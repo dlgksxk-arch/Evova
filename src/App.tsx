@@ -70,17 +70,57 @@ const App: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!faceImage || !clothImage) {
       alert("Please upload both Face and Clothes photos!");
       return;
     }
+    
     setIsGenerating(true);
-    // Simulate AI Process
-    setTimeout(() => {
-      alert("AI Fitting process started! (API connection required)");
+    
+    try {
+      // 나노바나나(Nano Banana) API 연동 로직
+      const apiKey = import.meta.env.VITE_NANOBANANA_API_KEY;
+      
+      if (!apiKey) {
+        console.warn("API Key is missing. Simulating API response...");
+        // API 키가 없을 경우 시뮬레이션 대기 (1.5초)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        alert("Nano Banana API is not fully configured (API Key missing). Showing mock results.");
+      } else {
+        // 실제 API 호출 로직 (가상의 Nano Banana Try-On 엔드포인트 예시)
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/nano-banana-pro:generateTryOn', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({
+            person_image: faceImage.split(',')[1], // Base64 데이터만 추출
+            garment_image: clothImage.split(',')[1],
+            parameters: {
+              output_format: "video", // 비디오 결과물 요청
+              angles: ["front", "side", "back", "turn"]
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Nano Banana API Response:", data);
+        alert("Nano Banana AI Fitting completed successfully!");
+        
+        // 실제 응답이 오면 state를 업데이트하여 비디오를 교체하는 로직이 여기에 들어갑니다.
+      }
+    } catch (error) {
+      console.error("Error calling Nano Banana API:", error);
+      alert("Failed to generate fitting video. Please try again.");
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const videos = [
