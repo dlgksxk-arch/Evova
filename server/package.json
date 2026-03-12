@@ -1,7 +1,7 @@
 {
-  "name": "evova-server",
+  "name": "HAMDEVA-server",
   "version": "1.0.0",
-  "description": "Evova virtual try-on backend",
+  "description": "HAMDEVA virtual try-on backend",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

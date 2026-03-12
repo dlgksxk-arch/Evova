@@ -208,10 +208,14 @@ const getSessionId = (): string => {
 };
 
 // ─── Functions API 기본 URL ───────────────────────────────────
-const API_BASE =
-  import.meta.env.DEV
+// VITE_API_BASE_URL 환경변수 우선, 없으면 실제 호스트명으로 판단
+// import.meta.env.DEV 는 cloudworkstations.dev 같은 원격 dev 환경에서도 true가 되므로
+// 실제 hostname이 localhost/127.0.0.1일 때만 로컬 에뮬레이터를 사용한다
+const API_BASE: string =
+  import.meta.env.VITE_API_BASE_URL ||
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api'  // 로컬 에뮬레이터
-    : '/api';                                               // 프로덕션 (Hosting rewrite)
+    : '/api');                                                  // 프로덕션 (Hosting rewrite)
 
 // ─── 무료 횟수 조회 (서버 기준) ──────────────────────────────
 const fetchUsage = async (sessionId: string): Promise<number> => {

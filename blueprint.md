@@ -1,8 +1,8 @@
-# EVOVA Blueprint
+# HAMDEVA Blueprint
 
 ## Project Overview
 
-EVOVA is a global AI-powered virtual try-on platform.
+HAMDEVA is a global AI-powered virtual try-on platform.
 
 Users upload:
 
@@ -203,7 +203,7 @@ Shop this look
 
 # Growth Strategy
 
-EVOVA growth relies on:
+HAMDEVA growth relies on:
 
 User-generated content
 
