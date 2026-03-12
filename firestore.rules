@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 사용량 통계 — 서버(Functions)만 쓰기 가능, 클라이언트 읽기 불가
+    match /usage/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // 결제 내역 — 서버만 접근
+    match /payments/{paymentId} {
+      allow read, write: if false;
+    }
+
+    // 나머지 모든 문서 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

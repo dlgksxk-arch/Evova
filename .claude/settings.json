@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/evova && git add -A && git diff --cached --quiet || git commit -m \"auto: $(git diff --cached --name-only | tr '\\n' ' ' | sed 's/ $//')\" && git push origin main"
+          }
+        ]
+      }
+    ]
+  }
+}

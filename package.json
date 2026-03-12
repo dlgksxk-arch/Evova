@@ -10,7 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tensorflow-models/blazeface": "^0.1.0",
+    "@tensorflow/tfjs": "^4.22.0",
     "openai": "^6.27.0",
+    "puppeteer": "^24.39.0",
+    "puppeteer-core": "^24.39.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
