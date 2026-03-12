@@ -213,7 +213,7 @@ const fetchUsage = async (sessionId: string): Promise<number> => {
 };
 
 // ─── Virtual Try-On API 호출 (Cloud Run 경유) ─────────────────
-const CLOUD_RUN_URL = 'https://evova-server-398391697481.asia-northeast3.run.app/generate';
+const CLOUD_RUN_URL = 'https://hamdeva-server-398391697481.asia-northeast3.run.app/generate';
 
 const callNanoBanana = async (personDataUrl: string, garmentDataUrl: string): Promise<string> => {
   const controller = new AbortController();
