@@ -82,4 +82,4 @@ app.post('/generate', async (req, res) => {
   return res.status(500).json({ error: 'No image in Gemini response' });
 });
 
-app.listen(PORT, () => console.log(`hamdeva-server listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`evova-server listening on port ${PORT}`));

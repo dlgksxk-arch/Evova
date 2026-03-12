@@ -1,6 +1,6 @@
 {
-  "name": "hamdeva-functions",
-  "description": "hamdeva Firebase Cloud Functions",
+  "name": "evova-functions",
+  "description": "evova Firebase Cloud Functions",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",

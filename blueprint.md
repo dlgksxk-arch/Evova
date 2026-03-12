@@ -1,26 +1,266 @@
-# Ibova - Try Your Style (AI Fitting App)
+# EVOVA Blueprint
 
-## 개요
-사용자가 자신의 얼굴 사진과 의상 사진을 업로드하면, AI가 해당 의상을 입은 모습을 4가지 각도(전면, 측면, 후면, 회전)의 비디오로 생성해주는 서비스의 프로토타입입니다.
+## Project Overview
 
-## 주요 기능
-- **얼굴/의상 업로드**: 드래그 앤 드롭 또는 클릭을 통한 이미지 업로드 및 실시간 미리보기.
-- **AI 피팅 생성**: 업로드된 이미지를 기반으로 가상의 피팅 비디오 생성 프로세스 시뮬레이션.
-- **결과물 갤러리**: 4개의 비디오 섹션을 통해 다각도 결과물 확인.
-- **반응형 디자인**: 모바일과 데스크톱에서 모두 최적화된 레이아웃.
+EVOVA is a global AI-powered virtual try-on platform.
 
-## 디자인 가이드
-- **색상**: 
-  - 배경: `#111` (다크 테마), 미세한 노이즈 텍스처 적용 제안.
-  - 포인트 컬러: `#ff3c6f` (Vibrant Pink).
-  - 카드/박스: `#1a1a1a`와 깊은 그림자 효과.
-- **타이포그래피**: Sans-serif (Inter, Arial), 헤드라인은 굵고 강조된 폰트.
-- **시각 효과**: 
-  - 버튼 및 업로드 박스에 글로우(Glow) 효과 및 호버 애니메이션.
-  - 부드러운 라운드 코너 (12px 이상).
+Users upload:
 
-## 구현 단계
-1. `App.tsx` 및 `App.css`를 구조화하여 기본 레이아웃 및 스타일 적용.
-2. 이미지 업로드 및 미리보기 로직 구현 (React hooks).
-3. 비디오 플레이스홀더 및 결과 섹션 UI 구성.
-4. 전체적인 인터랙션 및 애니메이션 디테일 보정.
+1. A person image
+2. A clothing image
+
+The system generates a photorealistic result showing the person wearing the clothing.
+
+Primary goals:
+
+* fast AI generation
+* mobile friendly
+* viral sharing
+* scalable global architecture
+
+---
+
+# Architecture
+
+Frontend
+
+React + Vite + TypeScript
+
+Hosting
+
+Firebase Hosting
+
+Domain
+
+Cloudflare DNS
+
+Backend
+
+Google Cloud Run (Node.js Express)
+
+AI Model
+
+Google Gemini image generation
+
+---
+
+# System Flow
+
+User uploads images
+
+Browser
+↓
+Firebase Hosting
+↓
+Cloud Run API
+↓
+Gemini AI
+↓
+Generated image returned
+↓
+Frontend display
+
+---
+
+# Repository Structure
+
+root
+
+src/
+App.tsx
+main.tsx
+index.css
+
+server/
+index.js
+package.json
+Dockerfile
+
+public/
+
+---
+
+# Frontend Responsibilities
+
+Frontend handles:
+
+* image upload
+* preview
+* API request
+* result display
+* download
+* usage counter
+* localization
+* UI layout
+
+Frontend must never contain API keys.
+
+---
+
+# Backend Responsibilities
+
+Cloud Run API handles:
+
+* secure Gemini API calls
+* image processing
+* request validation
+* response formatting
+
+Endpoint:
+
+POST /generate
+
+Request:
+
+{
+personImage: base64,
+garmentImage: base64
+}
+
+Response:
+
+{
+image: base64
+}
+
+---
+
+# Deployment
+
+Frontend
+
+Firebase Hosting
+
+Backend
+
+Cloud Run
+
+Region
+
+asia-northeast3
+
+---
+
+# Performance Rules
+
+Always follow these rules:
+
+1. Minimize API calls
+2. Cache repeated generations
+3. Resize large images before sending to AI
+4. Avoid blocking UI
+5. Optimize mobile performance
+
+---
+
+# Security Rules
+
+Never expose:
+
+Gemini API keys
+
+API keys must remain inside backend.
+
+Frontend only communicates with Cloud Run.
+
+---
+
+# UI Design Principles
+
+Simple interface
+
+3 main steps:
+
+Upload person photo
+Upload clothing photo
+Generate result
+
+Focus on:
+
+* fast interaction
+* minimal clicks
+* clear CTA
+
+---
+
+# Monetization Plan
+
+Phase 1
+
+AdSense ads
+
+Phase 2
+
+Premium generation limits
+
+Phase 3
+
+Affiliate clothing links
+
+Shop this look
+
+---
+
+# Growth Strategy
+
+EVOVA growth relies on:
+
+User-generated content
+
+Features planned:
+
+Outfit Gallery
+Daily Outfit Challenge
+Share to social platforms
+Leaderboard
+
+---
+
+# Future Infrastructure
+
+Image storage
+
+Google Cloud Storage
+
+User authentication
+
+Firebase Auth
+
+Analytics
+
+Google Analytics
+
+CDN
+
+Cloudflare
+
+---
+
+# Development Rules For AI Assistants
+
+When modifying code:
+
+Do NOT refactor entire files.
+
+Modify only necessary sections.
+
+Preserve UI components.
+
+Avoid adding heavy dependencies.
+
+Keep code production ready.
+
+Explain changes clearly.
+
+---
+
+# AI Assistant Role
+
+Act as a senior full-stack engineer.
+
+Goals:
+
+Improve stability
+Improve scalability
+Reduce AI costs
+Enhance user experience
