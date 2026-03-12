@@ -16,7 +16,7 @@ interface GeminiResponse {
 // CORS 헤더 설정
 const setCors = (req: functions.https.Request, res: functions.Response) => {
   const origin = req.headers.origin || '';
-  if (CORS_ORIGIN.includes(origin) || origin.includes('localhost')) {
+  if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
     res.set('Access-Control-Allow-Origin', origin);
   } else {
     res.set('Access-Control-Allow-Origin', 'https://fitall-ver1.web.app');
