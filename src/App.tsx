@@ -169,13 +169,29 @@ const translations = {
   },
 };
 
-type Lang = 'ko' | 'en' | 'es' | 'zh';
+type Lang = 'ko' | 'en' | 'zh' | 'hi' | 'es' | 'fr' | 'ar' | 'bn' | 'ru' | 'pt' | 'ur' | 'id' | 'de' | 'ja' | 'mr' | 'te' | 'tr' | 'ta' | 'vi' | 'it';
 
 const langOptions: { value: Lang; label: string; flag: string }[] = [
-  { value: 'ko', label: '한국어', flag: '🇰🇷' },
   { value: 'en', label: 'English', flag: '🇺🇸' },
-  { value: 'es', label: 'Español', flag: '🇪🇸' },
   { value: 'zh', label: '中文', flag: '🇨🇳' },
+  { value: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
+  { value: 'es', label: 'Español', flag: '🇪🇸' },
+  { value: 'fr', label: 'Français', flag: '🇫🇷' },
+  { value: 'ar', label: 'العربية', flag: '🇸🇦' },
+  { value: 'bn', label: 'বাংলা', flag: '🇧🇩' },
+  { value: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { value: 'pt', label: 'Português', flag: '🇵🇹' },
+  { value: 'ur', label: 'اردو', flag: '🇵🇰' },
+  { value: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { value: 'ja', label: '日本語', flag: '🇯🇵' },
+  { value: 'mr', label: 'मराठी', flag: '🇮🇳' },
+  { value: 'te', label: 'తెలుగు', flag: '🇮🇳' },
+  { value: 'tr', label: 'Türkçe', flag: '🇹🇷' },
+  { value: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
+  { value: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
+  { value: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { value: 'ko', label: '한국어', flag: '🇰🇷' },
 ];
 
 const FREE_LIMIT = 5;
@@ -684,8 +700,7 @@ const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ l
   return (
     <div className="lang-dropdown" ref={ref}>
       <button className="lang-dropdown-trigger" onClick={() => setOpen(!open)}>
-        <span>{cur.flag}</span>
-        <span className="lang-label">{cur.label}</span>
+        <span className="lang-label">LANGUAGE</span>
         <span className={`lang-caret ${open ? 'open' : ''}`}>▾</span>
       </button>
       {open && (
@@ -750,7 +765,7 @@ const App: React.FC = () => {
 
   const [darkMode, setDarkMode] = useState<boolean>(() => localStorage.getItem('evova-dark') === 'true');
   const [lang, setLang]         = useState<Lang>(() => (localStorage.getItem('evova-lang') as Lang) || 'ko');
-  const t = translations[lang];
+  const t = (translations as any)[lang] || translations.en;
 
   const freeLeft = Math.max(0, FREE_LIMIT - usageCount);
 
