@@ -43,7 +43,7 @@ const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebas
 // CORS 헤더 설정
 const setCors = (req, res) => {
     const origin = req.headers.origin ?? '';
-    if (CORS_ORIGIN.includes(origin) || origin.includes('localhost')) {
+    if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
         res.set('Access-Control-Allow-Origin', origin);
     }
     res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
