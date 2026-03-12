@@ -689,7 +689,6 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ lang, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const cur = langOptions.find((o) => o.value === lang)!;
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
@@ -1023,7 +1022,7 @@ const App: React.FC = () => {
             <p className="section-desc">{t.faqSub}</p>
           </div>
           <div className="faq-list">
-            {t.faqs.map((item, i) => <FaqItem key={i} q={item.q} a={item.a} />)}
+            {t.faqs.map((item: { q: string, a: string }, i: number) => <FaqItem key={i} q={item.q} a={item.a} />)}
           </div>
         </div>
       </section>
