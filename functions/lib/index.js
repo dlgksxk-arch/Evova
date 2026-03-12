@@ -128,7 +128,7 @@ Output: A single photorealistic try-on image.`,
                 topP: 0.95,
             },
         };
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
         if (!geminiRes.ok) {
             const errBody = await geminiRes.json().catch(() => ({}));
             functions.logger.error('Gemini API error', errBody);
@@ -216,7 +216,7 @@ Output: A single photorealistic try-on image.`,
             topP: 0.95,
         },
     };
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
     if (!geminiRes.ok) {
         const errBody = await geminiRes.json().catch(() => ({}));
         functions.logger.error('Gemini API error', errBody);
