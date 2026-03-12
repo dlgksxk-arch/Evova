@@ -96,11 +96,21 @@ const App: React.FC = () => {
     setIsGenerating(true);
     
     try {
-      // 나노바나나(Nano Banana) API 연동 로직
+      // 나노바나나(Nano Banana) API 등 가상 피팅 AI 연동 로직
       const apiKey = import.meta.env.VITE_NANOBANANA_API_KEY;
       
+      // AI 피팅 모델 프롬프트 및 설정 (가상의 예시)
+      const apiPayload = {
+        model: "virtual-try-on-v1",
+        face_image: faceImage.split(',')[1],
+        garment_image: clothImage.split(',')[1],
+        prompt: "Generate a highly realistic virtual try-on image by compositing the user's face onto the provided garment image. Ensure natural lighting, accurate body proportions, and seamless blending between the face and the clothes.",
+        output_format: "image"
+      };
+
       if (!apiKey) {
-        console.warn("API Key is missing. Simulating API response...");
+        console.warn("API Key is missing. Simulating API response with UI composition...", apiPayload);
+        // API 연동이 안 되어 있을 경우, 화면에서 CSS로 합성하여 보여주도록 1.5초 대기
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
         // 실제 API 호출 로직은 여기에 구현
@@ -116,19 +126,11 @@ const App: React.FC = () => {
       
     } catch (error) {
       console.error("Error generating:", error);
-      alert("피팅 영상 생성에 실패했습니다. 다시 시도해주세요.");
+      alert("피팅 이미지 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setIsGenerating(false);
     }
   };
-
-  // 플레이스홀더 영상을 위해 샘플 비디오 URL 적용 (실제 서비스에서는 API 응답 URL 사용)
-  const videos = [
-    { title: "정면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
-    { title: "측면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
-    { title: "후면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
-    { title: "턴", src: "https://www.w3schools.com/html/mov_bbb.mp4" }
-  ];
 
   return (
     <div className="app-container">
@@ -174,16 +176,11 @@ const App: React.FC = () => {
 
         {showResults && (
           <div className="result-section">
-            <h3>피팅 결과</h3>
-            <div className="video-grid">
-              {videos.map((v, i) => (
-                <div className="video-card" key={i}>
-                  <video controls autoPlay loop muted playsInline>
-                    <source src={v.src} type="video/mp4" />
-                  </video>
-                  <div className="video-info">{v.title}</div>
-                </div>
-              ))}
+            <h3>AI 피팅 결과 (미리보기)</h3>
+            <div className="composite-result">
+              {clothImage && <img src={clothImage} alt="Clothes" className="mock-cloth" />}
+              {faceImage && <img src={faceImage} alt="Face" className="mock-face" />}
+              <div className="composite-watermark">AI 가상 합성</div>
             </div>
           </div>
         )}
