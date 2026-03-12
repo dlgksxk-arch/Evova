@@ -248,15 +248,23 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
     });
   } catch (e) {
     clearTimeout(timer);
-    if ((e as Error).name === 'AbortError') throw new Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-    throw new Error('서버에 연결할 수 없습니다. 네트워크를 확인해주세요.');
+    const err = e as Error;
+    if (err.name === 'AbortError') throw new Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+    // TypeError: Failed to fetch → 네트워크 단절 또는 CORS 차단
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new Error(`네트워크 오류: API 서버에 연결할 수 없습니다.\n요청 주소: ${API_BASE}/tryon\nCORS 또는 네트워크 연결을 확인해주세요.`);
+    }
+    throw new Error(`네트워크 오류: ${err.message}`);
   }
   clearTimeout(timer);
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string, message?: string };
-    if (err.error === 'LIMIT_EXCEEDED') throw new Error('LIMIT_EXCEEDED');
-    throw new Error(err.message || err.error || `서버 오류 ${res.status}`);
+    const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
+    if (errBody.error === 'LIMIT_EXCEEDED') throw new Error('LIMIT_EXCEEDED');
+    if (res.status === 404) throw new Error(`API 엔드포인트를 찾을 수 없습니다 (404): ${API_BASE}/tryon`);
+    if (res.status === 0 || res.type === 'opaque') throw new Error('CORS 오류: 서버가 요청을 차단했습니다.');
+    if (res.status >= 500) throw new Error(`서버 내부 오류 (${res.status}): ${errBody.message || errBody.error || '알 수 없는 오류'}`);
+    throw new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
   }
 
   const data = await res.json() as { success?: boolean, image?: string };
