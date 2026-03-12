@@ -1,3 +1,5 @@
+import cors from 'cors';
+const corsHandler = cors({ origin: true });
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 
@@ -13,12 +15,15 @@ interface GeminiResponse {
 
 // CORS 헤더 설정
 const setCors = (req: functions.https.Request, res: functions.Response) => {
-  const origin = req.headers.origin ?? '';
+  const origin = req.headers.origin || '';
   if (CORS_ORIGIN.includes(origin) || origin.includes('localhost')) {
     res.set('Access-Control-Allow-Origin', origin);
+  } else {
+    res.set('Access-Control-Allow-Origin', 'https://fitall-ver1.web.app');
   }
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.set('Access-Control-Allow-Credentials', 'true');
 };
 
 // ─── /api/usage — 오늘 사용 횟수 조회 ────────────────────────
