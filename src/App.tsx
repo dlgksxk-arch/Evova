@@ -66,6 +66,7 @@ const App: React.FC = () => {
   const [clothImage, setClothImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [resultImage, setResultImage] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -94,29 +95,52 @@ const App: React.FC = () => {
     }
     
     setIsGenerating(true);
+    setResultImage(null);
     
     try {
-      // 나노바나나(Nano Banana) API 등 가상 피팅 AI 연동 로직
       const apiKey = import.meta.env.VITE_NANOBANANA_API_KEY;
       
-      // AI 피팅 모델 프롬프트 및 설정 (가상의 예시)
-      const apiPayload = {
-        model: "virtual-try-on-v1",
-        face_image: faceImage.split(',')[1],
-        garment_image: clothImage.split(',')[1],
-        prompt: "Generate a highly realistic virtual try-on image by compositing the user's face onto the provided garment image. Ensure natural lighting, accurate body proportions, and seamless blending between the face and the clothes.",
-        output_format: "image"
-      };
-
       if (!apiKey) {
-        console.warn("API Key is missing. Simulating API response with UI composition...", apiPayload);
-        // API 연동이 안 되어 있을 경우, 화면에서 CSS로 합성하여 보여주도록 1.5초 대기
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      } else {
-        // 실제 API 호출 로직은 여기에 구현
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        alert("Nano Banana API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.");
+        setIsGenerating(false);
+        return;
       }
+
+      // 실제 나노바나나 API 호출 (합성 요청)
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/nano-banana-pro:generateTryOn', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          person_image: faceImage.split(',')[1],
+          garment_image: clothImage.split(',')[1],
+          parameters: {
+            output_format: "image",
+            prompt: "Composite the face onto the garment realistically"
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      const data = await response.json();
       
+      // 다양한 API 응답 포맷 대응 (image_base64, generated_image, 혹은 candidates 기반)
+      let base64Result = null;
+      if (data.image_base64) base64Result = data.image_base64;
+      else if (data.generated_image) base64Result = data.generated_image;
+      else if (data.candidates && data.candidates[0]?.content) base64Result = data.candidates[0].content;
+      
+      if (!base64Result) {
+        console.error("Unknown API response format:", data);
+        throw new Error("결과 이미지를 응답에서 찾을 수 없습니다.");
+      }
+
+      setResultImage(`data:image/jpeg;base64,${base64Result}`);
       setShowResults(true);
       
       // 결과 영역으로 스크롤 이동
@@ -126,7 +150,7 @@ const App: React.FC = () => {
       
     } catch (error) {
       console.error("Error generating:", error);
-      alert("피팅 이미지 생성에 실패했습니다. 다시 시도해주세요.");
+      alert("Nano Banana 피팅 이미지 생성에 실패했습니다. 연결을 다시 확인해주세요.");
     } finally {
       setIsGenerating(false);
     }
@@ -170,17 +194,16 @@ const App: React.FC = () => {
             onClick={handleGenerate}
             disabled={isGenerating || !faceImage || !clothImage}
           >
-            {isGenerating ? "AI 분석 중..." : "AI 피팅 결과 확인하기"}
+            {isGenerating ? "Nano Banana AI 분석 중..." : "AI 피팅 결과 확인하기"}
           </button>
         </div>
 
-        {showResults && (
+        {showResults && resultImage && (
           <div className="result-section">
-            <h3>AI 피팅 결과 (미리보기)</h3>
-            <div className="composite-result">
-              {clothImage && <img src={clothImage} alt="Clothes" className="mock-cloth" />}
-              {faceImage && <img src={faceImage} alt="Face" className="mock-face" />}
-              <div className="composite-watermark">AI 가상 합성</div>
+            <h3>AI 피팅 결과</h3>
+            <div className="composite-result" style={{ aspectRatio: 'auto' }}>
+              <img src={resultImage} alt="Fitting Result" style={{ width: '100%', height: 'auto', borderRadius: '12px', display: 'block' }} />
+              <div className="composite-watermark">Nano Banana AI</div>
             </div>
           </div>
         )}
