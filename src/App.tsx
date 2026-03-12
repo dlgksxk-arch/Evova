@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 
 interface UploadCardProps {
@@ -66,6 +66,15 @@ const App: React.FC = () => {
   const [clothImage, setClothImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [isDarkMode]);
 
   const handleImageUpload = (file: File, type: 'face' | 'cloth') => {
     const reader = new FileReader();
@@ -113,17 +122,27 @@ const App: React.FC = () => {
     }
   };
 
+  // 플레이스홀더 영상을 위해 샘플 비디오 URL 적용 (실제 서비스에서는 API 응답 URL 사용)
   const videos = [
-    { title: "정면", src: "video_front.mp4" },
-    { title: "측면", src: "video_side.mp4" },
-    { title: "후면", src: "video_back.mp4" },
-    { title: "턴", src: "video_turn.mp4" }
+    { title: "정면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
+    { title: "측면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
+    { title: "후면", src: "https://www.w3schools.com/html/mov_bbb.mp4" },
+    { title: "턴", src: "https://www.w3schools.com/html/mov_bbb.mp4" }
   ];
 
   return (
     <div className="app-container">
       <header>
-        <h1>IBOVA Fitting</h1>
+        <div className="header-top">
+          <h1>IBOVA Fitting</h1>
+          <button 
+            className="theme-toggle" 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            aria-label="Toggle Dark Mode"
+          >
+            {isDarkMode ? '☀️ 밝은 모드' : '🌙 다크 모드'}
+          </button>
+        </div>
         <p>나에게 찰떡인 스타일을 찾아보세요!!<br/>AI 기반 가상 피팅 서비스</p>
       </header>
 
