@@ -39,7 +39,22 @@ app.post('/generate', async (req, res) => {
     contents: [{
       parts: [
         {
-          text: 'Create a photorealistic image of the person wearing the clothing. Keep the face, body proportions, pose, and lighting exactly as they appear in the original photo. Replace only the clothing with the garment provided. The result must look like a real photograph.',
+          text: `You are a virtual try-on image compositor.
+
+Two images are provided:
+- FIRST IMAGE = the person. This is the human subject. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
+- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
+
+Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
+
+Critical rules:
+1. The person's face and identity from the FIRST IMAGE must be IDENTICAL in the output — do not alter or replace the face
+2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
+3. Preserve the original pose, background, and lighting from the FIRST IMAGE
+4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
+5. Output must look like a single real photograph — not a collage, not an illustration
+
+Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`,
         },
         { inline_data: { mime_type: person.mimeType,  data: person.data  } },
         { inline_data: { mime_type: garment.mimeType, data: garment.data } },
