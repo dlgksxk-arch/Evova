@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import { modelSamples, clothSamples, countries } from './data/samples';
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
   ko: {
-    login: '로그인',
+
     navFeatures: '기능 소개', navHowto: '사용 방법', navFaq: 'FAQ',
     heroEyebrow: 'AI 기반 가상 피팅 서비스',
     heroTitle: '입어보지 않아도\n완벽한 나의 스타일',
-    heroSub: '내 사진 한 장이면 충분합니다. HADEVA의 AI가 얼굴을 인식하고, 원하는 옷을 실제로 입은 것처럼 합성해 드립니다.',
+    heroSub: '내 사진 한 장이면 충분합니다. HAMDEVA의 AI가 얼굴을 인식하고, 원하는 옷을 실제로 입은 것처럼 합성해 드립니다.',
     heroCta: '지금 무료로 시작하기',
-    featuresTitle: '왜 HADEVA인가요?', featuresSub: '빠르고, 정확하고, 누구나 쉽게 사용할 수 있습니다.',
+    featuresTitle: '왜 HAMDEVA인가요?', featuresSub: '빠르고, 정확하고, 누구나 쉽게 사용할 수 있습니다.',
     f1Title: 'AI 가상 피팅', f1Desc: 'Google Gemini AI가 인물 사진과 의상을 분석하여 실제로 입은 것 같은 자연스러운 합성 이미지를 생성합니다.',
     f2Title: '즉시 결과 확인', f2Desc: '별도의 회원가입 없이 사진 두 장만 업로드하면 수 초 내에 결과 이미지를 확인할 수 있습니다.',
     f3Title: '프라이버시 보호', f3Desc: '모든 이미지 처리는 브라우저에서 이루어지며, 사진이 별도로 저장되거나 공유되지 않습니다.',
@@ -33,25 +34,25 @@ const translations = {
     payClose: '닫기',
     payPlan1: '일일 이용권', payPlan1Price: '₩990', payPlan1Desc: '오늘 하루 무제한',
     payPlan2: '월정액', payPlan2Price: '₩9,900', payPlan2Desc: '30일 무제한',
-    faqTitle: '자주 묻는 질문', faqSub: 'HADEVA 사용에 대한 궁금증을 해결해 드립니다.',
+    faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
       { q: '하루 무료 횟수는 몇 번인가요?', a: '매일 자정 기준으로 5회 무료 사용이 제공됩니다. 추가 사용은 일일 이용권 또는 월정액 구독을 통해 가능합니다.' },
       { q: '어떤 사진을 올려야 가장 좋은 결과가 나오나요?', a: '인물 사진은 배경이 단순하고 전신 또는 상반신이 잘 보이는 정면 사진을 권장합니다. 의상 사진은 제품 단독 컷이나 착용 모델 사진이 적합합니다.' },
       { q: '합성 결과가 마음에 들지 않으면 어떻게 하나요?', a: '다른 사진으로 다시 시도해보세요. 인물 사진의 배경이 단순할수록, 의상 사진이 선명할수록 더 좋은 결과가 나옵니다.' },
-      { q: '모바일에서도 사용할 수 있나요?', a: '네. HADEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
+      { q: '모바일에서도 사용할 수 있나요?', a: '네. HAMDEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
       { q: '내 사진은 저장되나요?', a: '결제 및 처리 목적으로 일시적으로 전송되며, 별도로 저장하거나 다른 목적으로 사용하지 않습니다.' },
     ],
-    footer: '© 2025 HADEVA. All rights reserved.',
+    footer: '© 2025 HAMDEVA. All rights reserved.',
     footerPrivacy: '개인정보 처리방침', footerTerms: '이용약관', footerAbout: '서비스 소개',
   },
   en: {
-    login: 'Login',
+
     navFeatures: 'Features', navHowto: 'How It Works', navFaq: 'FAQ',
     heroEyebrow: 'AI-Powered Virtual Try-On',
     heroTitle: 'Your Perfect Style\nBefore You Buy',
-    heroSub: "All you need is one photo. HADEVA's AI creates a realistic virtual try-on — instantly.",
+    heroSub: "All you need is one photo. HAMDEVA's AI creates a realistic virtual try-on — instantly.",
     heroCta: 'Try for Free',
-    featuresTitle: 'Why HADEVA?', featuresSub: 'Fast, accurate, and easy to use for everyone.',
+    featuresTitle: 'Why HAMDEVA?', featuresSub: 'Fast, accurate, and easy to use for everyone.',
     f1Title: 'AI Virtual Try-On', f1Desc: 'Google Gemini AI analyzes your photo and clothing to generate a photorealistic composite image.',
     f2Title: 'Instant Results', f2Desc: 'No sign-up needed. Upload two photos and get your result in seconds.',
     f3Title: 'Privacy First', f3Desc: 'Your photos are not stored or shared beyond what is needed to generate your result.',
@@ -74,15 +75,15 @@ const translations = {
     payClose: 'Close',
     payPlan1: 'Day Pass', payPlan1Price: '$0.99', payPlan1Desc: 'Unlimited for today',
     payPlan2: 'Monthly', payPlan2Price: '$9.99', payPlan2Desc: '30 days unlimited',
-    faqTitle: 'FAQ', faqSub: 'Everything you need to know about HADEVA.',
+    faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
       { q: 'How many free uses do I get per day?', a: '5 free virtual try-ons are provided daily, resetting at midnight. Additional usage requires a Day Pass or monthly subscription.' },
       { q: 'What kind of photos work best?', a: 'For person photos, use a front-facing shot with a simple background showing your full or upper body. For clothing, solo product shots work best.' },
       { q: "What if I don't like the result?", a: "Try again with different photos. Simpler backgrounds and clearer clothing images produce better results." },
-      { q: 'Can I use it on mobile?', a: 'Yes. HADEVA is mobile-first and fully optimized for smartphones and tablets.' },
+      { q: 'Can I use it on mobile?', a: 'Yes. HAMDEVA is mobile-first and fully optimized for smartphones and tablets.' },
       { q: 'Are my photos stored?', a: 'Photos are temporarily transmitted for processing only and are not stored or used for any other purpose.' },
     ],
-    footer: '© 2025 HADEVA. All rights reserved.',
+    footer: '© 2025 HAMDEVA. All rights reserved.',
     footerPrivacy: 'Privacy Policy', footerTerms: 'Terms of Service', footerAbout: 'About',
   },
   es: {
@@ -90,9 +91,9 @@ const translations = {
     navFeatures: 'Funciones', navHowto: 'Cómo funciona', navFaq: 'FAQ',
     heroEyebrow: 'Prueba virtual con IA',
     heroTitle: 'Tu estilo perfecto\nantes de comprarlo',
-    heroSub: 'Solo necesitas una foto. La IA de HADEVA crea un resultado fotorrealista al instante.',
+    heroSub: 'Solo necesitas una foto. La IA de HAMDEVA crea un resultado fotorrealista al instante.',
     heroCta: 'Pruébalo gratis',
-    featuresTitle: '¿Por qué HADEVA?', featuresSub: 'Rápido, preciso y fácil de usar.',
+    featuresTitle: '¿Por qué HAMDEVA?', featuresSub: 'Rápido, preciso y fácil de usar.',
     f1Title: 'Prueba virtual con IA', f1Desc: 'Google Gemini AI analiza tu foto y la ropa para generar una imagen compuesta fotorrealista.',
     f2Title: 'Resultados instantáneos', f2Desc: 'Sin registro. Sube dos fotos y obtén tu resultado en segundos.',
     f3Title: 'Privacidad primero', f3Desc: 'Tus fotos no se almacenan ni comparten más allá de lo necesario para generar tu resultado.',
@@ -115,15 +116,15 @@ const translations = {
     payClose: 'Cerrar',
     payPlan1: 'Pase diario', payPlan1Price: '€0,99', payPlan1Desc: 'Ilimitado hoy',
     payPlan2: 'Mensual', payPlan2Price: '€9,99', payPlan2Desc: '30 días ilimitados',
-    faqTitle: 'Preguntas frecuentes', faqSub: 'Todo lo que necesitas saber sobre HADEVA.',
+    faqTitle: 'Preguntas frecuentes', faqSub: 'Todo lo que necesitas saber sobre HAMDEVA.',
     faqs: [
       { q: '¿Cuántos usos gratuitos tengo por día?', a: 'Se proporcionan 5 pruebas virtuales gratuitas al día, que se reinician a medianoche. El uso adicional requiere un pase diario o suscripción mensual.' },
       { q: '¿Qué tipo de fotos funcionan mejor?', a: 'Usa una foto de frente con fondo simple mostrando cuerpo completo. Para ropa, las fotos de producto individuales son ideales.' },
       { q: '¿Qué hago si no me gusta el resultado?', a: 'Intenta con otras fotos. Fondos más simples e imágenes de ropa más nítidas producen mejores resultados.' },
-      { q: '¿Puedo usarlo en móvil?', a: 'Sí. HADEVA está diseñado móvil-primero y optimizado para smartphones y tablets.' },
+      { q: '¿Puedo usarlo en móvil?', a: 'Sí. HAMDEVA está diseñado móvil-primero y optimizado para smartphones y tablets.' },
       { q: '¿Se almacenan mis fotos?', a: 'Las fotos se transmiten temporalmente solo para el procesamiento y no se almacenan ni usan para ningún otro fin.' },
     ],
-    footer: '© 2025 HADEVA. Todos los derechos reservados.',
+    footer: '© 2025 HAMDEVA. Todos los derechos reservados.',
     footerPrivacy: 'Privacidad', footerTerms: 'Términos', footerAbout: 'Acerca de',
   },
   zh: {
@@ -131,9 +132,9 @@ const translations = {
     navFeatures: '功能介绍', navHowto: '使用方法', navFaq: '常见问题',
     heroEyebrow: 'AI虚拟试穿服务',
     heroTitle: '无需试穿\n即可找到完美风格',
-    heroSub: '只需一张照片。HADEVA的AI立即生成逼真的虚拟试穿效果。',
+    heroSub: '只需一张照片。HAMDEVA的AI立即生成逼真的虚拟试穿效果。',
     heroCta: '免费开始体验',
-    featuresTitle: '为什么选择HADEVA？', featuresSub: '快速、精准，人人都能轻松使用。',
+    featuresTitle: '为什么选择HAMDEVA？', featuresSub: '快速、精准，人人都能轻松使用。',
     f1Title: 'AI虚拟试穿', f1Desc: 'Google Gemini AI分析您的照片和服装，生成逼真的合成图像。',
     f2Title: '即时查看结果', f2Desc: '无需注册。上传两张照片，几秒内即可查看结果。',
     f3Title: '隐私保护', f3Desc: '您的照片仅用于生成结果，不会被存储或分享。',
@@ -156,15 +157,15 @@ const translations = {
     payClose: '关闭',
     payPlan1: '日票', payPlan1Price: '¥7', payPlan1Desc: '今日无限次使用',
     payPlan2: '月度套餐', payPlan2Price: '¥68', payPlan2Desc: '30天无限次使用',
-    faqTitle: '常见问题', faqSub: '解答您关于HADEVA使用的疑问。',
+    faqTitle: '常见问题', faqSub: '解答您关于HAMDEVA使用的疑问。',
     faqs: [
       { q: '每天有几次免费使用？', a: '每天提供5次免费虚拟试穿，每日午夜重置。额外使用需购买日票或月度套餐。' },
       { q: '什么样的照片效果最好？', a: '人物照片建议使用背景简单的正面全身或半身照。服装照片建议使用单品拍摄图。' },
       { q: '如果结果不满意怎么办？', a: '请尝试换其他照片。背景越简单、服装图越清晰，效果越好。' },
-      { q: '可以在手机上使用吗？', a: '可以。HADEVA采用移动优先设计，在智能手机和平板上也能提供最佳体验。' },
+      { q: '可以在手机上使用吗？', a: '可以。HAMDEVA采用移动优先设计，在智能手机和平板上也能提供最佳体验。' },
       { q: '我的照片会被存储吗？', a: '照片仅用于生成结果的临时处理，不会被存储或用于其他目的。' },
     ],
-    footer: '© 2025 HADEVA. 保留所有权利。',
+    footer: '© 2025 HAMDEVA. 保留所有权利。',
     footerPrivacy: '隐私政策', footerTerms: '服务条款', footerAbout: '关于我们',
   },
 };
@@ -173,9 +174,11 @@ type Lang = 'ko' | 'en' | 'zh' | 'hi' | 'es' | 'fr' | 'ar' | 'bn' | 'ru' | 'pt' 
 
 const langOptions: { value: Lang; label: string; flag: string }[] = [
   { value: 'en', label: 'English', flag: '🇺🇸' },
-  { value: 'zh', label: '中文', flag: '🇨🇳' },
-  { value: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
   { value: 'es', label: 'Español', flag: '🇪🇸' },
+  { value: 'zh', label: '中文', flag: '🇨🇳' },
+  { value: 'ja', label: '日本語', flag: '🇯🇵' },
+  { value: 'ko', label: '한국어', flag: '🇰🇷' },
+  { value: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
   { value: 'fr', label: 'Français', flag: '🇫🇷' },
   { value: 'ar', label: 'العربية', flag: '🇸🇦' },
   { value: 'bn', label: 'বাংলা', flag: '🇧🇩' },
@@ -184,24 +187,22 @@ const langOptions: { value: Lang; label: string; flag: string }[] = [
   { value: 'ur', label: 'اردو', flag: '🇵🇰' },
   { value: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩' },
   { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { value: 'ja', label: '日本語', flag: '🇯🇵' },
   { value: 'mr', label: 'मराठी', flag: '🇮🇳' },
   { value: 'te', label: 'తెలుగు', flag: '🇮🇳' },
   { value: 'tr', label: 'Türkçe', flag: '🇹🇷' },
   { value: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
   { value: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
   { value: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { value: 'ko', label: '한국어', flag: '🇰🇷' },
 ];
 
 const FREE_LIMIT = 5;
 
 // ─── 세션 ID (익명 식별자) ────────────────────────────────────
 const getSessionId = (): string => {
-  let sid = localStorage.getItem('HADEVA-sid');
+  let sid = localStorage.getItem('HAMDEVA-sid');
   if (!sid) {
     sid = crypto.randomUUID();
-    localStorage.setItem('HADEVA-sid', sid);
+    localStorage.setItem('HAMDEVA-sid', sid);
   }
   return sid;
 };
@@ -221,26 +222,24 @@ const fetchUsage = async (sessionId: string): Promise<number> => {
     return data.count;
   } catch {
     // 오프라인 fallback — localStorage
-    const stored = localStorage.getItem('HADEVA-usage');
+    const stored = localStorage.getItem('HAMDEVA-usage');
     if (!stored) return 0;
     const { date, count } = JSON.parse(stored) as { date: string; count: number };
     return date === new Date().toDateString() ? count : 0;
   }
 };
 
-// ─── Virtual Try-On API 호출 (Cloud Run 경유) ─────────────────
-const CLOUD_RUN_URL = 'https://hamdeva-server-398391697481.asia-northeast3.run.app/generate';
-
-const callNanoBanana = async (personDataUrl: string, garmentDataUrl: string): Promise<string> => {
+// ─── Virtual Try-On API 호출 (Functions 경유) ─────────────────
+const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
 
   let res: Response;
   try {
-    res = await fetch(CLOUD_RUN_URL, {
+    res = await fetch(`${API_BASE}/tryon`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personImage: personDataUrl, garmentImage: garmentDataUrl }),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
   } catch (e) {
@@ -251,13 +250,14 @@ const callNanoBanana = async (personDataUrl: string, garmentDataUrl: string): Pr
   clearTimeout(timer);
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(err.error ?? `서버 오류 ${res.status}`);
+    const err = await res.json().catch(() => ({})) as { error?: string, message?: string };
+    if (err.error === 'LIMIT_EXCEEDED') throw new Error('LIMIT_EXCEEDED');
+    throw new Error(err.message || err.error || `서버 오류 ${res.status}`);
   }
 
-  const data = await res.json() as { image?: string };
+  const data = await res.json() as { success?: boolean, image?: string };
   if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-  return `data:image/png;base64,${data.image}`;
+  return data.image;
 };
 
 // ─── Image helpers ────────────────────────────────────────────
@@ -285,31 +285,31 @@ const simpleHash = (a: string, b: string): string => {
 };
 
 const getTryOnCache = (): Record<string, string> => {
-  try { return JSON.parse(localStorage.getItem('HADEVA-cache') ?? '{}') as Record<string, string>; }
+  try { return JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}') as Record<string, string>; }
   catch { return {}; }
 };
 const getCached = (k: string) => getTryOnCache()[k] ?? null;
 const setCached = (k: string, v: string) => {
   const c = getTryOnCache(); c[k] = v;
   const keys = Object.keys(c); if (keys.length > 5) delete c[keys[0]];
-  localStorage.setItem('HADEVA-cache', JSON.stringify(c));
+  localStorage.setItem('HAMDEVA-cache', JSON.stringify(c));
 };
 
 // ─── Wardrobe helpers ─────────────────────────────────────────
 interface WardrobeItem { id: string; image: string; createdAt: number; }
 
 const getWardrobe = (): WardrobeItem[] => {
-  try { return JSON.parse(localStorage.getItem('HADEVA-wardrobe') ?? '[]') as WardrobeItem[]; }
+  try { return JSON.parse(localStorage.getItem('HAMDEVA-wardrobe') ?? '[]') as WardrobeItem[]; }
   catch { return []; }
 };
 const addToWardrobe = (image: string): WardrobeItem[] => {
   const items = [{ id: crypto.randomUUID(), image, createdAt: Date.now() }, ...getWardrobe()].slice(0, 20);
-  localStorage.setItem('HADEVA-wardrobe', JSON.stringify(items));
+  localStorage.setItem('HAMDEVA-wardrobe', JSON.stringify(items));
   return items;
 };
 const deleteFromWardrobe = (id: string): WardrobeItem[] => {
   const items = getWardrobe().filter(i => i.id !== id);
-  localStorage.setItem('HADEVA-wardrobe', JSON.stringify(items));
+  localStorage.setItem('HAMDEVA-wardrobe', JSON.stringify(items));
   return items;
 };
 
@@ -317,17 +317,17 @@ const deleteFromWardrobe = (id: string): WardrobeItem[] => {
 interface RatingData { hot: number; not: number; voted: string | null; }
 const getRatings = (key: string): RatingData => {
   try {
-    const all = JSON.parse(localStorage.getItem('HADEVA-ratings') ?? '{}') as Record<string, RatingData>;
+    const all = JSON.parse(localStorage.getItem('HAMDEVA-ratings') ?? '{}') as Record<string, RatingData>;
     return all[key] ?? { hot: 0, not: 0, voted: null };
   } catch { return { hot: 0, not: 0, voted: null }; }
 };
 const saveRating = (key: string, vote: 'hot' | 'not'): RatingData => {
-  const all = JSON.parse(localStorage.getItem('HADEVA-ratings') ?? '{}') as Record<string, RatingData>;
+  const all = JSON.parse(localStorage.getItem('HAMDEVA-ratings') ?? '{}') as Record<string, RatingData>;
   const cur = all[key] ?? { hot: 0, not: 0, voted: null };
   if (!cur.voted) cur[vote]++;
   cur.voted = vote;
   all[key] = cur;
-  localStorage.setItem('HADEVA-ratings', JSON.stringify(all));
+  localStorage.setItem('HAMDEVA-ratings', JSON.stringify(all));
   return cur;
 };
 
@@ -365,7 +365,7 @@ const ShareSection: React.FC = () => {
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
   const handleNative = () => {
-    if (navigator.share) navigator.share({ title: 'HADEVA AI Try-On', text: 'Check my AI fitting result!', url }).catch(() => {});
+    if (navigator.share) navigator.share({ title: 'HAMDEVA AI Try-On', text: 'Check my AI fitting result!', url }).catch(() => {});
   };
   return (
     <div className="share-section">
@@ -469,7 +469,7 @@ const WardrobeSection: React.FC<{
 
 // ─── Leaderboard helpers ──────────────────────────────────────
 interface LbVotes { hot: number; voted: boolean; }
-const LB_KEY = 'HADEVA-lb';
+const LB_KEY = 'HAMDEVA-lb';
 
 const getLbVotes = (): Record<string, LbVotes> => {
   try { return JSON.parse(localStorage.getItem(LB_KEY) ?? '{}') as Record<string, LbVotes>; }
@@ -546,7 +546,7 @@ const CompareSection: React.FC<{ items: WardrobeItem[] }> = ({ items }) => {
   const startCompare = () => {
     if (!selA || !selB) return;
     const key = `cmp-${simpleHash(selA, selB)}`;
-    const stored = JSON.parse(localStorage.getItem('HADEVA-compare') ?? '{}') as Record<string, CompareVotes>;
+    const stored = JSON.parse(localStorage.getItem('HAMDEVA-compare') ?? '{}') as Record<string, CompareVotes>;
     setVotes(stored[key] ?? { a: 0, b: 0, voted: null });
     setComparing(true);
   };
@@ -554,11 +554,11 @@ const CompareSection: React.FC<{ items: WardrobeItem[] }> = ({ items }) => {
   const vote = (side: 'a' | 'b') => {
     if (votes.voted || !selA || !selB) return;
     const key = `cmp-${simpleHash(selA, selB)}`;
-    const stored = JSON.parse(localStorage.getItem('HADEVA-compare') ?? '{}') as Record<string, CompareVotes>;
+    const stored = JSON.parse(localStorage.getItem('HAMDEVA-compare') ?? '{}') as Record<string, CompareVotes>;
     const cur = stored[key] ?? { a: 0, b: 0, voted: null };
     cur[side]++; cur.voted = side;
     stored[key] = cur;
-    localStorage.setItem('HADEVA-compare', JSON.stringify(stored));
+    localStorage.setItem('HAMDEVA-compare', JSON.stringify(stored));
     setVotes({ ...cur });
   };
 
@@ -620,57 +620,6 @@ const CompareSection: React.FC<{ items: WardrobeItem[] }> = ({ items }) => {
         )}
       </div>
     </section>
-  );
-};
-
-// ─── UploadCard ───────────────────────────────────────────────
-const UploadCard: React.FC<{
-  label: string; title: string; icon: string;
-  description: string; image: string | null; onUpload: (f: File) => void;
-}> = ({ label, title, icon, description, image, onUpload }) => {
-  const ref = useRef<HTMLInputElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onUpload(file);
-      e.target.value = ''; // 같은 파일 재선택 허용
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) onUpload(file);
-  };
-
-  return (
-    <div className="upload-card">
-      <div className="card-header">
-        <span className="section-label">{label}</span>
-        <h3 className="card-title">{title}</h3>
-      </div>
-      <div
-        className={`upload-area ${image ? 'has-image' : ''}`}
-        onClick={() => ref.current?.click()}
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-      >
-        <input
-          type="file"
-          ref={ref}
-          onChange={handleChange}
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
-        {image ? <img src={image} alt={title} /> : (
-          <div className="upload-placeholder">
-            <span className="upload-icon">{icon}</span>
-            <p>{description}</p>
-          </div>
-        )}
-      </div>
-    </div>
   );
 };
 
@@ -748,6 +697,13 @@ const App: React.FC = () => {
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [gender, setGender] = useState<'female' | 'male'>('female');
+  const [height, setHeight] = useState<number | ''>('');
+  const [weight, setWeight] = useState<number | ''>('');
+  const [showModelModal, setShowModelModal] = useState(false);
+  const [showClothModal, setShowClothModal] = useState(false);
+  const [activeModelTab, setActiveModelTab] = useState<'female'|'male'>('female');
+  const [activeClothTab, setActiveClothTab] = useState<string>('korea');
   const [resultImage, setResultImage]   = useState<string | null>(null);
   const [resultKey, setResultKey]       = useState('');
   const [showPaywall, setShowPaywall]   = useState(false);
@@ -762,21 +718,23 @@ const App: React.FC = () => {
     fetchUsage(sessionId).then(setUsageCount).catch(() => setUsageCount(0));
   }, [sessionId]);
 
-  const [darkMode, setDarkMode] = useState<boolean>(() => localStorage.getItem('HADEVA-dark') === 'true');
-  const [lang, setLang]         = useState<Lang>(() => (localStorage.getItem('HADEVA-lang') as Lang) || 'ko');
+  const [darkMode, setDarkMode] = useState<boolean>(() => localStorage.getItem('HAMDEVA-dark') === 'true');
+  const [lang, setLang]         = useState<Lang>(() => (localStorage.getItem('HAMDEVA-lang') as Lang) || 'ko');
   const t = (translations as any)[lang] || translations.en;
 
   const freeLeft = Math.max(0, FREE_LIMIT - usageCount);
 
   useEffect(() => {
-    localStorage.setItem('HADEVA-dark', String(darkMode));
+    localStorage.setItem('HAMDEVA-dark', String(darkMode));
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  useEffect(() => { localStorage.setItem('HADEVA-lang', lang); }, [lang]);
+  useEffect(() => { localStorage.setItem('HAMDEVA-lang', lang); }, [lang]);
 
+  const MAX_IMAGE_SIZE_MB = 10;
+  const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
   const handleImageUpload = (file: File, type: 'person' | 'cloth') => {
-    if (file.size > 2 * 1024 * 1024) { alert('이미지 크기는 2MB 이하여야 합니다.'); return; }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) { alert(`이미지는 최대 ${MAX_IMAGE_SIZE_MB}MB까지 업로드할 수 있습니다.`); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result;
@@ -816,7 +774,7 @@ const App: React.FC = () => {
     setResultImage(null);
 
     try {
-      const result = await callNanoBanana(personImage, clothImage);
+      const result = await callNanoBanana({ sessionId, personImage, garmentImage: clothImage, bodyProfile: { gender, height, weight } });
       const newCount = await fetchUsage(sessionId);
       setUsageCount(newCount);
       setCached(cacheKey, result);
@@ -838,7 +796,7 @@ const App: React.FC = () => {
   const handleDownload = () => {
     if (!resultImage) return;
     const a = document.createElement('a');
-    a.href = resultImage; a.download = 'HADEVA-fitting.jpg'; a.click();
+    a.href = resultImage; a.download = 'HAMDEVA-fitting.jpg'; a.click();
   };
 
   const scrollTo = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false); };
@@ -959,11 +917,54 @@ const App: React.FC = () => {
 
           <OutfitGenerator onSelect={() => {}} />
 
-          <div className="upload-grid">
-            <UploadCard label={t.step1Label} title={t.step1Title} icon="🧍"
-              description={t.step1Desc} image={personImage} onUpload={(f) => handleImageUpload(f, 'person')} />
-            <UploadCard label={t.step2Label} title={t.step2Title} icon="👕"
-              description={t.step2Desc} image={clothImage} onUpload={(f) => handleImageUpload(f, 'cloth')} />
+          <div className="try-layout">
+            <div className="try-column">
+              <div className="card-header">
+                <span className="section-label">Step 1</span>
+                <h3 className="card-title">모델 선택</h3>
+              </div>
+              <div className="body-profile-inputs">
+                <div className="gender-toggle">
+                  <button className={gender === 'female' ? 'active' : ''} onClick={() => setGender('female')}>여성</button>
+                  <button className={gender === 'male' ? 'active' : ''} onClick={() => setGender('male')}>남성</button>
+                </div>
+                <div className="input-group">
+                  <input type="number" placeholder="키 (cm)" value={height} onChange={e => setHeight(Number(e.target.value) || '')} />
+                  <input type="number" placeholder="몸무게 (kg)" value={weight} onChange={e => setWeight(Number(e.target.value) || '')} />
+                </div>
+              </div>
+              <div className="try-actions">
+                <button className="outline-btn" onClick={() => setShowModelModal(true)}>샘플 얼굴 선택</button>
+                <button className="outline-btn" onClick={() => document.getElementById('person-upload')?.click()}>직접 업로드</button>
+                <input id="person-upload" type="file" hidden accept="image/*" onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleImageUpload(f, 'person');
+                  e.target.value = '';
+                }} />
+              </div>
+              <div className={`preview-box ${personImage ? 'has-image' : ''}`}>
+                {personImage ? <img src={personImage} alt="Person" /> : <div className="upload-placeholder"><span className="upload-icon">🧍</span><p>인물 사진을 선택하세요</p></div>}
+              </div>
+            </div>
+
+            <div className="try-column">
+              <div className="card-header">
+                <span className="section-label">Step 2</span>
+                <h3 className="card-title">의상 선택</h3>
+              </div>
+              <div className="try-actions">
+                <button className="outline-btn" onClick={() => setShowClothModal(true)}>샘플 의상 선택</button>
+                <button className="outline-btn" onClick={() => document.getElementById('cloth-upload')?.click()}>직접 업로드</button>
+                <input id="cloth-upload" type="file" hidden accept="image/*" onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleImageUpload(f, 'cloth');
+                  e.target.value = '';
+                }} />
+              </div>
+              <div className={`preview-box ${clothImage ? 'has-image' : ''}`}>
+                {clothImage ? <img src={clothImage} alt="Cloth" /> : <div className="upload-placeholder"><span className="upload-icon">👕</span><p>의상 사진을 선택하세요</p></div>}
+              </div>
+            </div>
           </div>
 
           <div className="action-section">
@@ -989,7 +990,7 @@ const App: React.FC = () => {
               <h2 className="section-heading" style={{ marginBottom: 24 }}>{t.resultTitle}</h2>
               <div className="composite-result">
                 <img src={resultImage} alt="Fitting Result" />
-                <div className="watermark">HADEVA AI</div>
+                <div className="watermark">HAMDEVA AI</div>
               </div>
               <div className="result-actions">
                 <button className="download-btn" onClick={handleDownload}>{t.download}</button>
@@ -1049,6 +1050,61 @@ const App: React.FC = () => {
           <div className="view-modal" onClick={e => e.stopPropagation()}>
             <img src={viewImage} alt="wardrobe item" />
             <button className="modal-close" onClick={() => setViewImage(null)}>✕ Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sample Model Modal ── */}
+      {showModelModal && (
+        <div className="modal-backdrop" onClick={() => setShowModelModal(false)}>
+          <div className="sample-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>샘플 얼굴 선택</h3>
+              <button className="modal-close-btn" onClick={() => setShowModelModal(false)}>✕</button>
+            </div>
+            <div className="modal-tabs">
+              <button className={activeModelTab === 'female' ? 'active' : ''} onClick={() => setActiveModelTab('female')}>여성</button>
+              <button className={activeModelTab === 'male' ? 'active' : ''} onClick={() => setActiveModelTab('male')}>남성</button>
+            </div>
+            <div className="sample-grid">
+              {modelSamples.filter(s => s.gender === activeModelTab).map(s => (
+                <div key={s.id} className={`sample-card ${personImage === s.image ? 'selected' : ''}`} onClick={() => {
+                  setPersonImage(s.image);
+                  setGender(s.gender);
+                  setShowModelModal(false);
+                }}>
+                  <img src={s.image} alt="model sample" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sample Cloth Modal ── */}
+      {showClothModal && (
+        <div className="modal-backdrop" onClick={() => setShowClothModal(false)}>
+          <div className="sample-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>샘플 의상 선택 (전통의상)</h3>
+              <button className="modal-close-btn" onClick={() => setShowClothModal(false)}>✕</button>
+            </div>
+            <div className="modal-tabs scrollable">
+              {countries.map(c => (
+                <button key={c.id} className={activeClothTab === c.id ? 'active' : ''} onClick={() => setActiveClothTab(c.id)}>{c.label}</button>
+              ))}
+            </div>
+            <div className="sample-grid">
+              {clothSamples.filter(s => s.country === activeClothTab).map(s => (
+                <div key={s.id} className={`sample-card ${clothImage === s.image ? 'selected' : ''}`} onClick={() => {
+                  setClothImage(s.image);
+                  setShowClothModal(false);
+                }}>
+                  <img src={s.image} alt="cloth sample" />
+                  <div className="sample-label">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
