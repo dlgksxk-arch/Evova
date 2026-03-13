@@ -1,0 +1,39 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 커밋 이력 필요 (버전 계산용)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        # vite build 시 git rev-list/rev-parse 실행 → version.json 자동 생성
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
+
+      - name: Build & deploy Functions
+        run: |
+          cd functions && npm ci
+          firebase deploy --only functions --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
+        working-directory: /home/runner/work/Evova/Evova
