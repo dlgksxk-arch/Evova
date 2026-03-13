@@ -5,13 +5,14 @@ import fs from 'fs'
 import path from 'path'
 
 const appVersion = (() => {
-  const baseVersion = process.env.npm_package_version || '0.0.0'
-
   try {
-    const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
-    return `v${baseVersion}-${gitHash}`
+    const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
+    const safeCount = Number.isNaN(commitCount) || commitCount < 1 ? 1 : commitCount
+    const major = Math.floor(safeCount / 100)
+    const minor = safeCount % 100
+    return `v${major}.${minor}`
   } catch {
-    return `v${baseVersion}`
+    return 'v0.1'
   }
 })()
 
