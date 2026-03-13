@@ -2,7 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 8080;
@@ -131,10 +136,6 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
-app.options(['/generate', '/tryon', '/generateTryOn'], (req, res) => {
-  console.info('[HAMDEVA-server] preflight', { path: req.path, method: req.method });
-  res.sendStatus(204);
-});
 
 app.post(['/generate', '/tryon', '/generateTryOn'], async (req, res) => {
   console.info('[HAMDEVA-server] incoming request', {
