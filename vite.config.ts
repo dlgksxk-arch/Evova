@@ -42,6 +42,20 @@ const appVersion = (() => {
   }
 })()
 
+function writeVersionFilePlugin() {
+  const versionPayload = JSON.stringify({ version: appVersion }, null, 2)
+
+  return {
+    name: 'write-version-file',
+    buildStart() {
+      fs.writeFileSync(path.resolve(__dirname, 'public/version.json'), versionPayload)
+    },
+    configureServer() {
+      fs.writeFileSync(path.resolve(__dirname, 'public/version.json'), versionPayload)
+    },
+  }
+}
+
 function sampleScannerPlugin() {
   const virtualModuleId = 'virtual:samples'
   const resolvedVirtualModuleId = '\0' + virtualModuleId
@@ -90,7 +104,7 @@ function sampleScannerPlugin() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), sampleScannerPlugin()],
+  plugins: [react(), sampleScannerPlugin(), writeVersionFilePlugin()],
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },

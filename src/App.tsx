@@ -1191,6 +1191,7 @@ const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [appVersion, setAppVersion] = useState(APP_VERSION);
   
   const t = uiTranslations[lang];
   const sessionId = getSessionId();
@@ -1203,6 +1204,22 @@ const App: React.FC = () => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
   }, [darkMode]);
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() as Promise<{ version?: string }> : null)
+      .then((data) => {
+        if (!cancelled && data?.version) {
+          setAppVersion(data.version);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     const syncPage = () => setCurrentPage(getPageFromHash(window.location.hash));
     window.addEventListener('hashchange', syncPage);
@@ -1346,7 +1363,7 @@ const App: React.FC = () => {
         <div className="nav-content">
           <div className="nav-brand">
             <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
-            <span className="app-version">{APP_VERSION}</span>
+            <span className="app-version">{appVersion}</span>
           </div>
           <div className="nav-links">
             {NAV_ITEMS.map((item) => (
