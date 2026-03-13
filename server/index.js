@@ -14,6 +14,11 @@ const PORT = process.env.PORT || 8080;
 const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
+const usageStore = new Map();
+const getUsageCount = (key) => {
+  const entry = usageStore.get(key);
+  return entry && Number.isFinite(entry.successCount) ? entry.successCount : 0;
+};
 
 const getOpenAIApiKey = () => {
   const envCandidates = [
@@ -180,8 +185,16 @@ app.post(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], async (req, re
     return res.status(400).json({ error: 'personImage and garmentImage are required' });
   }
 
+  const sessionId = String(req.body?.sessionId || '');
+  const today = new Date().toISOString().slice(0, 10);
+  const usageKey = `${sessionId || req.ip}_${today}`;
+  if (getUsageCount(usageKey) >= 3) {
+    return res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
+  }
+
   try {
     const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
+    usageStore.set(usageKey, { successCount: getUsageCount(usageKey) + 1 });
     return res.json({
       image: `data:${generatedImage.mimeType};base64,${generatedImage.data}`,
       mimeType: generatedImage.mimeType,
@@ -189,6 +202,9 @@ app.post(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], async (req, re
     });
   } catch (err) {
     console.error('OpenAI image generation failed:', err);
+    if (err instanceof Error && err.message === 'LIMIT_EXCEEDED') {
+      return res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
+    }
     const isConfigError = err instanceof Error && err.message === OPENAI_CONFIG_MESSAGE;
     return res.status(isConfigError ? 500 : 502).json({
       error: isConfigError ? OPENAI_CONFIG_ERROR : (err instanceof Error ? err.message : 'Failed to reach OpenAI API'),

@@ -25,6 +25,10 @@ interface OpenAIImageResponse {
 }
 
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
+const getUsageCount = (data?: FirebaseFirestore.DocumentData): number => {
+  const successCount = data?.successCount;
+  return typeof successCount === 'number' && Number.isFinite(successCount) ? successCount : 0;
+};
 
 const getOpenAIApiKey = (): string => {
   const envCandidates = [
@@ -223,7 +227,7 @@ export const api = functions
       const today = new Date().toISOString().slice(0, 10);
       const docRef = db.collection('usage').doc(`${sessionId}_${today}`);
       const doc = await docRef.get();
-      const count: number = doc.exists ? (doc.data()?.count as number ?? 0) : 0;
+      const count: number = doc.exists ? getUsageCount(doc.data()) : 0;
 
       res.json({ count, remaining: Math.max(0, FREE_LIMIT - count), limit: FREE_LIMIT });
       return;
@@ -247,35 +251,44 @@ export const api = functions
         res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' }); return;
       }
 
-      // 사용 횟수 확인 및 증가 (트랜잭션)
+      // 사용 횟수 확인
       const today = new Date().toISOString().slice(0, 10);
       const docRef = db.collection('usage').doc(`${sessionId}_${today}`);
-
-      let allowed = false;
-      await db.runTransaction(async (tx) => {
-        const doc = await tx.get(docRef);
-        const count: number = doc.exists ? (doc.data()?.count as number ?? 0) : 0;
-        if (count < FREE_LIMIT) {
-          tx.set(docRef, { sessionId, date: today, count: count + 1 }, { merge: true });
-          allowed = true;
-        }
-      });
-
-      if (!allowed) {
+      const doc = await docRef.get();
+      const currentCount = doc.exists ? getUsageCount(doc.data()) : 0;
+      if (currentCount >= FREE_LIMIT) {
         res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
         return;
       }
 
       try {
         const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
+        await db.runTransaction(async (tx) => {
+          const currentDoc = await tx.get(docRef);
+          const latestCount = currentDoc.exists ? getUsageCount(currentDoc.data()) : 0;
+          if (latestCount >= FREE_LIMIT) {
+            throw new Error('LIMIT_EXCEEDED');
+          }
+          tx.set(docRef, {
+            sessionId,
+            date: today,
+            successCount: latestCount + 1,
+            lastSuccessAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+        });
         const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
         res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
         return;
       } catch (error) {
         functions.logger.error('OpenAI try-on request failed', error);
-        res.status(502).json({
-          error: error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
-          message: error instanceof Error ? error.message : 'OpenAI image generation failed',
+        const isLimitExceeded = error instanceof Error && error.message === 'LIMIT_EXCEEDED';
+        res.status(isLimitExceeded ? 402 : 502).json({
+          error: isLimitExceeded
+            ? 'LIMIT_EXCEEDED'
+            : error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
+          message: isLimitExceeded
+            ? '오늘 무료 횟수를 모두 사용했습니다.'
+            : error instanceof Error ? error.message : 'OpenAI image generation failed',
         });
         return;
       }
@@ -318,35 +331,44 @@ export const generateTryOn = functions
       res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' }); return;
     }
 
-    // 사용 횟수 확인 및 증가 (Firestore 트랜잭션)
+    // 사용 횟수 확인
     const today = new Date().toISOString().slice(0, 10);
     const docRef = db.collection('usage').doc(`${sessionId}_${today}`);
-
-    let allowed = false;
-    await db.runTransaction(async (tx) => {
-      const doc = await tx.get(docRef);
-      const count: number = doc.exists ? (doc.data()?.count as number ?? 0) : 0;
-      if (count < FREE_LIMIT) {
-        tx.set(docRef, { sessionId, date: today, count: count + 1 }, { merge: true });
-        allowed = true;
-      }
-    });
-
-    if (!allowed) {
+    const doc = await docRef.get();
+    const currentCount = doc.exists ? getUsageCount(doc.data()) : 0;
+    if (currentCount >= FREE_LIMIT) {
       res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
       return;
     }
 
     try {
       const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
+      await db.runTransaction(async (tx) => {
+        const currentDoc = await tx.get(docRef);
+        const latestCount = currentDoc.exists ? getUsageCount(currentDoc.data()) : 0;
+        if (latestCount >= FREE_LIMIT) {
+          throw new Error('LIMIT_EXCEEDED');
+        }
+        tx.set(docRef, {
+          sessionId,
+          date: today,
+          successCount: latestCount + 1,
+          lastSuccessAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      });
       const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
       res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
       return;
     } catch (error) {
       functions.logger.error('OpenAI generateTryOn request failed', error);
-      res.status(502).json({
-        error: error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
-        message: error instanceof Error ? error.message : 'OpenAI image generation failed',
+      const isLimitExceeded = error instanceof Error && error.message === 'LIMIT_EXCEEDED';
+      res.status(isLimitExceeded ? 402 : 502).json({
+        error: isLimitExceeded
+          ? 'LIMIT_EXCEEDED'
+          : error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
+        message: isLimitExceeded
+          ? '오늘 무료 횟수를 모두 사용했습니다.'
+          : error instanceof Error ? error.message : 'OpenAI image generation failed',
       });
       return;
     }
