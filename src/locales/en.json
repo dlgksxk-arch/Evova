@@ -41,8 +41,14 @@
         "button": "Learn more →"
       }
     ],
-    "toolIntroTitle": "Stop imagining. Preview the look now.",
-    "toolIntroBody": "Upload a portrait, choose a garment, and let HAMDEVA return one sharp 1x4 try-on sheet."
+    "suggestionBoardTitle": "Suggestion Board",
+    "suggestionBoardDescription": "Recommend outfits and models you want added as future samples.",
+    "suggestionBoardItems": [
+      "Traditional dress to add next",
+      "Sample model style ideas",
+      "Couple or family sample requests",
+      "More menswear references"
+    ]
   },
   "modal": {
     "title": "Global Traditional Clothing Guide",
@@ -87,23 +93,14 @@
     },
     "countriesIntro": "Browse traditional clothing references by country and garment type.",
     "countries": [
-      { "country": "Korea", "clothing": "Hanbok", "description": "Known for graceful lines, layered volume, and elegant ceremonial styling." },
-      { "country": "Japan", "clothing": "Kimono", "description": "A wrapped silhouette with structured layering and refined seasonal presentation." },
-      { "country": "China", "clothing": "Qipao / Cheongsam", "description": "A sleek Chinese dress tradition known for its elegant line and refined formal image." },
-      { "country": "India", "clothing": "Saree", "description": "A draped garment with rich textile identity, regional styles, and ceremonial use." },
-      { "country": "Vietnam", "clothing": "Ao Dai", "description": "A fitted long tunic over trousers that combines elegance and movement." },
-      { "country": "Thailand", "clothing": "Chut Thai", "description": "A family of Thai traditional outfits used in formal and cultural settings." },
-      { "country": "Indonesia", "clothing": "Kebaya", "description": "A delicate blouse-and-wrap tradition often associated with formal occasions." },
-      { "country": "Malaysia", "clothing": "Baju Kurung", "description": "A modest, flowing ensemble with regional variations and everyday relevance." },
-      { "country": "Philippines", "clothing": "Baro't Saya", "description": "A historic women's silhouette that combines blouse, skirt, and layered structure." },
-      { "country": "Mongolia", "clothing": "Deel", "description": "A robe-like garment built for climate, movement, and strong visual identity." },
-      { "country": "Morocco", "clothing": "Kaftan", "description": "A luxurious long-form garment often associated with tailoring, embroidery, and ceremony." },
-      { "country": "Nigeria", "clothing": "Agbada", "description": "A voluminous robe ensemble that carries prestige and formal presence." },
-      { "country": "Mexico", "clothing": "Huipil", "description": "A richly varied textile tradition with strong regional patterns and symbolism." },
-      { "country": "Scotland", "clothing": "Kilt", "description": "A pleated garment tied closely to clan identity, ceremony, and Highland dress." },
-      { "country": "Germany", "clothing": "Dirndl", "description": "A bodice, blouse, and skirt arrangement rooted in Alpine regional dress." },
-      { "country": "Spain", "clothing": "Flamenco dress", "description": "A dramatic ruffled silhouette associated with performance and cultural celebration." },
-      { "country": "Norway", "clothing": "Bunad", "description": "A formal folk costume tradition shaped by region, embroidery, and family heritage." }
+      { "code": "korea", "country": "Korea", "clothing": "Hanbok", "description": "Known for graceful lines, layered volume, and elegant ceremonial styling." },
+      { "code": "japan", "country": "Japan", "clothing": "Kimono", "description": "A wrapped silhouette with structured layering and refined seasonal presentation." },
+      { "code": "china", "country": "China", "clothing": "Qipao / Cheongsam", "description": "A sleek Chinese dress tradition known for its elegant line and refined formal image." },
+      { "code": "india", "country": "India", "clothing": "Saree", "description": "A draped garment with rich textile identity, regional styles, and ceremonial use." },
+      { "code": "vietnam", "country": "Vietnam", "clothing": "Ao Dai", "description": "A fitted long tunic over trousers that combines elegance and movement." },
+      { "code": "thailand", "country": "Thailand", "clothing": "Chut Thai", "description": "A family of Thai traditional outfits used in formal and cultural settings." },
+      { "code": "indonesia", "country": "Indonesia", "clothing": "Kebaya", "description": "A delicate blouse-and-wrap tradition often associated with formal occasions." },
+      { "code": "spain", "country": "Spain", "clothing": "Flamenco dress", "description": "A dramatic ruffled silhouette associated with performance and cultural celebration." }
     ]
   },
   "pages": {
@@ -265,9 +262,10 @@
     "supportTitle": "Email Support",
     "supportBody": "For customer support, partnership questions, or editorial feedback, contact HAMDEVA at",
     "supportFootnote": "We review messages related to technical issues, content corrections, traditional clothing education, and AI try-on quality improvements.",
+    "recipientLabel": "Recipient",
     "formTitle": "Contact Form",
     "name": "Name",
-    "email": "Email",
+    "email": "Reply email",
     "message": "Message",
     "send": "Send Email"
   }

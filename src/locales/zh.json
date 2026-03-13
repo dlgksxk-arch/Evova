@@ -41,8 +41,14 @@
         "button": "了解更多 →"
       }
     ],
-    "toolIntroTitle": "别只想象，先把效果看清楚",
-    "toolIntroBody": "上传人物照片并选择服饰后，HAMDEVA 会返回一张包含多个角度的试穿结果。"
+    "suggestionBoardTitle": "建议板",
+    "suggestionBoardDescription": "欢迎推荐你希望加入样本库的服装与模特。",
+    "suggestionBoardItems": [
+      "想新增的国家传统服饰",
+      "样本模特风格建议",
+      "情侣或家庭样本请求",
+      "更多男装参考"
+    ]
   },
   "modal": {
     "title": "全球传统服饰指南",
@@ -87,23 +93,14 @@
     },
     "countriesIntro": "按国家浏览代表性传统服饰与简短文化说明。",
     "countries": [
-      { "country": "韩国", "clothing": "韩服", "description": "以曲线、层次与礼仪感闻名的韩国传统服饰。" },
-      { "country": "日本", "clothing": "和服", "description": "具有包裹式结构和季节审美的经典服饰。" },
-      { "country": "中国", "clothing": "旗袍（Qipao / Cheongsam）", "description": "以利落线条和典雅正式感著称的中国代表性服饰。" },
-      { "country": "印度", "clothing": "纱丽", "description": "以布料垂坠和地域织物特色见长的服饰。" },
-      { "country": "越南", "clothing": "奥黛", "description": "修长上衣与长裤组合形成优雅线条。" },
-      { "country": "泰国", "clothing": "Chut Thai", "description": "用于正式与文化场合的泰国传统服饰家族。" },
-      { "country": "印度尼西亚", "clothing": "Kebaya", "description": "精致上衣与裹裙组合的传统造型。" },
-      { "country": "马来西亚", "clothing": "Baju Kurung", "description": "兼具日常性与传统感的流动型服饰。" },
-      { "country": "菲律宾", "clothing": "Baro’t Saya", "description": "带有历史层次结构的女性传统服饰。" },
-      { "country": "蒙古", "clothing": "Deel", "description": "兼顾气候与行动性的长袍式服装。" },
-      { "country": "摩洛哥", "clothing": "Kaftan", "description": "常见于礼仪场合的长型华丽服饰。" },
-      { "country": "尼日利亚", "clothing": "Agbada", "description": "以体量感和庄重感著称的长袍组合。" },
-      { "country": "墨西哥", "clothing": "Huipil", "description": "以地区纹样与织物象征见长的传统服装。" },
-      { "country": "苏格兰", "clothing": "Kilt", "description": "与家族和仪式密切相关的褶裙服饰。" },
-      { "country": "德国", "clothing": "Dirndl", "description": "带有 bodice 与裙装结构的阿尔卑斯地区传统服装。" },
-      { "country": "西班牙", "clothing": "Flamenco dress", "description": "以荷叶边与表演感轮廓闻名的文化服饰。" },
-      { "country": "挪威", "clothing": "Bunad", "description": "体现地区、刺绣与家族传统的民族礼服。" }
+      { "code": "korea", "country": "韩国", "clothing": "韩服", "description": "以曲线、层次与礼仪感闻名的韩国传统服饰。" },
+      { "code": "japan", "country": "日本", "clothing": "和服", "description": "具有包裹式结构和季节审美的经典服饰。" },
+      { "code": "china", "country": "中国", "clothing": "旗袍（Qipao / Cheongsam）", "description": "以利落线条和典雅正式感著称的中国代表性服饰。" },
+      { "code": "india", "country": "印度", "clothing": "纱丽", "description": "以布料垂坠和地域织物特色见长的服饰。" },
+      { "code": "vietnam", "country": "越南", "clothing": "奥黛", "description": "修长上衣与长裤组合形成优雅线条。" },
+      { "code": "thailand", "country": "泰国", "clothing": "Chut Thai", "description": "用于正式与文化场合的泰国传统服饰家族。" },
+      { "code": "indonesia", "country": "印度尼西亚", "clothing": "Kebaya", "description": "精致上衣与裹裙组合的传统造型。" },
+      { "code": "spain", "country": "西班牙", "clothing": "Flamenco dress", "description": "以荷叶边与表演感轮廓闻名的文化服饰。" }
     ]
   },
   "pages": {
@@ -265,9 +262,10 @@
     "supportTitle": "邮件支持",
     "supportBody": "如需客户支持、合作咨询或内容反馈，请联系",
     "supportFootnote": "我们会查看技术问题、内容修正、传统服饰信息与 AI 试穿质量相关消息。",
+    "recipientLabel": "收件邮箱",
     "formTitle": "联系表单",
     "name": "姓名",
-    "email": "邮箱",
+    "email": "回信邮箱",
     "message": "留言",
     "send": "发送邮件"
   }

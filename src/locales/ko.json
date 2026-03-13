@@ -41,8 +41,14 @@
         "button": "더 알아보기 →"
       }
     ],
-    "toolIntroTitle": "전통 의상, 이제 상상하지 말고 바로 확인하세요",
-    "toolIntroBody": "인물 사진과 의상 이미지를 고르면 HAMDEVA가 한 장의 결과 안에 여러 각도를 정리해 보여줍니다."
+    "suggestionBoardTitle": "제안하기 게시판",
+    "suggestionBoardDescription": "샘플로 추가하고 싶은 의상과 모델을 추천해 주세요.",
+    "suggestionBoardItems": [
+      "추가하고 싶은 국가 전통 의상",
+      "샘플 모델 스타일 제안",
+      "커플·가족 샘플 요청",
+      "남성 의상 확장 요청"
+    ]
   },
   "modal": {
     "title": "글로벌 전통 의상 가이드",
@@ -87,23 +93,14 @@
     },
     "countriesIntro": "국가와 대표 전통 의상을 카드 형식으로 빠르게 살펴보세요.",
     "countries": [
-      { "country": "한국", "clothing": "한복", "description": "곡선적인 선과 겹침, 우아한 의례미가 특징인 한국 전통 의상입니다." },
-      { "country": "일본", "clothing": "기모노", "description": "감싸는 구조와 계절감, 정돈된 레이어링이 인상적인 의상입니다." },
-      { "country": "중국", "clothing": "치파오", "description": "세로로 떨어지는 라인과 우아한 격식미가 돋보이는 중국 대표 의상입니다." },
-      { "country": "인도", "clothing": "사리", "description": "드레이프 방식과 직물 표현이 핵심인 대표적 전통 의상입니다." },
-      { "country": "베트남", "clothing": "아오자이", "description": "길고 슬림한 튜닉과 바지 조합으로 우아한 선을 보여줍니다." },
-      { "country": "태국", "clothing": "추트 타이", "description": "태국의 의례와 문화 행사에서 다양한 형태로 입는 전통 의상입니다." },
-      { "country": "인도네시아", "clothing": "케바야", "description": "섬세한 상의와 랩 스커트 조합이 돋보이는 전통 스타일입니다." },
-      { "country": "말레이시아", "clothing": "바주 쿠룽", "description": "단정하고 유려한 실루엣으로 일상성과 전통성을 함께 지닙니다." },
-      { "country": "필리핀", "clothing": "바롯 사야", "description": "블라우스와 스커트 중심의 역사적 여성 전통 의상입니다." },
-      { "country": "몽골", "clothing": "딜", "description": "기후와 이동성을 고려한 로브형 구조가 강한 인상을 줍니다." },
-      { "country": "모로코", "clothing": "카프탄", "description": "장식성과 의례성이 강한 긴 형태의 전통 복식입니다." },
-      { "country": "나이지리아", "clothing": "아그바다", "description": "볼륨감 있는 로브 실루엣으로 위엄과 격식을 드러냅니다." },
-      { "country": "멕시코", "clothing": "위필", "description": "지역별 자수와 직물 표현이 중요한 전통 의상입니다." },
-      { "country": "스코틀랜드", "clothing": "킬트", "description": "주름 구조와 문양을 통해 지역성과 상징성을 보여줍니다." },
-      { "country": "독일", "clothing": "디른들", "description": "보디스와 블라우스, 스커트 구성이 특징적인 지역 전통 복장입니다." },
-      { "country": "스페인", "clothing": "플라멩코 드레스", "description": "강한 리듬감과 러플 실루엣이 돋보이는 문화 의상입니다." },
-      { "country": "노르웨이", "clothing": "부나드", "description": "지역성과 자수, 가족 전통성이 반영된 민속 정장입니다." }
+      { "code": "korea", "country": "한국", "clothing": "한복", "description": "곡선적인 선과 겹침, 우아한 의례미가 특징인 한국 전통 의상입니다." },
+      { "code": "japan", "country": "일본", "clothing": "기모노", "description": "감싸는 구조와 계절감, 정돈된 레이어링이 인상적인 의상입니다." },
+      { "code": "china", "country": "중국", "clothing": "치파오", "description": "세로로 떨어지는 라인과 우아한 격식미가 돋보이는 중국 대표 의상입니다." },
+      { "code": "india", "country": "인도", "clothing": "사리", "description": "드레이프 방식과 직물 표현이 핵심인 대표적 전통 의상입니다." },
+      { "code": "vietnam", "country": "베트남", "clothing": "아오자이", "description": "길고 슬림한 튜닉과 바지 조합으로 우아한 선을 보여줍니다." },
+      { "code": "thailand", "country": "태국", "clothing": "추트 타이", "description": "태국의 의례와 문화 행사에서 다양한 형태로 입는 전통 의상입니다." },
+      { "code": "indonesia", "country": "인도네시아", "clothing": "케바야", "description": "섬세한 상의와 랩 스커트 조합이 돋보이는 전통 스타일입니다." },
+      { "code": "spain", "country": "스페인", "clothing": "플라멩코 드레스", "description": "강한 리듬감과 러플 실루엣이 돋보이는 문화 의상입니다." }
     ]
   },
   "pages": {
@@ -265,9 +262,10 @@
     "supportTitle": "이메일 지원",
     "supportBody": "고객 지원, 파트너십 문의, 콘텐츠 의견은 아래 이메일로 연락해 주세요",
     "supportFootnote": "기술 문제, 콘텐츠 수정, 전통 의상 정보, AI 피팅 품질 관련 문의를 검토합니다.",
+    "recipientLabel": "수신 이메일",
     "formTitle": "문의 폼",
     "name": "이름",
-    "email": "이메일",
+    "email": "회신용 이메일",
     "message": "메시지",
     "send": "이메일 보내기"
   }

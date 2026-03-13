@@ -1,8 +1,17 @@
 import React, { useEffect } from 'react';
 import type { ContentLocale, ModalTab } from '../locales';
 
+interface CountryCardItem {
+  code: string;
+  country: string;
+  clothing: string;
+  description: string;
+  image: string;
+}
+
 interface ContentModalProps {
   activeTab: ModalTab;
+  countryCards: CountryCardItem[];
   locale: ContentLocale;
   onClose: () => void;
   onTabChange: (tab: ModalTab) => void;
@@ -10,7 +19,7 @@ interface ContentModalProps {
 
 const TAB_ORDER: ModalTab[] = ['overview', 'technology', 'cultural', 'future', 'countries'];
 
-const ContentModal: React.FC<ContentModalProps> = ({ activeTab, locale, onClose, onTabChange }) => {
+const ContentModal: React.FC<ContentModalProps> = ({ activeTab, countryCards, locale, onClose, onTabChange }) => {
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -52,8 +61,11 @@ const ContentModal: React.FC<ContentModalProps> = ({ activeTab, locale, onClose,
             <div className="content-country-block">
               <p className="content-modal-intro">{locale.modal.countriesIntro}</p>
               <div className="country-card-grid">
-                {locale.modal.countries.map((item) => (
-                  <article key={`${item.country}-${item.clothing}`} className="country-card">
+                {countryCards.map((item) => (
+                  <article key={`${item.code}-${item.clothing}`} className="country-card country-card-visual">
+                    <div className="country-card-thumb">
+                      <img src={item.image} alt={`${item.country} ${item.clothing}`} loading="lazy" />
+                    </div>
                     <span className="country-card-name">{item.country}</span>
                     <h4>{item.clothing}</h4>
                     <p>{item.description}</p>

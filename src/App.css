@@ -520,6 +520,47 @@ a { color: inherit; text-decoration: none; }
   text-align: center;
 }
 
+.suggestion-board-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.suggestion-board-copy h2 {
+  font-size: 28px;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.suggestion-board-copy p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-sub);
+}
+
+.suggestion-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  max-width: 440px;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 88%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .content-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--border);
@@ -661,6 +702,29 @@ a { color: inherit; text-decoration: none; }
   align-self: flex-start;
 }
 
+.contact-recipient-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+}
+
+.contact-recipient-box span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.contact-recipient-box strong {
+  font-size: 16px;
+  color: var(--text);
+}
+
 .content-modal {
   max-width: 980px !important;
 }
@@ -694,8 +758,29 @@ a { color: inherit; text-decoration: none; }
   box-shadow: var(--shadow-sm);
 }
 
+.country-card-visual {
+  overflow: hidden;
+  padding: 0 0 20px;
+}
+
+.country-card-thumb {
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+
+.country-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .country-card-name {
   display: inline-flex;
+  margin-left: 20px;
   margin-bottom: 10px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -710,12 +795,14 @@ a { color: inherit; text-decoration: none; }
   font-size: 20px;
   color: var(--text);
   margin-bottom: 10px;
+  padding: 0 20px;
 }
 
 .country-card p {
   font-size: 14px;
   line-height: 1.7;
   color: var(--text-sub);
+  padding: 0 20px;
 }
 
 .page-country-grid {
@@ -1135,6 +1222,14 @@ a { color: inherit; text-decoration: none; }
   .hero-section {
     min-height: 60vh;
     padding: 104px 20px 42px;
+  }
+  .suggestion-board-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .suggestion-chip-list {
+    justify-content: flex-start;
+    max-width: none;
   }
   .modal-content.sample-modal { padding: 24px; }
   .hero-title { max-width: none; }

@@ -916,6 +916,8 @@ const FREE_LIMIT = 3;
 const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
 const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
 const FALLBACK_FUNCTIONS_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api/tryon';
+const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
+const FALLBACK_FUNCTIONS_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/generateTryOn';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -1041,61 +1043,114 @@ const getGenerateErrorMessage = (
   return raw ? `${t.alertError}\n\n${raw}` : t.alertError;
 };
 
+const isGenerationConfigError = (message: string): boolean =>
+  message.includes('IMAGE_GENERATION_NOT_CONFIGURED')
+  || message.includes('OPENAI_API_KEY')
+  || message.includes('설정이 아직 완료되지 않았습니다')
+  || message.includes('not configured yet');
+
+const parseTryOnError = async (res: Response): Promise<Error> => {
+  const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
+  if (errBody.error === 'LIMIT_EXCEEDED') {
+    return new Error('LIMIT_EXCEEDED');
+  }
+
+  return new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
+};
+
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
-  const primaryEndpoint = SAME_ORIGIN_TRYON_ENDPOINT;
-  const fallbackEndpoint = FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
+  const endpoints = [
+    SAME_ORIGIN_TRYON_ENDPOINT,
+    FALLBACK_FUNCTIONS_TRYON_ENDPOINT,
+    SAME_ORIGIN_LEGACY_TRYON_ENDPOINT,
+    FALLBACK_FUNCTIONS_LEGACY_TRYON_ENDPOINT,
+  ];
 
-  let res: Response;
+  let lastError: Error | null = null;
   try {
-    try {
-      console.info('[HAMDEVA] tryon request', { endpoint: primaryEndpoint, method: 'POST' });
-      res = await fetch(primaryEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-    } catch (e) {
-      console.error('[HAMDEVA] primary tryon network error', e);
-      console.info('[HAMDEVA] tryon fallback request', { endpoint: fallbackEndpoint, method: 'POST' });
-      res = await fetch(fallbackEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-    }
+    for (const endpoint of endpoints) {
+      try {
+        console.info('[HAMDEVA] tryon request', { endpoint, method: 'POST' });
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        console.info('[HAMDEVA] tryon response', { endpoint: res.url || endpoint, method: 'POST', status: res.status });
 
-    if ((res.status === 404 || res.status === 405) && (primaryEndpoint as string) !== (fallbackEndpoint as string)) {
-      console.warn('[HAMDEVA] tryon route failed, retrying alternate endpoint', {
-        primaryEndpoint,
-        fallbackEndpoint,
-        status: res.status,
-      });
-      res = await fetch(fallbackEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+        if (!res.ok) {
+          const parsedError = await parseTryOnError(res);
+          if (parsedError.message === 'LIMIT_EXCEEDED') {
+            throw parsedError;
+          }
+
+          lastError = parsedError;
+          const shouldRetry =
+            res.status === 404
+            || res.status === 405
+            || isGenerationConfigError(parsedError.message);
+          if (shouldRetry && endpoint !== endpoints[endpoints.length - 1]) {
+            console.warn('[HAMDEVA] tryon request failed, retrying alternate endpoint', {
+              endpoint,
+              status: res.status,
+              message: parsedError.message,
+            });
+            continue;
+          }
+
+          throw parsedError;
+        }
+
+        const data = await res.json() as { success?: boolean, image?: string, mimeType?: string };
+        if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
+        return normalizeGeneratedImage(data.image, data.mimeType);
+      } catch (error) {
+        if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
+          throw error;
+        }
+
+        lastError = error instanceof Error ? error : new Error('이미지 생성 요청에 실패했습니다.');
+        console.error('[HAMDEVA] tryon endpoint error', { endpoint, error: lastError });
+        if (endpoint === endpoints[endpoints.length - 1]) {
+          throw lastError;
+        }
+      }
     }
   } finally {
     clearTimeout(timer);
   }
-  console.info('[HAMDEVA] tryon response', { endpoint: res.url || primaryEndpoint, method: 'POST', status: res.status });
 
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
-    if (errBody.error === 'LIMIT_EXCEEDED') throw new Error('LIMIT_EXCEEDED');
-    throw new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
-  }
-
-  const data = await res.json() as { success?: boolean, image?: string, mimeType?: string };
-  if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-  return normalizeGeneratedImage(data.image, data.mimeType);
+  throw lastError ?? new Error('이미지 생성 요청에 실패했습니다.');
 };
+
+type CountryShowcaseCard = {
+  code: string;
+  country: string;
+  clothing: string;
+  description: string;
+  image: string;
+};
+
+const getCountryShowcaseCards = (
+  items: Array<{ code: string; country: string; clothing: string; description: string }>,
+): CountryShowcaseCard[] =>
+  items
+    .map((item) => {
+      const matchingSamples = clothSampleOptions.filter((sample) => sample.country === item.code && (sample.category === 'female' || sample.category === 'male'));
+      const preferredSample = matchingSamples.find((sample) => sample.category === 'female') ?? matchingSamples[0];
+      if (!preferredSample) {
+        return null;
+      }
+
+      return {
+        ...item,
+        image: preferredSample.image,
+      };
+    })
+    .filter((item): item is CountryShowcaseCard => item !== null);
 
 const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -1210,6 +1265,7 @@ const App: React.FC = () => {
   
   const t = uiTranslations[lang];
   const contentLocale = getContentLocale(lang);
+  const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const sessionId = getSessionId();
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
@@ -1641,12 +1697,16 @@ const App: React.FC = () => {
 
           <section className="section editorial-section">
             <div className="section-inner">
-              <article className="content-card content-card-wide compact-tool-card">
-                <h2>{contentLocale.home.toolIntroTitle}</h2>
-                <p>{contentLocale.home.toolIntroBody}</p>
-                <button className="text-link-btn" onClick={() => openContentModal('countries')} type="button">
-                  {contentLocale.modal.tabs.countries}
-                </button>
+              <article className="content-card content-card-wide suggestion-board-card">
+                <div className="suggestion-board-copy">
+                  <h2>{contentLocale.home.suggestionBoardTitle}</h2>
+                  <p>{contentLocale.home.suggestionBoardDescription}</p>
+                </div>
+                <div className="suggestion-chip-list">
+                  {contentLocale.home.suggestionBoardItems.map((item) => (
+                    <span key={item} className="suggestion-chip">{item}</span>
+                  ))}
+                </div>
               </article>
             </div>
           </section>
@@ -1665,8 +1725,11 @@ const App: React.FC = () => {
 
             {(currentPage === 'traditional-clothing' || currentPage === 'countries') && (
               <div className="country-card-grid page-country-grid">
-                {contentLocale.modal.countries.map((item) => (
-                  <article key={`${item.country}-${item.clothing}`} className="country-card">
+                {countryShowcaseCards.map((item) => (
+                  <article key={`${item.code}-${item.clothing}`} className="country-card country-card-visual">
+                    <div className="country-card-thumb">
+                      <img src={item.image} alt={`${item.country} ${item.clothing}`} loading="lazy" />
+                    </div>
                     <span className="country-card-name">{item.country}</span>
                     <h4>{item.clothing}</h4>
                     <p>{item.description}</p>
@@ -1684,6 +1747,10 @@ const App: React.FC = () => {
                 </article>
                 <form className="contact-form" onSubmit={handleContactSubmit}>
                   <h2>{contentLocale.contact.formTitle}</h2>
+                  <div className="contact-recipient-box">
+                    <span>{contentLocale.contact.recipientLabel}</span>
+                    <strong>{SUPPORT_EMAIL}</strong>
+                  </div>
                   <label>
                     {contentLocale.contact.name}
                     <input
@@ -1733,6 +1800,7 @@ const App: React.FC = () => {
       {showContentModal && (
         <ContentModal
           activeTab={activeContentTab}
+          countryCards={countryShowcaseCards}
           locale={contentLocale}
           onClose={() => setShowContentModal(false)}
           onTabChange={setActiveContentTab}

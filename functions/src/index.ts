@@ -27,16 +27,35 @@ interface OpenAIImageResponse {
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 
 const getOpenAIApiKey = (): string => {
-  const envKey = process.env['OPENAI_API_KEY']?.trim();
-  if (envKey) {
-    return envKey;
+  const envCandidates = [
+    process.env['OPENAI_API_KEY'],
+    process.env['OPENAI_KEY'],
+    process.env['OPENAI_SECRET'],
+    process.env['OPENAI_SECRET_KEY'],
+    process.env['OPEN_AI_API_KEY'],
+    process.env['openai_api_key'],
+  ];
+
+  for (const candidate of envCandidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
   }
 
   try {
     const runtimeConfig = functions.config();
-    const configKey = runtimeConfig.openai?.api_key ?? runtimeConfig.openai?.key;
-    if (typeof configKey === 'string' && configKey.trim()) {
-      return configKey.trim();
+    const configCandidates = [
+      runtimeConfig.openai?.api_key,
+      runtimeConfig.openai?.key,
+      runtimeConfig.openai?.apiKey,
+      runtimeConfig.openai_api_key,
+      runtimeConfig.openai_key,
+    ];
+
+    for (const candidate of configCandidates) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
     }
   } catch {
     // Ignore missing runtime config and fall through to empty value.
