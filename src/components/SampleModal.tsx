@@ -99,13 +99,11 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang, onClose, on
                 onError={() => setErroredUrls((prev) => ({ ...prev, [url]: true }))}
                 onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
               />
-              <div className="sample-card-label">
-                {labels[category]} {index + 1}
-              </div>
               <div className="error-placeholder">{lang === 'ko' ? '이미지 오류' : 'Image error'}</div>
             </button>
           ))}
         </div>
+        <p className="modal-disclaimer">모든 이미지는 AI로 생성되었습니다.</p>
       </div>
     </div>
   );

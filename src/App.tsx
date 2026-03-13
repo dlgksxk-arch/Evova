@@ -5,6 +5,7 @@ import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
+type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -95,6 +96,28 @@ const translations = {
 const FREE_LIMIT = 3;
 const PRODUCTION_API_BASE = '/api';
 const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
+const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
+  en: 'latin',
+  es: 'latin',
+  zh: 'chinese',
+  ja: 'japanese',
+  ko: 'korean',
+  hi: 'indic',
+  fr: 'latin',
+  ar: 'arabic',
+  bn: 'indic',
+  ru: 'latin',
+  pt: 'latin',
+  ur: 'arabic',
+  id: 'latin',
+  de: 'latin',
+  mr: 'indic',
+  te: 'indic',
+  tr: 'latin',
+  ta: 'indic',
+  vi: 'latin',
+  it: 'latin',
+};
 const EMPTY_FACE_TIPS = {
   ko: [
     '정면에 가깝고 얼굴이 선명한 사진이 가장 좋습니다.',
@@ -160,6 +183,48 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+const dataUrlByteLength = (dataUrl: string): number => {
+  const base64 = dataUrl.split(',')[1] ?? '';
+  const padding = (base64.match(/=+$/)?.[0].length ?? 0);
+  return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
+};
+
+const loadImageElement = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('이미지를 불러오지 못했습니다.'));
+    img.src = src;
+  });
+
+const preprocessImageFile = async (
+  file: File,
+  options: { maxDimension?: number; maxBytes?: number; mimeType?: string } = {},
+): Promise<string> => {
+  const { maxDimension = 1536, maxBytes = 2_400_000, mimeType = 'image/jpeg' } = options;
+  const originalDataUrl = await blobToDataUrl(file);
+  const img = await loadImageElement(originalDataUrl);
+
+  let scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+  const qualities = [0.9, 0.82, 0.74, 0.66, 0.58];
+
+  for (const quality of qualities) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL(mimeType, quality);
+
+    if (dataUrlByteLength(dataUrl) <= maxBytes || scale <= 0.45) {
+      return dataUrl;
+    }
+
+    scale *= 0.86;
+  }
+
+  return originalDataUrl;
+};
+
 const ensureDataUrl = async (src: string): Promise<string> => {
   if (src.startsWith('data:')) return src;
 
@@ -170,6 +235,9 @@ const ensureDataUrl = async (src: string): Promise<string> => {
 
   return blobToDataUrl(await res.blob());
 };
+
+const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
+  image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
 
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
@@ -222,9 +290,9 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
     throw new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
   }
 
-  const data = await res.json() as { success?: boolean, image?: string };
+  const data = await res.json() as { success?: boolean, image?: string, mimeType?: string };
   if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-  return data.image;
+  return normalizeGeneratedImage(data.image, data.mimeType);
 };
 
 const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
@@ -285,14 +353,17 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
   );
 };
 
-const EmptyPreviewState: React.FC<{ title: string; tips: string[] }> = ({ title, tips }) => (
-  <div className="placeholder">
-    <strong style={{ display: 'block', marginBottom: '12px' }}>{title}</strong>
-    {tips.map((tip) => (
-      <p key={tip} style={{ margin: '0 0 8px', lineHeight: 1.5 }}>
-        {tip}
-      </p>
-    ))}
+const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ title, tips, type }) => (
+  <div className={`empty-preview empty-preview-${type}`}>
+    <div className="empty-preview-badge">{type === 'face' ? 'FACE GUIDE' : 'STYLE GUIDE'}</div>
+    <strong className="empty-preview-title">{title}</strong>
+    <div className="empty-preview-tips">
+      {tips.map((tip) => (
+        <p key={tip} className="empty-preview-tip">
+          {tip}
+        </p>
+      ))}
+    </div>
   </div>
 );
 
@@ -312,6 +383,8 @@ const App: React.FC = () => {
   const [personPreviewState, setPersonPreviewState] = useState<ImageLoadState>('idle');
   const [clothPreviewState, setClothPreviewState] = useState<ImageLoadState>('idle');
   const [resultPreviewState, setResultPreviewState] = useState<ImageLoadState>('idle');
+  const [personUploadMessage, setPersonUploadMessage] = useState<string | null>(null);
+  const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
   const [usageCount, setUsageCount]     = useState(0);
@@ -320,6 +393,7 @@ const App: React.FC = () => {
   
   const t = lang === 'ko' ? translations.ko : translations.en;
   const sessionId = getSessionId();
+  const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = lang === 'ko' ? EMPTY_FACE_TIPS.ko : EMPTY_FACE_TIPS.default;
   const emptyClothTips = lang === 'ko' ? EMPTY_CLOTH_TIPS.ko : EMPTY_CLOTH_TIPS.default;
 
@@ -385,7 +459,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`app-root ${darkMode ? 'dark' : ''}`}>
+    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
       <nav className="landing-nav">
         <div className="nav-content">
           <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
@@ -427,10 +501,17 @@ const App: React.FC = () => {
                 <input id="p-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
+                    setPersonUploadMessage(lang === 'ko' ? '이미지를 업로드하기 좋게 정리하고 있습니다...' : 'Preparing your image for upload...');
                     setPersonPreviewState('loading');
-                    blobToDataUrl(f)
-                      .then((src) => setPersonImage(src))
-                      .catch(() => setPersonPreviewState('error'));
+                    preprocessImageFile(f, { maxDimension: 1440, maxBytes: 2_100_000 })
+                      .then((src) => {
+                        setSelectedSampleUrl(null);
+                        setPersonImage(src);
+                      })
+                      .catch(() => {
+                        setPersonUploadMessage(null);
+                        setPersonPreviewState('error');
+                      });
                   }
                 }} />
               </div>
@@ -441,7 +522,7 @@ const App: React.FC = () => {
                     {personPreviewState === 'loading' && (
                       <div className="preview-overlay">
                         <span className="spinner"></span>
-                        <span>{lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...'}</span>
+                        <span>{personUploadMessage || (lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...')}</span>
                       </div>
                     )}
                     {personPreviewState === 'error' && (
@@ -450,7 +531,10 @@ const App: React.FC = () => {
                     <img 
                       src={activePersonImage} 
                       alt="Face" 
-                      onLoad={() => setPersonPreviewState('ready')}
+                      onLoad={() => {
+                        setPersonPreviewState('ready');
+                        setPersonUploadMessage(null);
+                      }}
                       onError={() => setPersonPreviewState('error')}
                       className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
                     />
@@ -459,6 +543,7 @@ const App: React.FC = () => {
                   <EmptyPreviewState
                     title={lang === 'ko' ? '얼굴 사진을 넣어주세요' : 'Add a face photo'}
                     tips={emptyFaceTips}
+                    type="face"
                   />
                 )}
                 {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
@@ -487,10 +572,17 @@ const App: React.FC = () => {
                 <input id="c-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
+                    setClothUploadMessage(lang === 'ko' ? '큰 의상 이미지를 자동으로 최적화하고 있습니다...' : 'Optimizing the clothing image for upload...');
                     setClothPreviewState('loading');
-                    blobToDataUrl(f)
-                      .then((src) => setClothImage(src))
-                      .catch(() => setClothPreviewState('error'));
+                    preprocessImageFile(f, { maxDimension: 1600, maxBytes: 2_400_000 })
+                      .then((src) => {
+                        setSelectedClothSampleUrl(null);
+                        setClothImage(src);
+                      })
+                      .catch(() => {
+                        setClothUploadMessage(null);
+                        setClothPreviewState('error');
+                      });
                   }
                 }} />
               </div>
@@ -500,7 +592,7 @@ const App: React.FC = () => {
                     {clothPreviewState === 'loading' && (
                       <div className="preview-overlay">
                         <span className="spinner"></span>
-                        <span>{lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...'}</span>
+                        <span>{clothUploadMessage || (lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...')}</span>
                       </div>
                     )}
                     {clothPreviewState === 'error' ? (
@@ -510,7 +602,10 @@ const App: React.FC = () => {
                         src={activeClothImage}
                         alt="Cloth"
                         className={clothPreviewState === 'ready' ? 'is-visible' : ''}
-                        onLoad={() => setClothPreviewState('ready')}
+                        onLoad={() => {
+                          setClothPreviewState('ready');
+                          setClothUploadMessage(null);
+                        }}
                         onError={() => setClothPreviewState('error')}
                       />
                     )}
@@ -527,6 +622,7 @@ const App: React.FC = () => {
                   <EmptyPreviewState
                     title={lang === 'ko' ? '의상 사진을 넣어주세요' : 'Add clothing photo'}
                     tips={emptyClothTips}
+                    type="cloth"
                   />
                 )}
               </div>
@@ -581,7 +677,13 @@ const App: React.FC = () => {
         <SampleModal 
           currentUrl={activePersonImage}
           lang={lang}
-          onSelect={(url, category) => { setSelectedSampleUrl(url); setGender(category); setPersonImage(null); setPersonPreviewState('loading'); }}
+          onSelect={(url, category) => {
+            setSelectedSampleUrl(url);
+            setGender(category);
+            setPersonImage(null);
+            setPersonUploadMessage(null);
+            setPersonPreviewState('loading');
+          }}
           onClose={() => setShowSampleModal(false)}
         />
       )}
@@ -593,6 +695,7 @@ const App: React.FC = () => {
           onSelect={(url) => {
             setSelectedClothSampleUrl(url);
             setClothImage(null);
+            setClothUploadMessage(null);
             setClothPreviewState('loading');
           }}
           onClose={() => setShowClothSampleModal(false)}

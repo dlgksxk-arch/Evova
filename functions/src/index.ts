@@ -8,7 +8,14 @@ const FREE_LIMIT = 3;
 const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
 
 interface GeminiResponse {
-  candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[];
+  candidates?: {
+    content?: {
+      parts?: {
+        inlineData?: { mimeType?: string; data?: string };
+        inline_data?: { mime_type?: string; data?: string };
+      }[];
+    };
+  }[];
 }
 
 type BodyProfile = {
@@ -69,6 +76,31 @@ Additional direction:
 ${bodyGuide}
 
 Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+};
+
+const extractGeneratedImage = (data: GeminiResponse): { mimeType: string; data: string } | null => {
+  const candidates = data.candidates ?? [];
+
+  for (const candidate of candidates) {
+    const parts = candidate.content?.parts ?? [];
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        return {
+          mimeType: part.inlineData.mimeType ?? 'image/png',
+          data: part.inlineData.data,
+        };
+      }
+
+      if (part.inline_data?.data) {
+        return {
+          mimeType: part.inline_data.mime_type ?? 'image/png',
+          data: part.inline_data.data,
+        };
+      }
+    }
+  }
+
+  return null;
 };
 
 // CORS 헤더 설정
@@ -186,14 +218,11 @@ export const api = functions
       }
 
       const data = await geminiRes.json() as GeminiResponse;
-      const parts = data.candidates?.[0]?.content?.parts ?? [];
-
-      for (const part of parts) {
-        if (part.inlineData) {
-          const resultDataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-          res.json({ success: true, image: resultDataUrl });
-          return;
-        }
+      const generatedImage = extractGeneratedImage(data);
+      if (generatedImage) {
+        const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
+        res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
+        return;
       }
 
       res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
@@ -292,14 +321,11 @@ export const generateTryOn = functions
     }
 
     const data = await geminiRes.json() as GeminiResponse;
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-
-    for (const part of parts) {
-      if (part.inlineData) {
-        const resultDataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        res.json({ success: true, image: resultDataUrl });
-        return;
-      }
+    const generatedImage = extractGeneratedImage(data);
+    if (generatedImage) {
+      const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
+      res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
+      return;
     }
 
     res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });

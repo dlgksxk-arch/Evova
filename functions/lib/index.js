@@ -91,6 +91,27 @@ ${bodyGuide}
 
 Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
 };
+const extractGeneratedImage = (data) => {
+    const candidates = data.candidates ?? [];
+    for (const candidate of candidates) {
+        const parts = candidate.content?.parts ?? [];
+        for (const part of parts) {
+            if (part.inlineData?.data) {
+                return {
+                    mimeType: part.inlineData.mimeType ?? 'image/png',
+                    data: part.inlineData.data,
+                };
+            }
+            if (part.inline_data?.data) {
+                return {
+                    mimeType: part.inline_data.mime_type ?? 'image/png',
+                    data: part.inline_data.data,
+                };
+            }
+        }
+    }
+    return null;
+};
 // CORS 헤더 설정
 const setCors = (req, res) => {
     const origin = req.headers.origin || '';
@@ -192,13 +213,11 @@ exports.api = functions
             return;
         }
         const data = await geminiRes.json();
-        const parts = data.candidates?.[0]?.content?.parts ?? [];
-        for (const part of parts) {
-            if (part.inlineData) {
-                const resultDataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                res.json({ success: true, image: resultDataUrl });
-                return;
-            }
+        const generatedImage = extractGeneratedImage(data);
+        if (generatedImage) {
+            const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
+            res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
+            return;
         }
         res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
         return;
@@ -282,13 +301,11 @@ exports.generateTryOn = functions
         return;
     }
     const data = await geminiRes.json();
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-    for (const part of parts) {
-        if (part.inlineData) {
-            const resultDataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            res.json({ success: true, image: resultDataUrl });
-            return;
-        }
+    const generatedImage = extractGeneratedImage(data);
+    if (generatedImage) {
+        const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
+        res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
+        return;
     }
     res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
 });

@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -60,6 +60,31 @@ Additional direction:
 ${bodyGuide}
 
 Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+};
+
+const extractGeneratedImage = (data) => {
+  const candidates = data?.candidates ?? [];
+
+  for (const candidate of candidates) {
+    const parts = candidate?.content?.parts ?? [];
+    for (const part of parts) {
+      if (part?.inlineData?.data) {
+        return {
+          mimeType: part.inlineData.mimeType ?? 'image/png',
+          data: part.inlineData.data,
+        };
+      }
+
+      if (part?.inline_data?.data) {
+        return {
+          mimeType: part.inline_data.mime_type ?? 'image/png',
+          data: part.inline_data.data,
+        };
+      }
+    }
+  }
+
+  return null;
 };
 
 // Health check
@@ -138,12 +163,14 @@ app.post(['/generate', '/tryon'], async (req, res) => {
   }
 
   const data = await geminiRes.json();
-  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  const generatedImage = extractGeneratedImage(data);
 
-  for (const part of parts) {
-    if (part.inlineData) {
-      return res.json({ image: part.inlineData.data });
-    }
+  if (generatedImage) {
+    return res.json({
+      image: `data:${generatedImage.mimeType};base64,${generatedImage.data}`,
+      mimeType: generatedImage.mimeType,
+      success: true,
+    });
   }
 
   return res.status(500).json({ error: 'No image in Gemini response' });

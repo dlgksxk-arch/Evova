@@ -63,11 +63,11 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, o
                 onError={() => setErroredUrls((prev) => ({ ...prev, [sample.image]: true }))}
                 onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
               />
-              <div className="sample-card-label">{sample.label}</div>
               <div className="error-placeholder">{lang === 'ko' ? '이미지 오류' : 'Image error'}</div>
             </button>
           ))}
         </div>
+        <p className="modal-disclaimer">모든 이미지는 AI로 생성되었습니다.</p>
       </div>
     </div>
   );
