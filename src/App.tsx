@@ -1026,14 +1026,8 @@ const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string 
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
-  const primaryEndpoint =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `${API_BASE}/tryon`
-      : FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
-  const fallbackEndpoint =
-    primaryEndpoint === FALLBACK_FUNCTIONS_TRYON_ENDPOINT
-      ? SAME_ORIGIN_TRYON_ENDPOINT
-      : FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
+  const primaryEndpoint = SAME_ORIGIN_TRYON_ENDPOINT;
+  const fallbackEndpoint = FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
 
   let res: Response;
   try {
