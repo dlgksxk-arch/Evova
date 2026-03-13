@@ -168,7 +168,7 @@ export const api = functions
     setCors(req, res);
     if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
 
-    const path = req.path;
+    const path = req.path.replace(/^\/api/, '') || '/';
     functions.logger.info('api request', {
       path,
       method: req.method,
