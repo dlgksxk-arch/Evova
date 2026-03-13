@@ -4,15 +4,41 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
+const formatVersion = (buildNumber: number) => {
+  const safeCount = Number.isNaN(buildNumber) || buildNumber < 1 ? 1 : buildNumber
+  const major = Math.floor(safeCount / 100)
+  const minor = safeCount % 100
+  return `v${major}.${minor}`
+}
+
+const readNumericEnv = (...keys: string[]) => {
+  for (const key of keys) {
+    const raw = process.env[key]
+    if (!raw) continue
+    const parsed = Number.parseInt(raw, 10)
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      return parsed
+    }
+  }
+  return null
+}
+
 const appVersion = (() => {
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
-    const safeCount = Number.isNaN(commitCount) || commitCount < 1 ? 1 : commitCount
-    const major = Math.floor(safeCount / 100)
-    const minor = safeCount % 100
-    return `v${major}.${minor}`
+    return formatVersion(commitCount)
   } catch {
-    return 'v0.1'
+    const ciBuildNumber = readNumericEnv(
+      'GITHUB_RUN_NUMBER',
+      'BUILD_NUMBER',
+      'CI_PIPELINE_IID',
+    )
+
+    if (ciBuildNumber) {
+      return formatVersion(ciBuildNumber)
+    }
+
+    return 'v0.63'
   }
 })()
 
