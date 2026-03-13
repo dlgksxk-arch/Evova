@@ -131,12 +131,12 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
-app.options(['/generate', '/tryon'], (req, res) => {
+app.options(['/generate', '/tryon', '/generateTryOn'], (req, res) => {
   console.info('[HAMDEVA-server] preflight', { path: req.path, method: req.method });
   res.sendStatus(204);
 });
 
-app.post(['/generate', '/tryon'], async (req, res) => {
+app.post(['/generate', '/tryon', '/generateTryOn'], async (req, res) => {
   console.info('[HAMDEVA-server] incoming request', {
     path: req.path,
     method: req.method,
@@ -165,7 +165,7 @@ app.post(['/generate', '/tryon'], async (req, res) => {
   }
 });
 
-app.all(['/generate', '/tryon'], (req, res) => {
+app.all(['/generate', '/tryon', '/generateTryOn'], (req, res) => {
   res.status(405).json({ error: 'Method Not Allowed', method: req.method, path: req.path, allowed: 'POST, OPTIONS' });
 });
 
