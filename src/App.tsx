@@ -1140,6 +1140,14 @@ const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string 
   return error instanceof Error ? error.message || fallbackMessage : fallbackMessage;
 };
 
+const isFirestorePermissionError = (error: unknown): boolean => {
+  const errorCode = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: string }).code)
+    : '';
+
+  return errorCode.includes('permission-denied');
+};
+
 const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE: string =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -1668,6 +1676,18 @@ const App: React.FC = () => {
     setAuthError(null);
     setShowAuthModal(true);
   };
+  const syncUserProfileAfterAuth = async (user: User) => {
+    try {
+      const profile = await ensureUserProfileDoc(user);
+      setUserProfile(profile);
+    } catch (error) {
+      if (isFirestorePermissionError(error)) {
+        setUserProfile(normalizeUserProfile(user.email || ''));
+        return;
+      }
+      console.error('Failed to sync user profile after login:', error);
+    }
+  };
   const handleAuthSubmit = async () => {
     if (!auth) {
       setAuthError(getFirebaseDisabledMessage());
@@ -1681,14 +1701,17 @@ const App: React.FC = () => {
     setAuthSubmitting(true);
     setAuthError(null);
     try {
+      let signedInUser: User;
       if (authMode === 'login') {
-        await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
+        const credential = await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
+        signedInUser = credential.user;
       } else {
         const credential = await createUserWithEmailAndPassword(auth, authForm.email, authForm.password);
-        await ensureUserProfileDoc(credential.user);
+        signedInUser = credential.user;
       }
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
+      void syncUserProfileAfterAuth(signedInUser);
     } catch (error) {
       setAuthError(buildAuthErrorMessage(error, t.authFailed));
     } finally {
@@ -1704,9 +1727,9 @@ const App: React.FC = () => {
     setAuthError(null);
     try {
       const credential = await signInWithPopup(auth, googleProvider);
-      await ensureUserProfileDoc(credential.user);
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
+      void syncUserProfileAfterAuth(credential.user);
     } catch (error) {
       setAuthError(buildAuthErrorMessage(error, t.authFailed));
     } finally {
