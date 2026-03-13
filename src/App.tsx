@@ -1282,10 +1282,12 @@ const App: React.FC = () => {
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
       <nav className="landing-nav">
         <div className="nav-content">
-          <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
+          <div className="nav-brand">
+            <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
+            <span className="app-version">{APP_VERSION}</span>
+          </div>
           <div className="nav-right">
             <LangDropdown lang={lang} onChange={setLang} />
-            <span className="app-version">{APP_VERSION}</span>
             <button className="dark-toggle" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? '☀️' : '🌙'}
             </button>
