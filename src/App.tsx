@@ -1223,13 +1223,17 @@ const App: React.FC = () => {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   useEffect(() => {
-    fetch('/version.json')
+    const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/dlgksxk-arch/Evova/main/public/version.json';
+    fetch(GITHUB_VERSION_URL)
       .then((r) => r.json())
       .then((data: { version?: string; sha?: string }) => {
         const label = data.sha ? `${data.version ?? APP_VERSION} (${data.sha})` : (data.version ?? APP_VERSION);
         setAppVersion(label);
       })
-      .catch(() => {});
+      .catch(() => fetch('/version.json').then((r) => r.json()).then((data: { version?: string; sha?: string }) => {
+        const label = data.sha ? `${data.version ?? APP_VERSION} (${data.sha})` : (data.version ?? APP_VERSION);
+        setAppVersion(label);
+      }).catch(() => {}));
   }, []);
   
   const t = uiTranslations[lang];
