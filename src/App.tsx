@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import ClothSampleModal from './components/ClothSampleModal';
 import SampleModal from './components/SampleModal';
-import { FACE_SAMPLES } from './data/faceSamples';
+import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import { clothSampleOptions } from './data/clothSamples';
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 // ─── 번역 ─────────────────────────────────────────────────────
@@ -90,8 +92,35 @@ const translations = {
   },
 };
 
-type Lang = 'ko' | 'en';
 const FREE_LIMIT = 3;
+const PRODUCTION_API_BASE = '/api';
+const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
+const EMPTY_FACE_TIPS = {
+  ko: [
+    '정면에 가깝고 얼굴이 선명한 사진이 가장 좋습니다.',
+    '머리카락, 손, 마스크, 안경, 소품 등에 얼굴이 가려지지 않은 사진을 권장합니다.',
+    '조명이 밝고 배경이 단순한 사진일수록 인식률이 좋습니다.',
+    '상반신 또는 얼굴 중심 사진이 가장 적합합니다.',
+  ],
+  default: [
+    'A clear photo close to the front view works best.',
+    'Use a photo where the face is not blocked by hair, hands, masks, glasses, or props.',
+    'Bright lighting and a simple background improve recognition.',
+    'Upper-body or face-focused photos work best.',
+  ],
+};
+const EMPTY_CLOTH_TIPS = {
+  ko: [
+    '의상 전체 형태가 잘 보이는 사진이 가장 좋습니다.',
+    '옷이 잘리지 않고 배경이 단순한 이미지를 권장합니다.',
+    '정면에 가깝고 주름이나 가림이 적은 사진일수록 결과가 좋습니다.',
+  ],
+  default: [
+    'A photo that clearly shows the full clothing shape works best.',
+    'Use an image where the outfit is not cropped and the background is simple.',
+    'Front-facing clothing photos with fewer wrinkles or obstructions produce better results.',
+  ],
+};
 
 // ─── 세션 ID (익명 식별자) ────────────────────────────────────
 const getSessionId = (): string => {
@@ -107,7 +136,7 @@ const API_BASE: string =
   import.meta.env.VITE_API_BASE_URL ||
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api'
-    : '/api');
+    : PRODUCTION_API_BASE);
 
 const fetchUsage = async (sessionId: string): Promise<number> => {
   try {
@@ -145,20 +174,47 @@ const ensureDataUrl = async (src: string): Promise<string> => {
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
+  const primaryEndpoint = `${API_BASE}/tryon`;
+  const fallbackEndpoint = `${FALLBACK_FUNCTIONS_API_BASE}/tryon`;
 
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/tryon`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-  } catch (e) {
+    try {
+      console.info('[HAMDEVA] tryon request', { endpoint: primaryEndpoint, method: 'POST' });
+      res = await fetch(primaryEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      console.error('[HAMDEVA] primary tryon network error', e);
+      console.info('[HAMDEVA] tryon fallback request', { endpoint: fallbackEndpoint, method: 'POST' });
+      res = await fetch(fallbackEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    }
+
+    if ((res.status === 404 || res.status === 405) && primaryEndpoint !== fallbackEndpoint) {
+      console.warn('[HAMDEVA] primary tryon route failed, retrying fallback', {
+        primaryEndpoint,
+        fallbackEndpoint,
+        status: res.status,
+      });
+      res = await fetch(fallbackEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+    }
+  } finally {
     clearTimeout(timer);
-    throw new Error(`네트워크 오류: ${(e as Error).message}`);
   }
-  clearTimeout(timer);
+  console.info('[HAMDEVA] tryon response', { endpoint: res.url || primaryEndpoint, method: 'POST', status: res.status });
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
@@ -199,15 +255,10 @@ const setCached = (k: string, v: string) => {
   localStorage.setItem('HAMDEVA-cache', JSON.stringify(c));
 };
 
-// ─── LangDropdown ─────────────────────────────────────────────
-const langOptions = [
-  { value: 'ko', label: '한국어', flag: '🇰🇷' },
-  { value: 'en', label: 'English', flag: '🇺🇸' },
-];
-
-const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ lang, onChange }) => {
+const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.value === lang) ?? LANGUAGE_OPTIONS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', h);
@@ -216,16 +267,16 @@ const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ l
 
   return (
     <div className="lang-dropdown" ref={ref}>
-      <button className="lang-dropdown-trigger" onClick={() => setOpen(!open)}>
-        <span>{langOptions.find(o => o.value === lang)?.flag}</span>
-        <span className="lang-text">{lang.toUpperCase()}</span>
+      <button className="lang-dropdown-trigger" onClick={() => setOpen(!open)} type="button">
+        <span className="lang-text">{currentLanguage.shortLabel}</span>
       </button>
       {open && (
-        <div className="lang-dropdown-menu">
-          {langOptions.map((opt) => (
+        <div className="lang-dropdown-menu" style={{ maxHeight: '320px', overflowY: 'auto', minWidth: '220px' }}>
+          {LANGUAGE_OPTIONS.map((opt) => (
             <button key={opt.value} className={`lang-option ${lang === opt.value ? 'active' : ''}`}
-              onClick={() => { onChange(opt.value as Lang); setOpen(false); }}>
-              <span>{opt.flag}</span><span>{opt.label}</span>
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              type="button">
+              <span>{opt.nativeLabel}</span><span>{opt.label}</span>
             </button>
           ))}
         </div>
@@ -233,6 +284,17 @@ const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ l
     </div>
   );
 };
+
+const EmptyPreviewState: React.FC<{ title: string; tips: string[] }> = ({ title, tips }) => (
+  <div className="placeholder">
+    <strong style={{ display: 'block', marginBottom: '12px' }}>{title}</strong>
+    {tips.map((tip) => (
+      <p key={tip} style={{ margin: '0 0 8px', lineHeight: 1.5 }}>
+        {tip}
+      </p>
+    ))}
+  </div>
+);
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
@@ -242,19 +304,24 @@ const App: React.FC = () => {
   const [gender, setGender] = useState<'female' | 'male' | 'dog' | 'cat'>('female');
   
   const [showSampleModal, setShowSampleModal] = useState(false);
-  const [selectedSampleUrl, setSelectedSampleUrl] = useState<string>(FACE_SAMPLES.female[0]);
+  const [showClothSampleModal, setShowClothSampleModal] = useState(false);
+  const [selectedSampleUrl, setSelectedSampleUrl] = useState<string | null>(null);
+  const [selectedClothSampleUrl, setSelectedClothSampleUrl] = useState<string | null>(null);
   const activePersonImage = personImage || selectedSampleUrl;
-  const [personPreviewState, setPersonPreviewState] = useState<ImageLoadState>('loading');
+  const activeClothImage = clothImage || selectedClothSampleUrl;
+  const [personPreviewState, setPersonPreviewState] = useState<ImageLoadState>('idle');
   const [clothPreviewState, setClothPreviewState] = useState<ImageLoadState>('idle');
   const [resultPreviewState, setResultPreviewState] = useState<ImageLoadState>('idle');
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
   const [usageCount, setUsageCount]     = useState(0);
-  const [lang, setLang] = useState<Lang>('ko');
+  const [lang, setLang] = useState<LanguageCode>('ko');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   
-  const t = translations[lang];
+  const t = lang === 'ko' ? translations.ko : translations.en;
   const sessionId = getSessionId();
+  const emptyFaceTips = lang === 'ko' ? EMPTY_FACE_TIPS.ko : EMPTY_FACE_TIPS.default;
+  const emptyClothTips = lang === 'ko' ? EMPTY_CLOTH_TIPS.ko : EMPTY_CLOTH_TIPS.default;
 
   useEffect(() => { fetchUsage(sessionId).then(setUsageCount); }, [sessionId]);
   useEffect(() => {
@@ -265,14 +332,23 @@ const App: React.FC = () => {
     setPersonPreviewState(activePersonImage ? 'loading' : 'idle');
   }, [activePersonImage]);
   useEffect(() => {
-    setClothPreviewState(clothImage ? 'loading' : 'idle');
-  }, [clothImage]);
+    setClothPreviewState(activeClothImage ? 'loading' : 'idle');
+  }, [activeClothImage]);
   useEffect(() => {
     setResultPreviewState(resultImage ? 'loading' : 'idle');
   }, [resultImage]);
 
+  const handleOpenPersonSampleModal = () => setShowSampleModal(true);
+  const handleOpenClothSampleModal = () => {
+    if (clothSampleOptions.length === 0) {
+      alert(lang === 'ko' ? '샘플 의상 데이터 준비 중입니다.' : 'Clothing samples are being prepared.');
+      return;
+    }
+    setShowClothSampleModal(true);
+  };
+
   const handleGenerate = async () => {
-    if (!activePersonImage || !clothImage) { alert(t.alertBoth); return; }
+    if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
     if (FREE_LIMIT - usageCount <= 0) { alert(t.freeExhausted); return; }
 
     setIsGenerating(true);
@@ -280,7 +356,7 @@ const App: React.FC = () => {
     try {
       const [preparedPersonImage, preparedClothImage] = await Promise.all([
         ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
-        ensureDataUrl(clothImage).then((src) => resizeImage(src, 1280)),
+        ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
       ]);
 
       const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
@@ -342,7 +418,7 @@ const App: React.FC = () => {
               </div>
               
               <div className="try-actions">
-                <button className="outline-btn primary" onClick={() => setShowSampleModal(true)}>
+                <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
                   {lang === 'ko' ? '샘플 선택' : 'Choose Sample'}
                 </button>
                 <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>
@@ -380,10 +456,19 @@ const App: React.FC = () => {
                     />
                   </>
                 ) : (
-                  <div className="placeholder">{t.step1Desc}</div>
+                  <EmptyPreviewState
+                    title={lang === 'ko' ? '얼굴 사진을 넣어주세요' : 'Add a face photo'}
+                    tips={emptyFaceTips}
+                  />
                 )}
                 {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
-                {personImage && <button className="clear-img-btn" onClick={() => setPersonImage(null)}>&times;</button>}
+                {(personImage || selectedSampleUrl) && (
+                  <button className="clear-img-btn" onClick={() => {
+                    setPersonImage(null);
+                    setSelectedSampleUrl(null);
+                    setPersonPreviewState('idle');
+                  }}>&times;</button>
+                )}
               </div>
             </div>
 
@@ -393,6 +478,9 @@ const App: React.FC = () => {
                 <h3 className="card-title">{t.step2Title}</h3>
               </div>
               <div className="try-actions">
+                <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
+                  {lang === 'ko' ? '샘플 의상 선택' : 'Choose Clothing Sample'}
+                </button>
                 <button className="outline-btn" onClick={() => document.getElementById('c-up')?.click()}>
                   {lang === 'ko' ? '의상 사진 업로드' : 'Upload Clothing'}
                 </button>
@@ -406,8 +494,8 @@ const App: React.FC = () => {
                   }
                 }} />
               </div>
-              <div className={`preview-box ${clothImage ? 'has-image' : ''}`}>
-                {clothImage ? (
+              <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
+                {activeClothImage ? (
                   <>
                     {clothPreviewState === 'loading' && (
                       <div className="preview-overlay">
@@ -419,22 +507,34 @@ const App: React.FC = () => {
                       <div className="img-error-msg">{lang === 'ko' ? '이미지를 불러올 수 없습니다.' : 'Unable to load image.'}</div>
                     ) : (
                       <img
-                        src={clothImage}
+                        src={activeClothImage}
                         alt="Cloth"
                         className={clothPreviewState === 'ready' ? 'is-visible' : ''}
                         onLoad={() => setClothPreviewState('ready')}
                         onError={() => setClothPreviewState('error')}
                       />
                     )}
-                    <button className="clear-img-btn" onClick={() => setClothImage(null)}>&times;</button>
+                    {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
+                    {(clothImage || selectedClothSampleUrl) && (
+                      <button className="clear-img-btn" onClick={() => {
+                        setClothImage(null);
+                        setSelectedClothSampleUrl(null);
+                        setClothPreviewState('idle');
+                      }}>&times;</button>
+                    )}
                   </>
-                ) : <div className="placeholder">{t.step2Desc}</div>}
+                ) : (
+                  <EmptyPreviewState
+                    title={lang === 'ko' ? '의상 사진을 넣어주세요' : 'Add clothing photo'}
+                    tips={emptyClothTips}
+                  />
+                )}
               </div>
             </div>
           </div>
 
           <div className="action-section">
-            <button className="generate-btn" onClick={handleGenerate} disabled={isGenerating || !activePersonImage || !clothImage}>
+            <button className="generate-btn" onClick={handleGenerate} disabled={isGenerating || !activePersonImage || !activeClothImage}>
               {isGenerating ? (
                 <><span className="spinner"></span>{t.generating}</>
               ) : t.generate}
@@ -483,6 +583,19 @@ const App: React.FC = () => {
           lang={lang}
           onSelect={(url, category) => { setSelectedSampleUrl(url); setGender(category); setPersonImage(null); setPersonPreviewState('loading'); }}
           onClose={() => setShowSampleModal(false)}
+        />
+      )}
+
+      {showClothSampleModal && (
+        <ClothSampleModal
+          currentUrl={activeClothImage}
+          lang={lang}
+          onSelect={(url) => {
+            setSelectedClothSampleUrl(url);
+            setClothImage(null);
+            setClothPreviewState('loading');
+          }}
+          onClose={() => setShowClothSampleModal(false)}
         />
       )}
     </div>

@@ -10,6 +10,14 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const buildTryOnPrompt = (bodyProfile = {}) => {
   const subjectType = bodyProfile.gender === 'dog' || bodyProfile.gender === 'cat' ? 'pet' : 'person';
+  const bodyGuide = [
+    bodyProfile.heightCm ? `Use ${bodyProfile.heightCm} cm height as a body proportion hint.` : null,
+    bodyProfile.weightKg ? `Use ${bodyProfile.weightKg} kg weight as a body volume hint.` : null,
+    'Keep the same person identity and face from the first image.',
+    'Keep the same clothing design, color, silhouette, and material from the second image.',
+    'Compose the final output as a realistic fashion-photo style 1x4 variation sheet.',
+    'Use a simple background and maintain a photorealistic result.',
+  ].filter(Boolean).join('\n');
 
   if (subjectType === 'pet') {
     return `You are a virtual try-on image compositor.
@@ -26,6 +34,9 @@ Critical rules:
 3. Preserve the original pose, background, and lighting from the FIRST IMAGE
 4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
 5. Output must look like a single real photograph, not a collage or illustration
+
+Additional direction:
+${bodyGuide}
 
 Output: One photorealistic image of the pet from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
   }
@@ -45,14 +56,26 @@ Critical rules:
 4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
 5. Output must look like a single real photograph, not a collage or illustration
 
+Additional direction:
+${bodyGuide}
+
 Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
 };
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
+app.options(['/generate', '/tryon'], (req, res) => {
+  console.info('[HAMDEVA-server] preflight', { path: req.path, method: req.method });
+  res.sendStatus(204);
+});
 
-// POST /generate
-app.post('/generate', async (req, res) => {
+app.post(['/generate', '/tryon'], async (req, res) => {
+  console.info('[HAMDEVA-server] incoming request', {
+    path: req.path,
+    method: req.method,
+    contentType: req.headers['content-type'],
+  });
+
   if (!GEMINI_API_KEY) {
     return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
   }
@@ -106,6 +129,8 @@ app.post('/generate', async (req, res) => {
     return res.status(500).json({ error: 'Failed to reach Gemini API' });
   }
 
+  console.info('[HAMDEVA-server] upstream response', { path: req.path, status: geminiRes.status });
+
   if (!geminiRes.ok) {
     const detail = await geminiRes.json().catch(() => ({}));
     console.error('Gemini error:', detail);
@@ -122,6 +147,10 @@ app.post('/generate', async (req, res) => {
   }
 
   return res.status(500).json({ error: 'No image in Gemini response' });
+});
+
+app.all(['/generate', '/tryon'], (req, res) => {
+  res.status(405).json({ error: 'Method Not Allowed', method: req.method, path: req.path, allowed: 'POST, OPTIONS' });
 });
 
 app.listen(PORT, () => console.log(`HAMDEVA-server listening on port ${PORT}`));

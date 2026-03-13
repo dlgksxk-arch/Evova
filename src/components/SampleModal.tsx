@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import type { LanguageCode } from '../constants/languages';
 import { FACE_SAMPLES, type FaceCategory } from '../data/faceSamples';
 
-type Lang = 'ko' | 'en';
-
-const FACE_CATEGORY_LABELS: Record<Lang, Record<FaceCategory, string>> = {
+const FACE_CATEGORY_LABELS: Record<'ko' | 'default', Record<FaceCategory, string>> = {
   ko: { female: '여성', male: '남성', dog: '강아지', cat: '고양이' },
-  en: { female: 'Women', male: 'Men', dog: 'Dog', cat: 'Cat' },
+  default: { female: 'Women', male: 'Men', dog: 'Dog', cat: 'Cat' },
 };
 
 const FACE_CATEGORIES: FaceCategory[] = ['female', 'male', 'dog', 'cat'];
@@ -20,7 +19,7 @@ const findCategoryByUrl = (url: string | null): FaceCategory => {
 
 interface SampleModalProps {
   currentUrl: string | null;
-  lang: Lang;
+  lang: LanguageCode;
   onClose: () => void;
   onSelect: (url: string, category: FaceCategory) => void;
 }
@@ -46,6 +45,7 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang, onClose, on
   }, [onClose]);
 
   const samples = useMemo(() => FACE_SAMPLES[category], [category]);
+  const labels = lang === 'ko' ? FACE_CATEGORY_LABELS.ko : FACE_CATEGORY_LABELS.default;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -70,7 +70,7 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang, onClose, on
               onClick={() => setCategory(tab)}
               type="button"
             >
-              {FACE_CATEGORY_LABELS[lang][tab]}
+              {labels[tab]}
             </button>
           ))}
         </div>
@@ -93,14 +93,14 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang, onClose, on
               )}
               <img
                 src={url}
-                alt={`${FACE_CATEGORY_LABELS[lang][category]} sample ${index + 1}`}
+                alt={`${labels[category]} sample ${index + 1}`}
                 className={loadedUrls[url] ? 'is-visible' : ''}
                 loading="lazy"
                 onError={() => setErroredUrls((prev) => ({ ...prev, [url]: true }))}
                 onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
               />
               <div className="sample-card-label">
-                {FACE_CATEGORY_LABELS[lang][category]} {index + 1}
+                {labels[category]} {index + 1}
               </div>
               <div className="error-placeholder">{lang === 'ko' ? '이미지 오류' : 'Image error'}</div>
             </button>

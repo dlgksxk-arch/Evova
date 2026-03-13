@@ -42,6 +42,14 @@ const FREE_LIMIT = 3;
 const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
 const buildTryOnPrompt = (bodyProfile) => {
     const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
+    const bodyGuide = [
+        bodyProfile?.heightCm ? `Use ${bodyProfile.heightCm} cm height as a body proportion hint.` : null,
+        bodyProfile?.weightKg ? `Use ${bodyProfile.weightKg} kg weight as a body volume hint.` : null,
+        'Keep the same person identity and face from the first image.',
+        'Keep the same clothing design, color, silhouette, and material from the second image.',
+        'Compose the final output as a realistic fashion-photo style 1x4 variation sheet.',
+        'Use a simple background and maintain a photorealistic result.',
+    ].filter(Boolean).join('\n');
     if (subjectType === 'pet') {
         return `You are a virtual try-on image compositor.
 
@@ -57,6 +65,9 @@ Critical rules:
 3. Preserve the original pose, background, and lighting from the FIRST IMAGE
 4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
 5. Output must look like a single real photograph, not a collage or illustration
+
+Additional direction:
+${bodyGuide}
 
 Output: One photorealistic image of the pet from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
     }
@@ -75,12 +86,18 @@ Critical rules:
 4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
 5. Output must look like a single real photograph, not a collage or illustration
 
+Additional direction:
+${bodyGuide}
+
 Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
 };
 // CORS 헤더 설정
 const setCors = (req, res) => {
     const origin = req.headers.origin || '';
-    if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
+    if (origin.startsWith('http://') || origin.startsWith('https://')) {
+        res.set('Access-Control-Allow-Origin', origin);
+    }
+    else if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
         res.set('Access-Control-Allow-Origin', origin);
     }
     else {
@@ -100,6 +117,11 @@ exports.api = functions
         return;
     }
     const path = req.path;
+    functions.logger.info('api request', {
+        path,
+        method: req.method,
+        contentType: req.get('content-type') ?? '',
+    });
     // ── GET /api/usage?sessionId=xxx ──────────────────────────
     if (req.method === 'GET' && path === '/usage') {
         const sessionId = req.query['sessionId'];
@@ -115,7 +137,7 @@ exports.api = functions
         return;
     }
     // ── POST /api/tryon ───────────────────────────────────────
-    if (req.method === 'POST' && path === '/tryon') {
+    if (req.method === 'POST' && (path === '/tryon' || path === '/generate')) {
         const { sessionId, personImage, garmentImage, bodyProfile } = req.body;
         if (!sessionId || !personImage || !garmentImage) {
             res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
@@ -162,6 +184,7 @@ exports.api = functions
             },
         };
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+        functions.logger.info('api upstream response', { path, status: geminiRes.status });
         if (!geminiRes.ok) {
             const errBody = await geminiRes.json().catch(() => ({}));
             functions.logger.error('Gemini API error', errBody);
@@ -180,6 +203,10 @@ exports.api = functions
         res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
         return;
     }
+    if (path === '/tryon' || path === '/generate') {
+        res.status(405).json({ error: 'Method Not Allowed', method: req.method, path, allowed: 'POST, OPTIONS' });
+        return;
+    }
     res.status(404).json({ error: 'Not found' });
 });
 // ─── generateTryOn — 전용 가상 피팅 Function ─────────────────────
@@ -192,6 +219,11 @@ exports.generateTryOn = functions
         res.status(204).send('');
         return;
     }
+    functions.logger.info('generateTryOn request', {
+        path: req.path,
+        method: req.method,
+        contentType: req.get('content-type') ?? '',
+    });
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed' });
         return;
@@ -242,6 +274,7 @@ exports.generateTryOn = functions
         },
     };
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+    functions.logger.info('generateTryOn upstream response', { status: geminiRes.status });
     if (!geminiRes.ok) {
         const errBody = await geminiRes.json().catch(() => ({}));
         functions.logger.error('Gemini API error', errBody);
