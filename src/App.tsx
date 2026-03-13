@@ -819,7 +819,7 @@ const App: React.FC = () => {
       {/* ── Navbar ── */}
       <nav className="landing-nav">
         <div className="nav-content">
-          <a href="/" className="nav-logo">HA<span>DEVA</span></a>
+          <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
           <div className="nav-links desktop-only">
             <button onClick={() => scrollTo('features')}>{t.navFeatures}</button>
             <button onClick={() => scrollTo('howto')}>{t.navHowto}</button>
@@ -1043,7 +1043,7 @@ const App: React.FC = () => {
       {/* ── Footer ── */}
       <footer className="site-footer">
         <div className="footer-inner">
-          <div className="footer-logo">HA<span>DEVA</span></div>
+          <div className="footer-logo">HAM<span>DEVA</span></div>
           <nav className="footer-links">
             <a href="/privacy">{t.footerPrivacy}</a>
             <a href="/terms">{t.footerTerms}</a>
