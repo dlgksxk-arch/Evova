@@ -4,6 +4,8 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const formatVersion = (buildNumber: number) => {
   const safeCount = Number.isNaN(buildNumber) || buildNumber < 1 ? 1 : buildNumber
   const major = Math.floor(safeCount / 100)
@@ -85,12 +87,12 @@ function sampleScannerPlugin() {
         return `export const samples = ${JSON.stringify(samples)};`
       }
     }
-  }
+  };
 }
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), sampleScannerPlugin()],
+  plugins: [react(), sampleScannerPlugin(), cloudflare()],
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },
