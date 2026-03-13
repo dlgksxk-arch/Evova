@@ -912,7 +912,7 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 
 const FREE_LIMIT = 3;
 const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
-const SAME_ORIGIN_TRYON_ENDPOINT = '/tryon';
+const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
 const FALLBACK_FUNCTIONS_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/tryon';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
