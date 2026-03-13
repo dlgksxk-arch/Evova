@@ -8,7 +8,8 @@
     "about": "关于 HAMDEVA",
     "privacy": "隐私政策",
     "terms": "服务条款",
-    "contact": "联系"
+    "contact": "联系",
+    "mypage": "我的页面"
   },
   "meta": {
     "homeTitle": "HAMDEVA | AI 虚拟试穿平台",
@@ -260,6 +261,18 @@
           "paragraphs": [
             "你可以通过联系表单或邮箱发送产品问题、内容建议与合作咨询。",
             "我们会查看与 AI 质量、文化内容和平台支持相关的消息。"
+          ]
+        }
+      ]
+    },
+    "mypage": {
+      "title": "我的页面",
+      "description": "查看账户信息与 AI 试穿生成记录。",
+      "sections": [
+        {
+          "heading": "我的生成记录",
+          "paragraphs": [
+            "你可以查看登录邮箱、剩余每日生成次数，以及保存的试穿结果。"
           ]
         }
       ]

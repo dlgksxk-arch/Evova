@@ -8,7 +8,8 @@
     "about": "About HAMDEVA",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "contact": "Contact"
+    "contact": "Contact",
+    "mypage": "My Page"
   },
   "meta": {
     "homeTitle": "HAMDEVA | AI Virtual Fitting Platform",
@@ -260,6 +261,18 @@
           "paragraphs": [
             "Use the contact form or direct email for product issues, article feedback, or partnership discussions.",
             "We review messages related to AI quality, cultural content, and platform support."
+          ]
+        }
+      ]
+    },
+    "mypage": {
+      "title": "My Page",
+      "description": "Review your account details and AI fitting generation history.",
+      "sections": [
+        {
+          "heading": "My generations",
+          "paragraphs": [
+            "See your signed-in email, remaining daily quota, and saved fitting results."
           ]
         }
       ]

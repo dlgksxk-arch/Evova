@@ -1,15 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
+import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
+import { auth, db, googleProvider } from './firebase';
+import type { User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
+import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, where, runTransaction, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
+type AuthMode = 'login' | 'signup';
+type UserPlan = 'free';
+
+interface UserProfile {
+  email: string;
+  plan: UserPlan;
+  dailyQuota: number;
+  usedToday: number;
+  lastUsageDate: string;
+  createdAt?: Timestamp | null;
+}
+
+interface GenerationRecord {
+  id: string;
+  uid: string;
+  faceImageUrl: string;
+  clothImageUrl: string;
+  resultImageUrl: string;
+  createdAt?: Timestamp | null;
+}
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -56,6 +81,27 @@ const translations = {
     payClose: '닫기',
     payPlan1: '일일 이용권', payPlan1Price: '₩990', payPlan1Desc: '오늘 하루 무제한',
     payPlan2: '월정액', payPlan2Price: '₩9,900', payPlan2Desc: '30일 무제한',
+    login: '로그인',
+    signup: '회원가입',
+    googleLogin: 'Google 로그인',
+    logout: '로그아웃',
+    myPage: '마이페이지',
+    emailLabel: '이메일',
+    passwordLabel: '비밀번호',
+    switchToSignup: '계정이 없나요? 회원가입',
+    switchToLogin: '이미 계정이 있나요? 로그인',
+    authRequired: '생성을 계속하려면 로그인해 주세요.',
+    authInvalid: '이메일과 비밀번호를 모두 입력해 주세요.',
+    authFailed: '로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.',
+    suggestionTitleLabel: '제안 제목',
+    suggestionContentLabel: '제안 내용',
+    suggestionSubmit: '제안 등록하기',
+    suggestionLoginRequired: '제안 등록은 로그인 후 사용할 수 있습니다.',
+    suggestionSaved: '제안이 등록되었습니다.',
+    suggestionPlaceholderTitle: '추가하고 싶은 의상이나 모델 제목',
+    suggestionPlaceholderContent: '원하는 샘플 스타일, 국가, 의상 종류를 자유롭게 적어주세요.',
+    remainingDaily: (n: number) => `오늘 남은 생성 횟수: ${n}회`,
+    noHistory: '아직 생성된 결과가 없습니다.',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
       { q: '하루 무료 횟수는 몇 번인가요?', a: '매일 자정 기준으로 3회 무료 사용이 제공됩니다. 추가 사용은 일일 이용권 또는 월정액 구독을 통해 가능합니다.' },
@@ -110,6 +156,27 @@ const translations = {
     payClose: 'Close',
     payPlan1: 'Day Pass', payPlan1Price: '$0.99', payPlan1Desc: 'Unlimited for today',
     payPlan2: 'Monthly', payPlan2Price: '$9.99', payPlan2Desc: '30 days unlimited',
+    login: 'Log In',
+    signup: 'Sign Up',
+    googleLogin: 'Continue with Google',
+    logout: 'Log Out',
+    myPage: 'My Page',
+    emailLabel: 'Email',
+    passwordLabel: 'Password',
+    switchToSignup: "Don't have an account? Sign up",
+    switchToLogin: 'Already have an account? Log in',
+    authRequired: 'Please log in to continue generation.',
+    authInvalid: 'Please enter both email and password.',
+    authFailed: 'Authentication failed. Please try again.',
+    suggestionTitleLabel: 'Suggestion title',
+    suggestionContentLabel: 'Suggestion details',
+    suggestionSubmit: 'Submit suggestion',
+    suggestionLoginRequired: 'Log in to submit a suggestion.',
+    suggestionSaved: 'Suggestion submitted.',
+    suggestionPlaceholderTitle: 'Title for the outfit or model suggestion',
+    suggestionPlaceholderContent: 'Tell us which sample outfit, country look, or model style you want added.',
+    remainingDaily: (n: number) => `Remaining daily generations: ${n}`,
+    noHistory: 'No saved generations yet.',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
       { q: 'How many free uses do I get per day?', a: '3 free virtual try-ons are provided daily, resetting at midnight. Additional usage requires a Day Pass or monthly subscription.' },
@@ -950,6 +1017,112 @@ const getSessionId = (): string => {
   return sid;
 };
 
+const getTodayKey = (): string => new Date().toISOString().slice(0, 10);
+
+const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserProfile => ({
+  email: data?.email || email,
+  plan: data?.plan || 'free',
+  dailyQuota: typeof data?.dailyQuota === 'number' ? data.dailyQuota : FREE_LIMIT,
+  usedToday: typeof data?.usedToday === 'number' ? data.usedToday : 0,
+  lastUsageDate: data?.lastUsageDate || getTodayKey(),
+  createdAt: data?.createdAt ?? null,
+});
+
+const ensureUserProfileDoc = async (user: User): Promise<UserProfile> => {
+  const userRef = doc(db, 'users', user.uid);
+  const snapshot = await getDoc(userRef);
+
+  if (!snapshot.exists()) {
+    const nextProfile = normalizeUserProfile(user.email || '', {
+      email: user.email || '',
+      usedToday: 0,
+      lastUsageDate: getTodayKey(),
+    });
+    await setDoc(userRef, {
+      ...nextProfile,
+      createdAt: serverTimestamp(),
+    });
+    return nextProfile;
+  }
+
+  const currentProfile = normalizeUserProfile(user.email || '', snapshot.data() as Partial<UserProfile>);
+  if (currentProfile.email !== user.email) {
+    await setDoc(userRef, { email: user.email || currentProfile.email }, { merge: true });
+  }
+  return currentProfile;
+};
+
+const refreshUserQuota = async (user: User): Promise<UserProfile> => {
+  const userRef = doc(db, 'users', user.uid);
+  const currentProfile = await ensureUserProfileDoc(user);
+  const today = getTodayKey();
+
+  if (currentProfile.lastUsageDate === today) {
+    return currentProfile;
+  }
+
+  const resetProfile = {
+    usedToday: 0,
+    lastUsageDate: today,
+  };
+  await setDoc(userRef, resetProfile, { merge: true });
+  return {
+    ...currentProfile,
+    ...resetProfile,
+  };
+};
+
+const incrementUserUsage = async (user: User): Promise<UserProfile> => {
+  const userRef = doc(db, 'users', user.uid);
+  const today = getTodayKey();
+
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userRef);
+    const profile = normalizeUserProfile(user.email || '', snapshot.data() as Partial<UserProfile>);
+    const currentUsedToday = profile.lastUsageDate === today ? profile.usedToday : 0;
+
+    if (currentUsedToday >= profile.dailyQuota) {
+      throw new Error('LIMIT_EXCEEDED');
+    }
+
+    transaction.set(userRef, {
+      email: user.email || profile.email,
+      plan: profile.plan,
+      dailyQuota: profile.dailyQuota,
+      usedToday: currentUsedToday + 1,
+      lastUsageDate: today,
+      createdAt: profile.createdAt ?? serverTimestamp(),
+    }, { merge: true });
+  });
+
+  return refreshUserQuota(user);
+};
+
+const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  const errorCode = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code?: string }).code)
+    : '';
+
+  if (!(error instanceof Error) && !errorCode) {
+    return fallbackMessage;
+  }
+
+  if (errorCode.includes('auth/invalid-credential') || errorCode.includes('auth/wrong-password')) {
+    return '이메일 또는 비밀번호를 다시 확인해 주세요.';
+  }
+  if (errorCode.includes('auth/email-already-in-use')) {
+    return '이미 가입된 이메일입니다.';
+  }
+  if (errorCode.includes('auth/popup-closed-by-user')) {
+    return '로그인 창이 닫혔습니다.';
+  }
+  if (errorCode.includes('auth/too-many-requests')) {
+    return '잠시 후 다시 시도해 주세요.';
+  }
+
+  return error instanceof Error ? error.message || fallbackMessage : fallbackMessage;
+};
+
 const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE: string =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -1167,6 +1340,9 @@ const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
     img.src = dataUrl;
   });
 
+const createHistoryPreview = (dataUrl: string, maxPx = 480): Promise<string> =>
+  resizeImage(dataUrl, maxPx);
+
 const simpleHash = (a: string, b: string): string => {
   const s = a.slice(-300) + b.slice(-300);
   let h = 0;
@@ -1234,6 +1410,7 @@ const App: React.FC = () => {
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
   const [personFile, setPersonFile] = useState<File | null>(null);
@@ -1259,17 +1436,32 @@ const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [suggestionForm, setSuggestionForm] = useState({ title: '', content: '' });
+  const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [historyItems, setHistoryItems] = useState<GenerationRecord[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [authForm, setAuthForm] = useState({ email: '', password: '' });
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   
   const t = uiTranslations[lang];
   const contentLocale = getContentLocale(lang);
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
-  const sessionId = getSessionId();
+  const guestSessionId = getSessionId();
+  const sessionId = currentUser?.uid || guestSessionId;
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
   const emptyClothTips = CLOTH_TIPS[lang];
+  const remainingGuestCount = Math.max(0, FREE_LIMIT - usageCount);
+  const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
+  const remainingGenerationCount = currentUser ? remainingUserCount : remainingGuestCount;
 
   useEffect(() => { fetchUsage(sessionId).then(setUsageCount); }, [sessionId]);
   useEffect(() => {
@@ -1300,6 +1492,71 @@ const App: React.FC = () => {
       window.removeEventListener('hashchange', syncPage);
       window.removeEventListener('popstate', syncPage);
     };
+  }, []);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      setUserMenuOpen(false);
+
+      if (!user) {
+        setUserProfile(null);
+        setHistoryItems([]);
+        return;
+      }
+
+      await ensureUserProfileDoc(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    const unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
+      if (!snapshot.exists()) {
+        const profile = await ensureUserProfileDoc(currentUser);
+        setUserProfile(profile);
+        return;
+      }
+
+      const profile = normalizeUserProfile(currentUser.email || '', snapshot.data() as Partial<UserProfile>);
+      if (profile.lastUsageDate !== getTodayKey()) {
+        const refreshed = await refreshUserQuota(currentUser);
+        setUserProfile(refreshed);
+      } else {
+        setUserProfile(profile);
+      }
+    });
+
+    const historyQuery = query(
+      collection(db, 'generations'),
+      where('uid', '==', currentUser.uid),
+      orderBy('createdAt', 'desc'),
+    );
+    const unsubscribeHistory = onSnapshot(historyQuery, (snapshot) => {
+      setHistoryItems(snapshot.docs.map((historyDoc) => ({
+        id: historyDoc.id,
+        ...(historyDoc.data() as Omit<GenerationRecord, 'id'>),
+      })));
+    });
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeHistory();
+    };
+  }, [currentUser]);
+  useEffect(() => {
+    const handleOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
   useEffect(() => {
     setPersonPreviewState(!activePersonImage ? 'idle' : personFile ? 'ready' : 'loading');
@@ -1374,6 +1631,54 @@ const App: React.FC = () => {
     setActiveContentTab(tab);
     setShowContentModal(true);
   };
+  const openAuthModal = (mode: AuthMode) => {
+    setAuthMode(mode);
+    setAuthError(null);
+    setShowAuthModal(true);
+  };
+  const handleAuthSubmit = async () => {
+    if (!authForm.email || !authForm.password) {
+      setAuthError(t.authInvalid);
+      return;
+    }
+
+    setAuthSubmitting(true);
+    setAuthError(null);
+    try {
+      if (authMode === 'login') {
+        await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
+      } else {
+        const credential = await createUserWithEmailAndPassword(auth, authForm.email, authForm.password);
+        await ensureUserProfileDoc(credential.user);
+      }
+      setShowAuthModal(false);
+      setAuthForm({ email: '', password: '' });
+    } catch (error) {
+      setAuthError(buildAuthErrorMessage(error, t.authFailed));
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+  const handleGoogleLogin = async () => {
+    setAuthSubmitting(true);
+    setAuthError(null);
+    try {
+      const credential = await signInWithPopup(auth, googleProvider);
+      await ensureUserProfileDoc(credential.user);
+      setShowAuthModal(false);
+      setAuthForm({ email: '', password: '' });
+    } catch (error) {
+      setAuthError(buildAuthErrorMessage(error, t.authFailed));
+    } finally {
+      setAuthSubmitting(false);
+    }
+  };
+  const handleLogout = async () => {
+    await signOut(auth);
+    if (currentPage === 'mypage') {
+      navigateToPage('home');
+    }
+  };
   const handleContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const subject = encodeURIComponent(`HAMDEVA inquiry from ${contactForm.name || 'website visitor'}`);
@@ -1382,10 +1687,38 @@ const App: React.FC = () => {
     );
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
+  const handleSuggestionSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!currentUser) {
+      setSuggestionStatus(t.suggestionLoginRequired);
+      openAuthModal('login');
+      return;
+    }
+
+    if (!suggestionForm.title || !suggestionForm.content) {
+      setSuggestionStatus(t.authInvalid);
+      return;
+    }
+
+    await addDoc(collection(db, 'suggestions'), {
+      uid: currentUser.uid,
+      email: currentUser.email || '',
+      title: suggestionForm.title,
+      content: suggestionForm.content,
+      createdAt: serverTimestamp(),
+    });
+    setSuggestionForm({ title: '', content: '' });
+    setSuggestionStatus(t.suggestionSaved);
+  };
 
   const handleGenerate = async () => {
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-    if (FREE_LIMIT - usageCount <= 0) { alert(t.freeExhausted); return; }
+    if (currentUser) {
+      const freshProfile = await refreshUserQuota(currentUser);
+      setUserProfile(freshProfile);
+      if (freshProfile.usedToday >= freshProfile.dailyQuota) { alert(t.freeExhausted); return; }
+    } else if (FREE_LIMIT - usageCount <= 0) { alert(t.freeExhausted); return; }
 
     setIsGenerating(true);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
@@ -1413,7 +1746,36 @@ const App: React.FC = () => {
         garmentImage: preparedClothImage,
         bodyProfile: { gender },
       });
-      setUsageCount(await fetchUsage(sessionId));
+
+      if (currentUser) {
+        try {
+          const nextProfile = await incrementUserUsage(currentUser);
+          setUserProfile(nextProfile);
+          const [historyFaceImage, historyClothImage, historyResultImage] = await Promise.all([
+            createHistoryPreview(preparedPersonImage, 360),
+            createHistoryPreview(preparedClothImage, 360),
+            createHistoryPreview(result, 720),
+          ]);
+
+          await addDoc(collection(db, 'generations'), {
+            uid: currentUser.uid,
+            faceImageUrl: historyFaceImage,
+            clothImageUrl: historyClothImage,
+            resultImageUrl: historyResultImage,
+            createdAt: serverTimestamp(),
+          });
+        } catch (error) {
+          if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
+            alert(t.freeExhausted);
+            setIsGenerating(false);
+            return;
+          }
+          throw error;
+        }
+      } else {
+        setUsageCount(await fetchUsage(sessionId));
+      }
+
       setCached(cacheKey, result);
       setResultImage(result);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -1445,6 +1807,27 @@ const App: React.FC = () => {
             ))}
           </div>
           <div className="nav-right">
+            {currentUser ? (
+              <div className="user-menu" ref={userMenuRef}>
+                <button className="lang-dropdown-trigger user-menu-trigger" onClick={() => setUserMenuOpen((prev) => !prev)} type="button">
+                  <span>{currentUser.email?.split('@')[0] || t.myPage}</span>
+                </button>
+                {userMenuOpen && (
+                  <div className="user-menu-dropdown">
+                    <button className="lang-option" onClick={() => { navigateToPage('mypage'); setUserMenuOpen(false); }} type="button">
+                      {t.myPage}
+                    </button>
+                    <button className="lang-option" onClick={() => { void handleLogout(); setUserMenuOpen(false); }} type="button">
+                      {t.logout}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button className="outline-btn auth-nav-btn" onClick={() => openAuthModal('login')} type="button">
+                {t.login}
+              </button>
+            )}
             <LangDropdown lang={lang} onChange={setLang} />
             <button className="dark-toggle" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? '☀️' : '🌙'}
@@ -1500,7 +1883,9 @@ const App: React.FC = () => {
 
           <section id="try" className="section try-section">
             <div className="section-inner">
-              <div className="usage-bar">{t.freeLeft(Math.max(0, FREE_LIMIT - usageCount))}</div>
+              <div className="usage-bar">
+                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.freeLeft(remainingGenerationCount)}
+              </div>
 
               <div className="try-layout">
                 <div className="try-column">
@@ -1702,11 +2087,31 @@ const App: React.FC = () => {
                   <h2>{contentLocale.home.suggestionBoardTitle}</h2>
                   <p>{contentLocale.home.suggestionBoardDescription}</p>
                 </div>
-                <div className="suggestion-chip-list">
-                  {contentLocale.home.suggestionBoardItems.map((item) => (
-                    <span key={item} className="suggestion-chip">{item}</span>
-                  ))}
-                </div>
+                <form className="suggestion-form" onSubmit={handleSuggestionSubmit}>
+                  <input
+                    placeholder={t.suggestionPlaceholderTitle}
+                    type="text"
+                    value={suggestionForm.title}
+                    onChange={(event) => setSuggestionForm((prev) => ({ ...prev, title: event.target.value }))}
+                  />
+                  <textarea
+                    placeholder={t.suggestionPlaceholderContent}
+                    rows={4}
+                    value={suggestionForm.content}
+                    onChange={(event) => setSuggestionForm((prev) => ({ ...prev, content: event.target.value }))}
+                  />
+                  <div className="suggestion-form-footer">
+                    <div className="suggestion-chip-list">
+                      {contentLocale.home.suggestionBoardItems.map((item) => (
+                        <span key={item} className="suggestion-chip">{item}</span>
+                      ))}
+                    </div>
+                    <button className="generate-btn suggestion-submit-btn" type="submit">
+                      {t.suggestionSubmit}
+                    </button>
+                  </div>
+                  {suggestionStatus && <p className="suggestion-status">{suggestionStatus}</p>}
+                </form>
               </article>
             </div>
           </section>
@@ -1782,6 +2187,45 @@ const App: React.FC = () => {
                 </form>
               </div>
             )}
+            {currentPage === 'mypage' && (
+              <div className="mypage-layout">
+                <article className="page-article">
+                  <h2>{t.myPage}</h2>
+                  {currentUser && userProfile ? (
+                    <div className="mypage-summary">
+                      <p><strong>{t.emailLabel}</strong> {currentUser.email}</p>
+                      <p><strong>{t.remainingDaily(remainingUserCount)}</strong></p>
+                    </div>
+                  ) : (
+                    <div className="mypage-empty">
+                      <p>{t.authRequired}</p>
+                      <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                        {t.login}
+                      </button>
+                    </div>
+                  )}
+                </article>
+                {currentUser && (
+                  <div className="history-grid">
+                    {historyItems.length > 0 ? historyItems.map((item) => (
+                      <article key={item.id} className="history-card">
+                        <div className="history-card-row">
+                          <img src={item.faceImageUrl} alt="Face history" />
+                          <img src={item.clothImageUrl} alt="Cloth history" />
+                        </div>
+                        <div className="history-result-box">
+                          <img src={item.resultImageUrl} alt="Generated result history" />
+                        </div>
+                      </article>
+                    )) : (
+                      <article className="page-article">
+                        <p>{t.noHistory}</p>
+                      </article>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </main>
       )}
@@ -1837,6 +2281,33 @@ const App: React.FC = () => {
             setClothPreviewState('loading');
           }}
           onClose={() => setShowClothSampleModal(false)}
+        />
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          copy={{
+            loginTitle: t.login,
+            signupTitle: t.signup,
+            emailLabel: t.emailLabel,
+            passwordLabel: t.passwordLabel,
+            loginButton: t.login,
+            signupButton: t.signup,
+            googleButton: t.googleLogin,
+            switchToSignup: t.switchToSignup,
+            switchToLogin: t.switchToLogin,
+          }}
+          email={authForm.email}
+          error={authError}
+          isSubmitting={authSubmitting}
+          mode={authMode}
+          password={authForm.password}
+          onClose={() => setShowAuthModal(false)}
+          onEmailChange={(value) => setAuthForm((prev) => ({ ...prev, email: value }))}
+          onGoogleLogin={() => { void handleGoogleLogin(); }}
+          onPasswordChange={(value) => setAuthForm((prev) => ({ ...prev, password: value }))}
+          onSubmit={() => { void handleAuthSubmit(); }}
+          onSwitchMode={(mode) => { setAuthMode(mode); setAuthError(null); }}
         />
       )}
     </div>

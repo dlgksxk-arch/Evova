@@ -264,6 +264,35 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
 }
 
+.auth-nav-btn {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  min-width: 96px;
+  justify-content: center;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  z-index: 1000;
+}
+
 .app-version {
   color: var(--text-muted);
   font-size: 11px;
@@ -561,6 +590,44 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 
+.suggestion-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 620px;
+}
+
+.suggestion-form input,
+.suggestion-form textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-alt);
+  color: var(--text);
+  padding: 14px 16px;
+  font-size: 15px;
+}
+
+.suggestion-form-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.suggestion-submit-btn {
+  padding: 14px 26px;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.suggestion-status {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .content-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--border);
@@ -702,6 +769,60 @@ a { color: inherit; text-decoration: none; }
   align-self: flex-start;
 }
 
+.auth-modal {
+  max-width: 460px !important;
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-field input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-alt);
+  color: var(--text);
+  padding: 14px 16px;
+  font-size: 15px;
+}
+
+.auth-error-text {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.auth-submit-btn,
+.auth-google-btn {
+  width: 100%;
+}
+
+.auth-google-btn {
+  flex: 0 0 auto;
+}
+
+.auth-switch-btn {
+  align-self: center;
+  margin-top: 4px;
+}
+
 .contact-recipient-box {
   display: flex;
   flex-direction: column;
@@ -824,6 +945,70 @@ a { color: inherit; text-decoration: none; }
 
 .page-country-grid {
   margin-top: 4px;
+}
+
+.mypage-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mypage-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 16px;
+  color: var(--text-sub);
+}
+
+.mypage-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.auth-inline-btn {
+  padding: 14px 26px;
+  font-size: 15px;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.history-card {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.history-card-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.history-card-row img,
+.history-result-box img {
+  width: 100%;
+  display: block;
+  border-radius: 16px;
+  object-fit: cover;
+  background: var(--bg-alt);
+}
+
+.history-card-row img {
+  aspect-ratio: 3 / 4;
+}
+
+.history-result-box img {
+  aspect-ratio: 16 / 10;
 }
 
 .usage-bar {
@@ -1233,7 +1418,8 @@ a { color: inherit; text-decoration: none; }
   .blog-preview-grid,
   .contact-layout,
   .compact-card-grid,
-  .country-card-grid {
+  .country-card-grid,
+  .history-grid {
     grid-template-columns: 1fr;
   }
   .hero-section {
@@ -1244,9 +1430,17 @@ a { color: inherit; text-decoration: none; }
     flex-direction: column;
     align-items: flex-start;
   }
+  .suggestion-form {
+    max-width: none;
+    width: 100%;
+  }
   .suggestion-chip-list {
     justify-content: flex-start;
     max-width: none;
+  }
+  .suggestion-form-footer {
+    flex-direction: column;
+    align-items: stretch;
   }
   .modal-content.sample-modal { padding: 24px; }
   .hero-title { max-width: none; }
