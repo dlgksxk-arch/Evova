@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { LanguageCode } from '../constants/languages';
-import { clothSampleOptions } from '../data/clothSamples';
+import { clothSampleOptions, type ClothSampleCategory } from '../data/clothSamples';
 
 const MODAL_COPY: Record<LanguageCode, { title: string; subtitle: string; error: string; disclaimer: string }> = {
   ko: { title: '샘플 의상 선택', subtitle: '미리보기에 사용할 샘플 의상을 선택하세요.', error: '이미지 오류', disclaimer: '모든 이미지는 AI로 생성되었습니다.' },
@@ -32,17 +32,54 @@ interface ClothSampleModalProps {
   onSelect: (url: string) => void;
 }
 
+const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'future', 'classic'];
+
+const CLOTH_CATEGORY_LABELS: Record<'ko' | 'default', Record<ClothSampleCategory, string>> = {
+  ko: {
+    female: '여성',
+    male: '남성',
+    animal: '동물',
+    future: '미래',
+    classic: '클래식',
+  },
+  default: {
+    female: 'Women',
+    male: 'Men',
+    animal: 'Animal',
+    future: 'Future',
+    classic: 'Classic',
+  },
+};
+
+const findCategoryByUrl = (url: string | null): ClothSampleCategory => {
+  if (!url) {
+    return 'female';
+  }
+
+  return clothSampleOptions.find((sample) => sample.image === url)?.category ?? 'female';
+};
+
 const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, onClose, onSelect }) => {
   const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
   const [erroredUrls, setErroredUrls] = useState<Record<string, boolean>>({});
+  const [category, setCategory] = useState<ClothSampleCategory>(() => findCategoryByUrl(currentUrl));
   const copy = MODAL_COPY[lang];
-  const groupedSamples = clothSampleOptions.reduce<Record<string, typeof clothSampleOptions>>((acc, sample) => {
+  const categoryLabels = lang === 'ko' ? CLOTH_CATEGORY_LABELS.ko : CLOTH_CATEGORY_LABELS.default;
+  const categorySamples = useMemo(
+    () => clothSampleOptions.filter((sample) => sample.category === category),
+    [category],
+  );
+  const groupedSamples = categorySamples.reduce<Record<string, typeof categorySamples>>((acc, sample) => {
     if (!acc[sample.country]) {
       acc[sample.country] = [];
     }
     acc[sample.country].push(sample);
     return acc;
   }, {});
+
+  useEffect(() => {
+    setCategory(findCategoryByUrl(currentUrl));
+  }, [currentUrl]);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
@@ -69,6 +106,19 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, o
         </div>
 
         <div className="sample-modal-body">
+          <div className="sample-category-tabs">
+            {CLOTH_SAMPLE_CATEGORIES.map((tab) => (
+              <button
+                key={tab}
+                className={category === tab ? 'active' : ''}
+                onClick={() => setCategory(tab)}
+                type="button"
+              >
+                {categoryLabels[tab]}
+              </button>
+            ))}
+          </div>
+
           {Object.values(groupedSamples).map((samples) => (
             <div key={samples[0].country} className="cloth-country-group">
               <div className="cloth-country-title">

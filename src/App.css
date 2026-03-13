@@ -621,13 +621,15 @@ a { color: inherit; text-decoration: none; }
 .sample-category-tabs {
   display: flex; gap: 8px; margin-bottom: 24px;
   background: var(--bg-alt); padding: 5px; border-radius: var(--r-pill);
+  overflow-x: auto;
 }
 .sample-category-tabs button {
-  flex: 1; padding: 10px; border: none; background: transparent;
+  flex: 1; min-width: max-content; padding: 10px 14px; border: none; background: transparent;
   border-radius: var(--r-pill); font-size: 13px; font-weight: 700;
   color: var(--text-sub); transition: all 0.2s;
 }
 .sample-category-tabs button.active { background: var(--primary); color: #fff; box-shadow: var(--shadow-sm); }
+.sample-category-tabs::-webkit-scrollbar { display: none; }
 
 .sample-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
