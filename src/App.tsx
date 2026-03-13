@@ -1,21 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
-
-// ─── 샘플 데이터 정의 ──────────────────────────────────────────
-const FACE_SAMPLES = {
-  female: Array.from({ length: 20 }, (_, i) => `/sample/face/female/(${i + 1}).png`),
-  male:   Array.from({ length: 20 }, (_, i) => `/sample/face/male/(${i + 1}).png`),
-  dog:    Array.from({ length: 5 },  (_, i) => `/sample/face/dog/(${i + 1}).png`),
-  cat:    Array.from({ length: 5 },  (_, i) => `/sample/face/cat/(${i + 1}).png`),
-};
-
-type FaceCategory = keyof typeof FACE_SAMPLES;
+import SampleModal from './components/SampleModal';
+import { FACE_SAMPLES } from './data/faceSamples';
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
-
-const FACE_CATEGORY_LABELS: Record<Lang, Record<FaceCategory, string>> = {
-  ko: { female: '여성', male: '남성', dog: '강아지', cat: '고양이' },
-  en: { female: 'Women', male: 'Men', dog: 'Dog', cat: 'Cat' },
-};
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -247,78 +234,6 @@ const LangDropdown: React.FC<{ lang: Lang; onChange: (l: Lang) => void }> = ({ l
   );
 };
 
-// ─── Sample Selection Modal ───────────────────────────────────
-interface SampleModalProps {
-  onSelect: (url: string, category: FaceCategory) => void;
-  onClose: () => void;
-  currentUrl: string | null;
-  lang: Lang;
-}
-
-const SampleModal: React.FC<SampleModalProps> = ({ onSelect, onClose, currentUrl, lang }) => {
-  const [cat, setCat] = useState<FaceCategory>('female');
-  const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
-  const [erroredUrls, setErroredUrls] = useState<Record<string, boolean>>({});
-  
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content sample-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <div>
-            <h3>{lang === 'ko' ? '샘플 이미지 선택' : 'Choose a Sample'}</h3>
-            <p className="modal-subtitle">
-              {lang === 'ko' ? '생성 전에 사용할 기본 인물 이미지를 고르세요.' : 'Pick a starter subject image for the try-on.'}
-            </p>
-          </div>
-          <button className="close-btn" onClick={onClose}>&times;</button>
-        </div>
-        
-        <div className="sample-category-tabs">
-          {(['female', 'male', 'dog', 'cat'] as FaceCategory[]).map(c => (
-            <button key={c} className={cat === c ? 'active' : ''} onClick={() => setCat(c)}>
-              {FACE_CATEGORY_LABELS[lang][c]}
-            </button>
-          ))}
-        </div>
-
-        <div className="sample-grid">
-          {FACE_SAMPLES[cat].map((url, idx) => (
-            <div 
-              key={url} 
-              className={`sample-card ${currentUrl === url ? 'selected' : ''}`}
-              onClick={() => { onSelect(url, cat); onClose(); }}
-            >
-              {!loadedUrls[url] && !erroredUrls[url] && (
-                <div className="sample-card-overlay">
-                  <span className="spinner sample-spinner"></span>
-                </div>
-              )}
-              <img
-                src={url}
-                alt={`${FACE_CATEGORY_LABELS[lang][cat]} sample ${idx + 1}`}
-                loading="lazy"
-                className={loadedUrls[url] ? 'is-visible' : ''}
-                onLoad={() => setLoadedUrls(prev => ({ ...prev, [url]: true }))}
-                onError={() => {
-                  setErroredUrls(prev => ({ ...prev, [url]: true }));
-                }}
-              />
-              <div className="sample-card-label">{FACE_CATEGORY_LABELS[lang][cat]} {idx + 1}</div>
-              <div className="error-placeholder">{lang === 'ko' ? '이미지 오류' : 'Image error'}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const [personImage, setPersonImage] = useState<string | null>(null);
@@ -428,7 +343,7 @@ const App: React.FC = () => {
               
               <div className="try-actions">
                 <button className="outline-btn primary" onClick={() => setShowSampleModal(true)}>
-                  {lang === 'ko' ? '샘플 이미지 선택' : 'Choose Sample'}
+                  {lang === 'ko' ? '샘플 선택' : 'Choose Sample'}
                 </button>
                 <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>
                   {lang === 'ko' ? '내 사진 업로드' : 'Upload My Photo'}
