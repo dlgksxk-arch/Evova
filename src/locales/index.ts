@@ -1,5 +1,6 @@
 import type { LanguageCode } from '../constants/languages';
 import en from './en.json';
+import hi from './hi.json';
 import ko from './ko.json';
 import zh from './zh.json';
 
@@ -30,6 +31,7 @@ export const SITE_PAGES: SitePage[] = [
 
 const locales: Record<string, ContentLocale> = {
   en,
+  hi,
   ko,
   zh,
 };

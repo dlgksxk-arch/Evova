@@ -40,7 +40,26 @@ admin.initializeApp();
 const db = admin.firestore();
 const FREE_LIMIT = 3;
 const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
+const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
+const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
+const getOpenAIApiKey = () => {
+    const envKey = process.env['OPENAI_API_KEY']?.trim();
+    if (envKey) {
+        return envKey;
+    }
+    try {
+        const runtimeConfig = functions.config();
+        const configKey = runtimeConfig.openai?.api_key ?? runtimeConfig.openai?.key;
+        if (typeof configKey === 'string' && configKey.trim()) {
+            return configKey.trim();
+        }
+    }
+    catch {
+        // Ignore missing runtime config and fall through to empty value.
+    }
+    return '';
+};
 const buildTryOnPrompt = (bodyProfile) => {
     const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
     const identityGuide = subjectType === 'pet'
@@ -94,9 +113,9 @@ const toImageBlob = (input, fallbackName) => {
     };
 };
 const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) => {
-    const apiKey = process.env['OPENAI_API_KEY'] ?? '';
+    const apiKey = getOpenAIApiKey();
     if (!apiKey) {
-        throw new Error('OPENAI_API_KEY is not set');
+        throw new Error(OPENAI_CONFIG_MESSAGE);
     }
     const garmentFile = toImageBlob(garmentImage, 'garment');
     const personFile = toImageBlob(personImage, 'person');
@@ -190,6 +209,10 @@ exports.api = functions
     }
     // ── POST /api/tryon ───────────────────────────────────────
     if (req.method === 'POST' && (path === '/tryon' || path === '/generate')) {
+        if (!getOpenAIApiKey()) {
+            res.status(500).json({ error: OPENAI_CONFIG_ERROR, message: OPENAI_CONFIG_MESSAGE });
+            return;
+        }
         const { sessionId, personImage, garmentImage, bodyProfile } = req.body;
         if (!sessionId || !personImage || !garmentImage) {
             res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
@@ -220,7 +243,8 @@ exports.api = functions
         catch (error) {
             functions.logger.error('OpenAI try-on request failed', error);
             res.status(502).json({
-                error: error instanceof Error ? error.message : 'OpenAI image generation failed',
+                error: error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
+                message: error instanceof Error ? error.message : 'OpenAI image generation failed',
             });
             return;
         }
@@ -248,6 +272,10 @@ exports.generateTryOn = functions
     });
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    if (!getOpenAIApiKey()) {
+        res.status(500).json({ error: OPENAI_CONFIG_ERROR, message: OPENAI_CONFIG_MESSAGE });
         return;
     }
     const { sessionId, personImage, garmentImage, bodyProfile } = req.body;
@@ -280,7 +308,8 @@ exports.generateTryOn = functions
     catch (error) {
         functions.logger.error('OpenAI generateTryOn request failed', error);
         res.status(502).json({
-            error: error instanceof Error ? error.message : 'OpenAI image generation failed',
+            error: error instanceof Error && error.message === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : (error instanceof Error ? error.message : 'OpenAI image generation failed'),
+            message: error instanceof Error ? error.message : 'OpenAI image generation failed',
         });
         return;
     }

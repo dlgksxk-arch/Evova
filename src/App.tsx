@@ -46,7 +46,7 @@ const translations = {
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
     generate: 'AI 피팅 생성하기', generating: 'AI 분석 중... (최대 30초)',
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
-    alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.',
+    alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
     freeLeft: (n: number) => `오늘 무료 사용 가능 횟수: ${n}회`,
     freeExhausted: '오늘 무료 사용 횟수(3회)를 모두 사용했습니다.',
@@ -100,7 +100,7 @@ const translations = {
     clothingSamplesPending: 'Clothing samples are being prepared.',
     generate: 'Generate AI Fitting', generating: 'AI Processing... (up to 30s)',
     loadingDetail: 'HAMDEVA AI is analyzing and compositing the images...',
-    alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.',
+    alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
     resultTitle: 'Fitting Result', download: 'Save Image',
     freeLeft: (n: number) => `Free uses remaining today: ${n}`,
     freeExhausted: "You've used all 3 free tries for today.",
@@ -1024,6 +1024,23 @@ const ensureDataUrl = async (src: string): Promise<string> => {
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
 
+const getGenerateErrorMessage = (
+  error: unknown,
+  t: { alertError: string; generationConfigError: string },
+): string => {
+  const raw = error instanceof Error ? error.message : '';
+  if (
+    raw.includes('IMAGE_GENERATION_NOT_CONFIGURED')
+    || raw.includes('OPENAI_API_KEY')
+    || raw.includes('설정이 아직 완료되지 않았습니다')
+    || raw.includes('not configured yet')
+  ) {
+    return t.generationConfigError;
+  }
+
+  return raw ? `${t.alertError}\n\n${raw}` : t.alertError;
+};
+
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
@@ -1159,7 +1176,7 @@ const getPageFromHash = (hash: string): SitePage => {
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
-  const SUPPORT_EMAIL = 'support@hamdeva.com';
+  const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
@@ -1190,19 +1207,6 @@ const App: React.FC = () => {
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
-  useEffect(() => {
-    const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/dlgksxk-arch/Evova/main/public/version.json';
-    fetch(GITHUB_VERSION_URL)
-      .then((r) => r.json())
-      .then((data: { version?: string; sha?: string }) => {
-        const label = data.sha ? `${data.version ?? APP_VERSION} (${data.sha})` : (data.version ?? APP_VERSION);
-        setAppVersion(label);
-      })
-      .catch(() => fetch('/version.json').then((r) => r.json()).then((data: { version?: string; sha?: string }) => {
-        const label = data.sha ? `${data.version ?? APP_VERSION} (${data.sha})` : (data.version ?? APP_VERSION);
-        setAppVersion(label);
-      }).catch(() => {}));
-  }, []);
   
   const t = uiTranslations[lang];
   const contentLocale = getContentLocale(lang);
@@ -1358,7 +1362,7 @@ const App: React.FC = () => {
       setResultImage(result);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
-      alert(t.alertError + (err instanceof Error ? `\n\n${err.message}` : ''));
+      alert(getGenerateErrorMessage(err, t));
     } finally {
       setIsGenerating(false);
     }
@@ -1366,15 +1370,6 @@ const App: React.FC = () => {
 
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
-      <video
-        className="bg-video"
-        autoPlay
-        loop
-        muted
-        playsInline
-      >
-        <source src="/mainpage/hamdeva_bg_video_v2.mp4" type="video/mp4" />
-      </video>
       <nav className="landing-nav">
         <div className="nav-content">
           <div className="nav-brand">
@@ -1403,6 +1398,15 @@ const App: React.FC = () => {
       </nav>
 
       <section className="hero-section">
+        <video
+          className="bg-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/mainpage/hamdeva_bg_video_v2.mp4" type="video/mp4" />
+        </video>
         <div className="hero-content">
           {currentPage === 'home' ? (
             <>

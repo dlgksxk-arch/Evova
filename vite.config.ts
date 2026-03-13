@@ -4,11 +4,20 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-const formatVersion = (buildNumber: number) => {
+const parseExistingBuildNumber = () => {
+  try {
+    const existing = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'public/version.json'), 'utf8'))
+    const version = typeof existing.version === 'string' ? existing.version : ''
+    const match = version.match(/^v0\.1\.(\d+)/)
+    return match ? Number.parseInt(match[1], 10) : 0
+  } catch {
+    return 0
+  }
+}
+
+const formatVersion = (buildNumber: number, shortSha = '') => {
   const safeCount = Number.isNaN(buildNumber) || buildNumber < 1 ? 1 : buildNumber
-  const major = Math.floor(safeCount / 100)
-  const minor = safeCount % 100
-  return `v${major}.${minor}`
+  return shortSha ? `v0.1.${safeCount}-${shortSha}` : `v0.1.${safeCount}`
 }
 
 const readNumericEnv = (...keys: string[]) => {
@@ -34,19 +43,10 @@ const getGitShortSha = () => {
 }
 
 const appVersion = (() => {
-  // Cloudflare Pages: shallow clone makes rev-list return 1 → v0.1
-  // Instead, read the committed public/version.json which has the correct version
-  if (process.env.CF_PAGES) {
-    try {
-      const existing = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'public/version.json'), 'utf8'))
-      return typeof existing.version === 'string' ? existing.version : 'v0.1'
-    } catch {
-      return 'v0.1'
-    }
-  }
+  const shortSha = getGitShortSha()
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
-    return formatVersion(commitCount)
+    return formatVersion(commitCount, shortSha)
   } catch {
     const ciBuildNumber = readNumericEnv(
       'GITHUB_RUN_NUMBER',
@@ -55,10 +55,10 @@ const appVersion = (() => {
     )
 
     if (ciBuildNumber) {
-      return formatVersion(ciBuildNumber)
+      return formatVersion(ciBuildNumber, shortSha)
     }
 
-    return 'v0.63'
+    return formatVersion(parseExistingBuildNumber() + 1, shortSha)
   }
 })()
 

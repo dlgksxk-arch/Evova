@@ -16,8 +16,8 @@
   },
   "hero": {
     "eyebrow": "全球传统服饰 AI 虚拟试穿",
-    "title": "在真正穿上之前\n先看见传统服饰的效果",
-    "sub": "HAMDEVA 将世界传统服饰介绍内容与 AI 试穿工具结合在一起，让用户可以边了解边体验。",
+    "title": "一张照片，\n先把世界传统服饰穿上看看",
+    "sub": "别再只靠想象判断适不适合。HAMDEVA 用更直接、更有冲击力的方式先把效果给你看。",
     "pageEyebrow": "HAMDEVA 内容"
   },
   "home": {
@@ -25,24 +25,24 @@
       {
         "id": "overview",
         "title": "什么是 HAMDEVA",
-        "description": "HAMDEVA 是一个全球传统服饰 AI 试穿平台。它把文化介绍与虚拟预览结合起来，让学习与体验发生在同一个界面中。",
+        "description": "HAMDEVA 是一个全球传统服饰 AI 试穿平台。它把文化信息与快速预览合并在同一个体验里。",
         "button": "了解更多 →"
       },
       {
         "id": "technology",
         "title": "AI 虚拟试穿如何工作",
-        "description": "人物照片负责保持身份与脸部一致性，服饰照片负责保持设计与轮廓忠实度。系统随后生成一张统一的 1x4 结果图。",
+        "description": "人物照片负责保持身份一致，服饰照片负责保持设计忠实度。系统随后返回一张统一的 1x4 结果图。",
         "button": "了解更多 →"
       },
       {
         "id": "cultural",
         "title": "为什么传统服饰重要",
-        "description": "传统服饰承载着历史、礼仪与地域身份。HAMDEVA 希望把它们作为活的文化来展示，而不是只当作装饰性图片。",
+        "description": "传统服饰承载着历史、礼仪与地方身份。HAMDEVA 希望把它们作为正在发生的文化来展示。",
         "button": "了解更多 →"
       }
     ],
-    "toolIntroTitle": "在线试穿传统服饰",
-    "toolIntroBody": "上传人物照片并选择服饰图像后，HAMDEVA 会生成一张包含多个角度的试穿结果。输入越清晰，结果通常越稳定。"
+    "toolIntroTitle": "别只想象，先把效果看清楚",
+    "toolIntroBody": "上传人物照片并选择服饰后，HAMDEVA 会返回一张包含多个角度的试穿结果。"
   },
   "modal": {
     "title": "全球传统服饰指南",
@@ -73,7 +73,7 @@
       "title": "传统服饰是活的设计语言",
       "paragraphs": [
         "传统服饰并不只是历史展示物，它们今天仍然活跃在仪式、节庆、旅游、表演、摄影和现代设计再诠释中。",
-        "HAMDEVA 目前重点介绍韩服、和服、汉服、纱丽、奥黛、泰式传统服、卡巴雅、Baju Kurung、Baro't Saya、Deel、Kaftan、Agbada、Huipil、Kilt、Dirndl、弗拉明戈裙和 Bunad。",
+        "HAMDEVA 目前重点介绍韩服、和服、旗袍（Qipao / Cheongsam）、纱丽、奥黛、泰式传统服、卡巴雅、Baju Kurung、Baro't Saya、Deel、Kaftan、Agbada、Huipil、Kilt、Dirndl、弗拉明戈裙和 Bunad。",
         "把这些服饰放在同一平台中比较，有助于用户看到不同文化如何通过轮廓、层次、色彩与材料表达身份与美感。"
       ]
     },
@@ -89,7 +89,7 @@
     "countries": [
       { "country": "韩国", "clothing": "韩服", "description": "以曲线、层次与礼仪感闻名的韩国传统服饰。" },
       { "country": "日本", "clothing": "和服", "description": "具有包裹式结构和季节审美的经典服饰。" },
-      { "country": "中国", "clothing": "汉服", "description": "拥有丰富层次与宽袖形式的传统服饰体系。" },
+      { "country": "中国", "clothing": "旗袍（Qipao / Cheongsam）", "description": "以利落线条和典雅正式感著称的中国代表性服饰。" },
       { "country": "印度", "clothing": "纱丽", "description": "以布料垂坠和地域织物特色见长的服饰。" },
       { "country": "越南", "clothing": "奥黛", "description": "修长上衣与长裤组合形成优雅线条。" },
       { "country": "泰国", "clothing": "Chut Thai", "description": "用于正式与文化场合的泰国传统服饰家族。" },

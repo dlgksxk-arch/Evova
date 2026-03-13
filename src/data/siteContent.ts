@@ -365,4 +365,4 @@ export const PAGE_CONTENT: Record<Exclude<SitePage, 'home'>, PageContent> = {
   },
 };
 
-export const SUPPORT_EMAIL = 'support@hamdeva.com';
+export const SUPPORT_EMAIL = 'dlgksxk@gmail.com';

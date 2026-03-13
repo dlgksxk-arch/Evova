@@ -11,8 +11,14 @@ app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 
 const PORT = process.env.PORT || 8080;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
+const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
+const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
+
+const getOpenAIApiKey = () => {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  return apiKey || '';
+};
 
 const buildTryOnPrompt = (bodyProfile = {}) => {
   const subjectType = bodyProfile.gender === 'dog' || bodyProfile.gender === 'cat' ? 'pet' : 'person';
@@ -74,8 +80,11 @@ const toImageBlob = (input, fallbackName) => {
 };
 
 const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) => {
-  if (!OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not set');
+  const apiKey = getOpenAIApiKey();
+  if (!apiKey) {
+    const error = new Error(OPENAI_CONFIG_MESSAGE);
+    error.code = OPENAI_CONFIG_ERROR;
+    throw error;
   }
 
   const garmentFile = toImageBlob(garmentImage, 'garment');
@@ -106,7 +115,7 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
   const openAIRes = await fetch('https://api.openai.com/v1/images/edits', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: formData,
   });
@@ -148,8 +157,8 @@ app.post(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], async (req, re
     contentType: req.headers['content-type'],
   });
 
-  if (!OPENAI_API_KEY) {
-    return res.status(500).json({ error: 'OPENAI_API_KEY is not set' });
+  if (!getOpenAIApiKey()) {
+    return res.status(500).json({ error: OPENAI_CONFIG_ERROR, message: OPENAI_CONFIG_MESSAGE });
   }
 
   const { personImage, garmentImage, bodyProfile } = req.body;
@@ -166,7 +175,11 @@ app.post(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], async (req, re
     });
   } catch (err) {
     console.error('OpenAI image generation failed:', err);
-    return res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to reach OpenAI API' });
+    const isConfigError = err instanceof Error && err.message === OPENAI_CONFIG_MESSAGE;
+    return res.status(isConfigError ? 500 : 502).json({
+      error: isConfigError ? OPENAI_CONFIG_ERROR : (err instanceof Error ? err.message : 'Failed to reach OpenAI API'),
+      message: err instanceof Error ? err.message : 'Failed to reach OpenAI API',
+    });
   }
 });
 
