@@ -29,6 +29,16 @@ export const SITE_PAGES: SitePage[] = [
   'contact',
 ];
 
+export const NAV_PAGES: SitePage[] = [
+  'home',
+  'about',
+  'how-it-works',
+  'traditional-clothing',
+  'privacy',
+  'terms',
+  'contact',
+];
+
 const locales: Record<string, ContentLocale> = {
   en,
   hi,

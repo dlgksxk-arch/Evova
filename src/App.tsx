@@ -5,7 +5,7 @@ import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
-import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
+import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
@@ -18,7 +18,7 @@ const translations = {
     heroEyebrow: 'AI 기반 가상 피팅 서비스',
     heroTitle: '입어보지 않아도\n완벽한 나의 스타일',
     heroSub: '단 한 장의 사진으로\nHAMDEVA AI가\n당신에게 가장 어울리는 스타일을\n미리 입혀드립니다',
-    heroCta: '지금 무료로 시작하기',
+    heroCta: 'AI 피팅 시작하기',
     featuresTitle: '왜 HAMDEVA인가요?', featuresSub: '빠르고, 정확하고, 누구나 쉽게 사용할 수 있습니다.',
     f1Title: 'AI 가상 피팅', f1Desc: 'HAMDEVA AI가 인물 사진과 의상을 분석하여 실제로 입은 것 같은 자연스러운 합성 이미지를 생성합니다.',
     f2Title: '즉시 결과 확인', f2Desc: '별도의 회원가입 없이 사진 두 장만 업로드하면 수 초 내에 결과 이미지를 확인할 수 있습니다.',
@@ -44,7 +44,7 @@ const translations = {
     renderingResult: '결과 이미지 렌더링 중...',
     resultDisplayError: '결과 이미지를 표시할 수 없습니다.',
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
-    generate: 'AI 피팅 생성하기', generating: 'AI 분석 중... (최대 30초)',
+    generate: 'AI 피팅 시작하기', generating: 'AI 분석 중... (최대 30초)',
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
@@ -72,7 +72,7 @@ const translations = {
     heroEyebrow: 'AI-Powered Virtual Try-On',
     heroTitle: 'Your Perfect Style\nBefore You Buy',
     heroSub: "All you need is one photo. HAMDEVA's AI creates a realistic virtual try-on — instantly.",
-    heroCta: 'Try for Free',
+    heroCta: 'Start AI Fitting',
     featuresTitle: 'Why HAMDEVA?', featuresSub: 'Fast, accurate, and easy to use for everyone.',
     f1Title: 'AI Virtual Try-On', f1Desc: 'HAMDEVA AI analyzes your photo and clothing to generate a photorealistic composite image.',
     f2Title: 'Instant Results', f2Desc: 'No sign-up needed. Upload two photos and get your result in seconds.',
@@ -1433,7 +1433,7 @@ const App: React.FC = () => {
             <span className="app-version">{appVersion}</span>
           </div>
           <div className="nav-links">
-            {SITE_PAGES.map((page) => (
+            {NAV_PAGES.map((page) => (
               <button
                 key={page}
                 className={`nav-link ${currentPage === page ? 'active' : ''}`}
@@ -1789,7 +1789,7 @@ const App: React.FC = () => {
       <footer className="site-footer">
         <p className="footer-copy">{t.footer}</p>
         <div className="footer-links">
-          {SITE_PAGES.map((page) => (
+          {NAV_PAGES.map((page) => (
             <button key={page} className="footer-link-btn" onClick={() => navigateToPage(page)} type="button">
               {contentLocale.nav[page]}
             </button>

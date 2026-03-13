@@ -1,23 +1,23 @@
 {
   "nav": {
     "home": "Home",
-    "traditional-clothing": "Traditional Clothing",
-    "countries": "Countries",
+    "traditional-clothing": "Sample Outfit Info",
+    "countries": "Sample Outfit Info",
     "how-it-works": "How It Works",
-    "fashion-technology": "Fashion Technology",
+    "fashion-technology": "Sample Outfit Info",
     "about": "About HAMDEVA",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "contact": "Contact"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | Global Traditional Clothing AI Try-On",
-    "homeDescription": "Explore traditional clothing from around the world and preview garments with HAMDEVA AI virtual try-on."
+    "homeTitle": "HAMDEVA | AI Virtual Fitting Platform",
+    "homeDescription": "Preview outfits in seconds with HAMDEVA AI using one face photo and one clothing image."
   },
   "hero": {
-    "eyebrow": "Global Traditional Clothing AI Try-On",
-    "title": "Try global traditional clothing\nbefore you commit",
-    "sub": "One photo is enough to preview bold cultural looks fast. HAMDEVA turns hesitation into an instant visual answer.",
+    "eyebrow": "AI Virtual Fitting Platform",
+    "title": "One photo is enough\nto try on any outfit",
+    "sub": "HAMDEVA AI analyzes a face photo and a clothing image\nand generates a virtual fitting result in seconds.",
     "pageEyebrow": "HAMDEVA CONTENT"
   },
   "home": {
@@ -25,19 +25,19 @@
       {
         "id": "overview",
         "title": "What Is HAMDEVA",
-        "description": "HAMDEVA is a global traditional clothing try-on platform. It blends cultural fashion context with instant AI previews in one flow.",
+        "description": "HAMDEVA is an AI virtual fitting platform built to preview outfits fast. Traditional clothing is one sample category inside a broader fitting experience.",
         "button": "Learn more →"
       },
       {
         "id": "technology",
         "title": "How AI Virtual Try-On Works",
-        "description": "A portrait keeps identity stable, and a garment image keeps design fidelity high. One generation returns a clean multi-angle result sheet.",
+        "description": "A face photo keeps identity stable, and an outfit image drives the styling result. HAMDEVA returns a clean fitting preview in seconds.",
         "button": "Learn more →"
       },
       {
         "id": "cultural",
-        "title": "Why Traditional Clothing Matters",
-        "description": "Traditional clothing holds ceremony, memory, and cultural design logic. HAMDEVA presents it as living style, not flat costume thumbnails.",
+        "title": "How Sample Outfits Work",
+        "description": "Traditional outfits, country looks, and other sample styles are ready to test inside the AI fitting flow. Pick a look and see it instantly on a face image.",
         "button": "Learn more →"
       }
     ],
@@ -105,28 +105,35 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "Traditional Clothing Around the World",
-      "description": "Explore how different regions express identity, ceremony, and beauty through traditional dress.",
+      "title": "Sample Outfit Info",
+      "description": "A sample outfit collection for trying HAMDEVA AI fitting.\n\nChoose a face photo and a clothing image to generate multi-angle fitting results.",
       "sections": [
         {
-          "heading": "A global clothing map",
+          "heading": "Traditional outfits",
           "paragraphs": [
-            "Traditional clothing exists in every region as a visual language shaped by climate, ceremony, craft, and social meaning.",
-            "HAMDEVA presents these garments as a connected global topic so users can compare silhouettes, layering systems, and cultural roles without reducing them to costume stereotypes."
+            "Traditional garments such as Hanbok, Kimono, Qipao, and Saree are available as strong visual sample categories.",
+            "They are useful for testing shape, color, and decorative detail inside the AI fitting flow."
           ]
         },
         {
-          "heading": "Why comparison matters",
+          "heading": "Country outfit samples",
           "paragraphs": [
-            "Looking across countries helps users notice how different cultures solve similar design questions such as movement, layering, modesty, ornament, and ceremony.",
-            "That makes AI try-on more useful because the viewer understands what each garment is trying to communicate before previewing it on a person."
+            "Country-based samples help users compare regional style moods at a glance.",
+            "You can move from overview to AI fitting without leaving the sample outfit flow."
+          ]
+        },
+        {
+          "heading": "Other sample styles",
+          "paragraphs": [
+            "HAMDEVA also includes animal, future, and classic sample styles for wider fitting experiments.",
+            "The platform is designed as a modern AI fitting engine, not a single-category clothing site."
           ]
         }
       ]
     },
     "countries": {
-      "title": "Countries and Cultural Dress",
-      "description": "Browse a country-by-country overview of traditional garments featured on HAMDEVA.",
+      "title": "Country Outfit Samples",
+      "description": "Browse sample outfit looks by country inside the HAMDEVA fitting experience.",
       "sections": [
         {
           "heading": "Country cards",

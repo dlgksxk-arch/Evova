@@ -1,23 +1,23 @@
 {
   "nav": {
     "home": "首页",
-    "traditional-clothing": "传统服饰",
-    "countries": "国家",
+    "traditional-clothing": "样本服饰信息",
+    "countries": "样本服饰信息",
     "how-it-works": "使用方法",
-    "fashion-technology": "时尚科技",
+    "fashion-technology": "样本服饰信息",
     "about": "关于 HAMDEVA",
     "privacy": "隐私政策",
     "terms": "服务条款",
     "contact": "联系"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | 全球传统服饰 AI 虚拟试穿",
-    "homeDescription": "了解世界各地传统服饰，并通过 HAMDEVA AI 快速预览试穿效果。"
+    "homeTitle": "HAMDEVA | AI 虚拟试穿平台",
+    "homeDescription": "用一张脸部照片和一张服装图片，几秒内预览 HAMDEVA AI 试穿结果。"
   },
   "hero": {
-    "eyebrow": "全球传统服饰 AI 虚拟试穿",
-    "title": "一张照片，\n先把世界传统服饰穿上看看",
-    "sub": "别再只靠想象判断适不适合。HAMDEVA 用更直接、更有冲击力的方式先把效果给你看。",
+    "eyebrow": "AI Virtual Fitting Platform",
+    "title": "一张照片，\n什么衣服都能先试一遍",
+    "sub": "HAMDEVA AI 会分析脸部照片与服装图片，\n在几秒内生成虚拟试穿结果。",
     "pageEyebrow": "HAMDEVA 内容"
   },
   "home": {
@@ -25,19 +25,19 @@
       {
         "id": "overview",
         "title": "什么是 HAMDEVA",
-        "description": "HAMDEVA 是一个全球传统服饰 AI 试穿平台。它把文化信息与快速预览合并在同一个体验里。",
+        "description": "HAMDEVA 是一个 AI 虚拟试穿平台。传统服饰只是其中一个样本分类，整体定位是更快的穿搭预览工具。",
         "button": "了解更多 →"
       },
       {
         "id": "technology",
         "title": "AI 虚拟试穿如何工作",
-        "description": "人物照片负责保持身份一致，服饰照片负责保持设计忠实度。系统随后返回一张统一的 1x4 结果图。",
+        "description": "脸部照片负责保持人物一致，服装图片负责保持样式信息。HAMDEVA 会在几秒内给出清晰的试穿结果。",
         "button": "了解更多 →"
       },
       {
         "id": "cultural",
-        "title": "为什么传统服饰重要",
-        "description": "传统服饰承载着历史、礼仪与地方身份。HAMDEVA 希望把它们作为正在发生的文化来展示。",
+        "title": "样本服饰怎么用",
+        "description": "传统服饰、国家风格与其他样本风格都能直接进入 AI 试穿。选中喜欢的样本后即可马上查看效果。",
         "button": "了解更多 →"
       }
     ],
@@ -105,28 +105,35 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "世界传统服饰",
-      "description": "了解不同文化如何通过传统服饰表达礼仪、身份与美感。",
+      "title": "样本服饰信息",
+      "description": "这是用于体验 HAMDEVA AI 试穿的样本服饰集合。\n\n选择脸部照片与服装图片后，AI 会生成多角度试穿结果。",
       "sections": [
         {
-          "heading": "全球视角",
+          "heading": "传统服饰",
           "paragraphs": [
-            "世界各地的传统服饰都由气候、礼仪、工艺与社会意义共同塑造。",
-            "HAMDEVA 把这些服饰放在同一平台中展示，方便用户跨文化比较轮廓与风格语言。"
+            "韩服、和服、旗袍、纱丽等传统服饰是 HAMDEVA 中最有辨识度的样本分类。",
+            "这些服饰非常适合测试轮廓、配色与装饰细节在 AI 试穿里的表现。"
           ]
         },
         {
-          "heading": "比较带来理解",
+          "heading": "国家别服饰",
           "paragraphs": [
-            "跨国家比较有助于看清不同文化如何处理层次、装饰、动作与仪式感。",
-            "先理解服饰，再进入 AI 试穿，得到的视觉结果会更有意义。"
+            "按国家整理的样本可以帮助你快速比较不同地区的风格氛围。",
+            "看完概览后可以直接进入 AI 试穿，不需要切换流程。"
+          ]
+        },
+        {
+          "heading": "其他样本风格",
+          "paragraphs": [
+            "除了传统服饰，HAMDEVA 也提供动物、未来、经典等样本风格。",
+            "它的核心定位是现代 AI 虚拟试穿平台，而不是单一主题服饰站点。"
           ]
         }
       ]
     },
     "countries": {
-      "title": "国家与服饰",
-      "description": "通过国家卡片快速浏览平台收录的代表性传统服饰。",
+      "title": "国家样本服饰",
+      "description": "在 HAMDEVA 试穿体验中快速查看各国家样本服饰。",
       "sections": [
         {
           "heading": "国家卡片",
