@@ -909,7 +909,7 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 };
 
 const FREE_LIMIT = 3;
-const PRODUCTION_API_BASE = '/api';
+const SAME_ORIGIN_API_BASE = '/api';
 const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
@@ -947,7 +947,7 @@ const API_BASE: string =
   import.meta.env.VITE_API_BASE_URL ||
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api'
-    : PRODUCTION_API_BASE);
+    : FALLBACK_FUNCTIONS_API_BASE);
 
 const fetchUsage = async (sessionId: string): Promise<number> => {
   try {
@@ -1021,7 +1021,7 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   const primaryEndpoint = `${API_BASE}/tryon`;
-  const fallbackEndpoint = `${FALLBACK_FUNCTIONS_API_BASE}/tryon`;
+  const fallbackEndpoint = `${SAME_ORIGIN_API_BASE}/tryon`;
 
   let res: Response;
   try {
