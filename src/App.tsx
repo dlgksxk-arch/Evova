@@ -27,6 +27,19 @@ const translations = {
     tryTitle: '지금 바로 체험해보세요', trySub: '하루 3회 무료로 사용할 수 있습니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
+    chooseSample: '샘플 선택',
+    uploadMyPhoto: '내 사진 업로드',
+    chooseClothingSample: '샘플 의상 선택',
+    uploadClothing: '의상 사진 업로드',
+    preparingPersonUpload: '이미지를 업로드하기 좋게 정리하고 있습니다...',
+    preparingClothingUpload: '큰 의상 이미지를 자동으로 최적화하고 있습니다...',
+    loadingImage: '이미지 불러오는 중...',
+    imageLoadError: '이미지를 불러올 수 없습니다.',
+    facePlaceholderTitle: '얼굴 사진을 넣어주세요',
+    clothingPlaceholderTitle: '의상 사진을 넣어주세요',
+    renderingResult: '결과 이미지 렌더링 중...',
+    resultDisplayError: '결과 이미지를 표시할 수 없습니다.',
+    clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
     generate: 'AI 피팅 생성하기', generating: 'AI 분석 중... (최대 30초)',
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.',
@@ -68,6 +81,19 @@ const translations = {
     tryTitle: 'Try It Now', trySub: '3 free uses per day. No sign-up required.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
+    chooseSample: 'Choose Sample',
+    uploadMyPhoto: 'Upload My Photo',
+    chooseClothingSample: 'Choose Clothing Sample',
+    uploadClothing: 'Upload Clothing',
+    preparingPersonUpload: 'Preparing your image for upload...',
+    preparingClothingUpload: 'Optimizing the clothing image for upload...',
+    loadingImage: 'Loading image...',
+    imageLoadError: 'Unable to load image.',
+    facePlaceholderTitle: 'Add a face photo',
+    clothingPlaceholderTitle: 'Add clothing photo',
+    renderingResult: 'Rendering result...',
+    resultDisplayError: 'Unable to display the result.',
+    clothingSamplesPending: 'Clothing samples are being prepared.',
     generate: 'Generate AI Fitting', generating: 'AI Processing... (up to 30s)',
     loadingDetail: 'HAMDEVA AI is analyzing and compositing the images...',
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.',
@@ -415,7 +441,7 @@ const App: React.FC = () => {
   const handleOpenPersonSampleModal = () => setShowSampleModal(true);
   const handleOpenClothSampleModal = () => {
     if (clothSampleOptions.length === 0) {
-      alert(lang === 'ko' ? '샘플 의상 데이터 준비 중입니다.' : 'Clothing samples are being prepared.');
+      alert(t.clothingSamplesPending);
       return;
     }
     setShowClothSampleModal(true);
@@ -493,15 +519,15 @@ const App: React.FC = () => {
               
               <div className="try-actions">
                 <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
-                  {lang === 'ko' ? '샘플 선택' : 'Choose Sample'}
+                  {t.chooseSample}
                 </button>
                 <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>
-                  {lang === 'ko' ? '내 사진 업로드' : 'Upload My Photo'}
+                  {t.uploadMyPhoto}
                 </button>
                 <input id="p-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    setPersonUploadMessage(lang === 'ko' ? '이미지를 업로드하기 좋게 정리하고 있습니다...' : 'Preparing your image for upload...');
+                    setPersonUploadMessage(t.preparingPersonUpload);
                     setPersonPreviewState('loading');
                     preprocessImageFile(f, { maxDimension: 1440, maxBytes: 2_100_000 })
                       .then((src) => {
@@ -522,11 +548,11 @@ const App: React.FC = () => {
                     {personPreviewState === 'loading' && (
                       <div className="preview-overlay">
                         <span className="spinner"></span>
-                        <span>{personUploadMessage || (lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...')}</span>
+                        <span>{personUploadMessage || t.loadingImage}</span>
                       </div>
                     )}
                     {personPreviewState === 'error' && (
-                      <div className="img-error-msg">{lang === 'ko' ? '이미지를 불러올 수 없습니다.' : 'Unable to load image.'}</div>
+                      <div className="img-error-msg">{t.imageLoadError}</div>
                     )}
                     <img 
                       src={activePersonImage} 
@@ -541,7 +567,7 @@ const App: React.FC = () => {
                   </>
                 ) : (
                   <EmptyPreviewState
-                    title={lang === 'ko' ? '얼굴 사진을 넣어주세요' : 'Add a face photo'}
+                    title={t.facePlaceholderTitle}
                     tips={emptyFaceTips}
                     type="face"
                   />
@@ -564,15 +590,15 @@ const App: React.FC = () => {
               </div>
               <div className="try-actions">
                 <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
-                  {lang === 'ko' ? '샘플 의상 선택' : 'Choose Clothing Sample'}
+                  {t.chooseClothingSample}
                 </button>
                 <button className="outline-btn" onClick={() => document.getElementById('c-up')?.click()}>
-                  {lang === 'ko' ? '의상 사진 업로드' : 'Upload Clothing'}
+                  {t.uploadClothing}
                 </button>
                 <input id="c-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    setClothUploadMessage(lang === 'ko' ? '큰 의상 이미지를 자동으로 최적화하고 있습니다...' : 'Optimizing the clothing image for upload...');
+                    setClothUploadMessage(t.preparingClothingUpload);
                     setClothPreviewState('loading');
                     preprocessImageFile(f, { maxDimension: 1600, maxBytes: 2_400_000 })
                       .then((src) => {
@@ -592,11 +618,11 @@ const App: React.FC = () => {
                     {clothPreviewState === 'loading' && (
                       <div className="preview-overlay">
                         <span className="spinner"></span>
-                        <span>{clothUploadMessage || (lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...')}</span>
+                        <span>{clothUploadMessage || t.loadingImage}</span>
                       </div>
                     )}
                     {clothPreviewState === 'error' ? (
-                      <div className="img-error-msg">{lang === 'ko' ? '이미지를 불러올 수 없습니다.' : 'Unable to load image.'}</div>
+                      <div className="img-error-msg">{t.imageLoadError}</div>
                     ) : (
                       <img
                         src={activeClothImage}
@@ -620,7 +646,7 @@ const App: React.FC = () => {
                   </>
                 ) : (
                   <EmptyPreviewState
-                    title={lang === 'ko' ? '의상 사진을 넣어주세요' : 'Add clothing photo'}
+                    title={t.clothingPlaceholderTitle}
                     tips={emptyClothTips}
                     type="cloth"
                   />
@@ -645,11 +671,11 @@ const App: React.FC = () => {
                 {resultPreviewState === 'loading' && (
                   <div className="preview-overlay result-overlay">
                     <span className="spinner"></span>
-                    <span>{lang === 'ko' ? '결과 이미지 렌더링 중...' : 'Rendering result...'}</span>
+                    <span>{t.renderingResult}</span>
                   </div>
                 )}
                 {resultPreviewState === 'error' ? (
-                  <div className="img-error-msg">{lang === 'ko' ? '결과 이미지를 표시할 수 없습니다.' : 'Unable to display the result.'}</div>
+                  <div className="img-error-msg">{t.resultDisplayError}</div>
                 ) : (
                   <img 
                     src={resultImage}
