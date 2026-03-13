@@ -943,11 +943,13 @@ const getSessionId = (): string => {
   return sid;
 };
 
+const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE: string =
-  import.meta.env.VITE_API_BASE_URL ||
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api'
-    : FALLBACK_FUNCTIONS_API_BASE);
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? (RAW_API_BASE || 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api')
+    : (!RAW_API_BASE || RAW_API_BASE.startsWith('/')
+        ? FALLBACK_FUNCTIONS_API_BASE
+        : RAW_API_BASE);
 
 const fetchUsage = async (sessionId: string): Promise<number> => {
   try {
@@ -1021,7 +1023,9 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   const primaryEndpoint = `${API_BASE}/tryon`;
-  const fallbackEndpoint = `${SAME_ORIGIN_API_BASE}/tryon`;
+  const fallbackEndpoint = API_BASE === FALLBACK_FUNCTIONS_API_BASE
+    ? `${SAME_ORIGIN_API_BASE}/tryon`
+    : `${FALLBACK_FUNCTIONS_API_BASE}/tryon`;
 
   let res: Response;
   try {
@@ -1045,7 +1049,7 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
     }
 
     if ((res.status === 404 || res.status === 405) && primaryEndpoint !== fallbackEndpoint) {
-      console.warn('[HAMDEVA] primary tryon route failed, retrying fallback', {
+      console.warn('[HAMDEVA] tryon route failed, retrying alternate endpoint', {
         primaryEndpoint,
         fallbackEndpoint,
         status: res.status,
