@@ -8,6 +8,46 @@ app.use(express.json({ limit: '20mb' }));
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+const buildTryOnPrompt = (bodyProfile = {}) => {
+  const subjectType = bodyProfile.gender === 'dog' || bodyProfile.gender === 'cat' ? 'pet' : 'person';
+
+  if (subjectType === 'pet') {
+    return `You are a virtual try-on image compositor.
+
+Two images are provided:
+- FIRST IMAGE = the pet. Preserve the exact face, fur pattern, body shape, pose, and species-specific features completely unchanged.
+- SECOND IMAGE = the pet clothing item only. This garment must be worn by the pet in the first image.
+
+Your task: Composite the clothing from the SECOND IMAGE onto the pet in the FIRST IMAGE.
+
+Critical rules:
+1. The pet's face, fur, body proportions, and identity from the FIRST IMAGE must remain unchanged
+2. Fit the clothing naturally to the pet's body and anatomy without turning it into a human garment
+3. Preserve the original pose, background, and lighting from the FIRST IMAGE
+4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
+5. Output must look like a single real photograph, not a collage or illustration
+
+Output: One photorealistic image of the pet from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+  }
+
+  return `You are a virtual try-on image compositor.
+
+Two images are provided:
+- FIRST IMAGE = the person. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
+- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
+
+Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
+
+Critical rules:
+1. The person's face and identity from the FIRST IMAGE must be identical in the output
+2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
+3. Preserve the original pose, background, and lighting from the FIRST IMAGE
+4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
+5. Output must look like a single real photograph, not a collage or illustration
+
+Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+};
+
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
@@ -17,7 +57,7 @@ app.post('/generate', async (req, res) => {
     return res.status(500).json({ error: 'GEMINI_API_KEY is not set' });
   }
 
-  const { personImage, garmentImage } = req.body;
+  const { personImage, garmentImage, bodyProfile } = req.body;
   if (!personImage || !garmentImage) {
     return res.status(400).json({ error: 'personImage and garmentImage are required' });
   }
@@ -39,22 +79,7 @@ app.post('/generate', async (req, res) => {
     contents: [{
       parts: [
         {
-          text: `You are a virtual try-on image compositor.
-
-Two images are provided:
-- FIRST IMAGE = the person. This is the human subject. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
-- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
-
-Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
-
-Critical rules:
-1. The person's face and identity from the FIRST IMAGE must be IDENTICAL in the output — do not alter or replace the face
-2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
-3. Preserve the original pose, background, and lighting from the FIRST IMAGE
-4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
-5. Output must look like a single real photograph — not a collage, not an illustration
-
-Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`,
+          text: buildTryOnPrompt(bodyProfile),
         },
         { inline_data: { mime_type: person.mimeType,  data: person.data  } },
         { inline_data: { mime_type: garment.mimeType, data: garment.data } },

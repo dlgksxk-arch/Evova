@@ -38,16 +38,57 @@ const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
 admin.initializeApp();
 const db = admin.firestore();
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 3;
 const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
+const buildTryOnPrompt = (bodyProfile) => {
+    const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
+    if (subjectType === 'pet') {
+        return `You are a virtual try-on image compositor.
+
+Two images are provided:
+- FIRST IMAGE = the pet. Preserve the exact face, fur pattern, body shape, pose, and species-specific features completely unchanged.
+- SECOND IMAGE = the pet clothing item only. This garment must be worn by the pet in the first image.
+
+Your task: Composite the clothing from the SECOND IMAGE onto the pet in the FIRST IMAGE.
+
+Critical rules:
+1. The pet's face, fur, body proportions, and identity from the FIRST IMAGE must remain unchanged
+2. Fit the clothing naturally to the pet's body and anatomy without turning it into a human garment
+3. Preserve the original pose, background, and lighting from the FIRST IMAGE
+4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
+5. Output must look like a single real photograph, not a collage or illustration
+
+Output: One photorealistic image of the pet from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+    }
+    return `You are a virtual try-on image compositor.
+
+Two images are provided:
+- FIRST IMAGE = the person. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
+- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
+
+Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
+
+Critical rules:
+1. The person's face and identity from the FIRST IMAGE must be identical in the output
+2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
+3. Preserve the original pose, background, and lighting from the FIRST IMAGE
+4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
+5. Output must look like a single real photograph, not a collage or illustration
+
+Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+};
 // CORS 헤더 설정
 const setCors = (req, res) => {
-    const origin = req.headers.origin ?? '';
+    const origin = req.headers.origin || '';
     if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
         res.set('Access-Control-Allow-Origin', origin);
     }
-    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    else {
+        res.set('Access-Control-Allow-Origin', 'https://fitall-ver1.web.app');
+    }
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.set('Access-Control-Allow-Credentials', 'true');
 };
 // ─── /api/usage — 오늘 사용 횟수 조회 ────────────────────────
 exports.api = functions
@@ -75,7 +116,7 @@ exports.api = functions
     }
     // ── POST /api/tryon ───────────────────────────────────────
     if (req.method === 'POST' && path === '/tryon') {
-        const { sessionId, personImage, garmentImage } = req.body;
+        const { sessionId, personImage, garmentImage, bodyProfile } = req.body;
         if (!sessionId || !personImage || !garmentImage) {
             res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
             return;
@@ -108,22 +149,7 @@ exports.api = functions
             contents: [{
                     parts: [
                         {
-                            text: `You are a virtual try-on image compositor.
-
-Two images are provided:
-- FIRST IMAGE = the person. This is the human subject. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
-- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
-
-Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
-
-Critical rules:
-1. The person's face and identity from the FIRST IMAGE must be IDENTICAL in the output — do not alter or replace the face
-2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
-3. Preserve the original pose, background, and lighting from the FIRST IMAGE
-4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
-5. Output must look like a single real photograph — not a collage, not an illustration
-
-Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`,
+                            text: buildTryOnPrompt(bodyProfile),
                         },
                         { inline_data: { mime_type: toMime(personImage), data: toBase64(personImage) } },
                         { inline_data: { mime_type: toMime(garmentImage), data: toBase64(garmentImage) } },
@@ -170,7 +196,7 @@ exports.generateTryOn = functions
         res.status(405).json({ error: 'Method Not Allowed' });
         return;
     }
-    const { sessionId, personImage, garmentImage } = req.body;
+    const { sessionId, personImage, garmentImage, bodyProfile } = req.body;
     if (!sessionId || !personImage || !garmentImage) {
         res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
         return;
@@ -203,15 +229,7 @@ exports.generateTryOn = functions
         contents: [{
                 parts: [
                     {
-                        text: `You are a professional virtual try-on AI.
-Task: Create a photorealistic image of the person in Image 1 wearing the clothing from Image 2.
-Requirements:
-- Keep the person's face, hair, skin tone, and body proportions exactly as they appear
-- Replace only the clothing with the garment from Image 2
-- Ensure natural fabric folds, shadows, and lighting that match the scene
-- The result must look like a real photograph, not a collage
-- Maintain the original background and pose of the person
-Output: A single photorealistic try-on image.`,
+                        text: buildTryOnPrompt(bodyProfile),
                     },
                     { inline_data: { mime_type: toMime(personImage), data: toBase64(personImage) } },
                     { inline_data: { mime_type: toMime(garmentImage), data: toBase64(garmentImage) } },

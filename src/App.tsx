@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
-import { modelSamples, clothSamples, countries } from './data/samples';
 
 // ─── 샘플 데이터 정의 ──────────────────────────────────────────
 const FACE_SAMPLES = {
@@ -11,6 +10,12 @@ const FACE_SAMPLES = {
 };
 
 type FaceCategory = keyof typeof FACE_SAMPLES;
+type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
+
+const FACE_CATEGORY_LABELS: Record<Lang, Record<FaceCategory, string>> = {
+  ko: { female: '여성', male: '남성', dog: '강아지', cat: '고양이' },
+  en: { female: 'Women', male: 'Men', dog: 'Dog', cat: 'Cat' },
+};
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -131,6 +136,25 @@ const fetchUsage = async (sessionId: string): Promise<number> => {
   }
 };
 
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('이미지를 읽는 중 오류가 발생했습니다.'));
+    reader.readAsDataURL(blob);
+  });
+
+const ensureDataUrl = async (src: string): Promise<string> => {
+  if (src.startsWith('data:')) return src;
+
+  const res = await fetch(src);
+  if (!res.ok) {
+    throw new Error('샘플 이미지를 불러오지 못했습니다.');
+  }
+
+  return blobToDataUrl(await res.blob());
+};
+
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
@@ -228,10 +252,13 @@ interface SampleModalProps {
   onSelect: (url: string, category: FaceCategory) => void;
   onClose: () => void;
   currentUrl: string | null;
+  lang: Lang;
 }
 
-const SampleModal: React.FC<SampleModalProps> = ({ onSelect, onClose, currentUrl }) => {
+const SampleModal: React.FC<SampleModalProps> = ({ onSelect, onClose, currentUrl, lang }) => {
   const [cat, setCat] = useState<FaceCategory>('female');
+  const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
+  const [erroredUrls, setErroredUrls] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -243,14 +270,19 @@ const SampleModal: React.FC<SampleModalProps> = ({ onSelect, onClose, currentUrl
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content sample-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>샘플 이미지 선택</h3>
+          <div>
+            <h3>{lang === 'ko' ? '샘플 이미지 선택' : 'Choose a Sample'}</h3>
+            <p className="modal-subtitle">
+              {lang === 'ko' ? '생성 전에 사용할 기본 인물 이미지를 고르세요.' : 'Pick a starter subject image for the try-on.'}
+            </p>
+          </div>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         
         <div className="sample-category-tabs">
           {(['female', 'male', 'dog', 'cat'] as FaceCategory[]).map(c => (
             <button key={c} className={cat === c ? 'active' : ''} onClick={() => setCat(c)}>
-              {c === 'female' ? '여성' : c === 'male' ? '남성' : c === 'dog' ? '강아지' : '고양이'}
+              {FACE_CATEGORY_LABELS[lang][c]}
             </button>
           ))}
         </div>
@@ -262,11 +294,23 @@ const SampleModal: React.FC<SampleModalProps> = ({ onSelect, onClose, currentUrl
               className={`sample-card ${currentUrl === url ? 'selected' : ''}`}
               onClick={() => { onSelect(url, cat); onClose(); }}
             >
-              <img src={url} alt={`sample-${idx}`} loading="lazy" onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).parentElement!.classList.add('error');
-              }} />
-              <div className="error-placeholder">Image Error</div>
+              {!loadedUrls[url] && !erroredUrls[url] && (
+                <div className="sample-card-overlay">
+                  <span className="spinner sample-spinner"></span>
+                </div>
+              )}
+              <img
+                src={url}
+                alt={`${FACE_CATEGORY_LABELS[lang][cat]} sample ${idx + 1}`}
+                loading="lazy"
+                className={loadedUrls[url] ? 'is-visible' : ''}
+                onLoad={() => setLoadedUrls(prev => ({ ...prev, [url]: true }))}
+                onError={() => {
+                  setErroredUrls(prev => ({ ...prev, [url]: true }));
+                }}
+              />
+              <div className="sample-card-label">{FACE_CATEGORY_LABELS[lang][cat]} {idx + 1}</div>
+              <div className="error-placeholder">{lang === 'ko' ? '이미지 오류' : 'Image error'}</div>
             </div>
           ))}
         </div>
@@ -284,12 +328,12 @@ const App: React.FC = () => {
   
   const [showSampleModal, setShowSampleModal] = useState(false);
   const [selectedSampleUrl, setSelectedSampleUrl] = useState<string>(FACE_SAMPLES.female[0]);
-  const [imgError, setImgError] = useState(false);
-
   const activePersonImage = personImage || selectedSampleUrl;
+  const [personPreviewState, setPersonPreviewState] = useState<ImageLoadState>('loading');
+  const [clothPreviewState, setClothPreviewState] = useState<ImageLoadState>('idle');
+  const [resultPreviewState, setResultPreviewState] = useState<ImageLoadState>('idle');
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
-  const [showPaywall, setShowPaywall]   = useState(false);
   const [usageCount, setUsageCount]     = useState(0);
   const [lang, setLang] = useState<Lang>('ko');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
@@ -302,23 +346,42 @@ const App: React.FC = () => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
   }, [darkMode]);
+  useEffect(() => {
+    setPersonPreviewState(activePersonImage ? 'loading' : 'idle');
+  }, [activePersonImage]);
+  useEffect(() => {
+    setClothPreviewState(clothImage ? 'loading' : 'idle');
+  }, [clothImage]);
+  useEffect(() => {
+    setResultPreviewState(resultImage ? 'loading' : 'idle');
+  }, [resultImage]);
 
   const handleGenerate = async () => {
     if (!activePersonImage || !clothImage) { alert(t.alertBoth); return; }
-    if (FREE_LIMIT - usageCount <= 0) { setShowPaywall(true); return; }
-
-    const cacheKey = simpleHash(activePersonImage, clothImage);
-    const cached = getCached(cacheKey);
-    if (cached) { 
-      setResultImage(cached); 
-      setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
-      return; 
-    }
+    if (FREE_LIMIT - usageCount <= 0) { alert(t.freeExhausted); return; }
 
     setIsGenerating(true);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
-      const result = await callNanoBanana({ sessionId, personImage: activePersonImage, garmentImage: clothImage, bodyProfile: { gender } });
+      const [preparedPersonImage, preparedClothImage] = await Promise.all([
+        ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
+        ensureDataUrl(clothImage).then((src) => resizeImage(src, 1280)),
+      ]);
+
+      const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
+      const cached = getCached(cacheKey);
+      if (cached) {
+        setResultImage(cached);
+        setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
+        return;
+      }
+
+      const result = await callNanoBanana({
+        sessionId,
+        personImage: preparedPersonImage,
+        garmentImage: preparedClothImage,
+        bodyProfile: { gender },
+      });
       setUsageCount(await fetchUsage(sessionId));
       setCached(cacheKey, result);
       setResultImage(result);
@@ -354,7 +417,7 @@ const App: React.FC = () => {
 
       <section id="try" className="section try-section">
         <div className="section-inner">
-          <div className="usage-bar">{t.freeLeft(Math.max(0, FREE_LIMIT - usageCount))}회</div>
+          <div className="usage-bar">{t.freeLeft(Math.max(0, FREE_LIMIT - usageCount))}</div>
 
           <div className="try-layout">
             <div className="try-column">
@@ -364,30 +427,47 @@ const App: React.FC = () => {
               </div>
               
               <div className="try-actions">
-                <button className="outline-btn primary" onClick={() => setShowSampleModal(true)}>샘플 이미지 선택</button>
-                <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>내 사진 업로드</button>
+                <button className="outline-btn primary" onClick={() => setShowSampleModal(true)}>
+                  {lang === 'ko' ? '샘플 이미지 선택' : 'Choose Sample'}
+                </button>
+                <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>
+                  {lang === 'ko' ? '내 사진 업로드' : 'Upload My Photo'}
+                </button>
                 <input id="p-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    const r = new FileReader();
-                    r.onload = (ev) => { setPersonImage(ev.target?.result as string); setImgError(false); };
-                    r.readAsDataURL(f);
+                    setPersonPreviewState('loading');
+                    blobToDataUrl(f)
+                      .then((src) => setPersonImage(src))
+                      .catch(() => setPersonPreviewState('error'));
                   }
                 }} />
               </div>
 
               <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
-                {imgError ? (
-                  <div className="img-error-msg">이미지를 불러올 수 없습니다.</div>
+                {activePersonImage ? (
+                  <>
+                    {personPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...'}</span>
+                      </div>
+                    )}
+                    {personPreviewState === 'error' && (
+                      <div className="img-error-msg">{lang === 'ko' ? '이미지를 불러올 수 없습니다.' : 'Unable to load image.'}</div>
+                    )}
+                    <img 
+                      src={activePersonImage} 
+                      alt="Face" 
+                      onLoad={() => setPersonPreviewState('ready')}
+                      onError={() => setPersonPreviewState('error')}
+                      className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
+                    />
+                  </>
                 ) : (
-                  <img 
-                    src={activePersonImage} 
-                    alt="Face" 
-                    onError={() => setImgError(true)} 
-                    className={personImage ? 'user-uploaded' : 'sample-img'}
-                  />
+                  <div className="placeholder">{t.step1Desc}</div>
                 )}
-                {!personImage && <div className="sample-badge">SAMPLE</div>}
+                {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
                 {personImage && <button className="clear-img-btn" onClick={() => setPersonImage(null)}>&times;</button>}
               </div>
             </div>
@@ -398,20 +478,39 @@ const App: React.FC = () => {
                 <h3 className="card-title">{t.step2Title}</h3>
               </div>
               <div className="try-actions">
-                <button className="outline-btn" onClick={() => document.getElementById('c-up')?.click()}>의상 사진 업로드</button>
+                <button className="outline-btn" onClick={() => document.getElementById('c-up')?.click()}>
+                  {lang === 'ko' ? '의상 사진 업로드' : 'Upload Clothing'}
+                </button>
                 <input id="c-up" type="file" hidden accept="image/*" onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    const r = new FileReader();
-                    r.onload = (ev) => setClothImage(ev.target?.result as string);
-                    r.readAsDataURL(f);
+                    setClothPreviewState('loading');
+                    blobToDataUrl(f)
+                      .then((src) => setClothImage(src))
+                      .catch(() => setClothPreviewState('error'));
                   }
                 }} />
               </div>
               <div className={`preview-box ${clothImage ? 'has-image' : ''}`}>
                 {clothImage ? (
                   <>
-                    <img src={clothImage} alt="Cloth" />
+                    {clothPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{lang === 'ko' ? '이미지 불러오는 중...' : 'Loading image...'}</span>
+                      </div>
+                    )}
+                    {clothPreviewState === 'error' ? (
+                      <div className="img-error-msg">{lang === 'ko' ? '이미지를 불러올 수 없습니다.' : 'Unable to load image.'}</div>
+                    ) : (
+                      <img
+                        src={clothImage}
+                        alt="Cloth"
+                        className={clothPreviewState === 'ready' ? 'is-visible' : ''}
+                        onLoad={() => setClothPreviewState('ready')}
+                        onError={() => setClothPreviewState('error')}
+                      />
+                    )}
                     <button className="clear-img-btn" onClick={() => setClothImage(null)}>&times;</button>
                   </>
                 ) : <div className="placeholder">{t.step2Desc}</div>}
@@ -432,7 +531,23 @@ const App: React.FC = () => {
             <div id="result-area" className="results-section">
               <h2 className="section-heading">{t.resultTitle}</h2>
               <div className="composite-result">
-                <img src={resultImage} alt="Result" />
+                {resultPreviewState === 'loading' && (
+                  <div className="preview-overlay result-overlay">
+                    <span className="spinner"></span>
+                    <span>{lang === 'ko' ? '결과 이미지 렌더링 중...' : 'Rendering result...'}</span>
+                  </div>
+                )}
+                {resultPreviewState === 'error' ? (
+                  <div className="img-error-msg">{lang === 'ko' ? '결과 이미지를 표시할 수 없습니다.' : 'Unable to display the result.'}</div>
+                ) : (
+                  <img 
+                    src={resultImage}
+                    alt="Result"
+                    className={resultPreviewState === 'ready' ? 'is-visible' : ''}
+                    onLoad={() => setResultPreviewState('ready')}
+                    onError={() => setResultPreviewState('error')}
+                  />
+                )}
                 <div className="watermark">HAMDEVA AI</div>
               </div>
               <button className="download-btn" onClick={() => {
@@ -450,7 +565,8 @@ const App: React.FC = () => {
       {showSampleModal && (
         <SampleModal 
           currentUrl={activePersonImage}
-          onSelect={(url, category) => { setSelectedSampleUrl(url); setGender(category); setPersonImage(null); setImgError(false); }}
+          lang={lang}
+          onSelect={(url, category) => { setSelectedSampleUrl(url); setGender(category); setPersonImage(null); setPersonPreviewState('loading'); }}
           onClose={() => setShowSampleModal(false)}
         />
       )}
