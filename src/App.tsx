@@ -1759,7 +1759,7 @@ const App: React.FC = () => {
         <div className="footer-links">
           {NAV_ITEMS.map((item) => (
             <button key={item.page} className="footer-link-btn" onClick={() => navigateToPage(item.page)} type="button">
-              {item.label}
+              {getNavLabel(item.page, lang)}
             </button>
           ))}
         </div>
