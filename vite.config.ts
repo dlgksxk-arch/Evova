@@ -23,6 +23,14 @@ const readNumericEnv = (...keys: string[]) => {
   return null
 }
 
+const getGitShortSha = () => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return ''
+  }
+}
+
 const appVersion = (() => {
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
@@ -41,6 +49,8 @@ const appVersion = (() => {
     return 'v0.63'
   }
 })()
+
+const gitShortSha = getGitShortSha()
 
 function writeVersionFilePlugin() {
   const versionPayload = JSON.stringify({ version: appVersion }, null, 2)

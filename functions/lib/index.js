@@ -168,7 +168,7 @@ exports.api = functions
         res.status(204).send('');
         return;
     }
-    const path = req.path;
+    const path = req.path.replace(/^\/api/, '') || '/';
     functions.logger.info('api request', {
         path,
         method: req.method,
