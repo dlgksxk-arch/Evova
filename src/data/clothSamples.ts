@@ -55,4 +55,28 @@ export const clothSampleOptions: ClothSampleOption[] = [
   { id: 'spain-trad-extra-2', label: '스페인 전통의상 3', image: '/sample/cloth/female/2026-03-13-13-27-29-spain-trad-extra.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
   { id: 'spain-trad-extra-3', label: '스페인 전통의상 4', image: '/sample/cloth/female/2026-03-13-13-28-14-spain-trad-extra.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
   { id: 'spain-trad-extra-4', label: '스페인 전통의상 5', image: '/sample/cloth/female/2026-03-13-13-28-57-spain-trad-extra.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
+
+  { id: 'korea-men-trad-0', label: '남성 한복 1', image: '/sample/cloth/male/2026-03-13-13-38-29-korea-men-trad-0.png', country: 'korea', countryLabelKo: '한국', countryLabelEn: 'Korea' },
+  { id: 'korea-men-trad-1', label: '남성 한복 2', image: '/sample/cloth/male/2026-03-13-13-39-10-korea-men-trad-1.png', country: 'korea', countryLabelKo: '한국', countryLabelEn: 'Korea' },
+
+  { id: 'japan-men-trad-0', label: '남성 기모노 1', image: '/sample/cloth/male/2026-03-13-13-39-49-japan-men-trad-0.png', country: 'japan', countryLabelKo: '일본', countryLabelEn: 'Japan' },
+  { id: 'japan-men-trad-1', label: '남성 기모노 2', image: '/sample/cloth/male/2026-03-13-13-40-31-japan-men-trad-1.png', country: 'japan', countryLabelKo: '일본', countryLabelEn: 'Japan' },
+
+  { id: 'china-men-trad-0', label: '남성 중국 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-41-13-china-men-trad-0.png', country: 'china', countryLabelKo: '중국', countryLabelEn: 'China' },
+  { id: 'china-men-trad-1', label: '남성 중국 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-41-56-china-men-trad-1.png', country: 'china', countryLabelKo: '중국', countryLabelEn: 'China' },
+
+  { id: 'thailand-men-trad-0', label: '남성 태국 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-42-40-thailand-men-trad-0.png', country: 'thailand', countryLabelKo: '태국', countryLabelEn: 'Thailand' },
+  { id: 'thailand-men-trad-1', label: '남성 태국 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-43-24-thailand-men-trad-1.png', country: 'thailand', countryLabelKo: '태국', countryLabelEn: 'Thailand' },
+
+  { id: 'vietnam-men-trad-0', label: '남성 베트남 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-44-06-vietnam-men-trad-0.png', country: 'vietnam', countryLabelKo: '베트남', countryLabelEn: 'Vietnam' },
+  { id: 'vietnam-men-trad-1', label: '남성 베트남 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-44-49-vietnam-men-trad-1.png', country: 'vietnam', countryLabelKo: '베트남', countryLabelEn: 'Vietnam' },
+
+  { id: 'india-men-trad-0', label: '남성 인도 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-45-32-india-men-trad-0.png', country: 'india', countryLabelKo: '인도', countryLabelEn: 'India' },
+  { id: 'india-men-trad-1', label: '남성 인도 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-46-15-india-men-trad-1.png', country: 'india', countryLabelKo: '인도', countryLabelEn: 'India' },
+
+  { id: 'indonesia-men-trad-0', label: '남성 인도네시아 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-46-57-indonesia-men-trad-0.png', country: 'indonesia', countryLabelKo: '인도네시아', countryLabelEn: 'Indonesia' },
+  { id: 'indonesia-men-trad-1', label: '남성 인도네시아 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-47-39-indonesia-men-trad-1.png', country: 'indonesia', countryLabelKo: '인도네시아', countryLabelEn: 'Indonesia' },
+
+  { id: 'spain-men-trad-0', label: '남성 스페인 전통의상 1', image: '/sample/cloth/male/2026-03-13-13-48-35-spain-men-trad-0.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
+  { id: 'spain-men-trad-1', label: '남성 스페인 전통의상 2', image: '/sample/cloth/male/2026-03-13-13-49-17-spain-men-trad-1.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
 ];
