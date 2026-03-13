@@ -10,11 +10,12 @@ import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage }
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, where, runTransaction, type Timestamp } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
+const MASTER_EMAIL = 'dlgksxk@gmail.com';
 type AuthMode = 'login' | 'signup';
 type UserPlan = 'free';
 
@@ -40,8 +41,11 @@ interface BbsPostRecord {
   id: string;
   nickname: string;
   content: string;
+  tempPassword?: string;
   uid?: string | null;
+  deleted?: boolean;
   createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
 }
 
 // ─── 번역 ─────────────────────────────────────────────────────
@@ -113,12 +117,22 @@ const translations = {
     suggestionPlaceholderContent: '원하는 샘플 스타일, 국가, 의상 종류를 자유롭게 적어주세요.',
     boardNicknameLabel: '닉네임',
     boardContentLabel: '내용',
+    boardTempPasswordLabel: '임시 비밀번호',
     boardNicknamePlaceholder: '게시글에 표시할 닉네임',
     boardContentPlaceholder: '남기고 싶은 의견이나 후기를 작성해 주세요.',
+    boardTempPasswordPlaceholder: '수정/삭제할 때 사용할 임시 비밀번호',
     boardSubmit: '게시글 등록하기',
+    boardUpdate: '게시글 수정하기',
+    boardEdit: '수정',
+    boardDelete: '삭제',
+    boardCancelEdit: '수정 취소',
     boardSubmitting: '게시글을 등록하고 있습니다...',
     boardInvalid: '닉네임과 내용을 모두 입력해 주세요.',
+    boardPasswordRequired: '임시 비밀번호를 입력해 주세요.',
+    boardPasswordMismatch: '임시 비밀번호가 일치하지 않습니다.',
     boardSaved: '게시글이 등록되었습니다.',
+    boardUpdated: '게시글이 수정되었습니다.',
+    boardDeleted: '게시글이 삭제되었습니다.',
     boardFailed: '게시글 등록 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
     boardEmpty: '아직 등록된 게시글이 없습니다.',
     boardMetaAnonymous: '익명 방문자',
@@ -212,12 +226,22 @@ const translations = {
     suggestionPlaceholderContent: 'Tell us which sample outfit, country look, or model style you want added.',
     boardNicknameLabel: 'Nickname',
     boardContentLabel: 'Post content',
+    boardTempPasswordLabel: 'Temporary password',
     boardNicknamePlaceholder: 'Nickname to display on the board',
     boardContentPlaceholder: 'Write your feedback, request, or outfit note here.',
+    boardTempPasswordPlaceholder: 'Temporary password for future edit or delete',
     boardSubmit: 'Post to board',
+    boardUpdate: 'Save changes',
+    boardEdit: 'Edit',
+    boardDelete: 'Delete',
+    boardCancelEdit: 'Cancel edit',
     boardSubmitting: 'Posting your message...',
     boardInvalid: 'Please enter both nickname and content.',
+    boardPasswordRequired: 'Please enter the temporary password.',
+    boardPasswordMismatch: 'Temporary password does not match.',
     boardSaved: 'Your post was published.',
+    boardUpdated: 'Your post was updated.',
+    boardDeleted: 'Your post was deleted.',
     boardFailed: 'Failed to publish the post. Please try again.',
     boardEmpty: 'No posts yet.',
     boardMetaAnonymous: 'Anonymous visitor',
@@ -1511,10 +1535,11 @@ const App: React.FC = () => {
   const [suggestionForm, setSuggestionForm] = useState({ title: '', content: '' });
   const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
   const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
-  const [bbsForm, setBbsForm] = useState({ nickname: '', content: '' });
+  const [bbsForm, setBbsForm] = useState({ nickname: '', content: '', tempPassword: '' });
   const [bbsStatus, setBbsStatus] = useState<string | null>(null);
   const [bbsSubmitting, setBbsSubmitting] = useState(false);
   const [bbsPosts, setBbsPosts] = useState<BbsPostRecord[]>([]);
+  const [editingBbsPostId, setEditingBbsPostId] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
@@ -1540,6 +1565,7 @@ const App: React.FC = () => {
     : null;
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
   const remainingGenerationCount = remainingUserCount;
+  const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL;
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
@@ -1607,7 +1633,7 @@ const App: React.FC = () => {
       setBbsPosts(snapshot.docs.map((postDoc) => ({
         id: postDoc.id,
         ...(postDoc.data() as Omit<BbsPostRecord, 'id'>),
-      })));
+      })).filter((post) => !post.deleted));
     }, (error) => {
       console.error('Failed to load board posts:', error);
       setBbsStatus(t.boardFailed);
@@ -1883,6 +1909,11 @@ const App: React.FC = () => {
     }
   };
 
+  const resetBbsEditor = () => {
+    setEditingBbsPostId(null);
+    setBbsForm({ nickname: '', content: '', tempPassword: '' });
+  };
+
   const handleBbsSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -1895,20 +1926,97 @@ const App: React.FC = () => {
       setBbsStatus(t.boardInvalid);
       return;
     }
+    if ((!editingBbsPostId || !isMasterUser) && !bbsForm.tempPassword.trim()) {
+      setBbsStatus(t.boardPasswordRequired);
+      return;
+    }
 
     setBbsSubmitting(true);
     setBbsStatus(t.boardSubmitting);
     try {
-      await addDoc(collection(db, 'bbsPosts'), {
-        nickname: bbsForm.nickname.trim(),
-        content: bbsForm.content.trim(),
-        uid: currentUser?.uid || null,
-        createdAt: serverTimestamp(),
-      });
-      setBbsForm({ nickname: '', content: '' });
-      setBbsStatus(t.boardSaved);
+      if (editingBbsPostId) {
+        const currentPost = bbsPosts.find((post) => post.id === editingBbsPostId);
+        if (!currentPost) {
+          setBbsStatus(t.boardFailed);
+          return;
+        }
+        if (!isMasterUser && currentPost.tempPassword !== bbsForm.tempPassword.trim()) {
+          setBbsStatus(t.boardPasswordMismatch);
+          return;
+        }
+
+        await updateDoc(doc(db, 'bbsPosts', editingBbsPostId), {
+          nickname: bbsForm.nickname.trim(),
+          content: bbsForm.content.trim(),
+          tempPassword: isMasterUser ? (currentPost.tempPassword || bbsForm.tempPassword.trim()) : bbsForm.tempPassword.trim(),
+          updatedAt: serverTimestamp(),
+        });
+        resetBbsEditor();
+        setBbsStatus(t.boardUpdated);
+      } else {
+        await addDoc(collection(db, 'bbsPosts'), {
+          nickname: bbsForm.nickname.trim(),
+          content: bbsForm.content.trim(),
+          tempPassword: bbsForm.tempPassword.trim(),
+          uid: currentUser?.uid || null,
+          deleted: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        resetBbsEditor();
+        setBbsStatus(t.boardSaved);
+      }
     } catch (error) {
       console.error('Failed to submit board post:', error);
+      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed));
+    } finally {
+      setBbsSubmitting(false);
+    }
+  };
+
+  const handleBbsEditStart = (post: BbsPostRecord) => {
+    setEditingBbsPostId(post.id);
+    setBbsStatus(null);
+    setBbsForm({
+      nickname: post.nickname,
+      content: post.content,
+      tempPassword: '',
+    });
+  };
+
+  const handleBbsDelete = async (post: BbsPostRecord) => {
+    if (!db) {
+      setBbsStatus(getFirebaseDisabledMessage());
+      return;
+    }
+
+    const typedPassword = isMasterUser ? post.tempPassword || '' : window.prompt(t.boardTempPasswordLabel) || '';
+    if (!isMasterUser && !typedPassword.trim()) {
+      setBbsStatus(t.boardPasswordRequired);
+      return;
+    }
+    if (!isMasterUser && typedPassword.trim() !== post.tempPassword) {
+      setBbsStatus(t.boardPasswordMismatch);
+      return;
+    }
+
+    setBbsSubmitting(true);
+    try {
+      if (isMasterUser) {
+        await deleteDoc(doc(db, 'bbsPosts', post.id));
+      } else {
+        await updateDoc(doc(db, 'bbsPosts', post.id), {
+          deleted: true,
+          updatedAt: serverTimestamp(),
+          tempPassword: typedPassword.trim(),
+        });
+      }
+      if (editingBbsPostId === post.id) {
+        resetBbsEditor();
+      }
+      setBbsStatus(t.boardDeleted);
+    } catch (error) {
+      console.error('Failed to delete board post:', error);
       setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed));
     } finally {
       setBbsSubmitting(false);
@@ -2394,10 +2502,24 @@ const App: React.FC = () => {
                         onChange={(event) => setBbsForm((prev) => ({ ...prev, content: event.target.value }))}
                       />
                     </label>
+                    <label>
+                      {t.boardTempPasswordLabel}
+                      <input
+                        placeholder={t.boardTempPasswordPlaceholder}
+                        type="password"
+                        value={bbsForm.tempPassword}
+                        onChange={(event) => setBbsForm((prev) => ({ ...prev, tempPassword: event.target.value }))}
+                      />
+                    </label>
                     <div className="bbs-form-footer">
                       <button className="generate-btn suggestion-submit-btn" disabled={bbsSubmitting} type="submit">
-                        {bbsSubmitting ? t.boardSubmitting : t.boardSubmit}
+                        {bbsSubmitting ? t.boardSubmitting : editingBbsPostId ? t.boardUpdate : t.boardSubmit}
                       </button>
+                      {editingBbsPostId && (
+                        <button className="outline-btn auth-inline-btn" onClick={resetBbsEditor} type="button">
+                          {t.boardCancelEdit}
+                        </button>
+                      )}
                       {bbsStatus && <p className="suggestion-status">{bbsStatus}</p>}
                     </div>
                   </form>
@@ -2407,8 +2529,33 @@ const App: React.FC = () => {
                   {bbsPosts.length > 0 ? bbsPosts.map((post) => (
                     <article key={post.id} className="page-article bbs-post-card">
                       <div className="bbs-post-header">
-                        <strong>{post.nickname || t.boardMetaAnonymous}</strong>
-                        {post.createdAt && <span>{formatTimestampLabel(post.createdAt)}</span>}
+                        <div className="bbs-post-meta">
+                          <strong>{post.nickname || t.boardMetaAnonymous}</strong>
+                          {post.createdAt && <span>{formatTimestampLabel(post.updatedAt || post.createdAt)}</span>}
+                        </div>
+                        <div className="bbs-post-actions">
+                          <button
+                            className="bbs-icon-btn"
+                            onClick={() => handleBbsEditStart(post)}
+                            title={t.boardEdit}
+                            type="button"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M4 20h4l10-10-4-4L4 16v4zm12.7-12.3 1.6-1.6a1 1 0 0 1 1.4 0l1.3 1.3a1 1 0 0 1 0 1.4L19.4 10l-2.7-2.3z" fill="currentColor" />
+                            </svg>
+                          </button>
+                          <button
+                            className="bbs-icon-btn danger"
+                            disabled={bbsSubmitting}
+                            onClick={() => { void handleBbsDelete(post); }}
+                            title={t.boardDelete}
+                            type="button"
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                       <p>{post.content}</p>
                     </article>

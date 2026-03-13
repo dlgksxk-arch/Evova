@@ -10,6 +10,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isMaster() {
+      return isSignedIn() && request.auth.token.email == 'dlgksxk@gmail.com';
+    }
+
     // 사용량 통계 — 서버(Functions)만 쓰기 가능, 클라이언트 읽기 불가
     match /usage/{sessionId} {
       allow read, write: if false;
@@ -48,8 +52,28 @@ service cloud.firestore {
         && request.resource.data.nickname.size() <= 40
         && request.resource.data.content is string
         && request.resource.data.content.size() > 0
-        && request.resource.data.content.size() <= 2000;
-      allow update, delete: if false;
+        && request.resource.data.content.size() <= 2000
+        && request.resource.data.tempPassword is string
+        && request.resource.data.tempPassword.size() >= 4
+        && request.resource.data.tempPassword.size() <= 40
+        && request.resource.data.deleted is bool;
+      allow update: if
+        (
+          isMaster()
+          || (
+            resource.data.tempPassword is string
+            && request.resource.data.tempPassword is string
+            && request.resource.data.tempPassword == resource.data.tempPassword
+          )
+        )
+        && request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 40
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 2000
+        && request.resource.data.deleted is bool;
+      allow delete: if isMaster();
     }
 
     // 나머지 모든 문서 차단
