@@ -7,7 +7,7 @@ import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
-import { auth, db, googleProvider } from './firebase';
+import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, where, runTransaction, type Timestamp } from 'firebase/firestore';
@@ -1019,6 +1019,17 @@ const getSessionId = (): string => {
 
 const getTodayKey = (): string => new Date().toISOString().slice(0, 10);
 
+const getFirebaseDisabledMessage = (): string => (
+  'Firebase 설정이 누락되어 로그인 기능을 사용할 수 없습니다. 관리자에게 문의하거나 .env 값을 확인해 주세요.'
+);
+
+const requireDb = () => {
+  if (!db) {
+    throw new Error('FIREBASE_NOT_CONFIGURED');
+  }
+  return db;
+};
+
 const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserProfile => ({
   email: data?.email || email,
   plan: data?.plan || 'free',
@@ -1029,7 +1040,7 @@ const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserP
 });
 
 const ensureUserProfileDoc = async (user: User): Promise<UserProfile> => {
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(requireDb(), 'users', user.uid);
   const snapshot = await getDoc(userRef);
 
   if (!snapshot.exists()) {
@@ -1053,7 +1064,7 @@ const ensureUserProfileDoc = async (user: User): Promise<UserProfile> => {
 };
 
 const refreshUserQuota = async (user: User): Promise<UserProfile> => {
-  const userRef = doc(db, 'users', user.uid);
+  const userRef = doc(requireDb(), 'users', user.uid);
   const currentProfile = await ensureUserProfileDoc(user);
   const today = getTodayKey();
 
@@ -1073,10 +1084,11 @@ const refreshUserQuota = async (user: User): Promise<UserProfile> => {
 };
 
 const incrementUserUsage = async (user: User): Promise<UserProfile> => {
-  const userRef = doc(db, 'users', user.uid);
+  const firestore = requireDb();
+  const userRef = doc(firestore, 'users', user.uid);
   const today = getTodayKey();
 
-  await runTransaction(db, async (transaction) => {
+  await runTransaction(firestore, async (transaction) => {
     const snapshot = await transaction.get(userRef);
     const profile = normalizeUserProfile(user.email || '', snapshot.data() as Partial<UserProfile>);
     const currentUsedToday = profile.lastUsageDate === today ? profile.usedToday : 0;
@@ -1115,6 +1127,9 @@ const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string 
   }
   if (errorCode.includes('auth/popup-closed-by-user')) {
     return '로그인 창이 닫혔습니다.';
+  }
+  if (errorCode.includes('auth/invalid-api-key') || errorCode.includes('auth/api-key-not-valid')) {
+    return 'Firebase 설정이 아직 완료되지 않았습니다. 관리자에게 문의해 주세요.';
   }
   if (errorCode.includes('auth/too-many-requests')) {
     return '잠시 후 다시 시도해 주세요.';
@@ -1459,6 +1474,9 @@ const App: React.FC = () => {
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
   const emptyClothTips = CLOTH_TIPS[lang];
+  const firebaseDisabledMessage = firebaseConfigError
+    ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
+    : null;
   const remainingGuestCount = Math.max(0, FREE_LIMIT - usageCount);
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
   const remainingGenerationCount = currentUser ? remainingUserCount : remainingGuestCount;
@@ -1494,6 +1512,13 @@ const App: React.FC = () => {
     };
   }, []);
   useEffect(() => {
+    if (!auth) {
+      setCurrentUser(null);
+      setUserProfile(null);
+      setHistoryItems([]);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       setUserMenuOpen(false);
@@ -1510,7 +1535,7 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
   useEffect(() => {
-    if (!currentUser) {
+    if (!currentUser || !db) {
       return;
     }
 
@@ -1632,11 +1657,21 @@ const App: React.FC = () => {
     setShowContentModal(true);
   };
   const openAuthModal = (mode: AuthMode) => {
+    if (!isFirebaseConfigured) {
+      setAuthMode(mode);
+      setAuthError(getFirebaseDisabledMessage());
+      setShowAuthModal(true);
+      return;
+    }
     setAuthMode(mode);
     setAuthError(null);
     setShowAuthModal(true);
   };
   const handleAuthSubmit = async () => {
+    if (!auth) {
+      setAuthError(getFirebaseDisabledMessage());
+      return;
+    }
     if (!authForm.email || !authForm.password) {
       setAuthError(t.authInvalid);
       return;
@@ -1660,6 +1695,10 @@ const App: React.FC = () => {
     }
   };
   const handleGoogleLogin = async () => {
+    if (!auth || !googleProvider) {
+      setAuthError(getFirebaseDisabledMessage());
+      return;
+    }
     setAuthSubmitting(true);
     setAuthError(null);
     try {
@@ -1674,6 +1713,9 @@ const App: React.FC = () => {
     }
   };
   const handleLogout = async () => {
+    if (!auth) {
+      return;
+    }
     await signOut(auth);
     if (currentPage === 'mypage') {
       navigateToPage('home');
@@ -1689,6 +1731,11 @@ const App: React.FC = () => {
   };
   const handleSuggestionSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!db) {
+      setSuggestionStatus(getFirebaseDisabledMessage());
+      return;
+    }
 
     if (!currentUser) {
       setSuggestionStatus(t.suggestionLoginRequired);
@@ -1757,7 +1804,7 @@ const App: React.FC = () => {
             createHistoryPreview(result, 720),
           ]);
 
-          await addDoc(collection(db, 'generations'), {
+          await addDoc(collection(requireDb(), 'generations'), {
             uid: currentUser.uid,
             faceImageUrl: historyFaceImage,
             clothImageUrl: historyClothImage,
@@ -1824,7 +1871,13 @@ const App: React.FC = () => {
                 )}
               </div>
             ) : (
-              <button className="outline-btn auth-nav-btn" onClick={() => openAuthModal('login')} type="button">
+              <button
+                className="outline-btn auth-nav-btn"
+                disabled={!isFirebaseConfigured}
+                onClick={() => openAuthModal('login')}
+                title={firebaseDisabledMessage || undefined}
+                type="button"
+              >
                 {t.login}
               </button>
             )}
@@ -1835,6 +1888,15 @@ const App: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {firebaseDisabledMessage && (
+        <div className="config-banner" role="alert">
+          <div className="section-inner">
+            <strong>Firebase 설정 누락</strong>
+            <p>{firebaseDisabledMessage}</p>
+          </div>
+        </div>
+      )}
 
       <section className="hero-section">
         <video
@@ -2198,10 +2260,12 @@ const App: React.FC = () => {
                     </div>
                   ) : (
                     <div className="mypage-empty">
-                      <p>{t.authRequired}</p>
-                      <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
-                        {t.login}
-                      </button>
+                      <p>{firebaseDisabledMessage || t.authRequired}</p>
+                      {isFirebaseConfigured && (
+                        <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                          {t.login}
+                        </button>
+                      )}
                     </div>
                   )}
                 </article>
