@@ -4,9 +4,10 @@ import ClothSampleModal from './components/ClothSampleModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
+declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
-const APP_VERSION = 'v0.0.1';
+const APP_VERSION = __APP_VERSION__;
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {

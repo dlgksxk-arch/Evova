@@ -1,7 +1,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+
+const appVersion = (() => {
+  const baseVersion = process.env.npm_package_version || '0.0.0'
+
+  try {
+    const gitHash = execSync('git rev-parse --short HEAD').toString().trim()
+    return `v${baseVersion}-${gitHash}`
+  } catch {
+    return `v${baseVersion}`
+  }
+})()
 
 function sampleScannerPlugin() {
   const virtualModuleId = 'virtual:samples'
@@ -52,6 +64,9 @@ function sampleScannerPlugin() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), sampleScannerPlugin()],
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   server: {
     fs: {
       allow: ['Z:/HDD2/샘플사진', '..']
