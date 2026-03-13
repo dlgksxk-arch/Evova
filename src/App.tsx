@@ -1281,6 +1281,15 @@ const App: React.FC = () => {
 
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
+      <video
+        className="bg-video"
+        autoPlay
+        loop
+        muted
+        playsInline
+      >
+        <source src="/mainpage/hamdeva_bg_video_v2.mp4" type="video/mp4" />
+      </video>
       <nav className="landing-nav">
         <div className="nav-content">
           <div className="nav-brand">

@@ -123,10 +123,23 @@ body {
 
 .app-root {
   min-height: 100vh;
-  background-color: var(--bg);
+  position: relative;
+  z-index: 0;
+  background-color: transparent;
   color: var(--text);
   font-family: var(--body-font, Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif);
   transition: background-color 0.3s, color 0.3s;
+}
+
+.bg-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .font-theme-latin {
