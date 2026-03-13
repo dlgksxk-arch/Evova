@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
 
     // 사용량 통계 — 서버(Functions)만 쓰기 가능, 클라이언트 읽기 불가
     match /usage/{sessionId} {
@@ -11,6 +18,25 @@ service cloud.firestore {
     // 결제 내역 — 서버만 접근
     match /payments/{paymentId} {
       allow read, write: if false;
+    }
+
+    // 사용자 프로필 — 본인만 읽기/쓰기 가능
+    match /users/{userId} {
+      allow read, create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // 생성 이력 — 본인 데이터만 생성/조회 가능
+    match /generations/{generationId} {
+      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 제안함 — 로그인 사용자만 본인 uid로 작성 가능, 읽기는 차단
+    match /suggestions/{suggestionId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
     }
 
     // 나머지 모든 문서 차단

@@ -1529,7 +1529,11 @@ const App: React.FC = () => {
         return;
       }
 
-      await ensureUserProfileDoc(user);
+      try {
+        await ensureUserProfileDoc(user);
+      } catch (error) {
+        console.error('Failed to sync user profile after auth change:', error);
+      }
     });
 
     return () => unsubscribe();
