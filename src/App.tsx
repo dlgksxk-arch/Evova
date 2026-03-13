@@ -1403,7 +1403,7 @@ const App: React.FC = () => {
                 onClick={() => navigateToPage(item.page)}
                 type="button"
               >
-                {item.label}
+                {getNavLabel(item.page, lang)}
               </button>
             ))}
           </div>
