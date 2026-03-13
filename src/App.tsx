@@ -1157,6 +1157,8 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
+  const personInputRef = useRef<HTMLInputElement>(null);
+  const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1199,6 +1201,36 @@ const App: React.FC = () => {
   useEffect(() => {
     setResultPreviewState(resultImage ? 'loading' : 'idle');
   }, [resultImage]);
+
+  const loadPersonUpload = async (file: File) => {
+    setPersonUploadMessage(t.preparingPersonUpload);
+    setPersonPreviewState('loading');
+
+    try {
+      const src = await preprocessImageFile(file, { maxDimension: 1440, maxBytes: 2_100_000 })
+        .catch(() => blobToDataUrl(file));
+      setSelectedSampleUrl(null);
+      setPersonImage(src);
+    } catch {
+      setPersonUploadMessage(null);
+      setPersonPreviewState('error');
+    }
+  };
+
+  const loadClothUpload = async (file: File) => {
+    setClothUploadMessage(t.preparingClothingUpload);
+    setClothPreviewState('loading');
+
+    try {
+      const src = await preprocessImageFile(file, { maxDimension: 1600, maxBytes: 2_400_000 })
+        .catch(() => blobToDataUrl(file));
+      setSelectedClothSampleUrl(null);
+      setClothImage(src);
+    } catch {
+      setClothUploadMessage(null);
+      setClothPreviewState('error');
+    }
+  };
 
   const handleOpenPersonSampleModal = () => setShowSampleModal(true);
   const handleOpenClothSampleModal = () => {
@@ -1283,25 +1315,23 @@ const App: React.FC = () => {
                 <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
                   {t.chooseSample}
                 </button>
-                <button className="outline-btn" onClick={() => document.getElementById('p-up')?.click()}>
+                <button className="outline-btn" onClick={() => personInputRef.current?.click()}>
                   {t.uploadMyPhoto}
                 </button>
-                <input id="p-up" type="file" hidden accept="image/*" onChange={e => {
+                <input
+                  id="p-up"
+                  ref={personInputRef}
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onClick={(e) => { e.currentTarget.value = ''; }}
+                  onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    setPersonUploadMessage(t.preparingPersonUpload);
-                    setPersonPreviewState('loading');
-                    preprocessImageFile(f, { maxDimension: 1440, maxBytes: 2_100_000 })
-                      .then((src) => {
-                        setSelectedSampleUrl(null);
-                        setPersonImage(src);
-                      })
-                      .catch(() => {
-                        setPersonUploadMessage(null);
-                        setPersonPreviewState('error');
-                      });
+                    void loadPersonUpload(f);
                   }
-                }} />
+                }}
+                />
               </div>
 
               <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
@@ -1354,25 +1384,23 @@ const App: React.FC = () => {
                 <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
                   {t.chooseClothingSample}
                 </button>
-                <button className="outline-btn" onClick={() => document.getElementById('c-up')?.click()}>
+                <button className="outline-btn" onClick={() => clothInputRef.current?.click()}>
                   {t.uploadClothing}
                 </button>
-                <input id="c-up" type="file" hidden accept="image/*" onChange={e => {
+                <input
+                  id="c-up"
+                  ref={clothInputRef}
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onClick={(e) => { e.currentTarget.value = ''; }}
+                  onChange={e => {
                   const f = e.target.files?.[0];
                   if (f) {
-                    setClothUploadMessage(t.preparingClothingUpload);
-                    setClothPreviewState('loading');
-                    preprocessImageFile(f, { maxDimension: 1600, maxBytes: 2_400_000 })
-                      .then((src) => {
-                        setSelectedClothSampleUrl(null);
-                        setClothImage(src);
-                      })
-                      .catch(() => {
-                        setClothUploadMessage(null);
-                        setClothPreviewState('error');
-                      });
+                    void loadClothUpload(f);
                   }
-                }} />
+                }}
+                />
               </div>
               <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
                 {activeClothImage ? (
