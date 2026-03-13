@@ -1,0 +1,274 @@
+{
+  "nav": {
+    "home": "Home",
+    "traditional-clothing": "Traditional Clothing",
+    "countries": "Countries",
+    "how-it-works": "How It Works",
+    "fashion-technology": "Fashion Technology",
+    "about": "About HAMDEVA",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact"
+  },
+  "meta": {
+    "homeTitle": "HAMDEVA | Global Traditional Clothing AI Try-On",
+    "homeDescription": "Explore traditional clothing from around the world and preview garments with HAMDEVA AI virtual try-on."
+  },
+  "hero": {
+    "eyebrow": "Global Traditional Clothing AI Try-On",
+    "title": "See traditional clothing\nbefore you wear it",
+    "sub": "HAMDEVA helps you explore cultural garments from around the world and preview them with AI in a fast, visual workflow.",
+    "pageEyebrow": "HAMDEVA CONTENT"
+  },
+  "home": {
+    "cards": [
+      {
+        "id": "overview",
+        "title": "What Is HAMDEVA",
+        "description": "HAMDEVA is a global traditional clothing try-on platform. It combines cultural fashion guidance with AI previews so users can learn and test garments in one place.",
+        "button": "Learn more →"
+      },
+      {
+        "id": "technology",
+        "title": "How AI Virtual Try-On Works",
+        "description": "The tool uses a person image for identity and a garment image for design fidelity. It then creates one consistent multi-angle try-on sheet in a single generation flow.",
+        "button": "Learn more →"
+      },
+      {
+        "id": "cultural",
+        "title": "Why Traditional Clothing Matters",
+        "description": "Traditional clothing carries history, ceremony, and local design language. HAMDEVA presents these garments as living culture rather than costume thumbnails.",
+        "button": "Learn more →"
+      }
+    ],
+    "toolIntroTitle": "Try traditional clothing online",
+    "toolIntroBody": "Upload a portrait, select a garment, and let HAMDEVA generate a clean 1x4 fitting preview. Better source images usually produce more faithful results."
+  },
+  "modal": {
+    "title": "Global Traditional Clothing Guide",
+    "tabs": {
+      "overview": "Overview",
+      "technology": "Technology",
+      "cultural": "Cultural Clothing",
+      "future": "Fashion Future",
+      "countries": "Countries"
+    },
+    "overview": {
+      "title": "A content-first traditional clothing platform",
+      "paragraphs": [
+        "HAMDEVA is designed as more than an image generator. It introduces users to traditional clothing from multiple regions and then lets them test garments through AI virtual try-on.",
+        "This structure makes the platform useful for travelers, students, fashion researchers, families planning portraits, and anyone curious about how cultural dress looks on a real person.",
+        "By combining educational content with a practical try-on tool, HAMDEVA helps people move from quick curiosity to informed visual understanding."
+      ]
+    },
+    "technology": {
+      "title": "How the try-on pipeline works",
+      "paragraphs": [
+        "The system starts with a portrait image to keep the same face identity and overall appearance across the result. A clothing image is then used as the strongest reference for silhouette, color, trim, and surface detail.",
+        "Instead of generating four unrelated images, HAMDEVA asks the image model for one wide 1x4 fashion sheet. That keeps front, left 45-degree, right 45-degree, and back views more visually consistent.",
+        "This approach is more useful than a single front image because traditional garments often depend on side volume, sleeve shape, ribbon placement, or back drape."
+      ]
+    },
+    "cultural": {
+      "title": "Traditional clothing as living design",
+      "paragraphs": [
+        "Traditional garments are not only historical objects. They remain part of celebrations, ceremonies, tourism, performance, identity, and modern design reinterpretation.",
+        "HAMDEVA currently highlights garments such as Hanbok, Kimono, Hanfu, Saree, Ao Dai, Chut Thai, Kebaya, Baju Kurung, Baro't Saya, Deel, Kaftan, Agbada, Huipil, Kilt, Dirndl, Flamenco dress, and Bunad.",
+        "Showing these clothes in one platform encourages comparison, respect, and broader awareness of how different cultures express beauty through structure, color, movement, and material."
+      ]
+    },
+    "future": {
+      "title": "Fashion technology with context",
+      "paragraphs": [
+        "AI tools can make fashion easier to explore, but technology is most useful when it supports understanding rather than replacing it. Strong reference images, good prompts, and clear cultural context all matter.",
+        "A better digital fashion experience does not only produce attractive pictures. It helps users compare garments, preview silhouettes, and make more confident choices before purchase or rental.",
+        "HAMDEVA treats AI as a visual support layer for cultural fashion discovery, not as a substitute for craftsmanship, tradition, or expert fitting."
+      ]
+    },
+    "countriesIntro": "Browse traditional clothing references by country and garment type.",
+    "countries": [
+      { "country": "Korea", "clothing": "Hanbok", "description": "Known for graceful lines, layered volume, and elegant ceremonial styling." },
+      { "country": "Japan", "clothing": "Kimono", "description": "A wrapped silhouette with structured layering and refined seasonal presentation." },
+      { "country": "China", "clothing": "Hanfu", "description": "A broad heritage dress tradition with flowing sleeves and layered forms." },
+      { "country": "India", "clothing": "Saree", "description": "A draped garment with rich textile identity, regional styles, and ceremonial use." },
+      { "country": "Vietnam", "clothing": "Ao Dai", "description": "A fitted long tunic over trousers that combines elegance and movement." },
+      { "country": "Thailand", "clothing": "Chut Thai", "description": "A family of Thai traditional outfits used in formal and cultural settings." },
+      { "country": "Indonesia", "clothing": "Kebaya", "description": "A delicate blouse-and-wrap tradition often associated with formal occasions." },
+      { "country": "Malaysia", "clothing": "Baju Kurung", "description": "A modest, flowing ensemble with regional variations and everyday relevance." },
+      { "country": "Philippines", "clothing": "Baro't Saya", "description": "A historic women's silhouette that combines blouse, skirt, and layered structure." },
+      { "country": "Mongolia", "clothing": "Deel", "description": "A robe-like garment built for climate, movement, and strong visual identity." },
+      { "country": "Morocco", "clothing": "Kaftan", "description": "A luxurious long-form garment often associated with tailoring, embroidery, and ceremony." },
+      { "country": "Nigeria", "clothing": "Agbada", "description": "A voluminous robe ensemble that carries prestige and formal presence." },
+      { "country": "Mexico", "clothing": "Huipil", "description": "A richly varied textile tradition with strong regional patterns and symbolism." },
+      { "country": "Scotland", "clothing": "Kilt", "description": "A pleated garment tied closely to clan identity, ceremony, and Highland dress." },
+      { "country": "Germany", "clothing": "Dirndl", "description": "A bodice, blouse, and skirt arrangement rooted in Alpine regional dress." },
+      { "country": "Spain", "clothing": "Flamenco dress", "description": "A dramatic ruffled silhouette associated with performance and cultural celebration." },
+      { "country": "Norway", "clothing": "Bunad", "description": "A formal folk costume tradition shaped by region, embroidery, and family heritage." }
+    ]
+  },
+  "pages": {
+    "traditional-clothing": {
+      "title": "Traditional Clothing Around the World",
+      "description": "Explore how different regions express identity, ceremony, and beauty through traditional dress.",
+      "sections": [
+        {
+          "heading": "A global clothing map",
+          "paragraphs": [
+            "Traditional clothing exists in every region as a visual language shaped by climate, ceremony, craft, and social meaning.",
+            "HAMDEVA presents these garments as a connected global topic so users can compare silhouettes, layering systems, and cultural roles without reducing them to costume stereotypes."
+          ]
+        },
+        {
+          "heading": "Why comparison matters",
+          "paragraphs": [
+            "Looking across countries helps users notice how different cultures solve similar design questions such as movement, layering, modesty, ornament, and ceremony.",
+            "That makes AI try-on more useful because the viewer understands what each garment is trying to communicate before previewing it on a person."
+          ]
+        }
+      ]
+    },
+    "countries": {
+      "title": "Countries and Cultural Dress",
+      "description": "Browse a country-by-country overview of traditional garments featured on HAMDEVA.",
+      "sections": [
+        {
+          "heading": "Country cards",
+          "paragraphs": [
+            "Use the country grid to review garment names and short cultural notes at a glance.",
+            "This page acts as a quick directory before entering the try-on flow or opening the detailed guide modal."
+          ]
+        }
+      ]
+    },
+    "how-it-works": {
+      "title": "How It Works",
+      "description": "See how HAMDEVA turns a portrait and clothing reference into one coordinated try-on result.",
+      "sections": [
+        {
+          "heading": "Step 1 – Upload a face photo",
+          "paragraphs": [
+            "Choose a clear portrait with visible facial features and balanced lighting.",
+            "The system uses this image to keep the same identity across the final result."
+          ]
+        },
+        {
+          "heading": "Step 2 – Select a traditional garment",
+          "paragraphs": [
+            "Pick a clothing image that clearly shows the full design, color, trim, and silhouette.",
+            "The stronger the garment reference, the more faithful the generated outfit usually becomes."
+          ]
+        },
+        {
+          "heading": "Step 3 – Generate one 1x4 result sheet",
+          "paragraphs": [
+            "HAMDEVA requests one wide image that contains front, left 45-degree, right 45-degree, and back views.",
+            "This single-call approach improves consistency and makes comparison easier."
+          ]
+        }
+      ]
+    },
+    "fashion-technology": {
+      "title": "Fashion Technology",
+      "description": "Understand how AI imaging supports cultural fashion discovery and visual decision-making.",
+      "sections": [
+        {
+          "heading": "Technology with reference discipline",
+          "paragraphs": [
+            "Good virtual try-on depends on clear input hierarchy: the person image guides identity and the garment image guides clothing fidelity.",
+            "Without that discipline, generated fashion quickly becomes inconsistent or generic."
+          ]
+        },
+        {
+          "heading": "Why one combined sheet matters",
+          "paragraphs": [
+            "A single 1x4 output behaves more like a lookbook page than four unrelated renders.",
+            "That makes it easier to judge proportion, back drape, sleeve shape, and overall garment continuity."
+          ]
+        }
+      ]
+    },
+    "about": {
+      "title": "About HAMDEVA",
+      "description": "Learn about the mission, technology vision, and purpose behind HAMDEVA.",
+      "sections": [
+        {
+          "heading": "Mission",
+          "paragraphs": [
+            "HAMDEVA exists to make traditional clothing easier to explore through a combination of educational content and AI try-on previews.",
+            "The goal is to support curiosity, confidence, and cultural respect at the same time."
+          ]
+        },
+        {
+          "heading": "Why virtual fashion matters",
+          "paragraphs": [
+            "Digital previews help users understand silhouette and styling before purchase, rental, travel, or family events.",
+            "For heritage fashion, that visual bridge can lower the barrier to exploration without replacing the value of real garments."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "description": "Understand how HAMDEVA handles uploaded images and AI processing.",
+      "sections": [
+        {
+          "heading": "Uploaded images",
+          "paragraphs": [
+            "User images are used to process the requested try-on result.",
+            "HAMDEVA does not present the service as a permanent personal photo archive."
+          ]
+        },
+        {
+          "heading": "Processing and storage",
+          "paragraphs": [
+            "Images may be transmitted for AI processing, but the service is intended to avoid long-term personal photo storage as part of normal use.",
+            "Users should avoid uploading sensitive images they do not wish to process through an AI service."
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "description": "Read the core responsibilities and content rules for using HAMDEVA.",
+      "sections": [
+        {
+          "heading": "User responsibility",
+          "paragraphs": [
+            "Users must upload images they have the right to use and should avoid unlawful, abusive, or misleading content.",
+            "The try-on output is AI-generated visual content and should be understood as a synthetic preview."
+          ]
+        },
+        {
+          "heading": "Content and copyright",
+          "paragraphs": [
+            "Do not upload copyrighted or personal material without permission.",
+            "Users remain responsible for how they use generated outputs in public, commercial, or editorial contexts."
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Reach HAMDEVA for support, questions, or partnership inquiries.",
+      "sections": [
+        {
+          "heading": "Support",
+          "paragraphs": [
+            "Use the contact form or direct email for product issues, article feedback, or partnership discussions.",
+            "We review messages related to AI quality, cultural content, and platform support."
+          ]
+        }
+      ]
+    }
+  },
+  "contact": {
+    "supportTitle": "Email Support",
+    "supportBody": "For customer support, partnership questions, or editorial feedback, contact HAMDEVA at",
+    "supportFootnote": "We review messages related to technical issues, content corrections, traditional clothing education, and AI try-on quality improvements.",
+    "formTitle": "Contact Form",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "send": "Send Email"
+  }
+}

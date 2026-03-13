@@ -1,0 +1,274 @@
+{
+  "nav": {
+    "home": "首页",
+    "traditional-clothing": "传统服饰",
+    "countries": "国家",
+    "how-it-works": "使用方法",
+    "fashion-technology": "时尚科技",
+    "about": "关于 HAMDEVA",
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "contact": "联系"
+  },
+  "meta": {
+    "homeTitle": "HAMDEVA | 全球传统服饰 AI 虚拟试穿",
+    "homeDescription": "了解世界各地传统服饰，并通过 HAMDEVA AI 快速预览试穿效果。"
+  },
+  "hero": {
+    "eyebrow": "全球传统服饰 AI 虚拟试穿",
+    "title": "在真正穿上之前\n先看见传统服饰的效果",
+    "sub": "HAMDEVA 将世界传统服饰介绍内容与 AI 试穿工具结合在一起，让用户可以边了解边体验。",
+    "pageEyebrow": "HAMDEVA 内容"
+  },
+  "home": {
+    "cards": [
+      {
+        "id": "overview",
+        "title": "什么是 HAMDEVA",
+        "description": "HAMDEVA 是一个全球传统服饰 AI 试穿平台。它把文化介绍与虚拟预览结合起来，让学习与体验发生在同一个界面中。",
+        "button": "了解更多 →"
+      },
+      {
+        "id": "technology",
+        "title": "AI 虚拟试穿如何工作",
+        "description": "人物照片负责保持身份与脸部一致性，服饰照片负责保持设计与轮廓忠实度。系统随后生成一张统一的 1x4 结果图。",
+        "button": "了解更多 →"
+      },
+      {
+        "id": "cultural",
+        "title": "为什么传统服饰重要",
+        "description": "传统服饰承载着历史、礼仪与地域身份。HAMDEVA 希望把它们作为活的文化来展示，而不是只当作装饰性图片。",
+        "button": "了解更多 →"
+      }
+    ],
+    "toolIntroTitle": "在线试穿传统服饰",
+    "toolIntroBody": "上传人物照片并选择服饰图像后，HAMDEVA 会生成一张包含多个角度的试穿结果。输入越清晰，结果通常越稳定。"
+  },
+  "modal": {
+    "title": "全球传统服饰指南",
+    "tabs": {
+      "overview": "概览",
+      "technology": "技术",
+      "cultural": "传统服饰",
+      "future": "时尚未来",
+      "countries": "国家"
+    },
+    "overview": {
+      "title": "以内容为基础的平台",
+      "paragraphs": [
+        "HAMDEVA 不只是图像生成工具，它也是一个帮助用户认识世界传统服饰的平台。",
+        "用户可以先阅读简洁的文化与设计说明，再进入 AI 试穿流程，这样更容易理解服饰本身。",
+        "这种结构让平台更适合学习、旅行准备、造型参考和文化探索。"
+      ]
+    },
+    "technology": {
+      "title": "试穿流程如何运作",
+      "paragraphs": [
+        "系统先用人物照片来保持同一张脸与整体外观，再用服饰图像来约束服装轮廓、颜色与装饰细节。",
+        "HAMDEVA 不会分四次单独生成，而是一次生成一张横向 1x4 试穿图，从而提高多个角度之间的一致性。",
+        "这对传统服饰尤其有意义，因为侧面、袖形、背部和垂坠往往同样重要。"
+      ]
+    },
+    "cultural": {
+      "title": "传统服饰是活的设计语言",
+      "paragraphs": [
+        "传统服饰并不只是历史展示物，它们今天仍然活跃在仪式、节庆、旅游、表演、摄影和现代设计再诠释中。",
+        "HAMDEVA 目前重点介绍韩服、和服、汉服、纱丽、奥黛、泰式传统服、卡巴雅、Baju Kurung、Baro't Saya、Deel、Kaftan、Agbada、Huipil、Kilt、Dirndl、弗拉明戈裙和 Bunad。",
+        "把这些服饰放在同一平台中比较，有助于用户看到不同文化如何通过轮廓、层次、色彩与材料表达身份与美感。"
+      ]
+    },
+    "future": {
+      "title": "有语境的时尚科技",
+      "paragraphs": [
+        "AI 可以让时尚探索更直观，但如果没有清晰的参考图与文化说明，结果就容易变得表面化。",
+        "好的数字时尚体验不仅要生成漂亮图片，更要帮助用户理解服饰结构与穿着逻辑。",
+        "HAMDEVA 将 AI 视为文化服饰探索的视觉辅助层，而不是替代工艺与传统的工具。"
+      ]
+    },
+    "countriesIntro": "按国家浏览代表性传统服饰与简短文化说明。",
+    "countries": [
+      { "country": "韩国", "clothing": "韩服", "description": "以曲线、层次与礼仪感闻名的韩国传统服饰。" },
+      { "country": "日本", "clothing": "和服", "description": "具有包裹式结构和季节审美的经典服饰。" },
+      { "country": "中国", "clothing": "汉服", "description": "拥有丰富层次与宽袖形式的传统服饰体系。" },
+      { "country": "印度", "clothing": "纱丽", "description": "以布料垂坠和地域织物特色见长的服饰。" },
+      { "country": "越南", "clothing": "奥黛", "description": "修长上衣与长裤组合形成优雅线条。" },
+      { "country": "泰国", "clothing": "Chut Thai", "description": "用于正式与文化场合的泰国传统服饰家族。" },
+      { "country": "印度尼西亚", "clothing": "Kebaya", "description": "精致上衣与裹裙组合的传统造型。" },
+      { "country": "马来西亚", "clothing": "Baju Kurung", "description": "兼具日常性与传统感的流动型服饰。" },
+      { "country": "菲律宾", "clothing": "Baro’t Saya", "description": "带有历史层次结构的女性传统服饰。" },
+      { "country": "蒙古", "clothing": "Deel", "description": "兼顾气候与行动性的长袍式服装。" },
+      { "country": "摩洛哥", "clothing": "Kaftan", "description": "常见于礼仪场合的长型华丽服饰。" },
+      { "country": "尼日利亚", "clothing": "Agbada", "description": "以体量感和庄重感著称的长袍组合。" },
+      { "country": "墨西哥", "clothing": "Huipil", "description": "以地区纹样与织物象征见长的传统服装。" },
+      { "country": "苏格兰", "clothing": "Kilt", "description": "与家族和仪式密切相关的褶裙服饰。" },
+      { "country": "德国", "clothing": "Dirndl", "description": "带有 bodice 与裙装结构的阿尔卑斯地区传统服装。" },
+      { "country": "西班牙", "clothing": "Flamenco dress", "description": "以荷叶边与表演感轮廓闻名的文化服饰。" },
+      { "country": "挪威", "clothing": "Bunad", "description": "体现地区、刺绣与家族传统的民族礼服。" }
+    ]
+  },
+  "pages": {
+    "traditional-clothing": {
+      "title": "世界传统服饰",
+      "description": "了解不同文化如何通过传统服饰表达礼仪、身份与美感。",
+      "sections": [
+        {
+          "heading": "全球视角",
+          "paragraphs": [
+            "世界各地的传统服饰都由气候、礼仪、工艺与社会意义共同塑造。",
+            "HAMDEVA 把这些服饰放在同一平台中展示，方便用户跨文化比较轮廓与风格语言。"
+          ]
+        },
+        {
+          "heading": "比较带来理解",
+          "paragraphs": [
+            "跨国家比较有助于看清不同文化如何处理层次、装饰、动作与仪式感。",
+            "先理解服饰，再进入 AI 试穿，得到的视觉结果会更有意义。"
+          ]
+        }
+      ]
+    },
+    "countries": {
+      "title": "国家与服饰",
+      "description": "通过国家卡片快速浏览平台收录的代表性传统服饰。",
+      "sections": [
+        {
+          "heading": "国家卡片",
+          "paragraphs": [
+            "每张卡片包含国家名、服饰名与简短文化说明。",
+            "它适合在进入详细介绍或试穿流程前先建立整体印象。"
+          ]
+        }
+      ]
+    },
+    "how-it-works": {
+      "title": "使用方法",
+      "description": "了解人物图像与服饰图像如何被组合成一张统一的试穿结果。",
+      "sections": [
+        {
+          "heading": "步骤 1 – 上传人物照片",
+          "paragraphs": [
+            "选择脸部清晰、光线均衡的照片，有助于保持人物身份一致。",
+            "遮挡越少，试穿结果越稳定。"
+          ]
+        },
+        {
+          "heading": "步骤 2 – 选择传统服饰",
+          "paragraphs": [
+            "请尽量选择能看清整体轮廓、色彩和装饰细节的服饰图片。",
+            "服饰参考越明确，最终生成通常越忠实。"
+          ]
+        },
+        {
+          "heading": "步骤 3 – 生成 1x4 结果图",
+          "paragraphs": [
+            "HAMDEVA 一次生成一张包含正面、左右 45 度与背面的横向结果图。",
+            "这种方式比单张图更适合比较传统服饰的结构。"
+          ]
+        }
+      ]
+    },
+    "fashion-technology": {
+      "title": "时尚科技",
+      "description": "看看 AI 成像如何帮助传统服饰的视觉探索与理解。",
+      "sections": [
+        {
+          "heading": "参考图优先级",
+          "paragraphs": [
+            "虚拟试穿最重要的是明确人物图与服饰图各自承担的角色。",
+            "人物图保持身份，服饰图保持服装设计，这样结果才不会漂移。"
+          ]
+        },
+        {
+          "heading": "为什么是一张组合图",
+          "paragraphs": [
+            "一张 1x4 结果图更像 lookbook 页面，而不是四张互不相关的图。",
+            "这有助于用户同时判断正面、侧面与背面的连续性。"
+          ]
+        }
+      ]
+    },
+    "about": {
+      "title": "关于 HAMDEVA",
+      "description": "了解 HAMDEVA 的使命与平台定位。",
+      "sections": [
+        {
+          "heading": "使命",
+          "paragraphs": [
+            "HAMDEVA 希望让传统服饰更容易被理解、比较和体验。",
+            "通过内容与 AI 工具结合，平台支持更有信息基础的视觉探索。"
+          ]
+        },
+        {
+          "heading": "为什么虚拟时尚重要",
+          "paragraphs": [
+            "数字预览能在购买、租赁、旅行或拍摄前降低想象成本。",
+            "对于不熟悉的文化服饰，它尤其能降低入门门槛。"
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "隐私政策",
+      "description": "了解上传图像与 AI 处理的基本原则。",
+      "sections": [
+        {
+          "heading": "上传图像",
+          "paragraphs": [
+            "用户图像用于处理所请求的试穿结果。",
+            "HAMDEVA 不将服务定位为长期存储个人照片的平台。"
+          ]
+        },
+        {
+          "heading": "处理与存储",
+          "paragraphs": [
+            "图像可能会被传输用于 AI 处理，但正常使用并不以长期保存为目标。",
+            "用户应谨慎上传敏感或不希望参与 AI 处理的图像。"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "服务条款",
+      "description": "查看使用 HAMDEVA 时的基本责任与内容规则。",
+      "sections": [
+        {
+          "heading": "用户责任",
+          "paragraphs": [
+            "用户只能上传自己有权使用的图像，不得提交违法、侵权或伤害他人的内容。",
+            "生成结果属于 AI 合成视觉预览，应以此方式理解和使用。"
+          ]
+        },
+        {
+          "heading": "版权与使用范围",
+          "paragraphs": [
+            "未经授权不得上传受版权保护或包含他人隐私的素材。",
+            "生成结果用于公开、商业或编辑场景时，责任仍由用户承担。"
+          ]
+        }
+      ]
+    },
+    "contact": {
+      "title": "联系",
+      "description": "向 HAMDEVA 发送支持请求、合作咨询或内容反馈。",
+      "sections": [
+        {
+          "heading": "支持说明",
+          "paragraphs": [
+            "你可以通过联系表单或邮箱发送产品问题、内容建议与合作咨询。",
+            "我们会查看与 AI 质量、文化内容和平台支持相关的消息。"
+          ]
+        }
+      ]
+    }
+  },
+  "contact": {
+    "supportTitle": "邮件支持",
+    "supportBody": "如需客户支持、合作咨询或内容反馈，请联系",
+    "supportFootnote": "我们会查看技术问题、内容修正、传统服饰信息与 AI 试穿质量相关消息。",
+    "formTitle": "联系表单",
+    "name": "姓名",
+    "email": "邮箱",
+    "message": "留言",
+    "send": "发送邮件"
+  }
+}

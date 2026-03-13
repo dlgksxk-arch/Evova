@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import ClothSampleModal from './components/ClothSampleModal';
+import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
-import { HOME_BOTTOM_SECTIONS, HOME_TOP_SECTIONS, NAV_ITEMS, PAGE_CONTENT, SUPPORT_EMAIL, type SitePage } from './data/siteContent';
+import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
@@ -1151,49 +1152,14 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
   </div>
 );
 
-const NAV_LABELS: Partial<Record<LanguageCode, Partial<Record<SitePage, string>>>> = {
-  ko: {
-    home: '홈',
-    'how-it-works': '사용 방법',
-    'hanbok-guide': '한복 가이드',
-    'fashion-blog': '패션 블로그',
-    about: '서비스 소개',
-    privacy: '개인정보처리방침',
-    terms: '이용약관',
-    contact: '문의하기',
-  },
-  ja: {
-    home: 'ホーム',
-    'how-it-works': '使い方',
-    'hanbok-guide': '韓服ガイド',
-    'fashion-blog': 'ファッションブログ',
-    about: 'サービス紹介',
-    privacy: 'プライバシーポリシー',
-    terms: '利用規約',
-    contact: 'お問い合わせ',
-  },
-  zh: {
-    home: '首页',
-    'how-it-works': '使用方法',
-    'hanbok-guide': '韩服指南',
-    'fashion-blog': '时尚博客',
-    about: '服务介绍',
-    privacy: '隐私政策',
-    terms: '使用条款',
-    contact: '联系我们',
-  },
-};
-
-const getNavLabel = (page: SitePage, lang: LanguageCode): string =>
-  NAV_LABELS[lang]?.[page] ?? NAV_ITEMS.find((item) => item.page === page)?.label ?? page;
-
 const getPageFromHash = (hash: string): SitePage => {
   const normalized = hash.replace(/^#/, '');
-  return NAV_ITEMS.some((item) => item.page === normalized) ? normalized as SitePage : 'home';
+  return SITE_PAGES.includes(normalized as SitePage) ? normalized as SitePage : 'home';
 };
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
+  const SUPPORT_EMAIL = 'support@hamdeva.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
@@ -1222,6 +1188,8 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [appVersion, setAppVersion] = useState(APP_VERSION);
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
   useEffect(() => {
     const GITHUB_VERSION_URL = 'https://raw.githubusercontent.com/dlgksxk-arch/Evova/main/public/version.json';
     fetch(GITHUB_VERSION_URL)
@@ -1237,6 +1205,7 @@ const App: React.FC = () => {
   }, []);
   
   const t = uiTranslations[lang];
+  const contentLocale = getContentLocale(lang);
   const sessionId = getSessionId();
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
@@ -1288,10 +1257,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const pageMeta = currentPage === 'home'
       ? {
-          title: 'HAMDEVA | AI Hanbok Virtual Try-On, Guides, and Fashion Articles',
-          description: 'Explore Hanbok culture, learn how AI virtual try-on works, and preview Korean traditional fashion with HAMDEVA.',
+          title: contentLocale.meta.homeTitle,
+          description: contentLocale.meta.homeDescription,
         }
-      : PAGE_CONTENT[currentPage];
+      : contentLocale.pages[currentPage];
 
     document.title = pageMeta.title;
 
@@ -1303,7 +1272,7 @@ const App: React.FC = () => {
     }
 
     descriptionTag.setAttribute('content', pageMeta.description);
-  }, [currentPage]);
+  }, [contentLocale, currentPage]);
 
   const loadPersonUpload = async (file: File) => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -1340,6 +1309,10 @@ const App: React.FC = () => {
     window.history.pushState(null, '', nextUrl);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const openContentModal = (tab: ModalTab) => {
+    setActiveContentTab(tab);
+    setShowContentModal(true);
   };
   const handleContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1409,14 +1382,14 @@ const App: React.FC = () => {
             <span className="app-version">{appVersion}</span>
           </div>
           <div className="nav-links">
-            {NAV_ITEMS.map((item) => (
+            {SITE_PAGES.map((page) => (
               <button
-                key={item.page}
-                className={`nav-link ${currentPage === item.page ? 'active' : ''}`}
-                onClick={() => navigateToPage(item.page)}
+                key={page}
+                className={`nav-link ${currentPage === page ? 'active' : ''}`}
+                onClick={() => navigateToPage(page)}
                 type="button"
               >
-                {getNavLabel(item.page, lang)}
+                {contentLocale.nav[page]}
               </button>
             ))}
           </div>
@@ -1433,15 +1406,15 @@ const App: React.FC = () => {
         <div className="hero-content">
           {currentPage === 'home' ? (
             <>
-              <div className="hero-eyebrow">{t.heroEyebrow}</div>
-              <h1 className="hero-title">{t.heroTitle}</h1>
-              <p className="hero-sub">{t.heroSub}</p>
+              <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
+              <h1 className="hero-title">{contentLocale.hero.title}</h1>
+              <p className="hero-sub">{contentLocale.hero.sub}</p>
             </>
           ) : (
             <>
-              <div className="hero-eyebrow">HAMDEVA CONTENT</div>
-              <h1 className="hero-title page-title">{PAGE_CONTENT[currentPage].title}</h1>
-              <p className="hero-sub">{PAGE_CONTENT[currentPage].description}</p>
+              <div className="hero-eyebrow">{contentLocale.hero.pageEyebrow}</div>
+              <h1 className="hero-title page-title">{contentLocale.pages[currentPage].title}</h1>
+              <p className="hero-sub">{contentLocale.pages[currentPage].description}</p>
             </>
           )}
         </div>
@@ -1451,13 +1424,14 @@ const App: React.FC = () => {
         <>
           <section className="section editorial-section">
             <div className="section-inner">
-              <div className="content-grid">
-                {HOME_TOP_SECTIONS.map((section) => (
-                  <article key={section.heading} className="content-card">
-                    <h2>{section.heading}</h2>
-                    {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
+              <div className="compact-card-grid">
+                {contentLocale.home.cards.map((card) => (
+                  <article key={card.id} className="compact-info-card">
+                    <h2>{card.title}</h2>
+                    <p>{card.description}</p>
+                    <button className="text-link-btn" onClick={() => openContentModal(card.id as ModalTab)} type="button">
+                      {card.button}
+                    </button>
                   </article>
                 ))}
               </div>
@@ -1663,61 +1637,35 @@ const App: React.FC = () => {
 
           <section className="section editorial-section">
             <div className="section-inner">
-              <div className="content-grid">
-                {HOME_BOTTOM_SECTIONS.map((section) => (
-                  <article key={section.heading} className="content-card content-card-wide">
-                    <h2>{section.heading}</h2>
-                    {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="section editorial-section">
-            <div className="section-inner">
-              <div className="section-copy">
-                <h2>Featured Hanbok Reads</h2>
-                <p>Read editorial guides and long-form articles that explain the history of Hanbok, modern reinterpretations, and the role of technology in future fashion experiences.</p>
-              </div>
-              <div className="blog-preview-grid">
-                {PAGE_CONTENT['fashion-blog'].articles?.slice(0, 3).map((article) => (
-                  <article key={article.slug} className="blog-preview-card">
-                    <h3>{article.title}</h3>
-                    <p>{article.description}</p>
-                    <button className="text-link-btn" onClick={() => navigateToPage('fashion-blog')} type="button">
-                      Read article
-                    </button>
-                  </article>
-                ))}
-              </div>
+              <article className="content-card content-card-wide compact-tool-card">
+                <h2>{contentLocale.home.toolIntroTitle}</h2>
+                <p>{contentLocale.home.toolIntroBody}</p>
+                <button className="text-link-btn" onClick={() => openContentModal('countries')} type="button">
+                  {contentLocale.modal.tabs.countries}
+                </button>
+              </article>
             </div>
           </section>
         </>
       ) : (
         <main className="section page-shell">
           <div className="section-inner page-layout">
-            {'sections' in PAGE_CONTENT[currentPage] && PAGE_CONTENT[currentPage].sections?.map((section) => (
+            {contentLocale.pages[currentPage].sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
-                {section.subheading && <h3>{section.subheading}</h3>}
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
               </article>
             ))}
 
-            {currentPage === 'fashion-blog' && (
-              <div className="blog-article-stack">
-                {PAGE_CONTENT['fashion-blog'].articles?.map((article) => (
-                  <article key={article.slug} className="page-article blog-article">
-                    <h2>{article.title}</h2>
-                    <p className="article-description">{article.description}</p>
-                    {article.paragraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
+            {(currentPage === 'traditional-clothing' || currentPage === 'countries') && (
+              <div className="country-card-grid page-country-grid">
+                {contentLocale.modal.countries.map((item) => (
+                  <article key={`${item.country}-${item.clothing}`} className="country-card">
+                    <span className="country-card-name">{item.country}</span>
+                    <h4>{item.clothing}</h4>
+                    <p>{item.description}</p>
                   </article>
                 ))}
               </div>
@@ -1726,14 +1674,14 @@ const App: React.FC = () => {
             {currentPage === 'contact' && (
               <div className="contact-layout">
                 <article className="page-article">
-                  <h2>Email Support</h2>
-                  <p>For customer support, partnership questions, or editorial feedback, contact HAMDEVA at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
-                  <p>We review messages related to technical issues, content corrections, Hanbok education, and AI try-on quality improvements.</p>
+                  <h2>{contentLocale.contact.supportTitle}</h2>
+                  <p>{contentLocale.contact.supportBody} <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+                  <p>{contentLocale.contact.supportFootnote}</p>
                 </article>
                 <form className="contact-form" onSubmit={handleContactSubmit}>
-                  <h2>Contact Form</h2>
+                  <h2>{contentLocale.contact.formTitle}</h2>
                   <label>
-                    Name
+                    {contentLocale.contact.name}
                     <input
                       value={contactForm.name}
                       onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
@@ -1742,7 +1690,7 @@ const App: React.FC = () => {
                     />
                   </label>
                   <label>
-                    Email
+                    {contentLocale.contact.email}
                     <input
                       value={contactForm.email}
                       onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
@@ -1751,7 +1699,7 @@ const App: React.FC = () => {
                     />
                   </label>
                   <label>
-                    Message
+                    {contentLocale.contact.message}
                     <textarea
                       value={contactForm.message}
                       onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
@@ -1759,7 +1707,7 @@ const App: React.FC = () => {
                       required
                     />
                   </label>
-                  <button className="generate-btn contact-submit" type="submit">Send Email</button>
+                  <button className="generate-btn contact-submit" type="submit">{contentLocale.contact.send}</button>
                 </form>
               </div>
             )}
@@ -1770,13 +1718,22 @@ const App: React.FC = () => {
       <footer className="site-footer">
         <p className="footer-copy">{t.footer}</p>
         <div className="footer-links">
-          {NAV_ITEMS.map((item) => (
-            <button key={item.page} className="footer-link-btn" onClick={() => navigateToPage(item.page)} type="button">
-              {getNavLabel(item.page, lang)}
+          {SITE_PAGES.map((page) => (
+            <button key={page} className="footer-link-btn" onClick={() => navigateToPage(page)} type="button">
+              {contentLocale.nav[page]}
             </button>
           ))}
         </div>
       </footer>
+
+      {showContentModal && (
+        <ContentModal
+          activeTab={activeContentTab}
+          locale={contentLocale}
+          onClose={() => setShowContentModal(false)}
+          onTabChange={setActiveContentTab}
+        />
+      )}
 
       {showSampleModal && (
         <SampleModal 
