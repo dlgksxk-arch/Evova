@@ -1222,6 +1222,15 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [appVersion, setAppVersion] = useState(APP_VERSION);
+  useEffect(() => {
+    fetch('/version.json')
+      .then((r) => r.json())
+      .then((data: { version?: string; sha?: string }) => {
+        const label = data.sha ? `${data.version ?? APP_VERSION} (${data.sha})` : (data.version ?? APP_VERSION);
+        setAppVersion(label);
+      })
+      .catch(() => {});
+  }, []);
   
   const t = uiTranslations[lang];
   const sessionId = getSessionId();
