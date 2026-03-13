@@ -13,7 +13,7 @@ const translations = {
     navFeatures: '기능 소개', navHowto: '사용 방법', navFaq: 'FAQ',
     heroEyebrow: 'AI 기반 가상 피팅 서비스',
     heroTitle: '입어보지 않아도\n완벽한 나의 스타일',
-    heroSub: '내 사진 한 장이면 충분합니다. HAMDEVA의 AI가 얼굴을 인식하고, 원하는 옷을 실제로 입은 것처럼 합성해 드립니다.',
+    heroSub: '단 한 장의 사진으로\nHAMDEVA AI가\n당신에게 가장 어울리는 스타일을\n미리 입혀드립니다',
     heroCta: '지금 무료로 시작하기',
     featuresTitle: '왜 HAMDEVA인가요?', featuresSub: '빠르고, 정확하고, 누구나 쉽게 사용할 수 있습니다.',
     f1Title: 'AI 가상 피팅', f1Desc: 'HAMDEVA AI가 인물 사진과 의상을 분석하여 실제로 입은 것 같은 자연스러운 합성 이미지를 생성합니다.',
@@ -971,48 +971,6 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-const dataUrlByteLength = (dataUrl: string): number => {
-  const base64 = dataUrl.split(',')[1] ?? '';
-  const padding = (base64.match(/=+$/)?.[0].length ?? 0);
-  return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
-};
-
-const loadImageElement = (src: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('이미지를 불러오지 못했습니다.'));
-    img.src = src;
-  });
-
-const preprocessImageFile = async (
-  file: File,
-  options: { maxDimension?: number; maxBytes?: number; mimeType?: string } = {},
-): Promise<string> => {
-  const { maxDimension = 1536, maxBytes = 2_400_000, mimeType = 'image/jpeg' } = options;
-  const originalDataUrl = await blobToDataUrl(file);
-  const img = await loadImageElement(originalDataUrl);
-
-  let scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
-  const qualities = [0.9, 0.82, 0.74, 0.66, 0.58];
-
-  for (const quality of qualities) {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(img.width * scale));
-    canvas.height = Math.max(1, Math.round(img.height * scale));
-    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL(mimeType, quality);
-
-    if (dataUrlByteLength(dataUrl) <= maxBytes || scale <= 0.45) {
-      return dataUrl;
-    }
-
-    scale *= 0.86;
-  }
-
-  return originalDataUrl;
-};
-
 const ensureDataUrl = async (src: string): Promise<string> => {
   if (src.startsWith('data:')) return src;
 
@@ -1161,6 +1119,8 @@ const App: React.FC = () => {
   const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
+  const [personFile, setPersonFile] = useState<File | null>(null);
+  const [clothFile, setClothFile] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [gender, setGender] = useState<'female' | 'male' | 'dog' | 'cat'>('female');
   
@@ -1193,43 +1153,37 @@ const App: React.FC = () => {
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
   }, [darkMode]);
   useEffect(() => {
-    setPersonPreviewState(activePersonImage ? 'loading' : 'idle');
-  }, [activePersonImage]);
+    setPersonPreviewState(!activePersonImage ? 'idle' : personFile ? 'ready' : 'loading');
+  }, [activePersonImage, personFile]);
   useEffect(() => {
-    setClothPreviewState(activeClothImage ? 'loading' : 'idle');
-  }, [activeClothImage]);
+    setClothPreviewState(!activeClothImage ? 'idle' : clothFile ? 'ready' : 'loading');
+  }, [activeClothImage, clothFile]);
   useEffect(() => {
     setResultPreviewState(resultImage ? 'loading' : 'idle');
   }, [resultImage]);
+  useEffect(() => () => {
+    if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+    if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+  }, [personImage, clothImage]);
 
   const loadPersonUpload = async (file: File) => {
-    setPersonUploadMessage(t.preparingPersonUpload);
-    setPersonPreviewState('loading');
-
-    try {
-      const src = await preprocessImageFile(file, { maxDimension: 1440, maxBytes: 2_100_000 })
-        .catch(() => blobToDataUrl(file));
-      setSelectedSampleUrl(null);
-      setPersonImage(src);
-    } catch {
-      setPersonUploadMessage(null);
-      setPersonPreviewState('error');
-    }
+    if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+    const previewUrl = URL.createObjectURL(file);
+    setSelectedSampleUrl(null);
+    setPersonFile(file);
+    setPersonImage(previewUrl);
+    setPersonUploadMessage(null);
+    setPersonPreviewState('ready');
   };
 
   const loadClothUpload = async (file: File) => {
-    setClothUploadMessage(t.preparingClothingUpload);
-    setClothPreviewState('loading');
-
-    try {
-      const src = await preprocessImageFile(file, { maxDimension: 1600, maxBytes: 2_400_000 })
-        .catch(() => blobToDataUrl(file));
-      setSelectedClothSampleUrl(null);
-      setClothImage(src);
-    } catch {
-      setClothUploadMessage(null);
-      setClothPreviewState('error');
-    }
+    if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+    const previewUrl = URL.createObjectURL(file);
+    setSelectedClothSampleUrl(null);
+    setClothFile(file);
+    setClothImage(previewUrl);
+    setClothUploadMessage(null);
+    setClothPreviewState('ready');
   };
 
   const handleOpenPersonSampleModal = () => setShowSampleModal(true);
@@ -1249,8 +1203,12 @@ const App: React.FC = () => {
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await Promise.all([
-        ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
-        ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
+        personFile
+          ? blobToDataUrl(personFile).then((src) => resizeImage(src, 1280))
+          : ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
+        clothFile
+          ? blobToDataUrl(clothFile).then((src) => resizeImage(src, 1280))
+          : ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
       ]);
 
       const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
@@ -1323,7 +1281,7 @@ const App: React.FC = () => {
                   ref={personInputRef}
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                   onClick={(e) => { e.currentTarget.value = ''; }}
                   onChange={e => {
                   const f = e.target.files?.[0];
@@ -1353,7 +1311,10 @@ const App: React.FC = () => {
                         setPersonPreviewState('ready');
                         setPersonUploadMessage(null);
                       }}
-                      onError={() => setPersonPreviewState('error')}
+                      onError={() => {
+                        setPersonUploadMessage(null);
+                        setPersonPreviewState('error');
+                      }}
                       className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
                     />
                   </>
@@ -1367,8 +1328,11 @@ const App: React.FC = () => {
                 {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
                 {(personImage || selectedSampleUrl) && (
                   <button className="clear-img-btn" onClick={() => {
+                    if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
                     setPersonImage(null);
+                    setPersonFile(null);
                     setSelectedSampleUrl(null);
+                    setPersonUploadMessage(null);
                     setPersonPreviewState('idle');
                   }}>&times;</button>
                 )}
@@ -1392,7 +1356,7 @@ const App: React.FC = () => {
                   ref={clothInputRef}
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                   onClick={(e) => { e.currentTarget.value = ''; }}
                   onChange={e => {
                   const f = e.target.files?.[0];
@@ -1422,14 +1386,20 @@ const App: React.FC = () => {
                           setClothPreviewState('ready');
                           setClothUploadMessage(null);
                         }}
-                        onError={() => setClothPreviewState('error')}
+                        onError={() => {
+                          setClothUploadMessage(null);
+                          setClothPreviewState('error');
+                        }}
                       />
                     )}
                     {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
                     {(clothImage || selectedClothSampleUrl) && (
                       <button className="clear-img-btn" onClick={() => {
+                        if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
                         setClothImage(null);
+                        setClothFile(null);
                         setSelectedClothSampleUrl(null);
+                        setClothUploadMessage(null);
                         setClothPreviewState('idle');
                       }}>&times;</button>
                     )}
@@ -1494,9 +1464,11 @@ const App: React.FC = () => {
           currentUrl={activePersonImage}
           lang={lang}
           onSelect={(url, category) => {
+            if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
             setSelectedSampleUrl(url);
             setGender(category);
             setPersonImage(null);
+            setPersonFile(null);
             setPersonUploadMessage(null);
             setPersonPreviewState('loading');
           }}
@@ -1509,8 +1481,10 @@ const App: React.FC = () => {
           currentUrl={activeClothImage}
           lang={lang}
           onSelect={(url) => {
+            if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
             setSelectedClothSampleUrl(url);
             setClothImage(null);
+            setClothFile(null);
             setClothUploadMessage(null);
             setClothPreviewState('loading');
           }}
