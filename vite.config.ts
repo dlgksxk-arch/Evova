@@ -53,7 +53,7 @@ const appVersion = (() => {
 const gitShortSha = getGitShortSha()
 
 function writeVersionFilePlugin() {
-  const versionPayload = JSON.stringify({ version: appVersion }, null, 2)
+  const versionPayload = JSON.stringify({ version: appVersion, sha: gitShortSha }, null, 2)
 
   return {
     name: 'write-version-file',
