@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# 빌드 시 자동 생성 (커밋 불필요)
+public/version.json
