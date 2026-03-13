@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import { modelSamples, clothSamples, countries } from './data/samples';
+import { samples as dynamicSamples } from 'virtual:samples';
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -20,23 +21,23 @@ const translations = {
     h1Step: 'Step 01', h1Title: '얼굴 사진 업로드', h1Desc: '정면을 바라보는 전신 또는 상반신 사진을 업로드하세요. 배경이 단순하고 전체적인 체형이 보이면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 체험해보세요', trySub: '하루 5회 무료로 사용할 수 있습니다.',
+    tryTitle: '지금 바로 체험해보세요', trySub: '하루 3회 무료로 사용할 수 있습니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
     generate: 'AI 피팅 생성하기', generating: 'AI 분석 중... (최대 30초)',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
     freeLeft: (n: number) => `오늘 무료 사용 가능 횟수: ${n}회`,
-    freeExhausted: '오늘 무료 사용 횟수(5회)를 모두 사용했습니다.',
+    freeExhausted: '오늘 무료 사용 횟수(3회)를 모두 사용했습니다.',
     payTitle: '무료 횟수 소진',
-    payDesc: '오늘의 무료 피팅(5회)을 모두 사용하셨습니다.\n추가 이용을 위해 결제가 필요합니다.',
+    payDesc: '오늘의 무료 피팅(3회)을 모두 사용하셨습니다.\n추가 이용을 위해 결제가 필요합니다.',
     payBtn: '결제하고 계속 이용하기',
     payClose: '닫기',
     payPlan1: '일일 이용권', payPlan1Price: '₩990', payPlan1Desc: '오늘 하루 무제한',
     payPlan2: '월정액', payPlan2Price: '₩9,900', payPlan2Desc: '30일 무제한',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
-      { q: '하루 무료 횟수는 몇 번인가요?', a: '매일 자정 기준으로 5회 무료 사용이 제공됩니다. 추가 사용은 일일 이용권 또는 월정액 구독을 통해 가능합니다.' },
+      { q: '하루 무료 횟수는 몇 번인가요?', a: '매일 자정 기준으로 3회 무료 사용이 제공됩니다. 추가 사용은 일일 이용권 또는 월정액 구독을 통해 가능합니다.' },
       { q: '어떤 사진을 올려야 가장 좋은 결과가 나오나요?', a: '인물 사진은 배경이 단순하고 전신 또는 상반신이 잘 보이는 정면 사진을 권장합니다. 의상 사진은 제품 단독 컷이나 착용 모델 사진이 적합합니다.' },
       { q: '합성 결과가 마음에 들지 않으면 어떻게 하나요?', a: '다른 사진으로 다시 시도해보세요. 인물 사진의 배경이 단순할수록, 의상 사진이 선명할수록 더 좋은 결과가 나옵니다.' },
       { q: '모바일에서도 사용할 수 있나요?', a: '네. HAMDEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
@@ -61,23 +62,23 @@ const translations = {
     h1Step: 'Step 01', h1Title: 'Upload Your Photo', h1Desc: 'Upload a front-facing full-body or upper-body photo. A simple background improves result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Try It Now', trySub: '5 free uses per day. No sign-up required.',
+    tryTitle: 'Try It Now', trySub: '3 free uses per day. No sign-up required.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     generate: 'Generate AI Fitting', generating: 'AI Processing... (up to 30s)',
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.',
     resultTitle: 'Fitting Result', download: 'Save Image',
     freeLeft: (n: number) => `Free uses remaining today: ${n}`,
-    freeExhausted: "You've used all 5 free tries for today.",
+    freeExhausted: "You've used all 3 free tries for today.",
     payTitle: 'Daily Limit Reached',
-    payDesc: "You've used all 5 free fittings for today.\nUpgrade to continue.",
+    payDesc: "You've used all 3 free fittings for today.\nUpgrade to continue.",
     payBtn: 'Unlock More',
     payClose: 'Close',
     payPlan1: 'Day Pass', payPlan1Price: '$0.99', payPlan1Desc: 'Unlimited for today',
     payPlan2: 'Monthly', payPlan2Price: '$9.99', payPlan2Desc: '30 days unlimited',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
-      { q: 'How many free uses do I get per day?', a: '5 free virtual try-ons are provided daily, resetting at midnight. Additional usage requires a Day Pass or monthly subscription.' },
+      { q: 'How many free uses do I get per day?', a: '3 free virtual try-ons are provided daily, resetting at midnight. Additional usage requires a Day Pass or monthly subscription.' },
       { q: 'What kind of photos work best?', a: 'For person photos, use a front-facing shot with a simple background showing your full or upper body. For clothing, solo product shots work best.' },
       { q: "What if I don't like the result?", a: "Try again with different photos. Simpler backgrounds and clearer clothing images produce better results." },
       { q: 'Can I use it on mobile?', a: 'Yes. HAMDEVA is mobile-first and fully optimized for smartphones and tablets.' },
@@ -102,23 +103,23 @@ const translations = {
     h1Step: 'Paso 01', h1Title: 'Sube tu foto', h1Desc: 'Sube una foto de frente con cuerpo completo o medio cuerpo. Un fondo simple mejora los resultados.',
     h2Step: 'Paso 02', h2Title: 'Sube la ropa', h2Desc: 'Sube la prenda que quieres probar. Fotos de producto o de modelo, ambas funcionan bien.',
     h3Step: 'Paso 03', h3Title: 'Genera y guarda', h3Desc: 'Pulsa Generar y el resultado estará listo en segundos. Descárgalo de inmediato.',
-    tryTitle: 'Pruébalo ahora', trySub: '5 usos gratuitos por día. Sin registro.',
+    tryTitle: 'Pruébalo ahora', trySub: '3 usos gratuitos por día. Sin registro.',
     step1Label: 'Paso 1', step1Title: 'Foto de persona', step1Desc: 'Arrastra o haz clic para subir una foto de frente',
     step2Label: 'Paso 2', step2Title: 'Foto de ropa', step2Desc: 'Arrastra o haz clic para subir la prenda',
     generate: 'Generar prueba IA', generating: 'Procesando... (hasta 30s)',
     alertBoth: '¡Sube una foto de persona y una de ropa!', alertError: 'Error al generar. Inténtalo de nuevo.',
     resultTitle: 'Resultado', download: 'Guardar imagen',
     freeLeft: (n: number) => `Usos gratuitos restantes hoy: ${n}`,
-    freeExhausted: 'Has usado los 5 intentos gratuitos de hoy.',
+    freeExhausted: 'Has usado los 3 intentos gratuitos de hoy.',
     payTitle: 'Límite diario alcanzado',
-    payDesc: 'Has usado los 5 fittings gratuitos de hoy.\nActualiza para continuar.',
+    payDesc: 'Has usado los 3 fittings gratuitos de hoy.\nActualiza para continuar.',
     payBtn: 'Desbloquear más',
     payClose: 'Cerrar',
     payPlan1: 'Pase diario', payPlan1Price: '€0,99', payPlan1Desc: 'Ilimitado hoy',
     payPlan2: 'Mensual', payPlan2Price: '€9,99', payPlan2Desc: '30 días ilimitados',
     faqTitle: 'Preguntas frecuentes', faqSub: 'Todo lo que necesitas saber sobre HAMDEVA.',
     faqs: [
-      { q: '¿Cuántos usos gratuitos tengo por día?', a: 'Se proporcionan 5 pruebas virtuales gratuitas al día, que se reinician a medianoche. El uso adicional requiere un pase diario o suscripción mensual.' },
+      { q: '¿Cuántos usos gratuitos tengo por día?', a: 'Se proporcionan 3 pruebas virtuales gratuitas al día, que se reinician a medianoche. El uso adicional requiere un pase diario o suscripción mensual.' },
       { q: '¿Qué tipo de fotos funcionan mejor?', a: 'Usa una foto de frente con fondo simple mostrando cuerpo completo. Para ropa, las fotos de producto individuales son ideales.' },
       { q: '¿Qué hago si no me gusta el resultado?', a: 'Intenta con otras fotos. Fondos más simples e imágenes de ropa más nítidas producen mejores resultados.' },
       { q: '¿Puedo usarlo en móvil?', a: 'Sí. HAMDEVA está diseñado móvil-primero y optimizado para smartphones y tablets.' },
@@ -143,23 +144,23 @@ const translations = {
     h1Step: '第一步', h1Title: '上传人物照片', h1Desc: '请上传正面清晰的全身或半身照片。背景简单时效果更佳。',
     h2Step: '第二步', h2Title: '上传服装照片', h2Desc: '上传您想试穿的服装照片，单品图或模特穿搭图均可。',
     h3Step: '第三步', h3Title: 'AI合成与保存', h3Desc: '点击生成按钮，系统自动分析并合成。结果图像可立即保存。',
-    tryTitle: '立即体验', trySub: '每天5次免费使用，无需注册。',
+    tryTitle: '立即体验', trySub: '每天3次免费使用，无需注册。',
     step1Label: '第1步', step1Title: '上传人物照片', step1Desc: '拖拽或点击上传正面照片',
     step2Label: '第2步', step2Title: '上传服装照片', step2Desc: '拖拽或点击上传服装照片',
     generate: '生成AI试穿效果', generating: 'AI分析中...（最多30秒）',
     alertBoth: '请上传人物照片和服装照片！', alertError: '图像生成失败，请重试。',
     resultTitle: '试穿结果', download: '保存图像',
     freeLeft: (n: number) => `今日剩余免费次数：${n}次`,
-    freeExhausted: '您今日的5次免费试穿已全部使用完毕。',
+    freeExhausted: '您今日的3次免费试穿已全部使用完毕。',
     payTitle: '今日次数已用完',
-    payDesc: '您已使用完今日5次免费试穿。\n请付费继续使用。',
+    payDesc: '您已使用完今日3次免费试穿。\n请付费继续使用。',
     payBtn: '解锁更多次数',
     payClose: '关闭',
     payPlan1: '日票', payPlan1Price: '¥7', payPlan1Desc: '今日无限次使用',
     payPlan2: '月度套餐', payPlan2Price: '¥68', payPlan2Desc: '30天无限次使用',
     faqTitle: '常见问题', faqSub: '解答您关于HAMDEVA使用的疑问。',
     faqs: [
-      { q: '每天有几次免费使用？', a: '每天提供5次免费虚拟试穿，每日午夜重置。额外使用需购买日票或月度套餐。' },
+      { q: '每天有几次免费使用？', a: '每天提供3次免费虚拟试穿，每日午夜重置。额外使用需购买日票或月度套餐。' },
       { q: '什么样的照片效果最好？', a: '人物照片建议使用背景简单的正面全身或半身照。服装照片建议使用单品拍摄图。' },
       { q: '如果结果不满意怎么办？', a: '请尝试换其他照片。背景越简单、服装图越清晰，效果越好。' },
       { q: '可以在手机上使用吗？', a: '可以。HAMDEVA采用移动优先设计，在智能手机和平板上也能提供最佳体验。' },
@@ -195,7 +196,7 @@ const langOptions: { value: Lang; label: string; flag: string }[] = [
   { value: 'it', label: 'Italiano', flag: '🇮🇹' },
 ];
 
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 3;
 
 // ─── 세션 ID (익명 식별자) ────────────────────────────────────
 const getSessionId = (): string => {
@@ -706,15 +707,39 @@ const PaywallModal: React.FC<{ t: typeof translations['ko']; onClose: () => void
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
+  const getRandomSample = (g: string) => {
+    const list = dynamicSamples[g] || [];
+    if (list.length > 0) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+    // Fallback to builtin samples if no virtual samples found
+    const builtins = modelSamples.filter(s => s.gender === g);
+    if (builtins.length > 0) {
+      return builtins[Math.floor(Math.random() * builtins.length)].image;
+    }
+    return null;
+  };
+
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [gender, setGender] = useState<'female' | 'male'>('female');
+  const [gender, setGender] = useState<'female' | 'male' | 'dog' | 'cat'>('female');
+  const [defaultPersonImage, setDefaultPersonImage] = useState<string | null>(() => getRandomSample('female'));
+
+  useEffect(() => {
+    setDefaultPersonImage(getRandomSample(gender));
+  }, [gender]);
+
+  const handleNextSample = () => {
+    setDefaultPersonImage(getRandomSample(gender));
+    setPersonImage(null); // Clear custom upload to show the new default
+  };
+
   const [height, setHeight] = useState<number | ''>('');
   const [weight, setWeight] = useState<number | ''>('');
   const [showModelModal, setShowModelModal] = useState(false);
   const [showClothModal, setShowClothModal] = useState(false);
-  const [activeModelTab, setActiveModelTab] = useState<'female'|'male'>('female');
+  const [activeModelTab, setActiveModelTab] = useState<'female'|'male'|'dog'|'cat'>('female');
   const [activeClothTab, setActiveClothTab] = useState<string>('korea');
   const [resultImage, setResultImage]   = useState<string | null>(null);
   const [resultKey, setResultKey]       = useState('');
@@ -766,14 +791,16 @@ const App: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const activePersonImage = personImage || defaultPersonImage;
+
   const handleGenerate = async () => {
-    if (!personImage || !clothImage) { alert(t.alertBoth); return; }
+    if (!activePersonImage || !clothImage) { alert(t.alertBoth); return; }
 
     // 무료 횟수 체크
     if (freeLeft <= 0) { setShowPaywall(true); return; }
 
     // 캐시 확인 — 동일 이미지 조합은 API 호출 없이 재사용
-    const cacheKey = simpleHash(personImage, clothImage);
+    const cacheKey = simpleHash(activePersonImage, clothImage);
     const cached = getCached(cacheKey);
     if (cached) {
       setResultImage(cached);
@@ -786,7 +813,7 @@ const App: React.FC = () => {
     setResultImage(null);
 
     try {
-      const result = await callNanoBanana({ sessionId, personImage, garmentImage: clothImage, bodyProfile: { gender, height, weight } });
+      const result = await callNanoBanana({ sessionId, personImage: activePersonImage, garmentImage: clothImage, bodyProfile: { gender, height, weight } });
       const newCount = await fetchUsage(sessionId);
       setUsageCount(newCount);
       setCached(cacheKey, result);
@@ -939,6 +966,8 @@ const App: React.FC = () => {
                 <div className="gender-toggle">
                   <button className={gender === 'female' ? 'active' : ''} onClick={() => setGender('female')}>여성</button>
                   <button className={gender === 'male' ? 'active' : ''} onClick={() => setGender('male')}>남성</button>
+                  <button className={gender === 'dog' ? 'active' : ''} onClick={() => setGender('dog')}>강아지</button>
+                  <button className={gender === 'cat' ? 'active' : ''} onClick={() => setGender('cat')}>고양이</button>
                 </div>
                 <div className="input-group">
                   <input type="number" placeholder="키 (cm)" value={height} onChange={e => setHeight(Number(e.target.value) || '')} />
@@ -946,7 +975,7 @@ const App: React.FC = () => {
                 </div>
               </div>
               <div className="try-actions">
-                <button className="outline-btn" onClick={() => setShowModelModal(true)}>샘플 얼굴 선택</button>
+                <button className="outline-btn" onClick={handleNextSample}>다음 샘플</button>
                 <button className="outline-btn" onClick={() => document.getElementById('person-upload')?.click()}>직접 업로드</button>
                 <input id="person-upload" type="file" hidden accept="image/*" onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -954,8 +983,8 @@ const App: React.FC = () => {
                   e.target.value = '';
                 }} />
               </div>
-              <div className={`preview-box ${personImage ? 'has-image' : ''}`}>
-                {personImage ? <img src={personImage} alt="Person" /> : <div className="upload-placeholder"><span className="upload-icon">🧍</span><p>인물 사진을 선택하세요</p></div>}
+              <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
+                {activePersonImage ? <img src={activePersonImage} alt="Person" /> : <div className="upload-placeholder"><span className="upload-icon">🧍</span><p>인물 사진을 선택하세요</p></div>}
               </div>
             </div>
 
@@ -981,7 +1010,7 @@ const App: React.FC = () => {
 
           <div className="action-section">
             <button className="generate-btn" onClick={handleGenerate}
-              disabled={isGenerating || !personImage || !clothImage}>
+              disabled={isGenerating || !activePersonImage || !clothImage}>
               {isGenerating ? (
                 <><span className="spinner" />{t.generating}</>
               ) : (
