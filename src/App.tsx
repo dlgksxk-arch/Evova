@@ -1050,7 +1050,7 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
       });
     }
 
-    if ((res.status === 404 || res.status === 405) && primaryEndpoint !== fallbackEndpoint) {
+    if ((res.status === 404 || res.status === 405) && (primaryEndpoint as string) !== (fallbackEndpoint as string)) {
       console.warn('[HAMDEVA] tryon route failed, retrying alternate endpoint', {
         primaryEndpoint,
         fallbackEndpoint,
