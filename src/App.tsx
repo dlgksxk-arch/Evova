@@ -909,8 +909,9 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 };
 
 const FREE_LIMIT = 3;
-const SAME_ORIGIN_API_BASE = '/api';
 const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
+const SAME_ORIGIN_TRYON_ENDPOINT = '/generateTryOn';
+const FALLBACK_FUNCTIONS_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/generateTryOn';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -1022,10 +1023,14 @@ const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string 
 const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
-  const primaryEndpoint = `${API_BASE}/tryon`;
-  const fallbackEndpoint = API_BASE === FALLBACK_FUNCTIONS_API_BASE
-    ? `${SAME_ORIGIN_API_BASE}/tryon`
-    : `${FALLBACK_FUNCTIONS_API_BASE}/tryon`;
+  const primaryEndpoint =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? `${API_BASE}/tryon`
+      : FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
+  const fallbackEndpoint =
+    primaryEndpoint === FALLBACK_FUNCTIONS_TRYON_ENDPOINT
+      ? SAME_ORIGIN_TRYON_ENDPOINT
+      : FALLBACK_FUNCTIONS_TRYON_ENDPOINT;
 
   let res: Response;
   try {
