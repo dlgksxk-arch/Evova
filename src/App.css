@@ -44,6 +44,14 @@
   --border:           #DDD0B8;
   --upload-bg:        #FAF5EC;
   --upload-hover-bg:  #F0E8D0;
+  --guide-card-bg:    linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,248,240,0.92));
+  --guide-orb-gold:   rgba(200,150,12,0.18);
+  --guide-orb-blue:   rgba(27,79,138,0.12);
+  --guide-border-face: rgba(184,54,14,0.16);
+  --guide-border-cloth: rgba(27,79,138,0.16);
+  --guide-badge-bg:   rgba(255,255,255,0.88);
+  --guide-badge-border: rgba(44,24,16,0.08);
+  --guide-dot-shadow: rgba(184,54,14,0.08);
 
   --shadow-sm:        0 2px 8px rgba(44,24,16,0.07);
   --shadow-md:        0 8px 24px rgba(44,24,16,0.10);
@@ -85,6 +93,14 @@
   --border:           #3A2A18;
   --upload-bg:        #1E140A;
   --upload-hover-bg:  #2A1E10;
+  --guide-card-bg:    linear-gradient(180deg, rgba(40,25,14,0.94), rgba(28,17,9,0.98));
+  --guide-orb-gold:   rgba(229,171,20,0.16);
+  --guide-orb-blue:   rgba(74,143,212,0.16);
+  --guide-border-face: rgba(224,64,16,0.28);
+  --guide-border-cloth: rgba(74,143,212,0.24);
+  --guide-badge-bg:   rgba(255,255,255,0.06);
+  --guide-badge-border: rgba(250,240,224,0.08);
+  --guide-dot-shadow: rgba(224,64,16,0.18);
 
   --shadow-sm:        0 2px 8px rgba(0,0,0,0.4);
   --shadow-md:        0 8px 24px rgba(0,0,0,0.5);
@@ -448,16 +464,16 @@ a { color: inherit; text-decoration: none; }
   padding: 26px;
   border-radius: 22px;
   background:
-    radial-gradient(circle at top right, rgba(200,150,12,0.18), transparent 42%),
-    radial-gradient(circle at left bottom, rgba(27,79,138,0.12), transparent 36%),
-    linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,248,240,0.92));
+    radial-gradient(circle at top right, var(--guide-orb-gold), transparent 42%),
+    radial-gradient(circle at left bottom, var(--guide-orb-blue), transparent 36%),
+    var(--guide-card-bg);
   box-shadow: 0 18px 32px rgba(44,24,16,0.06);
 }
 .empty-preview-face {
-  border: 1px solid rgba(184,54,14,0.16);
+  border: 1px solid var(--guide-border-face);
 }
 .empty-preview-cloth {
-  border: 1px solid rgba(27,79,138,0.16);
+  border: 1px solid var(--guide-border-cloth);
 }
 .empty-preview-badge {
   display: inline-flex;
@@ -465,8 +481,8 @@ a { color: inherit; text-decoration: none; }
   min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.88);
-  border: 1px solid rgba(44,24,16,0.08);
+  background: var(--guide-badge-bg);
+  border: 1px solid var(--guide-badge-border);
   color: var(--primary);
   font-size: 11px;
   font-weight: 800;
@@ -498,7 +514,7 @@ a { color: inherit; text-decoration: none; }
   height: 8px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent-gold), var(--primary));
-  box-shadow: 0 0 0 4px rgba(184,54,14,0.08);
+  box-shadow: 0 0 0 4px var(--guide-dot-shadow);
 }
 .img-error-msg {
   padding: 24px;
