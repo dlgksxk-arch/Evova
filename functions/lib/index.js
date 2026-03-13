@@ -40,77 +40,101 @@ admin.initializeApp();
 const db = admin.firestore();
 const FREE_LIMIT = 3;
 const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
+const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 const buildTryOnPrompt = (bodyProfile) => {
     const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
+    const identityGuide = subjectType === 'pet'
+        ? 'Preserve the subject’s face, fur pattern, body shape, and species traits from the first image.'
+        : 'Preserve the person’s facial identity, hairstyle, skin tone, and overall appearance from the first image.';
     const bodyGuide = [
-        bodyProfile?.heightCm ? `Use ${bodyProfile.heightCm} cm height as a body proportion hint.` : null,
-        bodyProfile?.weightKg ? `Use ${bodyProfile.weightKg} kg weight as a body volume hint.` : null,
-        'Keep the same person identity and face from the first image.',
-        'Keep the same clothing design, color, silhouette, and material from the second image.',
-        'Compose the final output as a realistic fashion-photo style 1x4 variation sheet.',
-        'Use a simple background and maintain a photorealistic result.',
-    ].filter(Boolean).join('\n');
-    if (subjectType === 'pet') {
-        return `You are a virtual try-on image compositor.
-
-Two images are provided:
-- FIRST IMAGE = the pet. Preserve the exact face, fur pattern, body shape, pose, and species-specific features completely unchanged.
-- SECOND IMAGE = the pet clothing item only. This garment must be worn by the pet in the first image.
-
-Your task: Composite the clothing from the SECOND IMAGE onto the pet in the FIRST IMAGE.
-
-Critical rules:
-1. The pet's face, fur, body proportions, and identity from the FIRST IMAGE must remain unchanged
-2. Fit the clothing naturally to the pet's body and anatomy without turning it into a human garment
-3. Preserve the original pose, background, and lighting from the FIRST IMAGE
-4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
-5. Output must look like a single real photograph, not a collage or illustration
-
-Additional direction:
-${bodyGuide}
-
-Output: One photorealistic image of the pet from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
-    }
-    return `You are a virtual try-on image compositor.
-
-Two images are provided:
-- FIRST IMAGE = the person. Preserve their exact face, skin tone, hair, body shape, and pose completely unchanged.
-- SECOND IMAGE = the clothing item only (no person). This garment must be worn by the person in the first image.
-
-Your task: Composite the clothing from the SECOND IMAGE onto the body of the person in the FIRST IMAGE.
-
-Critical rules:
-1. The person's face and identity from the FIRST IMAGE must be identical in the output
-2. The clothing item from the SECOND IMAGE must appear naturally fitted on the person's body
-3. Preserve the original pose, background, and lighting from the FIRST IMAGE
-4. The fabric texture, color, and design of the clothing must exactly match the SECOND IMAGE
-5. Output must look like a single real photograph, not a collage or illustration
-
-Additional direction:
-${bodyGuide}
-
-Output: One photorealistic image of the person from the FIRST IMAGE wearing the clothing from the SECOND IMAGE.`;
+        bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
+        bodyProfile?.weightKg ? `Reflect a natural body volume using ${bodyProfile.weightKg} kg weight as guidance.` : null,
+    ].filter(Boolean).join(' ');
+    return [
+        'Using the first input image as the identity reference and the second input image as the clothing reference, generate one single wide 1x4 fashion try-on sheet.',
+        'Show the same subject wearing the same outfit in four consistent panels ordered left to right: front view, left 45-degree view, right 45-degree view, and back view.',
+        identityGuide,
+        'Preserve the outfit’s key design details, color, silhouette, styling, and material impression from the second image.',
+        'Keep all four panels visually consistent as the same subject and the same garment.',
+        'Use clean premium studio fashion photography, full-body framing, realistic lighting, and a simple background.',
+        'Do not create four separate files or collage borders outside the single wide sheet.',
+        bodyGuide,
+    ].filter(Boolean).join(' ');
 };
-const extractGeneratedImage = (data) => {
-    const candidates = data.candidates ?? [];
-    for (const candidate of candidates) {
-        const parts = candidate.content?.parts ?? [];
-        for (const part of parts) {
-            if (part.inlineData?.data) {
-                return {
-                    mimeType: part.inlineData.mimeType ?? 'image/png',
-                    data: part.inlineData.data,
-                };
-            }
-            if (part.inline_data?.data) {
-                return {
-                    mimeType: part.inline_data.mime_type ?? 'image/png',
-                    data: part.inline_data.data,
-                };
-            }
-        }
+const parseDataUrl = (input) => {
+    if (input.startsWith('data:')) {
+        const [header, data = ''] = input.split(',', 2);
+        return {
+            mimeType: header.split(';')[0].replace('data:', ''),
+            data,
+        };
     }
-    return null;
+    return { mimeType: 'image/png', data: input };
+};
+const mimeTypeToExtension = (mimeType) => {
+    switch (mimeType) {
+        case 'image/jpeg':
+            return 'jpg';
+        case 'image/webp':
+            return 'webp';
+        default:
+            return 'png';
+    }
+};
+const toImageBlob = (input, fallbackName) => {
+    const { mimeType, data } = parseDataUrl(input);
+    const buffer = Buffer.from(data, 'base64');
+    return {
+        blob: new Blob([buffer], { type: mimeType }),
+        filename: `${fallbackName}.${mimeTypeToExtension(mimeType)}`,
+    };
+};
+const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) => {
+    const apiKey = process.env['OPENAI_API_KEY'] ?? '';
+    if (!apiKey) {
+        throw new Error('OPENAI_API_KEY is not set');
+    }
+    const personFile = toImageBlob(personImage, 'person');
+    const garmentFile = toImageBlob(garmentImage, 'garment');
+    const formData = new FormData();
+    formData.append('model', OPENAI_IMAGE_MODEL);
+    formData.append('prompt', buildTryOnPrompt(bodyProfile));
+    formData.append('image', personFile.blob, personFile.filename);
+    formData.append('image', garmentFile.blob, garmentFile.filename);
+    formData.append('size', '1536x1024');
+    formData.append('quality', 'medium');
+    formData.append('output_format', 'png');
+    formData.append('background', 'opaque');
+    formData.append('n', '1');
+    if (OPENAI_IMAGE_MODEL === 'gpt-image-1') {
+        formData.append('input_fidelity', 'high');
+    }
+    functions.logger.info('openai image edit request', {
+        model: OPENAI_IMAGE_MODEL,
+        size: '1536x1024',
+        inputCount: 2,
+    });
+    const openAIRes = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: formData,
+    });
+    functions.logger.info('openai image edit response', {
+        model: OPENAI_IMAGE_MODEL,
+        status: openAIRes.status,
+    });
+    const responseBody = await openAIRes.json().catch(() => ({}));
+    if (!openAIRes.ok) {
+        functions.logger.error('OpenAI image edit error', responseBody);
+        throw new Error(responseBody.error?.message || `OpenAI API error ${openAIRes.status}`);
+    }
+    const image = responseBody.data?.[0]?.b64_json;
+    if (!image) {
+        throw new Error('OpenAI response did not include an image.');
+    }
+    return { mimeType: 'image/png', data: image };
 };
 // CORS 헤더 설정
 const setCors = (req, res) => {
@@ -180,47 +204,19 @@ exports.api = functions
             res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
             return;
         }
-        // Gemini 이미지 생성 API 호출
-        const apiKey = process.env['NANOBANANA_API_KEY'] ?? '';
-        if (!apiKey) {
-            res.status(500).json({ error: 'API 키가 서버에 설정되어 있지 않습니다.' });
-            return;
-        }
-        const toBase64 = (dataUrl) => dataUrl.split(',')[1];
-        const toMime = (dataUrl) => dataUrl.split(';')[0].split(':')[1];
-        const geminiBody = {
-            contents: [{
-                    parts: [
-                        {
-                            text: buildTryOnPrompt(bodyProfile),
-                        },
-                        { inline_data: { mime_type: toMime(personImage), data: toBase64(personImage) } },
-                        { inline_data: { mime_type: toMime(garmentImage), data: toBase64(garmentImage) } },
-                    ],
-                }],
-            generationConfig: {
-                responseModalities: ['IMAGE', 'TEXT'],
-                temperature: 1,
-                topP: 0.95,
-            },
-        };
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
-        functions.logger.info('api upstream response', { path, status: geminiRes.status });
-        if (!geminiRes.ok) {
-            const errBody = await geminiRes.json().catch(() => ({}));
-            functions.logger.error('Gemini API error', errBody);
-            res.status(502).json({ error: `Gemini API 오류: ${geminiRes.status}`, detail: errBody });
-            return;
-        }
-        const data = await geminiRes.json();
-        const generatedImage = extractGeneratedImage(data);
-        if (generatedImage) {
+        try {
+            const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
             const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
             res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
             return;
         }
-        res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
-        return;
+        catch (error) {
+            functions.logger.error('OpenAI try-on request failed', error);
+            res.status(502).json({
+                error: error instanceof Error ? error.message : 'OpenAI image generation failed',
+            });
+            return;
+        }
     }
     if (path === '/tryon' || path === '/generate') {
         res.status(405).json({ error: 'Method Not Allowed', method: req.method, path, allowed: 'POST, OPTIONS' });
@@ -268,45 +264,18 @@ exports.generateTryOn = functions
         res.status(402).json({ error: 'LIMIT_EXCEEDED', message: '오늘 무료 횟수를 모두 사용했습니다.' });
         return;
     }
-    // Gemini API 키 확인
-    const apiKey = process.env['NANOBANANA_API_KEY'] ?? '';
-    if (!apiKey) {
-        res.status(500).json({ error: 'API 키가 서버에 설정되어 있지 않습니다.' });
-        return;
-    }
-    const toBase64 = (dataUrl) => dataUrl.split(',')[1];
-    const toMime = (dataUrl) => dataUrl.split(';')[0].split(':')[1];
-    const geminiBody = {
-        contents: [{
-                parts: [
-                    {
-                        text: buildTryOnPrompt(bodyProfile),
-                    },
-                    { inline_data: { mime_type: toMime(personImage), data: toBase64(personImage) } },
-                    { inline_data: { mime_type: toMime(garmentImage), data: toBase64(garmentImage) } },
-                ],
-            }],
-        generationConfig: {
-            responseModalities: ['IMAGE', 'TEXT'],
-            temperature: 1,
-            topP: 0.95,
-        },
-    };
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
-    functions.logger.info('generateTryOn upstream response', { status: geminiRes.status });
-    if (!geminiRes.ok) {
-        const errBody = await geminiRes.json().catch(() => ({}));
-        functions.logger.error('Gemini API error', errBody);
-        res.status(502).json({ error: `Gemini API 오류: ${geminiRes.status}`, detail: errBody });
-        return;
-    }
-    const data = await geminiRes.json();
-    const generatedImage = extractGeneratedImage(data);
-    if (generatedImage) {
+    try {
+        const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
         const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
         res.json({ success: true, image: resultDataUrl, mimeType: generatedImage.mimeType });
         return;
     }
-    res.status(502).json({ error: '응답에서 이미지를 찾을 수 없습니다.' });
+    catch (error) {
+        functions.logger.error('OpenAI generateTryOn request failed', error);
+        res.status(502).json({
+            error: error instanceof Error ? error.message : 'OpenAI image generation failed',
+        });
+        return;
+    }
 });
 //# sourceMappingURL=index.js.map
