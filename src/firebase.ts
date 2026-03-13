@@ -39,6 +39,7 @@ if (!firebaseConfigError) {
     auth = getAuth(app);
     db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Firebase initialization failed';
     firebaseConfigError = message.includes('invalid-api-key')
