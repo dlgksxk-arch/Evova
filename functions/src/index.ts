@@ -27,21 +27,25 @@ const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 const buildTryOnPrompt = (bodyProfile?: BodyProfile): string => {
   const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
   const identityGuide = subjectType === 'pet'
-    ? 'Preserve the subject’s face, fur pattern, body shape, and species traits from the first image.'
-    : 'Preserve the person’s facial identity, hairstyle, skin tone, and overall appearance from the first image.';
+    ? 'Use the second input image as the identity reference and preserve the subject’s face, fur pattern, body shape, and species traits consistently across all four panels.'
+    : 'Use the second input image as the identity reference for the face, hairstyle, skin tone, and overall person, and keep that same identity in all four panels.';
   const bodyGuide = [
     bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
     bodyProfile?.weightKg ? `Reflect a natural body volume using ${bodyProfile.weightKg} kg weight as guidance.` : null,
   ].filter(Boolean).join(' ');
 
   return [
-    'Using the first input image as the identity reference and the second input image as the clothing reference, generate one single wide 1x4 fashion try-on sheet.',
-    'Show the same subject wearing the same outfit in four consistent panels ordered left to right: front view, left 45-degree view, right 45-degree view, and back view.',
+    'Use the first input image as the clothing reference and reproduce the garment faithfully.',
+    'Preserve the garment silhouette, color, fabric feel, embroidery, ribbon, accessories, length, sleeve shape, trim, and decorative details exactly.',
+    'Do not invent a new outfit. Do not simplify the outfit. Do not redesign the clothing. Preserve traditional clothing details exactly.',
     identityGuide,
-    'Preserve the outfit’s key design details, color, silhouette, styling, and material impression from the second image.',
-    'Keep all four panels visually consistent as the same subject and the same garment.',
-    'Use clean premium studio fashion photography, full-body framing, realistic lighting, and a simple background.',
-    'Do not create four separate files or collage borders outside the single wide sheet.',
+    'Generate one single wide 1x4 fashion try-on sheet in one image.',
+    'The four panels must be ordered left to right as: front view, left 45-degree view, right 45-degree view, and back view.',
+    'The same subject and the same garment must appear consistently in all four panels.',
+    'The back view must still clearly match the exact same garment from the front views.',
+    'Show full body in all four panels when possible, with enough space to see the full clothing silhouette and elegant fashion posture.',
+    'Use realistic premium studio fashion photography, clean soft neutral background, and consistent catalog lighting across all four panels.',
+    'Do not create separate files. Return one combined wide lookbook sheet only.',
     bodyGuide,
   ].filter(Boolean).join(' ');
 };
@@ -89,14 +93,14 @@ const requestOpenAIComposite = async (
     throw new Error('OPENAI_API_KEY is not set');
   }
 
-  const personFile = toImageBlob(personImage, 'person');
   const garmentFile = toImageBlob(garmentImage, 'garment');
+  const personFile = toImageBlob(personImage, 'person');
   const formData = new FormData();
 
   formData.append('model', OPENAI_IMAGE_MODEL);
   formData.append('prompt', buildTryOnPrompt(bodyProfile));
-  formData.append('image', personFile.blob, personFile.filename);
   formData.append('image', garmentFile.blob, garmentFile.filename);
+  formData.append('image', personFile.blob, personFile.filename);
   formData.append('size', '1536x1024');
   formData.append('quality', 'medium');
   formData.append('output_format', 'png');
@@ -108,8 +112,10 @@ const requestOpenAIComposite = async (
 
   functions.logger.info('openai image edit request', {
     model: OPENAI_IMAGE_MODEL,
+    endpoint: '/v1/images/edits',
     size: '1536x1024',
-    inputCount: 2,
+    hasGarmentImage: Boolean(garmentImage),
+    hasPersonImage: Boolean(personImage),
   });
 
   const openAIRes = await fetch('https://api.openai.com/v1/images/edits', {
@@ -122,6 +128,7 @@ const requestOpenAIComposite = async (
 
   functions.logger.info('openai image edit response', {
     model: OPENAI_IMAGE_MODEL,
+    endpoint: '/v1/images/edits',
     status: openAIRes.status,
   });
 
