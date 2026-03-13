@@ -9,6 +9,8 @@
     "privacy": "隐私政策",
     "terms": "服务条款",
     "contact": "联系",
+    "board": "留言板",
+    "site-management": "站点管理",
     "mypage": "我的页面"
   },
   "meta": {
@@ -264,6 +266,14 @@
           ]
         }
       ]
+    },
+    "board": {
+      "title": "留言板",
+      "description": "留下昵称与内容，记录试穿反馈、想法与服务建议。"
+    },
+    "site-management": {
+      "title": "站点管理",
+      "description": "查看 HAMDEVA 当前运行状态、版本与基础内容指标。"
     },
     "mypage": {
       "title": "我的页面",

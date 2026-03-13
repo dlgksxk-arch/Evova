@@ -9,6 +9,8 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "contact": "Contact",
+    "board": "Board",
+    "site-management": "Site Management",
     "mypage": "My Page"
   },
   "meta": {
@@ -264,6 +266,14 @@
           ]
         }
       ]
+    },
+    "board": {
+      "title": "Community Board",
+      "description": "Leave a nickname and a message to share feedback, fitting notes, or requests with other visitors."
+    },
+    "site-management": {
+      "title": "Site Management",
+      "description": "Review current operating status, runtime version, and simple content metrics for HAMDEVA."
     },
     "mypage": {
       "title": "My Page",

@@ -39,6 +39,19 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // 공개 게시판 — 닉네임과 내용만으로 작성 가능, 모두 읽기 가능
+    match /bbsPosts/{postId} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.nickname is string
+        && request.resource.data.nickname.size() > 0
+        && request.resource.data.nickname.size() <= 40
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 2000;
+      allow update, delete: if false;
+    }
+
     // 나머지 모든 문서 차단
     match /{document=**} {
       allow read, write: if false;

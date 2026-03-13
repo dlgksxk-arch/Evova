@@ -36,6 +36,14 @@ interface GenerationRecord {
   createdAt?: Timestamp | null;
 }
 
+interface BbsPostRecord {
+  id: string;
+  nickname: string;
+  content: string;
+  uid?: string | null;
+  createdAt?: Timestamp | null;
+}
+
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
   ko: {
@@ -98,9 +106,32 @@ const translations = {
     suggestionContentLabel: '제안 내용',
     suggestionSubmit: '제안 등록하기',
     suggestionLoginRequired: '제안 등록은 로그인 후 사용할 수 있습니다.',
+    suggestionSubmitting: '제안을 등록하고 있습니다...',
     suggestionSaved: '제안이 등록되었습니다.',
+    suggestionFailed: '제안 등록 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
     suggestionPlaceholderTitle: '추가하고 싶은 의상이나 모델 제목',
     suggestionPlaceholderContent: '원하는 샘플 스타일, 국가, 의상 종류를 자유롭게 적어주세요.',
+    boardNicknameLabel: '닉네임',
+    boardContentLabel: '내용',
+    boardNicknamePlaceholder: '게시글에 표시할 닉네임',
+    boardContentPlaceholder: '남기고 싶은 의견이나 후기를 작성해 주세요.',
+    boardSubmit: '게시글 등록하기',
+    boardSubmitting: '게시글을 등록하고 있습니다...',
+    boardInvalid: '닉네임과 내용을 모두 입력해 주세요.',
+    boardSaved: '게시글이 등록되었습니다.',
+    boardFailed: '게시글 등록 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+    boardEmpty: '아직 등록된 게시글이 없습니다.',
+    boardMetaAnonymous: '익명 방문자',
+    siteManagementTitle: '사이트 관리',
+    siteManagementIntro: '서비스 운영 상태와 주요 지표를 한 화면에서 확인할 수 있습니다.',
+    siteVersionLabel: '현재 버전',
+    siteFirebaseLabel: 'Firebase 상태',
+    siteFirebaseReady: '정상 연결',
+    siteFirebaseBlocked: '설정 확인 필요',
+    siteLoginLabel: '현재 로그인 계정',
+    siteBoardCountLabel: '게시판 글 수',
+    siteHistoryCountLabel: '내 생성 기록 수',
+    siteQuotaLabel: '오늘 남은 무료 횟수',
     remainingDaily: (n: number) => `오늘 남은 생성 횟수: ${n}회`,
     noHistory: '아직 생성된 결과가 없습니다.',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
@@ -174,9 +205,32 @@ const translations = {
     suggestionContentLabel: 'Suggestion details',
     suggestionSubmit: 'Submit suggestion',
     suggestionLoginRequired: 'Log in to submit a suggestion.',
+    suggestionSubmitting: 'Submitting your suggestion...',
     suggestionSaved: 'Suggestion submitted.',
+    suggestionFailed: 'Failed to submit the suggestion. Please try again.',
     suggestionPlaceholderTitle: 'Title for the outfit or model suggestion',
     suggestionPlaceholderContent: 'Tell us which sample outfit, country look, or model style you want added.',
+    boardNicknameLabel: 'Nickname',
+    boardContentLabel: 'Post content',
+    boardNicknamePlaceholder: 'Nickname to display on the board',
+    boardContentPlaceholder: 'Write your feedback, request, or outfit note here.',
+    boardSubmit: 'Post to board',
+    boardSubmitting: 'Posting your message...',
+    boardInvalid: 'Please enter both nickname and content.',
+    boardSaved: 'Your post was published.',
+    boardFailed: 'Failed to publish the post. Please try again.',
+    boardEmpty: 'No posts yet.',
+    boardMetaAnonymous: 'Anonymous visitor',
+    siteManagementTitle: 'Site Management',
+    siteManagementIntro: 'Review the current service status and operating metrics in one place.',
+    siteVersionLabel: 'Current version',
+    siteFirebaseLabel: 'Firebase status',
+    siteFirebaseReady: 'Connected',
+    siteFirebaseBlocked: 'Needs attention',
+    siteLoginLabel: 'Signed-in account',
+    siteBoardCountLabel: 'Board posts',
+    siteHistoryCountLabel: 'Saved generations',
+    siteQuotaLabel: 'Remaining daily free uses',
     remainingDaily: (n: number) => `Remaining daily generations: ${n}`,
     noHistory: 'No saved generations yet.',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
@@ -1009,16 +1063,6 @@ const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   vi: 'latin',
   it: 'latin',
 };
-// ─── 세션 ID (익명 식별자) ────────────────────────────────────
-const getSessionId = (): string => {
-  let sid = localStorage.getItem('HAMDEVA-sid');
-  if (!sid) {
-    sid = crypto.randomUUID();
-    localStorage.setItem('HAMDEVA-sid', sid);
-  }
-  return sid;
-};
-
 const getTodayKey = (): string => new Date().toISOString().slice(0, 10);
 
 const getFirebaseDisabledMessage = (): string => (
@@ -1148,6 +1192,24 @@ const isFirestorePermissionError = (error: unknown): boolean => {
   return errorCode.includes('permission-denied');
 };
 
+const formatTimestampLabel = (value?: Timestamp | null): string => {
+  if (!value) {
+    return '';
+  }
+
+  try {
+    return new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(value.toDate());
+  } catch {
+    return '';
+  }
+};
+
 const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL?.trim();
 const API_BASE: string =
   window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -1155,20 +1217,6 @@ const API_BASE: string =
     : (!RAW_API_BASE || RAW_API_BASE.startsWith('/')
         ? FALLBACK_FUNCTIONS_API_BASE
         : RAW_API_BASE);
-
-const fetchUsage = async (sessionId: string): Promise<number> => {
-  try {
-    const res = await fetch(`${API_BASE}/usage?sessionId=${sessionId}`);
-    if (!res.ok) return 0;
-    const data = await res.json() as { count: number };
-    return data.count;
-  } catch {
-    const stored = localStorage.getItem('HAMDEVA-usage');
-    if (!stored) return 0;
-    const { date, count } = JSON.parse(stored) as { date: string; count: number };
-    return date === new Date().toDateString() ? count : 0;
-  }
-};
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -1462,6 +1510,11 @@ const App: React.FC = () => {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [suggestionForm, setSuggestionForm] = useState({ title: '', content: '' });
   const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
+  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+  const [bbsForm, setBbsForm] = useState({ nickname: '', content: '' });
+  const [bbsStatus, setBbsStatus] = useState<string | null>(null);
+  const [bbsSubmitting, setBbsSubmitting] = useState(false);
+  const [bbsPosts, setBbsPosts] = useState<BbsPostRecord[]>([]);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
@@ -1543,6 +1596,25 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+  useEffect(() => {
+    if (!db) {
+      setBbsPosts([]);
+      return;
+    }
+
+    const postsQuery = query(collection(db, 'bbsPosts'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
+      setBbsPosts(snapshot.docs.map((postDoc) => ({
+        id: postDoc.id,
+        ...(postDoc.data() as Omit<BbsPostRecord, 'id'>),
+      })));
+    }, (error) => {
+      console.error('Failed to load board posts:', error);
+      setBbsStatus(t.boardFailed);
+    });
+
+    return () => unsubscribe();
+  }, [db, t.boardFailed]);
   useEffect(() => {
     if (!currentUser || !db) {
       return;
@@ -1665,6 +1737,25 @@ const App: React.FC = () => {
     setActiveContentTab(tab);
     setShowContentModal(true);
   };
+  const scrollToTrySection = () => {
+    window.setTimeout(() => {
+      document.getElementById('try')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  };
+  const handleHeroCta = () => {
+    if (!currentUser) {
+      openAuthModal('login');
+      return;
+    }
+
+    if (currentPage !== 'home') {
+      navigateToPage('home');
+      scrollToTrySection();
+      return;
+    }
+
+    scrollToTrySection();
+  };
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
       setAuthMode(mode);
@@ -1772,15 +1863,56 @@ const App: React.FC = () => {
       return;
     }
 
-    await addDoc(collection(db, 'suggestions'), {
-      uid: currentUser.uid,
-      email: currentUser.email || '',
-      title: suggestionForm.title,
-      content: suggestionForm.content,
-      createdAt: serverTimestamp(),
-    });
-    setSuggestionForm({ title: '', content: '' });
-    setSuggestionStatus(t.suggestionSaved);
+    setSuggestionSubmitting(true);
+    setSuggestionStatus(t.suggestionSubmitting);
+    try {
+      await addDoc(collection(db, 'suggestions'), {
+        uid: currentUser.uid,
+        email: currentUser.email || '',
+        title: suggestionForm.title,
+        content: suggestionForm.content,
+        createdAt: serverTimestamp(),
+      });
+      setSuggestionForm({ title: '', content: '' });
+      setSuggestionStatus(t.suggestionSaved);
+    } catch (error) {
+      console.error('Failed to submit suggestion:', error);
+      setSuggestionStatus(isFirestorePermissionError(error) ? t.suggestionFailed : buildAuthErrorMessage(error, t.suggestionFailed));
+    } finally {
+      setSuggestionSubmitting(false);
+    }
+  };
+
+  const handleBbsSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!db) {
+      setBbsStatus(getFirebaseDisabledMessage());
+      return;
+    }
+
+    if (!bbsForm.nickname.trim() || !bbsForm.content.trim()) {
+      setBbsStatus(t.boardInvalid);
+      return;
+    }
+
+    setBbsSubmitting(true);
+    setBbsStatus(t.boardSubmitting);
+    try {
+      await addDoc(collection(db, 'bbsPosts'), {
+        nickname: bbsForm.nickname.trim(),
+        content: bbsForm.content.trim(),
+        uid: currentUser?.uid || null,
+        createdAt: serverTimestamp(),
+      });
+      setBbsForm({ nickname: '', content: '' });
+      setBbsStatus(t.boardSaved);
+    } catch (error) {
+      console.error('Failed to submit board post:', error);
+      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed));
+    } finally {
+      setBbsSubmitting(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -1887,6 +2019,9 @@ const App: React.FC = () => {
                     <button className="lang-option" onClick={() => { navigateToPage('mypage'); setUserMenuOpen(false); }} type="button">
                       {t.myPage}
                     </button>
+                    <button className="lang-option" onClick={() => { navigateToPage('site-management'); setUserMenuOpen(false); }} type="button">
+                      {contentLocale.nav['site-management']}
+                    </button>
                     <button className="lang-option" onClick={() => { void handleLogout(); setUserMenuOpen(false); }} type="button">
                       {t.logout}
                     </button>
@@ -1937,6 +2072,9 @@ const App: React.FC = () => {
               <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
               <h1 className="hero-title">{contentLocale.hero.title}</h1>
               <p className="hero-sub">{contentLocale.hero.sub}</p>
+              <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
+                {t.heroCta}
+              </button>
             </>
           ) : (
             <>
@@ -2195,8 +2333,8 @@ const App: React.FC = () => {
                         <span key={item} className="suggestion-chip">{item}</span>
                       ))}
                     </div>
-                    <button className="generate-btn suggestion-submit-btn" type="submit">
-                      {t.suggestionSubmit}
+                    <button className="generate-btn suggestion-submit-btn" disabled={suggestionSubmitting} type="submit">
+                      {suggestionSubmitting ? t.suggestionSubmitting : t.suggestionSubmit}
                     </button>
                   </div>
                   {suggestionStatus && <p className="suggestion-status">{suggestionStatus}</p>}
@@ -2229,6 +2367,90 @@ const App: React.FC = () => {
                     <p>{item.description}</p>
                   </article>
                 ))}
+              </div>
+            )}
+
+            {currentPage === 'board' && (
+              <div className="bbs-layout">
+                <article className="page-article">
+                  <h2>{contentLocale.pages.board.title}</h2>
+                  <p>{contentLocale.pages.board.description}</p>
+                  <form className="suggestion-form bbs-form" onSubmit={handleBbsSubmit}>
+                    <label>
+                      {t.boardNicknameLabel}
+                      <input
+                        placeholder={t.boardNicknamePlaceholder}
+                        type="text"
+                        value={bbsForm.nickname}
+                        onChange={(event) => setBbsForm((prev) => ({ ...prev, nickname: event.target.value }))}
+                      />
+                    </label>
+                    <label>
+                      {t.boardContentLabel}
+                      <textarea
+                        placeholder={t.boardContentPlaceholder}
+                        rows={5}
+                        value={bbsForm.content}
+                        onChange={(event) => setBbsForm((prev) => ({ ...prev, content: event.target.value }))}
+                      />
+                    </label>
+                    <div className="bbs-form-footer">
+                      <button className="generate-btn suggestion-submit-btn" disabled={bbsSubmitting} type="submit">
+                        {bbsSubmitting ? t.boardSubmitting : t.boardSubmit}
+                      </button>
+                      {bbsStatus && <p className="suggestion-status">{bbsStatus}</p>}
+                    </div>
+                  </form>
+                </article>
+
+                <div className="bbs-post-list">
+                  {bbsPosts.length > 0 ? bbsPosts.map((post) => (
+                    <article key={post.id} className="page-article bbs-post-card">
+                      <div className="bbs-post-header">
+                        <strong>{post.nickname || t.boardMetaAnonymous}</strong>
+                        {post.createdAt && <span>{formatTimestampLabel(post.createdAt)}</span>}
+                      </div>
+                      <p>{post.content}</p>
+                    </article>
+                  )) : (
+                    <article className="page-article">
+                      <p>{t.boardEmpty}</p>
+                    </article>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {currentPage === 'site-management' && (
+              <div className="management-grid">
+                <article className="page-article">
+                  <h2>{t.siteManagementTitle}</h2>
+                  <p>{t.siteManagementIntro}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteVersionLabel}</h3>
+                  <p>{appVersion}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteFirebaseLabel}</h3>
+                  <p>{isFirebaseConfigured ? t.siteFirebaseReady : t.siteFirebaseBlocked}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteLoginLabel}</h3>
+                  <p>{currentUser?.email || t.boardMetaAnonymous}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteBoardCountLabel}</h3>
+                  <p>{bbsPosts.length}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteHistoryCountLabel}</h3>
+                  <p>{historyItems.length}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteQuotaLabel}</h3>
+                  <p>{remainingGenerationCount}</p>
+                </article>
               </div>
             )}
 

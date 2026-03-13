@@ -16,6 +16,8 @@ export type SitePage =
   | 'privacy'
   | 'terms'
   | 'contact'
+  | 'board'
+  | 'site-management'
   | 'mypage';
 
 export const SITE_PAGES: SitePage[] = [
@@ -28,6 +30,8 @@ export const SITE_PAGES: SitePage[] = [
   'privacy',
   'terms',
   'contact',
+  'board',
+  'site-management',
   'mypage',
 ];
 
@@ -36,6 +40,7 @@ export const NAV_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
+  'board',
   'privacy',
   'terms',
   'contact',

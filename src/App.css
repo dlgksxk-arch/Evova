@@ -663,6 +663,60 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 
+.hero-cta-btn {
+  margin-top: 26px;
+}
+
+.bbs-layout,
+.management-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.management-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bbs-form {
+  margin-top: 18px;
+  max-width: none;
+}
+
+.bbs-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bbs-form-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.bbs-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bbs-post-card p {
+  white-space: pre-wrap;
+}
+
+.bbs-post-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 12px;
+  color: var(--text-sub);
+}
+
 .content-card {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border: 1px solid var(--border);
@@ -1454,7 +1508,8 @@ a { color: inherit; text-decoration: none; }
   .contact-layout,
   .compact-card-grid,
   .country-card-grid,
-  .history-grid {
+  .history-grid,
+  .management-grid {
     grid-template-columns: 1fr;
   }
   .hero-section {
