@@ -4,6 +4,7 @@ import ClothSampleModal from './components/ClothSampleModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
+import { HOME_BOTTOM_SECTIONS, HOME_TOP_SECTIONS, NAV_ITEMS, PAGE_CONTENT, SUPPORT_EMAIL, type SitePage } from './data/siteContent';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
@@ -1156,6 +1157,11 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
   </div>
 );
 
+const getPageFromHash = (hash: string): SitePage => {
+  const normalized = hash.replace(/^#/, '');
+  return NAV_ITEMS.some((item) => item.page === normalized) ? normalized as SitePage : 'home';
+};
+
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const personInputRef = useRef<HTMLInputElement>(null);
@@ -1183,6 +1189,8 @@ const App: React.FC = () => {
   const [usageCount, setUsageCount]     = useState(0);
   const [lang, setLang] = useState<LanguageCode>('ko');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
+  const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   
   const t = uiTranslations[lang];
   const sessionId = getSessionId();
@@ -1196,6 +1204,15 @@ const App: React.FC = () => {
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
   }, [darkMode]);
   useEffect(() => {
+    const syncPage = () => setCurrentPage(getPageFromHash(window.location.hash));
+    window.addEventListener('hashchange', syncPage);
+    window.addEventListener('popstate', syncPage);
+    return () => {
+      window.removeEventListener('hashchange', syncPage);
+      window.removeEventListener('popstate', syncPage);
+    };
+  }, []);
+  useEffect(() => {
     setPersonPreviewState(!activePersonImage ? 'idle' : personFile ? 'ready' : 'loading');
   }, [activePersonImage, personFile]);
   useEffect(() => {
@@ -1208,6 +1225,25 @@ const App: React.FC = () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
   }, [personImage, clothImage]);
+  useEffect(() => {
+    const pageMeta = currentPage === 'home'
+      ? {
+          title: 'HAMDEVA | AI Hanbok Virtual Try-On, Guides, and Fashion Articles',
+          description: 'Explore Hanbok culture, learn how AI virtual try-on works, and preview Korean traditional fashion with HAMDEVA.',
+        }
+      : PAGE_CONTENT[currentPage];
+
+    document.title = pageMeta.title;
+
+    let descriptionTag = document.querySelector('meta[name="description"]');
+    if (!descriptionTag) {
+      descriptionTag = document.createElement('meta');
+      descriptionTag.setAttribute('name', 'description');
+      document.head.appendChild(descriptionTag);
+    }
+
+    descriptionTag.setAttribute('content', pageMeta.description);
+  }, [currentPage]);
 
   const loadPersonUpload = async (file: File) => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -1236,6 +1272,22 @@ const App: React.FC = () => {
       return;
     }
     setShowClothSampleModal(true);
+  };
+  const navigateToPage = (page: SitePage) => {
+    const nextUrl = page === 'home'
+      ? `${window.location.pathname}${window.location.search}`
+      : `${window.location.pathname}${window.location.search}#${page}`;
+    window.history.pushState(null, '', nextUrl);
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const handleContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const subject = encodeURIComponent(`HAMDEVA inquiry from ${contactForm.name || 'website visitor'}`);
+    const body = encodeURIComponent(
+      `Name: ${contactForm.name}\nEmail: ${contactForm.email}\n\nMessage:\n${contactForm.message}`,
+    );
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
 
   const handleGenerate = async () => {
@@ -1293,8 +1345,20 @@ const App: React.FC = () => {
       <nav className="landing-nav">
         <div className="nav-content">
           <div className="nav-brand">
-            <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
+            <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
             <span className="app-version">{APP_VERSION}</span>
+          </div>
+          <div className="nav-links">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.page}
+                className={`nav-link ${currentPage === item.page ? 'active' : ''}`}
+                onClick={() => navigateToPage(item.page)}
+                type="button"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
           <div className="nav-right">
             <LangDropdown lang={lang} onChange={setLang} />
@@ -1307,211 +1371,351 @@ const App: React.FC = () => {
 
       <section className="hero-section">
         <div className="hero-content">
-          <div className="hero-eyebrow">{t.heroEyebrow}</div>
-          <h1 className="hero-title">{t.heroTitle}</h1>
-          <p className="hero-sub">{t.heroSub}</p>
-        </div>
-      </section>
-
-      <section id="try" className="section try-section">
-        <div className="section-inner">
-          <div className="usage-bar">{t.freeLeft(Math.max(0, FREE_LIMIT - usageCount))}</div>
-
-          <div className="try-layout">
-            <div className="try-column">
-              <div className="card-header">
-                <span className="section-label">Step 1</span>
-                <h3 className="card-title">{t.step1Title}</h3>
-              </div>
-              
-              <div className="try-actions">
-                <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
-                  {t.chooseSample}
-                </button>
-                <button className="outline-btn" onClick={() => personInputRef.current?.click()}>
-                  {t.uploadMyPhoto}
-                </button>
-                <input
-                  id="p-up"
-                  ref={personInputRef}
-                  type="file"
-                  hidden
-                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                  onClick={(e) => { e.currentTarget.value = ''; }}
-                  onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) {
-                    void loadPersonUpload(f);
-                  }
-                }}
-                />
-              </div>
-
-              <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
-                {activePersonImage ? (
-                  <>
-                    {personPreviewState === 'loading' && (
-                      <div className="preview-overlay">
-                        <span className="spinner"></span>
-                        <span>{personUploadMessage || t.loadingImage}</span>
-                      </div>
-                    )}
-                    {personPreviewState === 'error' && (
-                      <div className="img-error-msg">{t.imageLoadError}</div>
-                    )}
-                    <img 
-                      src={activePersonImage} 
-                      alt="Face" 
-                      onLoad={() => {
-                        setPersonPreviewState('ready');
-                        setPersonUploadMessage(null);
-                      }}
-                      onError={() => {
-                        setPersonUploadMessage(null);
-                        setPersonPreviewState('error');
-                      }}
-                      className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
-                    />
-                  </>
-                ) : (
-                  <EmptyPreviewState
-                    title={t.facePlaceholderTitle}
-                    tips={emptyFaceTips}
-                    type="face"
-                  />
-                )}
-                {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
-                {(personImage || selectedSampleUrl) && (
-                  <button className="clear-img-btn" onClick={() => {
-                    if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
-                    setPersonImage(null);
-                    setPersonFile(null);
-                    setSelectedSampleUrl(null);
-                    setPersonUploadMessage(null);
-                    setPersonPreviewState('idle');
-                  }}>&times;</button>
-                )}
-              </div>
-            </div>
-
-            <div className="try-column">
-              <div className="card-header">
-                <span className="section-label">Step 2</span>
-                <h3 className="card-title">{t.step2Title}</h3>
-              </div>
-              <div className="try-actions">
-                <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
-                  {t.chooseClothingSample}
-                </button>
-                <button className="outline-btn" onClick={() => clothInputRef.current?.click()}>
-                  {t.uploadClothing}
-                </button>
-                <input
-                  id="c-up"
-                  ref={clothInputRef}
-                  type="file"
-                  hidden
-                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                  onClick={(e) => { e.currentTarget.value = ''; }}
-                  onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) {
-                    void loadClothUpload(f);
-                  }
-                }}
-                />
-              </div>
-              <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
-                {activeClothImage ? (
-                  <>
-                    {clothPreviewState === 'loading' && (
-                      <div className="preview-overlay">
-                        <span className="spinner"></span>
-                        <span>{clothUploadMessage || t.loadingImage}</span>
-                      </div>
-                    )}
-                    {clothPreviewState === 'error' ? (
-                      <div className="img-error-msg">{t.imageLoadError}</div>
-                    ) : (
-                      <img
-                        src={activeClothImage}
-                        alt="Cloth"
-                        className={clothPreviewState === 'ready' ? 'is-visible' : ''}
-                        onLoad={() => {
-                          setClothPreviewState('ready');
-                          setClothUploadMessage(null);
-                        }}
-                        onError={() => {
-                          setClothUploadMessage(null);
-                          setClothPreviewState('error');
-                        }}
-                      />
-                    )}
-                    {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
-                    {(clothImage || selectedClothSampleUrl) && (
-                      <button className="clear-img-btn" onClick={() => {
-                        if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-                        setClothImage(null);
-                        setClothFile(null);
-                        setSelectedClothSampleUrl(null);
-                        setClothUploadMessage(null);
-                        setClothPreviewState('idle');
-                      }}>&times;</button>
-                    )}
-                  </>
-                ) : (
-                  <EmptyPreviewState
-                    title={t.clothingPlaceholderTitle}
-                    tips={emptyClothTips}
-                    type="cloth"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="action-section">
-            <button className="generate-btn" onClick={handleGenerate} disabled={isGenerating || !activePersonImage || !activeClothImage}>
-              {isGenerating ? (
-                <><span className="spinner"></span>{t.generating}</>
-              ) : t.generate}
-            </button>
-            {isGenerating && <p className="loading-subtext">{t.loadingDetail}</p>}
-          </div>
-
-          {resultImage && (
-            <div id="result-area" className="results-section">
-              <h2 className="section-heading">{t.resultTitle}</h2>
-              <div className="composite-result">
-                {resultPreviewState === 'loading' && (
-                  <div className="preview-overlay result-overlay">
-                    <span className="spinner"></span>
-                    <span>{t.renderingResult}</span>
-                  </div>
-                )}
-                {resultPreviewState === 'error' ? (
-                  <div className="img-error-msg">{t.resultDisplayError}</div>
-                ) : (
-                  <img 
-                    src={resultImage}
-                    alt="Result"
-                    className={resultPreviewState === 'ready' ? 'is-visible' : ''}
-                    onLoad={() => setResultPreviewState('ready')}
-                    onError={() => setResultPreviewState('error')}
-                  />
-                )}
-                <div className="watermark">HAMDEVA AI</div>
-              </div>
-              <button className="download-btn" onClick={() => {
-                const a = document.createElement('a'); a.href = resultImage; a.download = 'hamdeva-fitting.png'; a.click();
-              }}>{t.download}</button>
-            </div>
+          {currentPage === 'home' ? (
+            <>
+              <div className="hero-eyebrow">{t.heroEyebrow}</div>
+              <h1 className="hero-title">{t.heroTitle}</h1>
+              <p className="hero-sub">{t.heroSub}</p>
+            </>
+          ) : (
+            <>
+              <div className="hero-eyebrow">HAMDEVA CONTENT</div>
+              <h1 className="hero-title page-title">{PAGE_CONTENT[currentPage].title}</h1>
+              <p className="hero-sub">{PAGE_CONTENT[currentPage].description}</p>
+            </>
           )}
         </div>
       </section>
 
+      {currentPage === 'home' ? (
+        <>
+          <section className="section editorial-section">
+            <div className="section-inner">
+              <div className="content-grid">
+                {HOME_TOP_SECTIONS.map((section) => (
+                  <article key={section.heading} className="content-card">
+                    <h2>{section.heading}</h2>
+                    {section.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="try" className="section try-section">
+            <div className="section-inner">
+              <div className="usage-bar">{t.freeLeft(Math.max(0, FREE_LIMIT - usageCount))}</div>
+
+              <div className="try-layout">
+                <div className="try-column">
+                  <div className="card-header">
+                    <span className="section-label">Step 1</span>
+                    <h3 className="card-title">{t.step1Title}</h3>
+                  </div>
+                  
+                  <div className="try-actions">
+                    <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
+                      {t.chooseSample}
+                    </button>
+                    <button className="outline-btn" onClick={() => personInputRef.current?.click()}>
+                      {t.uploadMyPhoto}
+                    </button>
+                    <input
+                      id="p-up"
+                      ref={personInputRef}
+                      type="file"
+                      hidden
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onClick={(e) => { e.currentTarget.value = ''; }}
+                      onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        void loadPersonUpload(f);
+                      }
+                    }}
+                    />
+                  </div>
+
+                  <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
+                    {activePersonImage ? (
+                      <>
+                        {personPreviewState === 'loading' && (
+                          <div className="preview-overlay">
+                            <span className="spinner"></span>
+                            <span>{personUploadMessage || t.loadingImage}</span>
+                          </div>
+                        )}
+                        {personPreviewState === 'error' && (
+                          <div className="img-error-msg">{t.imageLoadError}</div>
+                        )}
+                        <img 
+                          src={activePersonImage} 
+                          alt="Face" 
+                          onLoad={() => {
+                            setPersonPreviewState('ready');
+                            setPersonUploadMessage(null);
+                          }}
+                          onError={() => {
+                            setPersonUploadMessage(null);
+                            setPersonPreviewState('error');
+                          }}
+                          className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
+                        />
+                      </>
+                    ) : (
+                      <EmptyPreviewState
+                        title={t.facePlaceholderTitle}
+                        tips={emptyFaceTips}
+                        type="face"
+                      />
+                    )}
+                    {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
+                    {(personImage || selectedSampleUrl) && (
+                      <button className="clear-img-btn" onClick={() => {
+                        if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+                        setPersonImage(null);
+                        setPersonFile(null);
+                        setSelectedSampleUrl(null);
+                        setPersonUploadMessage(null);
+                        setPersonPreviewState('idle');
+                      }}>&times;</button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="try-column">
+                  <div className="card-header">
+                    <span className="section-label">Step 2</span>
+                    <h3 className="card-title">{t.step2Title}</h3>
+                  </div>
+                  <div className="try-actions">
+                    <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
+                      {t.chooseClothingSample}
+                    </button>
+                    <button className="outline-btn" onClick={() => clothInputRef.current?.click()}>
+                      {t.uploadClothing}
+                    </button>
+                    <input
+                      id="c-up"
+                      ref={clothInputRef}
+                      type="file"
+                      hidden
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onClick={(e) => { e.currentTarget.value = ''; }}
+                      onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        void loadClothUpload(f);
+                      }
+                    }}
+                    />
+                  </div>
+                  <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
+                    {activeClothImage ? (
+                      <>
+                        {clothPreviewState === 'loading' && (
+                          <div className="preview-overlay">
+                            <span className="spinner"></span>
+                            <span>{clothUploadMessage || t.loadingImage}</span>
+                          </div>
+                        )}
+                        {clothPreviewState === 'error' ? (
+                          <div className="img-error-msg">{t.imageLoadError}</div>
+                        ) : (
+                          <img
+                            src={activeClothImage}
+                            alt="Cloth"
+                            className={clothPreviewState === 'ready' ? 'is-visible' : ''}
+                            onLoad={() => {
+                              setClothPreviewState('ready');
+                              setClothUploadMessage(null);
+                            }}
+                            onError={() => {
+                              setClothUploadMessage(null);
+                              setClothPreviewState('error');
+                            }}
+                          />
+                        )}
+                        {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
+                        {(clothImage || selectedClothSampleUrl) && (
+                          <button className="clear-img-btn" onClick={() => {
+                            if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+                            setClothImage(null);
+                            setClothFile(null);
+                            setSelectedClothSampleUrl(null);
+                            setClothUploadMessage(null);
+                            setClothPreviewState('idle');
+                          }}>&times;</button>
+                        )}
+                      </>
+                    ) : (
+                      <EmptyPreviewState
+                        title={t.clothingPlaceholderTitle}
+                        tips={emptyClothTips}
+                        type="cloth"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="action-section">
+                <button className="generate-btn" onClick={handleGenerate} disabled={isGenerating || !activePersonImage || !activeClothImage}>
+                  {isGenerating ? (
+                    <><span className="spinner"></span>{t.generating}</>
+                  ) : t.generate}
+                </button>
+                {isGenerating && <p className="loading-subtext">{t.loadingDetail}</p>}
+              </div>
+
+              {resultImage && (
+                <div id="result-area" className="results-section">
+                  <h2 className="section-heading">{t.resultTitle}</h2>
+                  <div className="composite-result">
+                    {resultPreviewState === 'loading' && (
+                      <div className="preview-overlay result-overlay">
+                        <span className="spinner"></span>
+                        <span>{t.renderingResult}</span>
+                      </div>
+                    )}
+                    {resultPreviewState === 'error' ? (
+                      <div className="img-error-msg">{t.resultDisplayError}</div>
+                    ) : (
+                      <img 
+                        src={resultImage}
+                        alt="Result"
+                        className={resultPreviewState === 'ready' ? 'is-visible' : ''}
+                        onLoad={() => setResultPreviewState('ready')}
+                        onError={() => setResultPreviewState('error')}
+                      />
+                    )}
+                    <div className="watermark">HAMDEVA AI</div>
+                  </div>
+                  <button className="download-btn" onClick={() => {
+                    const a = document.createElement('a'); a.href = resultImage; a.download = 'hamdeva-fitting.png'; a.click();
+                  }}>{t.download}</button>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="section editorial-section">
+            <div className="section-inner">
+              <div className="content-grid">
+                {HOME_BOTTOM_SECTIONS.map((section) => (
+                  <article key={section.heading} className="content-card content-card-wide">
+                    <h2>{section.heading}</h2>
+                    {section.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="section editorial-section">
+            <div className="section-inner">
+              <div className="section-copy">
+                <h2>Featured Hanbok Reads</h2>
+                <p>Read editorial guides and long-form articles that explain the history of Hanbok, modern reinterpretations, and the role of technology in future fashion experiences.</p>
+              </div>
+              <div className="blog-preview-grid">
+                {PAGE_CONTENT['fashion-blog'].articles?.slice(0, 3).map((article) => (
+                  <article key={article.slug} className="blog-preview-card">
+                    <h3>{article.title}</h3>
+                    <p>{article.description}</p>
+                    <button className="text-link-btn" onClick={() => navigateToPage('fashion-blog')} type="button">
+                      Read article
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      ) : (
+        <main className="section page-shell">
+          <div className="section-inner page-layout">
+            {'sections' in PAGE_CONTENT[currentPage] && PAGE_CONTENT[currentPage].sections?.map((section) => (
+              <article key={section.heading} className="page-article">
+                <h2>{section.heading}</h2>
+                {section.subheading && <h3>{section.subheading}</h3>}
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </article>
+            ))}
+
+            {currentPage === 'fashion-blog' && (
+              <div className="blog-article-stack">
+                {PAGE_CONTENT['fashion-blog'].articles?.map((article) => (
+                  <article key={article.slug} className="page-article blog-article">
+                    <h2>{article.title}</h2>
+                    <p className="article-description">{article.description}</p>
+                    {article.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {currentPage === 'contact' && (
+              <div className="contact-layout">
+                <article className="page-article">
+                  <h2>Email Support</h2>
+                  <p>For customer support, partnership questions, or editorial feedback, contact HAMDEVA at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+                  <p>We review messages related to technical issues, content corrections, Hanbok education, and AI try-on quality improvements.</p>
+                </article>
+                <form className="contact-form" onSubmit={handleContactSubmit}>
+                  <h2>Contact Form</h2>
+                  <label>
+                    Name
+                    <input
+                      value={contactForm.name}
+                      onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
+                      type="text"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Email
+                    <input
+                      value={contactForm.email}
+                      onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
+                      type="email"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Message
+                    <textarea
+                      value={contactForm.message}
+                      onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
+                      rows={6}
+                      required
+                    />
+                  </label>
+                  <button className="generate-btn contact-submit" type="submit">Send Email</button>
+                </form>
+              </div>
+            )}
+          </div>
+        </main>
+      )}
+
       <footer className="site-footer">
         <p className="footer-copy">{t.footer}</p>
+        <div className="footer-links">
+          {NAV_ITEMS.map((item) => (
+            <button key={item.page} className="footer-link-btn" onClick={() => navigateToPage(item.page)} type="button">
+              {item.label}
+            </button>
+          ))}
+        </div>
       </footer>
 
       {showSampleModal && (
