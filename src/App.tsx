@@ -1151,6 +1151,42 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
   </div>
 );
 
+const NAV_LABELS: Partial<Record<LanguageCode, Partial<Record<SitePage, string>>>> = {
+  ko: {
+    home: '홈',
+    'how-it-works': '사용 방법',
+    'hanbok-guide': '한복 가이드',
+    'fashion-blog': '패션 블로그',
+    about: '서비스 소개',
+    privacy: '개인정보처리방침',
+    terms: '이용약관',
+    contact: '문의하기',
+  },
+  ja: {
+    home: 'ホーム',
+    'how-it-works': '使い方',
+    'hanbok-guide': '韓服ガイド',
+    'fashion-blog': 'ファッションブログ',
+    about: 'サービス紹介',
+    privacy: 'プライバシーポリシー',
+    terms: '利用規約',
+    contact: 'お問い合わせ',
+  },
+  zh: {
+    home: '首页',
+    'how-it-works': '使用方法',
+    'hanbok-guide': '韩服指南',
+    'fashion-blog': '时尚博客',
+    about: '服务介绍',
+    privacy: '隐私政策',
+    terms: '使用条款',
+    contact: '联系我们',
+  },
+};
+
+const getNavLabel = (page: SitePage, lang: LanguageCode): string =>
+  NAV_LABELS[lang]?.[page] ?? NAV_ITEMS.find((item) => item.page === page)?.label ?? page;
+
 const getPageFromHash = (hash: string): SitePage => {
   const normalized = hash.replace(/^#/, '');
   return NAV_ITEMS.some((item) => item.page === normalized) ? normalized as SitePage : 'home';
