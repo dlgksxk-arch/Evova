@@ -53,7 +53,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: '얼굴 사진 업로드', h1Desc: '정면을 바라보는 전신 또는 상반신 사진을 업로드하세요. 배경이 단순하고 전체적인 체형이 보이면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 체험해보세요', trySub: '하루 3회 무료로 사용할 수 있습니다.',
+    tryTitle: '지금 바로 체험해보세요', trySub: '로그인 후 하루 3회 무료로 사용할 수 있습니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
     chooseSample: '샘플 선택',
@@ -91,6 +91,7 @@ const translations = {
     switchToSignup: '계정이 없나요? 회원가입',
     switchToLogin: '이미 계정이 있나요? 로그인',
     authRequired: '생성을 계속하려면 로그인해 주세요.',
+    loginForFree: '로그인 후 하루 3회 무료로 피팅할 수 있습니다.',
     authInvalid: '이메일과 비밀번호를 모두 입력해 주세요.',
     authFailed: '로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.',
     suggestionTitleLabel: '제안 제목',
@@ -128,7 +129,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: 'Upload Your Photo', h1Desc: 'Upload a front-facing full-body or upper-body photo. A simple background improves result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Try It Now', trySub: '3 free uses per day. No sign-up required.',
+    tryTitle: 'Try It Now', trySub: 'Log in to get 3 free try-ons per day.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     chooseSample: 'Choose Sample',
@@ -166,6 +167,7 @@ const translations = {
     switchToSignup: "Don't have an account? Sign up",
     switchToLogin: 'Already have an account? Log in',
     authRequired: 'Please log in to continue generation.',
+    loginForFree: 'Log in to get 3 free try-ons per day.',
     authInvalid: 'Please enter both email and password.',
     authFailed: 'Authentication failed. Please try again.',
     suggestionTitleLabel: 'Suggestion title',
@@ -1446,7 +1448,6 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
-  const [usageCount, setUsageCount]     = useState(0);
   const [lang, setLang] = useState<LanguageCode>('ko');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
@@ -1469,19 +1470,15 @@ const App: React.FC = () => {
   const t = uiTranslations[lang];
   const contentLocale = getContentLocale(lang);
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
-  const guestSessionId = getSessionId();
-  const sessionId = currentUser?.uid || guestSessionId;
+  const sessionId = currentUser?.uid || '';
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
   const emptyClothTips = CLOTH_TIPS[lang];
   const firebaseDisabledMessage = firebaseConfigError
     ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
-  const remainingGuestCount = Math.max(0, FREE_LIMIT - usageCount);
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
-  const remainingGenerationCount = currentUser ? remainingUserCount : remainingGuestCount;
-
-  useEffect(() => { fetchUsage(sessionId).then(setUsageCount); }, [sessionId]);
+  const remainingGenerationCount = remainingUserCount;
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
@@ -1764,12 +1761,15 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (!currentUser) {
+      openAuthModal('login');
+      return;
+    }
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-    if (currentUser) {
-      const freshProfile = await refreshUserQuota(currentUser);
-      setUserProfile(freshProfile);
-      if (freshProfile.usedToday >= freshProfile.dailyQuota) { alert(t.freeExhausted); return; }
-    } else if (FREE_LIMIT - usageCount <= 0) { alert(t.freeExhausted); return; }
+
+    const freshProfile = await refreshUserQuota(currentUser);
+    setUserProfile(freshProfile);
+    if (freshProfile.usedToday >= freshProfile.dailyQuota) { alert(t.freeExhausted); return; }
 
     setIsGenerating(true);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
@@ -1798,33 +1798,29 @@ const App: React.FC = () => {
         bodyProfile: { gender },
       });
 
-      if (currentUser) {
-        try {
-          const nextProfile = await incrementUserUsage(currentUser);
-          setUserProfile(nextProfile);
-          const [historyFaceImage, historyClothImage, historyResultImage] = await Promise.all([
-            createHistoryPreview(preparedPersonImage, 360),
-            createHistoryPreview(preparedClothImage, 360),
-            createHistoryPreview(result, 720),
-          ]);
+      try {
+        const nextProfile = await incrementUserUsage(currentUser);
+        setUserProfile(nextProfile);
+        const [historyFaceImage, historyClothImage, historyResultImage] = await Promise.all([
+          createHistoryPreview(preparedPersonImage, 360),
+          createHistoryPreview(preparedClothImage, 360),
+          createHistoryPreview(result, 720),
+        ]);
 
-          await addDoc(collection(requireDb(), 'generations'), {
-            uid: currentUser.uid,
-            faceImageUrl: historyFaceImage,
-            clothImageUrl: historyClothImage,
-            resultImageUrl: historyResultImage,
-            createdAt: serverTimestamp(),
-          });
-        } catch (error) {
-          if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
-            alert(t.freeExhausted);
-            setIsGenerating(false);
-            return;
-          }
-          throw error;
+        await addDoc(collection(requireDb(), 'generations'), {
+          uid: currentUser.uid,
+          faceImageUrl: historyFaceImage,
+          clothImageUrl: historyClothImage,
+          resultImageUrl: historyResultImage,
+          createdAt: serverTimestamp(),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
+          alert(t.freeExhausted);
+          setIsGenerating(false);
+          return;
         }
-      } else {
-        setUsageCount(await fetchUsage(sessionId));
+        throw error;
       }
 
       setCached(cacheKey, result);
@@ -1950,7 +1946,7 @@ const App: React.FC = () => {
           <section id="try" className="section try-section">
             <div className="section-inner">
               <div className="usage-bar">
-                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.freeLeft(remainingGenerationCount)}
+                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.loginForFree}
               </div>
 
               <div className="try-layout">
@@ -2107,7 +2103,11 @@ const App: React.FC = () => {
               </div>
 
               <div className="action-section">
-                <button className="generate-btn" onClick={handleGenerate} disabled={isGenerating || !activePersonImage || !activeClothImage}>
+                <button
+                  className="generate-btn"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || (Boolean(currentUser) && (!activePersonImage || !activeClothImage))}
+                >
                   {isGenerating ? (
                     <><span className="spinner"></span>{t.generating}</>
                   ) : t.generate}
