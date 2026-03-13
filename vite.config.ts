@@ -24,6 +24,8 @@ const readNumericEnv = (...keys: string[]) => {
 }
 
 const getGitShortSha = () => {
+  // Cloudflare Pages injects CF_PAGES_COMMIT_SHA
+  if (process.env.CF_PAGES_COMMIT_SHA) return process.env.CF_PAGES_COMMIT_SHA.slice(0, 7)
   try {
     return execSync('git rev-parse --short HEAD').toString().trim()
   } catch {
@@ -32,6 +34,16 @@ const getGitShortSha = () => {
 }
 
 const appVersion = (() => {
+  // Cloudflare Pages: shallow clone makes rev-list return 1 → v0.1
+  // Instead, read the committed public/version.json which has the correct version
+  if (process.env.CF_PAGES) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'public/version.json'), 'utf8'))
+      return typeof existing.version === 'string' ? existing.version : 'v0.1'
+    } catch {
+      return 'v0.1'
+    }
+  }
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
     return formatVersion(commitCount)
