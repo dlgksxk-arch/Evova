@@ -596,6 +596,16 @@ a { color: inherit; text-decoration: none; }
   to { opacity: 1; transform: scale(1); }
 }
 
+.sample-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sample-modal-body::-webkit-scrollbar { width: 6px; }
+.sample-modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 24px;
@@ -621,10 +631,8 @@ a { color: inherit; text-decoration: none; }
 
 .sample-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 12px; overflow-y: auto; padding-right: 4px;
+  gap: 12px;
 }
-.sample-grid::-webkit-scrollbar { width: 5px; }
-.sample-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
 .cloth-country-group {
   margin-bottom: 20px;

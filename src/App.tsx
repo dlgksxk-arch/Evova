@@ -971,8 +971,40 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+const imageSrcToDataUrl = (src: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const context = canvas.getContext('2d');
+
+      if (!context) {
+        reject(new Error('이미지 변환 컨텍스트를 만들 수 없습니다.'));
+        return;
+      }
+
+      context.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+
+    img.onerror = () => reject(new Error('샘플 이미지를 불러오지 못했습니다.'));
+    img.decoding = 'async';
+    img.src = src;
+  });
+
 const ensureDataUrl = async (src: string): Promise<string> => {
   if (src.startsWith('data:')) return src;
+
+  if (!src.startsWith('blob:')) {
+    try {
+      return await imageSrcToDataUrl(src);
+    } catch (error) {
+      console.error('[HAMDEVA] sample image conversion failed', { src, error });
+    }
+  }
 
   const res = await fetch(src);
   if (!res.ok) {

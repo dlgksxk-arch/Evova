@@ -102,46 +102,51 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang, onClose, on
           </button>
         </div>
 
-        <div className="sample-category-tabs">
-          {FACE_CATEGORIES.map((tab) => (
-            <button
-              key={tab}
-              className={category === tab ? 'active' : ''}
-              onClick={() => setCategory(tab)}
-              type="button"
-            >
-              {labels[tab]}
-            </button>
-          ))}
-        </div>
+        <div className="sample-modal-body">
+          <div className="sample-category-tabs">
+            {FACE_CATEGORIES.map((tab) => (
+              <button
+                key={tab}
+                className={category === tab ? 'active' : ''}
+                onClick={() => setCategory(tab)}
+                type="button"
+              >
+                {labels[tab]}
+              </button>
+            ))}
+          </div>
 
-        <div className="sample-grid">
-          {samples.map((url, index) => (
-            <button
-              key={url}
-              className={`sample-card ${currentUrl === url ? 'selected' : ''}`}
-              onClick={() => {
-                onSelect(url, category);
-                onClose();
-              }}
-              type="button"
-            >
-              {!loadedUrls[url] && !erroredUrls[url] && (
-                <div className="sample-card-overlay">
-                  <span className="spinner sample-spinner"></span>
-                </div>
-              )}
-              <img
-                src={url}
-                alt={`${labels[category]} sample ${index + 1}`}
-                className={loadedUrls[url] ? 'is-visible' : ''}
-                loading="lazy"
-                onError={() => setErroredUrls((prev) => ({ ...prev, [url]: true }))}
-                onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
-              />
-              <div className="error-placeholder">{copy.error}</div>
-            </button>
-          ))}
+          <div className="sample-grid">
+            {samples.map((url, index) => (
+              <button
+                key={url}
+                className={`sample-card ${currentUrl === url ? 'selected' : ''} ${erroredUrls[url] ? 'error' : ''}`}
+                onClick={() => {
+                  onSelect(url, category);
+                  onClose();
+                }}
+                type="button"
+              >
+                {!loadedUrls[url] && !erroredUrls[url] && (
+                  <div className="sample-card-overlay">
+                    <span className="spinner sample-spinner"></span>
+                  </div>
+                )}
+                <img
+                  src={url}
+                  alt={`${labels[category]} sample ${index + 1}`}
+                  className={loadedUrls[url] ? 'is-visible' : ''}
+                  loading="eager"
+                  onError={() => {
+                    console.error('[HAMDEVA] face sample thumbnail failed', url);
+                    setErroredUrls((prev) => ({ ...prev, [url]: true }));
+                  }}
+                  onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
+                />
+                <div className="error-placeholder">{copy.error}</div>
+              </button>
+            ))}
+          </div>
         </div>
         <p className="modal-disclaimer">{copy.disclaimer}</p>
       </div>
