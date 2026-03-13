@@ -6,6 +6,7 @@ import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
+const APP_VERSION = 'v0.0.1';
 
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
@@ -1284,6 +1285,7 @@ const App: React.FC = () => {
           <a href="/" className="nav-logo">HAM<span>DEVA</span></a>
           <div className="nav-right">
             <LangDropdown lang={lang} onChange={setLang} />
+            <span className="app-version">{APP_VERSION}</span>
             <button className="dark-toggle" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? '☀️' : '🌙'}
             </button>
