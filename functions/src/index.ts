@@ -1558,13 +1558,14 @@ export const api = functions
     }
 
     const path = req.path.replace(/^\/api/, '') || '/';
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     functions.logger.info('api request', {
-      path,
+      path: normalizedPath,
       method: req.method,
       contentType: req.get('content-type') ?? '',
     });
 
-    if (req.method === 'POST' && path === '/bootstrap') {
+    if (req.method === 'POST' && normalizedPath === '/bootstrap') {
       try {
         const user = await requireAuthenticatedUser(req);
         const result = await bootstrapUserCredits(user);
@@ -1575,7 +1576,7 @@ export const api = functions
       return;
     }
 
-    if (req.method === 'GET' && path === '/credits') {
+    if (req.method === 'GET' && normalizedPath === '/credits') {
       try {
         const user = await requireAuthenticatedUser(req);
         const snapshot = await db.collection('users').doc(user.uid).get();
@@ -1594,27 +1595,27 @@ export const api = functions
       return;
     }
 
-    if (req.method === 'POST' && path === '/classify-subject') {
+    if (req.method === 'POST' && normalizedPath === '/classify-subject') {
       await handleSubjectClassificationRequest(req, res);
       return;
     }
 
-    if (req.method === 'POST' && path === '/video') {
+    if (req.method === 'POST' && normalizedPath === '/video') {
       await handleVideoGenerationRequest(req, res);
       return;
     }
 
-    if (req.method === 'GET' && path === '/video-status') {
+    if (req.method === 'GET' && normalizedPath === '/video-status') {
       await handleVideoStatusRequest(req, res);
       return;
     }
 
-    if (req.method === 'GET' && path === '/video-content') {
+    if (req.method === 'GET' && normalizedPath === '/video-content') {
       await handleVideoContentRequest(req, res);
       return;
     }
 
-    if (path === '/tryon' || path === '/generate') {
+    if (normalizedPath === '/tryon' || normalizedPath === '/generate') {
       await handleTryOnRequest(req, res, 'api');
       return;
     }
