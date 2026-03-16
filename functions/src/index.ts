@@ -30,7 +30,7 @@ const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
-const OPENAI_IMAGE_SIZE = '1024x1024';
+const OPENAI_IMAGE_SIZE = '1024x1536';
 const OPENAI_IMAGE_QUALITY = 'medium';
 const SUBJECT_CLASSIFICATION_MODEL = process.env['OPENAI_CLASSIFICATION_MODEL'] ?? 'gpt-4.1-nano';
 const VIDEO_MODEL = process.env['OPENAI_VIDEO_MODEL'] ?? 'sora-2';
@@ -146,6 +146,8 @@ Use a slightly wider, zoomed-out camera framing so the subject is fully visible.
 Use a wider full-body long shot instead of a close fashion crop.
 Frame the shot with clear space above the head and below the feet.
 Leave noticeable margin above the hair and below the shoes.
+Use a tall portrait composition with generous headroom above the hairstyle.
+Keep extra empty space above the head so the hairstyle never feels cramped.
 Keep the full silhouette comfortably inside the image boundaries.
 Do not crop the top of the head, any part of the hair, arms, hands, legs, or feet.
 Leave comfortable space around the subject so the full body fits naturally in frame.
