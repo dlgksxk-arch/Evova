@@ -42,33 +42,30 @@ const getGitShortSha = () => {
   }
 }
 
-const appVersion = (() => {
-  const shortSha = getGitShortSha()
-  const previousBuildNumber = parseExistingBuildNumber()
-
+const getBuildNumber = () => {
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
-    const normalizedBuildNumber = commitCount > previousBuildNumber
-      ? commitCount
-      : previousBuildNumber + 1
-    return formatVersion(normalizedBuildNumber, shortSha)
-  } catch {
-    const ciBuildNumber = readNumericEnv(
-      'GITHUB_RUN_NUMBER',
-      'BUILD_NUMBER',
-      'CI_PIPELINE_IID',
-    )
-
-    if (ciBuildNumber) {
-      const normalizedBuildNumber = ciBuildNumber > previousBuildNumber
-        ? ciBuildNumber
-        : previousBuildNumber + 1
-      return formatVersion(normalizedBuildNumber, shortSha)
+    if (!Number.isNaN(commitCount) && commitCount > 0) {
+      return commitCount
     }
-
-    return formatVersion(previousBuildNumber + 1, shortSha)
+  } catch {
   }
-})()
+
+  const ciBuildNumber = readNumericEnv(
+    'GITHUB_RUN_NUMBER',
+    'BUILD_NUMBER',
+    'CI_PIPELINE_IID',
+  )
+
+  if (ciBuildNumber) {
+    return ciBuildNumber
+  }
+
+  const previousBuildNumber = parseExistingBuildNumber()
+  return previousBuildNumber > 0 ? previousBuildNumber + 1 : 1
+}
+
+const appVersion = formatVersion(getBuildNumber(), getGitShortSha())
 
 const gitShortSha = getGitShortSha()
 

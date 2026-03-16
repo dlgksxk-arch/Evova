@@ -18,9 +18,9 @@
     "homeDescription": "用一张脸部照片和一张服装图片，几秒内预览 HAMDEVA AI 试穿结果。"
   },
   "hero": {
-    "eyebrow": "AI Virtual Fitting Platform",
-    "title": "一张照片，\n什么衣服都能先试一遍",
-    "sub": "HAMDEVA AI 会分析脸部照片与服装图片，\n在几秒内生成虚拟试穿结果。",
+    "eyebrow": "AI 虚拟试衣平台",
+    "title": "点击点击，虚拟试衣空间",
+    "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA 内容"
   },
   "home": {

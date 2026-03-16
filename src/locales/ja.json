@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "traditional-clothing": "サンプル衣装情報",
+    "countries": "サンプル衣装情報",
+    "how-it-works": "使い方",
+    "fashion-technology": "サンプル衣装情報",
+    "about": "HAMDEVA について",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約",
+    "contact": "お問い合わせ",
+    "board": "掲示板",
+    "site-management": "サイト管理",
+    "mypage": "マイページ"
+  },
+  "meta": {
+    "homeTitle": "HAMDEVA | AI バーチャルフィッティングプラットフォーム",
+    "homeDescription": "顔写真 1 枚と衣装画像 1 枚で、HAMDEVA AI のバーチャル試着をすばやく確認できます。"
+  },
+  "hero": {
+    "eyebrow": "AI バーチャルフィッティングプラットフォーム",
+    "title": "クリッククリック、バーチャルフィッティング空間",
+    "subtitle": "HAMDEVA",
+    "pageEyebrow": "HAMDEVA コンテンツ"
+  }
+}

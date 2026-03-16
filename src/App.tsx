@@ -4,7 +4,7 @@ import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
-import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
@@ -1502,6 +1502,21 @@ const getPageFromHash = (hash: string): SitePage => {
   return SITE_PAGES.includes(normalized as SitePage) ? normalized as SitePage : 'home';
 };
 
+const DEFAULT_LANGUAGE: LanguageCode = 'ko';
+
+const isLanguageCode = (value: string | null): value is LanguageCode =>
+  value !== null && LANGUAGE_CODES.includes(value as LanguageCode);
+
+const getInitialLanguage = (): LanguageCode => {
+  const savedLanguage = localStorage.getItem('HAMDEVA-lang');
+  if (isLanguageCode(savedLanguage)) {
+    return savedLanguage;
+  }
+
+  const browserLanguage = navigator.language.toLowerCase().split('-')[0];
+  return isLanguageCode(browserLanguage) ? browserLanguage : DEFAULT_LANGUAGE;
+};
+
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
@@ -1528,7 +1543,7 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
-  const [lang, setLang] = useState<LanguageCode>('ko');
+  const [lang, setLang] = useState<LanguageCode>(() => getInitialLanguage());
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -1566,10 +1581,18 @@ const App: React.FC = () => {
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
   const remainingGenerationCount = remainingUserCount;
   const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL;
+  const handleLanguageChange = (nextLanguage: LanguageCode) => {
+    setLang(nextLanguage);
+  };
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
     localStorage.setItem('HAMDEVA-dark', String(darkMode));
   }, [darkMode]);
+  useEffect(() => {
+    localStorage.setItem('HAMDEVA-lang', lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
   useEffect(() => {
     let cancelled = false;
 
@@ -2147,7 +2170,7 @@ const App: React.FC = () => {
                 {t.login}
               </button>
             )}
-            <LangDropdown lang={lang} onChange={setLang} />
+            <LangDropdown lang={lang} onChange={handleLanguageChange} />
             <button className="dark-toggle" onClick={() => setDarkMode(!darkMode)}>
               {darkMode ? '☀️' : '🌙'}
             </button>
@@ -2179,7 +2202,7 @@ const App: React.FC = () => {
             <>
               <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
               <h1 className="hero-title">{contentLocale.hero.title}</h1>
-              <p className="hero-sub">{contentLocale.hero.sub}</p>
+              <p className="hero-subtitle">{contentLocale.hero.subtitle}</p>
               <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
                 {t.heroCta}
               </button>

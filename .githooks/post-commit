@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$branch" = "HEAD" ]; then
+  exit 0
+fi
+
+git push origin "$branch"
