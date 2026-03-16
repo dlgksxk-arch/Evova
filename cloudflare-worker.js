@@ -5,10 +5,10 @@ export default {
     const targetUrl = new URL(request.url);
 
     if (isApiRequest) {
-      targetUrl.hostname = 'asia-northeast3-fitall-ver1.cloudfunctions.net';
+      targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
       targetUrl.pathname = url.pathname.replace(/^\/api/, '/api');
     } else {
-      targetUrl.hostname = 'fitall-ver1.web.app';
+      targetUrl.hostname = 'hamdeva.web.app';
     }
 
     console.log('[HAMDEVA-worker] proxy request', {

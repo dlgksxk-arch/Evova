@@ -1,5 +1,19 @@
 # React + TypeScript + Vite
 
+## Firebase Functions deploy notes
+
+- Firebase Functions deploy requires the Blaze plan.
+- Create `functions/.env` before deploy and set:
+  - `OPENAI_API_KEY=...`
+  - `OPENAI_IMAGE_MODEL=gpt-image-1`
+- Deploy Functions with:
+  - `firebase deploy --only functions`
+- Local verification:
+  - `cd functions && npm install`
+  - `npm run build`
+  - `firebase emulators:start --only functions`
+  - In another terminal run the app and verify `POST /api/tryon` or `POST /generateTryOn`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -5,7 +5,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const FREE_LIMIT = 3;
-const CORS_ORIGIN = ['https://fitall-ver1.web.app', 'https://fitall-ver1.firebaseapp.com'];
+const CORS_ORIGIN = ['https://hamdeva.web.app', 'https://hamdeva.firebaseapp.com'];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
 
@@ -31,41 +31,8 @@ const getUsageCount = (data?: FirebaseFirestore.DocumentData): number => {
 };
 
 const getOpenAIApiKey = (): string => {
-  const envCandidates = [
-    process.env['OPENAI_API_KEY'],
-    process.env['OPENAI_KEY'],
-    process.env['OPENAI_SECRET'],
-    process.env['OPENAI_SECRET_KEY'],
-    process.env['OPEN_AI_API_KEY'],
-    process.env['openai_api_key'],
-  ];
-
-  for (const candidate of envCandidates) {
-    if (typeof candidate === 'string' && candidate.trim()) {
-      return candidate.trim();
-    }
-  }
-
-  try {
-    const runtimeConfig = functions.config();
-    const configCandidates = [
-      runtimeConfig.openai?.api_key,
-      runtimeConfig.openai?.key,
-      runtimeConfig.openai?.apiKey,
-      runtimeConfig.openai_api_key,
-      runtimeConfig.openai_key,
-    ];
-
-    for (const candidate of configCandidates) {
-      if (typeof candidate === 'string' && candidate.trim()) {
-        return candidate.trim();
-      }
-    }
-  } catch {
-    // Ignore missing runtime config and fall through to empty value.
-  }
-
-  return '';
+  const apiKey = process.env['OPENAI_API_KEY'];
+  return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 
 const buildTryOnPrompt = (bodyProfile?: BodyProfile): string => {
@@ -193,12 +160,10 @@ const requestOpenAIComposite = async (
 // CORS 헤더 설정
 const setCors = (req: functions.https.Request, res: functions.Response) => {
   const origin = req.headers.origin || '';
-  if (origin.startsWith('http://') || origin.startsWith('https://')) {
-    res.set('Access-Control-Allow-Origin', origin);
-  } else if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('cloudworkstations.dev')) {
+  if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('cloudworkstations.dev')) {
     res.set('Access-Control-Allow-Origin', origin);
   } else {
-    res.set('Access-Control-Allow-Origin', 'https://fitall-ver1.web.app');
+    res.set('Access-Control-Allow-Origin', CORS_ORIGIN[0]);
   }
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');

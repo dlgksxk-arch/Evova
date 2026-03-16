@@ -141,7 +141,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://asia-northeast3-fitall-ver1.cloudfunctions.net',
+        target: 'https://asia-northeast3-hamdeva.cloudfunctions.net',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/generateTryOn': {
+        target: 'https://asia-northeast3-hamdeva.cloudfunctions.net',
         changeOrigin: true,
         secure: true,
       },

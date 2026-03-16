@@ -1063,11 +1063,8 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 };
 
 const FREE_LIMIT = 3;
-const FALLBACK_FUNCTIONS_API_BASE = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api';
 const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
-const FALLBACK_FUNCTIONS_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/api/tryon';
 const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
-const FALLBACK_FUNCTIONS_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-fitall-ver1.cloudfunctions.net/generateTryOn';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -1237,14 +1234,6 @@ const formatTimestampLabel = (value?: Timestamp | null): string => {
   }
 };
 
-const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL?.trim();
-const API_BASE: string =
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? (RAW_API_BASE || 'http://127.0.0.1:5001/fitall-ver1/asia-northeast3/api')
-    : (!RAW_API_BASE || RAW_API_BASE.startsWith('/')
-        ? FALLBACK_FUNCTIONS_API_BASE
-        : RAW_API_BASE);
-
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1336,9 +1325,7 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
   const timer = setTimeout(() => controller.abort(), 60_000);
   const endpoints = [
     SAME_ORIGIN_TRYON_ENDPOINT,
-    FALLBACK_FUNCTIONS_TRYON_ENDPOINT,
     SAME_ORIGIN_LEGACY_TRYON_ENDPOINT,
-    FALLBACK_FUNCTIONS_LEGACY_TRYON_ENDPOINT,
   ];
 
   let lastError: Error | null = null;
