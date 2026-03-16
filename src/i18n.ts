@@ -1,22 +1,23 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import { resources, type SupportedLanguage } from './i18n-resources';
+import { LANGUAGE_CODES, type LanguageCode } from './constants/languages';
+import { resources } from './i18n-resources';
 
-const SUPPORTED_LANGUAGES = new Set<SupportedLanguage>(['en', 'ko', 'ja', 'zh']);
+const SUPPORTED_LANGUAGES = new Set<LanguageCode>(LANGUAGE_CODES);
 
-const detectLanguage = (): SupportedLanguage => {
+const detectLanguage = (): LanguageCode => {
   if (typeof window !== 'undefined') {
     const savedLanguage = window.localStorage.getItem('HAMDEVA-lang');
-    if (savedLanguage && SUPPORTED_LANGUAGES.has(savedLanguage as SupportedLanguage)) {
-      return savedLanguage as SupportedLanguage;
+    if (savedLanguage && SUPPORTED_LANGUAGES.has(savedLanguage as LanguageCode)) {
+      return savedLanguage as LanguageCode;
     }
   }
 
   if (typeof navigator !== 'undefined') {
     const browserLanguage = navigator.language.toLowerCase().split('-')[0];
-    if (SUPPORTED_LANGUAGES.has(browserLanguage as SupportedLanguage)) {
-      return browserLanguage as SupportedLanguage;
+    if (SUPPORTED_LANGUAGES.has(browserLanguage as LanguageCode)) {
+      return browserLanguage as LanguageCode;
     }
   }
 

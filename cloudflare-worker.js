@@ -2,11 +2,14 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const isApiRequest = url.pathname.startsWith('/api/');
+    const isLegacyTryOnRequest = url.pathname === '/generateTryOn';
     const targetUrl = new URL(request.url);
 
     if (isApiRequest) {
       targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
       targetUrl.pathname = url.pathname.replace(/^\/api/, '/api');
+    } else if (isLegacyTryOnRequest) {
+      targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
     } else {
       targetUrl.hostname = 'hamdeva.web.app';
     }

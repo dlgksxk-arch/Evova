@@ -5,12 +5,10 @@ import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
-import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
-import { NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
+import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
-import i18n from './i18n';
-import type { AppTranslation } from './i18n-resources';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
@@ -1473,9 +1471,9 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
   );
 };
 
-const EmptyPreviewState: React.FC<{ badge: string; title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ badge, title, tips, type }) => (
+const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ title, tips, type }) => (
   <div className={`empty-preview empty-preview-${type}`}>
-    <div className="empty-preview-badge">{badge}</div>
+    <div className="empty-preview-badge">{type === 'face' ? 'FACE GUIDE' : 'STYLE GUIDE'}</div>
     <strong className="empty-preview-title">{title}</strong>
     <div className="empty-preview-tips">
       {tips.map((tip) => (
@@ -1492,25 +1490,20 @@ const getPageFromHash = (hash: string): SitePage => {
   return SITE_PAGES.includes(normalized as SitePage) ? normalized as SitePage : 'home';
 };
 
-const SUPPORTED_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
-type SupportedLanguageCode = typeof SUPPORTED_LANGUAGE_CODES[number];
+const SUPPORTED_LANGUAGE_CODES = LANGUAGE_CODES;
+const DEFAULT_LANGUAGE: LanguageCode = 'en';
 
-const DEFAULT_LANGUAGE: SupportedLanguageCode = 'en';
+const isSupportedLanguageCode = (value: string | null): value is LanguageCode =>
+  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as LanguageCode);
 
-const isSupportedLanguageCode = (value: string | null): value is SupportedLanguageCode =>
-  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as SupportedLanguageCode);
-
-const normalizeLanguageCode = (value: string | null | undefined): SupportedLanguageCode => {
+const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {
   const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
   return isSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
 };
 
-const getTranslationBundle = (lang: SupportedLanguageCode): AppTranslation =>
-  (i18n.getResourceBundle(lang, 'translation') ?? i18n.getResourceBundle(DEFAULT_LANGUAGE, 'translation')) as AppTranslation;
-
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
-  const { t: translate, i18n: i18next } = useTranslation();
+  const { i18n: i18next } = useTranslation();
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
@@ -1559,16 +1552,16 @@ const App: React.FC = () => {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
-  const lang = normalizeLanguageCode(i18next.resolvedLanguage || i18next.language);
-  const contentLocale = getTranslationBundle(lang);
-  const t = contentLocale.ui;
+  const lang = normalizeLanguageCode(i18next.language);
+  const contentLocale = getContentLocale(lang);
+  const t = uiTranslations[lang];
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const sessionId = currentUser?.uid || '';
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
-  const emptyFaceTips = contentLocale.emptyPreview.faceTips;
-  const emptyClothTips = contentLocale.emptyPreview.clothTips;
+  const emptyFaceTips = FACE_TIPS[lang];
+  const emptyClothTips = CLOTH_TIPS[lang];
   const firebaseDisabledMessage = firebaseConfigError
-    ? `${translate('ui.firebaseDisabledMessage')}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
+    ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
   const remainingGenerationCount = remainingUserCount;
@@ -1803,7 +1796,7 @@ const App: React.FC = () => {
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
       setAuthMode(mode);
-      setAuthError(translate('ui.firebaseDisabledMessage'));
+      setAuthError(getFirebaseDisabledMessage());
       setShowAuthModal(true);
       return;
     }
@@ -1825,7 +1818,7 @@ const App: React.FC = () => {
   };
   const handleAuthSubmit = async () => {
     if (!auth) {
-      setAuthError(translate('ui.firebaseDisabledMessage'));
+      setAuthError(getFirebaseDisabledMessage());
       return;
     }
     if (!authForm.email || !authForm.password) {
@@ -1855,7 +1848,7 @@ const App: React.FC = () => {
   };
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
-      setAuthError(translate('ui.firebaseDisabledMessage'));
+      setAuthError(getFirebaseDisabledMessage());
       return;
     }
     setAuthSubmitting(true);
@@ -1892,7 +1885,7 @@ const App: React.FC = () => {
     event.preventDefault();
 
     if (!db) {
-      setSuggestionStatus(translate('ui.firebaseDisabledMessage'));
+      setSuggestionStatus(getFirebaseDisabledMessage());
       return;
     }
 
@@ -1936,7 +1929,7 @@ const App: React.FC = () => {
     event.preventDefault();
 
     if (!db) {
-      setBbsStatus(translate('ui.firebaseDisabledMessage'));
+      setBbsStatus(getFirebaseDisabledMessage());
       return;
     }
 
@@ -2004,7 +1997,7 @@ const App: React.FC = () => {
 
   const handleBbsDelete = async (post: BbsPostRecord) => {
     if (!db) {
-      setBbsStatus(translate('ui.firebaseDisabledMessage'));
+      setBbsStatus(getFirebaseDisabledMessage());
       return;
     }
 
@@ -2176,7 +2169,7 @@ const App: React.FC = () => {
       {firebaseDisabledMessage && (
         <div className="config-banner" role="alert">
           <div className="section-inner">
-            <strong>{t.firebaseConfigMissing}</strong>
+            <strong>Firebase 설정 누락</strong>
             <p>{firebaseDisabledMessage}</p>
           </div>
         </div>
@@ -2195,11 +2188,11 @@ const App: React.FC = () => {
         <div className="hero-content">
           {currentPage === 'home' ? (
             <>
-              <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
+              <div className="hero-eyebrow">{t.heroEyebrow}</div>
               <h1 className="hero-title">
-                {translate('hero_click')}
+                {t.heroTitle.split('\n')[0] ?? t.heroTitle}
                 <br />
-                {translate('hero_space')}
+                {t.heroTitle.split('\n')[1] ?? ''}
               </h1>
               <p className="hero-subtitle">{contentLocale.hero.subtitle}</p>
               <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
@@ -2237,7 +2230,7 @@ const App: React.FC = () => {
           <section id="try" className="section try-section">
             <div className="section-inner">
               <div className="usage-bar">
-                {currentUser ? translate('ui.remainingDaily', { count: remainingGenerationCount }) : t.loginForFree}
+                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.loginForFree}
               </div>
 
               <div className="try-layout">
@@ -2298,13 +2291,12 @@ const App: React.FC = () => {
                       </>
                     ) : (
                       <EmptyPreviewState
-                        badge={contentLocale.emptyPreview.faceGuide}
                         title={t.facePlaceholderTitle}
                         tips={emptyFaceTips}
                         type="face"
                       />
                     )}
-                    {!personImage && activePersonImage && <div className="sample-badge">{t.sampleBadge}</div>}
+                    {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
                     {(personImage || selectedSampleUrl) && (
                       <button className="clear-img-btn" onClick={() => {
                         if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -2371,7 +2363,7 @@ const App: React.FC = () => {
                             }}
                           />
                         )}
-                        {!clothImage && activeClothImage && <div className="sample-badge">{t.sampleBadge}</div>}
+                        {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
                         {(clothImage || selectedClothSampleUrl) && (
                           <button className="clear-img-btn" onClick={() => {
                             if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
@@ -2385,7 +2377,6 @@ const App: React.FC = () => {
                       </>
                     ) : (
                       <EmptyPreviewState
-                        badge={contentLocale.emptyPreview.styleGuide}
                         title={t.clothingPlaceholderTitle}
                         tips={emptyClothTips}
                         type="cloth"
@@ -2676,7 +2667,7 @@ const App: React.FC = () => {
                   {currentUser && userProfile ? (
                     <div className="mypage-summary">
                       <p><strong>{t.emailLabel}</strong> {currentUser.email}</p>
-                      <p><strong>{translate('ui.remainingDaily', { count: remainingUserCount })}</strong></p>
+                      <p><strong>{t.remainingDaily(remainingUserCount)}</strong></p>
                     </div>
                   ) : (
                     <div className="mypage-empty">
