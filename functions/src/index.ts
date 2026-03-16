@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import sharp from 'sharp';
-import Stripe from 'stripe';
+import { Webhook } from 'standardwebhooks';
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -15,8 +15,8 @@ const CORS_ORIGIN = [
 ];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = 'OpenAI API key is missing. Set OPENAI_API_KEY or firebase functions:config:set openai.key="YOUR_OPENAI_API_KEY".';
-const STRIPE_CONFIG_ERROR = 'PAYMENT_NOT_CONFIGURED';
-const STRIPE_CONFIG_MESSAGE = '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.';
+const PAYMENT_CONFIG_ERROR = 'PAYMENT_NOT_CONFIGURED';
+const PAYMENT_CONFIG_MESSAGE = '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.';
 const AUTH_REQUIRED_MESSAGE = '로그인이 필요합니다.';
 const NOT_ENOUGH_CREDITS_ERROR = 'PAYMENT_REQUIRED';
 const NOT_ENOUGH_CREDITS_MESSAGE = '크레딧이 부족합니다.';
@@ -24,11 +24,12 @@ const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
 const DUPLICATE_REQUEST_MESSAGE = '이미 처리 중인 생성 요청입니다.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30_000;
 const GENERATION_COST = 100;
-const VIDEO_GENERATION_COST = 1000;
-const DAILY_CREDIT_AMOUNT = 300;
+const VIDEO_GENERATION_COST = 1500;
+const DAILY_CREDIT_AMOUNT = 100;
+const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
-const OPENAI_IMAGE_SIZE = '1536x1024';
+const OPENAI_IMAGE_SIZE = '1024x1024';
 const OPENAI_IMAGE_QUALITY = 'medium';
 const SUBJECT_CLASSIFICATION_MODEL = process.env['OPENAI_CLASSIFICATION_MODEL'] ?? 'gpt-4.1-nano';
 const VIDEO_MODEL = process.env['OPENAI_VIDEO_MODEL'] ?? 'sora-2';
@@ -37,8 +38,9 @@ const VIDEO_SIZE = '1280x720';
 const VIDEO_ESTIMATED_COST = 0.4;
 const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
-const STRIPE_PROVIDER = 'stripe';
-const STRIPE_CURRENCY = 'usd';
+const POLAR_PROVIDER = 'polar';
+const PAYMENT_CURRENCY = 'usd';
+const POLAR_API_BASE_URL = 'https://api.polar.sh/v1';
 const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
 Return ONLY one word:
 
@@ -46,30 +48,38 @@ human
 dog
 cat`;
 const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
-const STRIPE_PRODUCTS = {
+const PAYMENT_PRODUCTS = {
   starter: {
     id: 'starter',
-    amountCents: 499,
-    amountUsd: 4.99,
-    currency: STRIPE_CURRENCY,
-    paidCredit: 5000,
+    amountCents: 399,
+    amountUsd: 3.99,
+    currency: PAYMENT_CURRENCY,
+    paidCredit: 1000,
     name: 'HAMDEVA Starter Credits',
   },
   creator: {
     id: 'creator',
-    amountCents: 999,
-    amountUsd: 9.99,
-    currency: STRIPE_CURRENCY,
-    paidCredit: 12000,
-    name: 'HAMDEVA Creator Credits',
+    amountCents: 1599,
+    amountUsd: 15.99,
+    currency: PAYMENT_CURRENCY,
+    paidCredit: 5000,
+    name: 'HAMDEVA Popular Credits',
   },
   pro: {
     id: 'pro',
-    amountCents: 1999,
-    amountUsd: 19.99,
-    currency: STRIPE_CURRENCY,
-    paidCredit: 26000,
+    amountCents: 2999,
+    amountUsd: 29.99,
+    currency: PAYMENT_CURRENCY,
+    paidCredit: 10000,
     name: 'HAMDEVA Pro Credits',
+  },
+  studio: {
+    id: 'studio',
+    amountCents: 5999,
+    amountUsd: 59.99,
+    currency: PAYMENT_CURRENCY,
+    paidCredit: 25000,
+    name: 'HAMDEVA Studio Credits',
   },
 } as const;
 const OPENAI_IMAGE_TOKEN_PRICING = {
@@ -100,153 +110,56 @@ const OPENAI_IMAGE_UNIT_PRICING = {
     high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
   },
 } as const;
-const HUMAN_PROMPT = `Use the uploaded face photo as the identity anchor and the uploaded clothing image as the outfit reference.
+const HUMAN_PROMPT = `Use the first input image as the face reference and identity lock.
+Use the second input image as the clothing reference.
 
-Create a realistic virtual fitting image of the exact same person from the uploaded face photo.
-Identity preservation is the highest priority.
+Generate a single realistic full-body fashion image of the same person wearing the referenced outfit.
 
-Strict identity rules:
-- keep the same person
-- preserve the exact identity and facial resemblance of the uploaded face
-- do not invent a new face
-- do not change ethnicity
-- do not change age
-- do not beautify, idealize, or stylize the face
-- do not make the person look like a different model
-- keep the same eyes, nose, mouth, jawline, chin shape, cheek structure, face shape, skin tone, forehead ratio, eye spacing, lip shape, and hairline
-- keep the same overall likeness and real-person appearance
-- if there is any conflict between fashion styling and facial identity, preserve facial identity first
+Requirements:
+- preserve the exact facial identity from the face reference
+- character lock: do not change the person into a different model
+- keep natural beauty makeup only
+- preserve the clothing accurately, including color, silhouette, fabric feel, ornament details, and overall design
+- use a fashion pose that matches the clothing concept
+- use a cinematic background that matches the clothing style
+- keep balanced and natural body proportions
+- use professional fashion lighting
+- show a single model only
+- full body shot
+- one image only
+- no collage, no multi-panel layout, no duplicate subject
+- no extra accessories unless they are clearly implied by the clothing reference
+- if identity and styling conflict, preserve identity first`;
+const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
-Garment transfer rules:
-- transfer only the outfit from the uploaded clothing image
-- preserve the garment color, silhouette, texture, visible ornament details, sleeve shape, skirt volume, top-to-bottom proportions, and overall design
-- do not replace the outfit with a different design
-- keep the clothing faithful to the reference image
+Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
 
-Output requirements:
-- generate one clean 1x4 fashion lookbook grid
-- the same person must appear in all 4 panels
-- keep the face consistent across all 4 panels
-- keep the body proportions consistent across all 4 panels
-- panel 1: front view
-- panel 2: 3/4 front view
-- panel 3: side or semi-back view
-- panel 4: back view
+Requirements:
+- preserve the exact dog identity, breed appearance, fur pattern, and face
+- preserve the clothing color, silhouette, and design as closely as possible
+- adapt the outfit naturally to a dog body
+- use a fashion pose and cinematic background that match the outfit concept
+- keep balanced body proportions
+- use professional lighting
+- single subject only
+- full body shot
+- one image only
+- no collage, no duplicate subject, no cartoon styling`;
+const CAT_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
-Style requirements:
-- realistic studio photo
-- natural lighting
-- clean simple background
-- full-body fitting result
-- realistic fabric appearance
-- no illustration
-- no cartoon
-- no fantasy styling
-- no extra accessories unless clearly visible in the clothing reference
+Generate a single realistic full-body fashion image of the same cat wearing an adapted version of the referenced outfit.
 
-Face consistency constraints:
-The uploaded face photo must remain the identity source.
-Do not reinterpret the face.
-Do not optimize the face for beauty.
-Do not change the person into a more glamorous or more generic fashion model.
-Keep the facial geometry close to the uploaded face.
-Same person in all 4 panels. No panel may show a different face.`;
-const DOG_PROMPT = `Use the uploaded dog photo as the identity anchor and the uploaded clothing image as the outfit reference.
-
-Create a realistic virtual fitting image of the exact same dog from the uploaded dog photo.
-Animal identity preservation is the highest priority.
-
-Strict identity rules:
-- keep the same dog
-- preserve the exact likeness of the uploaded dog
-- do not invent a different dog
-- do not change breed appearance
-- do not change fur color
-- do not change fur pattern
-- do not stylize or cartoonize the dog
-- keep the same muzzle shape, snout length, ear shape, ear position, eye shape, eye spacing, forehead shape, face width, body proportions, tail appearance if visible, and overall breed impression
-- keep the same real-animal appearance and overall likeness
-- if there is any conflict between outfit styling and animal identity, preserve animal identity first
-
-Garment transfer rules:
-- adapt the uploaded clothing image into a realistic dog fitting
-- preserve the clothing color, silhouette, texture, visible ornament details, and overall design language as much as possible
-- do not replace the outfit with a completely different design
-- fit the outfit naturally to a dog body shape
-- keep the outfit believable and species-appropriate
-
-Output requirements:
-- generate one clean multi-view fashion lookbook image
-- if the current pipeline supports 1x4, keep a 1x4 layout of the same dog
-- the same dog must appear consistently in all panels
-- keep the face and body consistent across all views
-- front, 3/4, side/semi-back, and back-style variation if supported by the current layout
-
-Style requirements:
-- realistic pet studio photo
-- natural lighting
-- clean simple background
-- realistic fur detail
-- no illustration
-- no cartoon
-- no fantasy creature styling
-- no human face traits
-- no extra accessories unless clearly justified by the clothing reference
-
-Animal consistency constraints:
-The uploaded dog photo must remain the identity source.
-Do not reinterpret the dog into a different breed or different face.
-Do not beautify the dog into a generic pet model.
-Keep the same fur pattern, muzzle shape, ears, eye shape, and overall body silhouette.
-The same dog must appear in every panel.`;
-const CAT_PROMPT = `Use the uploaded cat photo as the identity anchor and the uploaded clothing image as the outfit reference.
-
-Create a realistic virtual fitting image of the exact same cat from the uploaded cat photo.
-Animal identity preservation is the highest priority.
-
-Strict identity rules:
-- keep the same cat
-- preserve the exact likeness of the uploaded cat
-- do not invent a different cat
-- do not change fur color
-- do not change fur pattern
-- do not change face shape
-- do not stylize or cartoonize the cat
-- keep the same ears, eye shape, eye spacing, nose shape, muzzle area, whisker pad area, forehead shape, fur markings, body proportions, tail appearance if visible, and overall likeness
-- keep the same real-animal appearance
-- if there is any conflict between outfit styling and animal identity, preserve animal identity first
-
-Garment transfer rules:
-- adapt the uploaded clothing image into a realistic cat fitting
-- preserve the clothing color, silhouette, texture, visible ornament details, and overall design language as much as possible
-- do not replace the outfit with a completely different design
-- fit the outfit naturally to a cat body shape
-- keep the outfit believable and species-appropriate
-
-Output requirements:
-- generate one clean multi-view fashion lookbook image
-- if the current pipeline supports 1x4, keep a 1x4 layout of the same cat
-- the same cat must appear consistently in all panels
-- keep the face and body consistent across all views
-- front, 3/4, side/semi-back, and back-style variation if supported by the current layout
-
-Style requirements:
-- realistic pet studio photo
-- natural lighting
-- clean simple background
-- realistic fur detail
-- no illustration
-- no cartoon
-- no fantasy creature styling
-- no human face traits
-- no extra accessories unless clearly justified by the clothing reference
-
-Animal consistency constraints:
-The uploaded cat photo must remain the identity source.
-Do not reinterpret the cat into a different face or different markings.
-Do not beautify the cat into a generic pet model.
-Keep the same fur markings, ears, eye shape, whisker area, and overall body silhouette.
-The same cat must appear in every panel.`;
+Requirements:
+- preserve the exact cat identity, fur markings, and face
+- preserve the clothing color, silhouette, and design as closely as possible
+- adapt the outfit naturally to a cat body
+- use a fashion pose and cinematic background that match the outfit concept
+- keep balanced body proportions
+- use professional lighting
+- single subject only
+- full body shot
+- one image only
+- no collage, no duplicate subject, no cartoon styling`;
 const VIDEO_PROMPT_TEMPLATE = `Use the generated outfit image as the identity and outfit reference.
 
 Create a short cinematic fashion showcase video of the exact same subject wearing the exact same outfit.
@@ -276,8 +189,9 @@ type CreditTransactionType =
   | 'use_daily'
   | 'use_paid'
   | 'refund';
-type PaymentProductId = keyof typeof STRIPE_PRODUCTS;
+type PaymentProductId = keyof typeof PAYMENT_PRODUCTS;
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'canceled';
+type PaymentProvider = 'polar';
 type OpenAIKeySource = 'env' | 'config' | 'missing';
 type OpenAIKeyState = {
   key: string;
@@ -318,6 +232,7 @@ type BootstrapResult = {
     role: AccountRole;
   };
   dailyRewardGranted: number;
+  signupBonusGranted: number;
 };
 type ApiBonusFields = {
   dailyRewardGranted: number;
@@ -378,7 +293,17 @@ type GenerationUsageMetadata = {
 type CheckoutSessionRequest = {
   productId?: PaymentProductId;
 };
-type StripeCheckoutSession = Stripe.Checkout.Session;
+type PolarCheckoutRecord = {
+  id?: string;
+  url?: string | null;
+  status?: string;
+  metadata?: Record<string, unknown>;
+  productPriceId?: string | null;
+};
+type PolarWebhookEvent = {
+  type?: string;
+  data?: Record<string, unknown>;
+};
 
 interface OpenAIImageResponse {
   model?: string;
@@ -388,6 +313,7 @@ interface OpenAIImageResponse {
   };
   data?: {
     b64_json?: string;
+    url?: string;
   }[];
   error?: {
     message?: string;
@@ -422,7 +348,6 @@ interface OpenAIVideoStatusResponse {
 }
 
 let lastLoggedOpenAIKeySource: OpenAIKeySource | null = null;
-let stripeClient: Stripe | null = null;
 
 const formatSeoulDateKey = (date: Date): string => {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -477,7 +402,7 @@ const normalizeSubjectType = (value: unknown): SubjectType => {
 };
 
 const isPaymentProductId = (value: unknown): value is PaymentProductId =>
-  typeof value === 'string' && value in STRIPE_PRODUCTS;
+  typeof value === 'string' && value in PAYMENT_PRODUCTS;
 
 const normalizeUserAccount = (email: string, data?: FirebaseFirestore.DocumentData): UserAccount => {
   const subscriptionPlan = normalizeSubscriptionPlan(data?.subscriptionPlan);
@@ -538,37 +463,44 @@ const getOpenAIApiKey = (): string => {
   return state.key;
 };
 
-const getStripeSecretKey = (): string => {
-  const envKey = process.env['STRIPE_SECRET_KEY'];
+const getPolarApiKey = (): string => {
+  const envKey = process.env['POLAR_API_KEY'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.stripe?.secret;
+  const configKey = functions.config()?.polar?.api_key;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const getStripeWebhookSecret = (): string => {
-  const envKey = process.env['STRIPE_WEBHOOK_SECRET'];
+const getPolarWebhookSecret = (): string => {
+  const envKey = process.env['POLAR_WEBHOOK_SECRET'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.stripe?.webhook_secret;
+  const configKey = functions.config()?.polar?.webhook_secret;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const requireStripe = (): Stripe => {
-  const secretKey = getStripeSecretKey();
-  if (!secretKey) {
-    throw new Error(STRIPE_CONFIG_ERROR);
+const getPolarProductExternalId = (productId: PaymentProductId): string => {
+  const envKey = process.env[`POLAR_PRODUCT_ID_${productId.toUpperCase()}`];
+  if (typeof envKey === 'string' && envKey.trim()) {
+    return envKey.trim();
   }
 
-  if (!stripeClient) {
-    stripeClient = new Stripe(secretKey);
+  const configuredProducts = functions.config()?.polar?.products as Record<string, unknown> | undefined;
+  const configuredProductId = configuredProducts?.[productId];
+  return typeof configuredProductId === 'string' ? configuredProductId.trim() : '';
+};
+
+const requirePolarConfig = (): { apiKey: string } => {
+  const apiKey = getPolarApiKey();
+  if (!apiKey) {
+    throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
-  return stripeClient;
+  return { apiKey };
 };
 
 const roundEstimatedCost = (value: number): number =>
@@ -688,6 +620,33 @@ const toImageBlob = (input: string, fallbackName: string): { blob: Blob; filenam
   };
 };
 
+const fetchOpenAIImageOutput = async (
+  image: { b64_json?: string; url?: string } | undefined,
+): Promise<{ mimeType: string; data: string }> => {
+  if (image?.b64_json && image.b64_json.length > 1000) {
+    return {
+      mimeType: 'image/png',
+      data: image.b64_json,
+    };
+  }
+
+  if (image?.url) {
+    const response = await fetch(image.url);
+    if (!response.ok) {
+      throw new Error(`OpenAI image download error ${response.status}`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const mimeType = response.headers.get('content-type')?.split(';')[0] || 'image/png';
+    return {
+      mimeType,
+      data: buffer.toString('base64'),
+    };
+  }
+
+  throw new Error('OpenAI response did not include a usable image.');
+};
+
 const requestOpenAIComposite = async (
   personImage: string,
   garmentImage: string,
@@ -703,21 +662,21 @@ const requestOpenAIComposite = async (
     throw new Error(OPENAI_CONFIG_MESSAGE);
   }
 
-  const garmentFile = toImageBlob(garmentImage, 'garment');
-  const personFile = toImageBlob(personImage, 'person');
-  const formData = new FormData();
-
-  formData.append('model', OPENAI_IMAGE_MODEL);
-  formData.append('prompt', buildTryOnPrompt(subjectType, bodyProfile));
-  formData.append('image[]', personFile.blob, personFile.filename);
-  formData.append('image[]', garmentFile.blob, garmentFile.filename);
-  formData.append('size', OPENAI_IMAGE_SIZE);
-  formData.append('quality', OPENAI_IMAGE_QUALITY);
-  formData.append('output_format', 'png');
-  formData.append('background', 'opaque');
-  formData.append('n', '1');
+  const requestBody: Record<string, unknown> = {
+    model: OPENAI_IMAGE_MODEL,
+    prompt: buildTryOnPrompt(subjectType, bodyProfile),
+    images: [
+      { image_url: personImage },
+      { image_url: garmentImage },
+    ],
+    size: OPENAI_IMAGE_SIZE,
+    quality: OPENAI_IMAGE_QUALITY,
+    output_format: 'png',
+    background: 'opaque',
+    n: 1,
+  };
   if (OPENAI_IMAGE_MODEL === 'gpt-image-1') {
-    formData.append('input_fidelity', 'high');
+    requestBody['input_fidelity'] = 'high';
   }
 
   functions.logger.info('openai image edit request', {
@@ -732,9 +691,10 @@ const requestOpenAIComposite = async (
   const openAIRes = await fetch('https://api.openai.com/v1/images/edits', {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: formData,
+    body: JSON.stringify(requestBody),
   });
 
   const responseBody = await openAIRes.json().catch(() => ({})) as OpenAIImageResponse;
@@ -749,10 +709,7 @@ const requestOpenAIComposite = async (
     throw new Error(responseBody.error?.message || `OpenAI API error ${openAIRes.status}`);
   }
 
-  const image = responseBody.data?.[0]?.b64_json;
-  if (!image || image.length < 1000) {
-    throw new Error('OpenAI response did not include a usable image.');
-  }
+  const image = await fetchOpenAIImageOutput(responseBody.data?.[0]);
 
   const usage = {
     input_tokens: typeof responseBody.usage?.input_tokens === 'number' ? responseBody.usage.input_tokens : 0,
@@ -760,8 +717,8 @@ const requestOpenAIComposite = async (
   };
 
   return {
-    mimeType: 'image/png',
-    data: image,
+    mimeType: image.mimeType,
+    data: image.data,
     metadata: {
       type: 'image_generation',
       subjectType,
@@ -891,8 +848,8 @@ const requireAuthenticatedUser = async (req: functions.https.Request): Promise<A
 
 const createCreditTransactionRef = () => db.collection('credit_transactions').doc();
 
-const buildPaymentDocId = (providerPaymentId: string): string =>
-  `${STRIPE_PROVIDER}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+const buildPaymentDocId = (provider: PaymentProvider, providerPaymentId: string): string =>
+  `${provider}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
 const createGenerationDocRef = (uid: string, requestId: string) =>
   db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
@@ -997,6 +954,41 @@ const applyDailyResetIfNeeded = (
   };
 };
 
+const applySignupBonusIfNeeded = (
+  transaction: FirebaseFirestore.Transaction,
+  user: AuthenticatedUser,
+  account: UserAccount,
+  shouldApply: boolean,
+): { account: UserAccount; signupBonusGranted: number } => {
+  if (!shouldApply) {
+    return {
+      account,
+      signupBonusGranted: 0,
+    };
+  }
+
+  const nextAccount: UserAccount = {
+    ...account,
+    dailyCredit: account.dailyCredit + SIGNUP_BONUS_CREDIT_AMOUNT,
+    credits: account.dailyCredit + SIGNUP_BONUS_CREDIT_AMOUNT + account.paidCredit,
+  };
+
+  writeCreditTransaction(transaction, {
+    uid: user.uid,
+    email: user.email || account.email,
+    type: 'charge',
+    amount: SIGNUP_BONUS_CREDIT_AMOUNT,
+    balanceDailyAfter: nextAccount.dailyCredit,
+    balancePaidAfter: nextAccount.paidCredit,
+    memo: 'signup bonus credit grant',
+  });
+
+  return {
+    account: nextAccount,
+    signupBonusGranted: SIGNUP_BONUS_CREDIT_AMOUNT,
+  };
+};
+
 const buildBootstrapProfile = (account: UserAccount): BootstrapResult['profile'] => ({
   dailyCredit: account.dailyCredit,
   paidCredit: account.paidCredit,
@@ -1007,9 +999,9 @@ const buildBootstrapProfile = (account: UserAccount): BootstrapResult['profile']
   role: account.role,
 });
 
-const buildApiBonusFields = (dailyRewardGranted = 0): ApiBonusFields => ({
+const buildApiBonusFields = (dailyRewardGranted = 0, signupBonusGranted = 0): ApiBonusFields => ({
   dailyRewardGranted,
-  signupBonusGranted: 0,
+  signupBonusGranted,
   subscriptionBonusGranted: 0,
 });
 
@@ -1026,6 +1018,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
       role: 'user',
     },
     dailyRewardGranted: 0,
+    signupBonusGranted: 0,
   };
 
   await db.runTransaction(async (transaction) => {
@@ -1034,6 +1027,9 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
     const reset = applyDailyResetIfNeeded(transaction, user, account);
     account = reset.account;
     result.dailyRewardGranted = reset.dailyRewardGranted;
+    const signupBonus = applySignupBonusIfNeeded(transaction, user, account, !snapshot.exists);
+    account = signupBonus.account;
+    result.signupBonusGranted = signupBonus.signupBonusGranted;
 
     transaction.set(
       userRef,
@@ -1091,6 +1087,7 @@ const beginChargedRequest = async (
       role: 'user',
     },
     dailyRewardGranted: 0,
+    signupBonusGranted: 0,
     requestId,
     dailyCreditAfterCharge: 0,
     paidCreditAfterCharge: 0,
@@ -1124,6 +1121,9 @@ const beginChargedRequest = async (
     const reset = applyDailyResetIfNeeded(transaction, user, account);
     account = reset.account;
     result.dailyRewardGranted = reset.dailyRewardGranted;
+    const signupBonus = applySignupBonusIfNeeded(transaction, user, account, !userSnapshot.exists);
+    account = signupBonus.account;
+    result.signupBonusGranted = signupBonus.signupBonusGranted;
     const generationCost = options.cost;
 
     let usedCreditType: CreditType | null = null;
@@ -1534,57 +1534,74 @@ const getAppBaseUrl = (req: functions.https.Request): string => {
   return CORS_ORIGIN[0];
 };
 
-const getStripeProductFromSession = (session: StripeCheckoutSession) => {
-  const rawProductId = session.metadata?.productId;
-  if (!isPaymentProductId(rawProductId)) {
-    throw new Error('INVALID_PRODUCT');
-  }
+const getPaymentProduct = (productId: PaymentProductId) => PAYMENT_PRODUCTS[productId];
 
-  return STRIPE_PRODUCTS[rawProductId];
-};
+const getPolarWebhookHeaders = (req: functions.https.Request): Record<string, string> =>
+  Object.entries(req.headers).reduce<Record<string, string>>((acc, [key, value]) => {
+    if (typeof value === 'string') {
+      acc[key] = value;
+    } else if (Array.isArray(value) && typeof value[0] === 'string') {
+      acc[key] = value[0];
+    }
+    return acc;
+  }, {});
 
-const getStripeSessionUid = (session: StripeCheckoutSession): string => {
-  const metadataUid = session.metadata?.uid;
-  if (typeof metadataUid === 'string' && metadataUid) {
-    return metadataUid;
-  }
-
-  return typeof session.client_reference_id === 'string' ? session.client_reference_id : '';
-};
-
-const markPaymentStatus = async (
-  session: StripeCheckoutSession,
-  status: Exclude<PaymentStatus, 'paid'>,
-): Promise<void> => {
-  const uid = getStripeSessionUid(session);
-  const product = getStripeProductFromSession(session);
-  const paymentRef = db.collection('payments').doc(buildPaymentDocId(session.id));
-
-  await paymentRef.set({
-    uid,
-    provider: STRIPE_PROVIDER,
-    providerPaymentId: session.id,
+const upsertPendingPayment = async (params: {
+  provider: PaymentProvider;
+  providerPaymentId: string;
+  uid: string;
+  productId: PaymentProductId;
+}): Promise<void> => {
+  const product = getPaymentProduct(params.productId);
+  await db.collection('payments').doc(buildPaymentDocId(params.provider, params.providerPaymentId)).set({
+    uid: params.uid,
+    provider: params.provider,
+    providerPaymentId: params.providerPaymentId,
     productId: product.id,
     amount: product.amountUsd,
     amountCents: product.amountCents,
     currency: product.currency,
     paidCredit: product.paidCredit,
-    status,
+    status: 'pending',
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
 };
 
-const fulfillCheckoutSession = async (session: StripeCheckoutSession): Promise<void> => {
-  const uid = getStripeSessionUid(session);
-  const product = getStripeProductFromSession(session);
-  if (!uid) {
-    throw new Error('INVALID_PAYMENT_UID');
-  }
+const markPaymentStatus = async (params: {
+  provider: PaymentProvider;
+  providerPaymentId: string;
+  status: Exclude<PaymentStatus, 'paid'>;
+}): Promise<void> => {
+  const paymentRef = db.collection('payments').doc(buildPaymentDocId(params.provider, params.providerPaymentId));
+  const paymentSnapshot = await paymentRef.get();
+  const paymentData = paymentSnapshot.data() ?? {};
 
-  const paymentRef = db.collection('payments').doc(buildPaymentDocId(session.id));
-  const userRef = db.collection('users').doc(uid);
-  const email = session.customer_details?.email || session.customer_email || '';
+  await paymentRef.set({
+    ...paymentData,
+    provider: params.provider,
+    providerPaymentId: params.providerPaymentId,
+    status: params.status,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: paymentSnapshot.exists
+      ? paymentData.createdAt ?? admin.firestore.FieldValue.serverTimestamp()
+      : admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+};
+
+const fulfillCreditPurchase = async (params: {
+  provider: PaymentProvider;
+  providerPaymentId: string;
+  uid: string;
+  productId: PaymentProductId;
+  amount?: number | null;
+  currency?: string | null;
+  paidAt?: string | number | Date | null;
+  rawPayload?: unknown;
+}): Promise<void> => {
+  const paymentRef = db.collection('payments').doc(buildPaymentDocId(params.provider, params.providerPaymentId));
+  const userRef = db.collection('users').doc(params.uid);
+  const product = getPaymentProduct(params.productId);
 
   await db.runTransaction(async (transaction) => {
     const [paymentSnapshot, userSnapshot] = await Promise.all([
@@ -1597,9 +1614,17 @@ const fulfillCheckoutSession = async (session: StripeCheckoutSession): Promise<v
       return;
     }
 
+    const email = typeof existingPayment?.email === 'string'
+      ? existingPayment.email
+      : typeof userSnapshot.data()?.email === 'string'
+        ? userSnapshot.data()?.email
+        : '';
+
     let account = normalizeUserAccount(email, userSnapshot.data());
-    const reset = applyDailyResetIfNeeded(transaction, { uid, email }, account);
+    const reset = applyDailyResetIfNeeded(transaction, { uid: params.uid, email }, account);
     account = reset.account;
+    const signupBonus = applySignupBonusIfNeeded(transaction, { uid: params.uid, email }, account, !userSnapshot.exists);
+    account = signupBonus.account;
     account = {
       ...account,
       paidCredit: account.paidCredit + product.paidCredit,
@@ -1615,20 +1640,20 @@ const fulfillCheckoutSession = async (session: StripeCheckoutSession): Promise<v
       { merge: true },
     );
     transaction.set(paymentRef, {
-      uid,
-      provider: STRIPE_PROVIDER,
-      providerPaymentId: session.id,
+      uid: params.uid,
+      provider: params.provider,
+      providerPaymentId: params.providerPaymentId,
       productId: product.id,
-      amount: product.amountUsd,
+      amount: typeof params.amount === 'number' && Number.isFinite(params.amount) ? params.amount : product.amountUsd,
       amountCents: product.amountCents,
-      currency: product.currency,
+      currency: typeof params.currency === 'string' && params.currency ? params.currency : product.currency,
       paidCredit: product.paidCredit,
       status: 'paid',
       createdAt: paymentSnapshot.exists ? existingPayment?.createdAt ?? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     writeCreditTransaction(transaction, {
-      uid,
+      uid: params.uid,
       email: email || account.email,
       type: 'charge',
       amount: product.paidCredit,
@@ -1642,42 +1667,47 @@ const fulfillCheckoutSession = async (session: StripeCheckoutSession): Promise<v
 
 const getCheckoutSessionStatus = async (
   user: AuthenticatedUser,
-  sessionId: string,
+  sessionId?: string,
 ): Promise<PaymentSessionStatusResult> => {
-  const paymentRef = db.collection('payments').doc(buildPaymentDocId(sessionId));
-  const [paymentSnapshot, userSnapshot] = await Promise.all([
-    paymentRef.get(),
-    db.collection('users').doc(user.uid).get(),
+  const userSnapshotPromise = db.collection('users').doc(user.uid).get();
+  const paymentSnapshotPromise = sessionId
+    ? db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, sessionId)).get()
+    : db.collection('payments')
+        .where('uid', '==', user.uid)
+        .orderBy('updatedAt', 'desc')
+        .limit(10)
+        .get()
+        .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === POLAR_PROVIDER) ?? null);
+
+  const [paymentSnapshotLike, userSnapshot] = await Promise.all([
+    paymentSnapshotPromise,
+    userSnapshotPromise,
   ]);
   const account = normalizeUserAccount(user.email, userSnapshot.data());
+  const paymentSnapshot = paymentSnapshotLike && 'exists' in paymentSnapshotLike
+    ? paymentSnapshotLike
+    : null;
 
-  if (paymentSnapshot.exists) {
-    const paymentData = paymentSnapshot.data() ?? {};
-    if (paymentData.uid !== user.uid) {
-      throw new Error('FORBIDDEN');
-    }
-
+  if (!paymentSnapshot?.exists) {
     return {
-      status: (paymentData.status as PaymentStatus | undefined) ?? 'pending',
-      paymentId: paymentRef.id,
-      paidCredit: typeof paymentData.paidCredit === 'number' ? paymentData.paidCredit : 0,
+      status: 'pending',
+      paymentId: null,
+      paidCredit: 0,
       dailyCredit: account.dailyCredit,
       paidCreditBalance: account.paidCredit,
       totalCreditBalance: account.credits,
     };
   }
 
-  const stripe = requireStripe();
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
-  if (getStripeSessionUid(session) !== user.uid) {
+  const paymentData = paymentSnapshot.data() ?? {};
+  if (paymentData.uid !== user.uid) {
     throw new Error('FORBIDDEN');
   }
 
-  const product = getStripeProductFromSession(session);
   return {
-    status: session.payment_status === 'paid' ? 'processing' : session.status === 'expired' ? 'canceled' : 'pending',
-    paymentId: null,
-    paidCredit: product.paidCredit,
+    status: (paymentData.status as PaymentStatus | undefined) ?? 'pending',
+    paymentId: paymentSnapshot.id,
+    paidCredit: typeof paymentData.paidCredit === 'number' ? paymentData.paidCredit : 0,
     dailyCredit: account.dailyCredit,
     paidCreditBalance: account.paidCredit,
     totalCreditBalance: account.credits,
@@ -1697,33 +1727,41 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
     return;
   }
 
-  const stripe = requireStripe();
-  const product = STRIPE_PRODUCTS[productId];
+  const { apiKey } = requirePolarConfig();
+  const product = getPaymentProduct(productId);
+  const polarProductId = getPolarProductExternalId(productId);
+  if (!polarProductId) {
+    throw new Error(PAYMENT_CONFIG_ERROR);
+  }
   const baseUrl = getAppBaseUrl(req);
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/payment-failed`,
-    client_reference_id: user.uid,
-    customer_email: user.email || undefined,
-    metadata: {
-      uid: user.uid,
-      productId: product.id,
-      paidCredit: String(product.paidCredit),
+  const response = await fetch(`${POLAR_API_BASE_URL}/checkouts`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
     },
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: product.currency,
-          unit_amount: product.amountCents,
-          product_data: {
-            name: product.name,
-            description: `${product.paidCredit} paid credits`,
-          },
-        },
+    body: JSON.stringify({
+      products: [polarProductId],
+      successUrl: `${baseUrl}/payment-success`,
+      metadata: {
+        uid: user.uid,
+        productId: product.id,
+        paidCredit: String(product.paidCredit),
       },
-    ],
+      externalCustomerId: user.uid,
+      customerEmail: user.email || undefined,
+    }),
+  });
+  const session = await response.json().catch(() => ({})) as PolarCheckoutRecord;
+  if (!response.ok || !session.id || !session.url) {
+    throw new Error(PAYMENT_CONFIG_ERROR);
+  }
+
+  await upsertPendingPayment({
+    provider: POLAR_PROVIDER,
+    providerPaymentId: session.id,
+    uid: user.uid,
+    productId,
   });
 
   res.json({
@@ -1739,13 +1777,8 @@ const handleCheckoutSessionStatusRequest = async (req: functions.https.Request, 
     return;
   }
 
-  const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
-  if (!sessionId) {
-    res.status(400).json({ error: 'SESSION_ID_REQUIRED', message: 'sessionId is required.' });
-    return;
-  }
-
   const user = await requireAuthenticatedUser(req);
+  const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : undefined;
   const status = await getCheckoutSessionStatus(user, sessionId);
   res.json({
     success: true,
@@ -1753,46 +1786,106 @@ const handleCheckoutSessionStatusRequest = async (req: functions.https.Request, 
   });
 };
 
-const handleStripeWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
+const getStringValue = (...values: unknown[]): string =>
+  values.find((value) => typeof value === 'string' && value.trim()) as string || '';
+
+const getObjectValue = (...values: unknown[]): Record<string, unknown> =>
+  (values.find((value) => value !== null && typeof value === 'object' && !Array.isArray(value)) as Record<string, unknown> | undefined) ?? {};
+
+const getPolarPaymentContext = async (providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
+  const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, providerPaymentId)).get();
+  const data = paymentSnapshot.data();
+  if (!data || typeof data.uid !== 'string' || !isPaymentProductId(data.productId)) {
+    return null;
+  }
+
+  return {
+    uid: data.uid,
+    productId: data.productId,
+  };
+};
+
+const handlePolarWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
-  const stripe = requireStripe();
-  const webhookSecret = getStripeWebhookSecret();
+  const webhookSecret = getPolarWebhookSecret();
   if (!webhookSecret) {
-    throw new Error(STRIPE_CONFIG_ERROR);
+    throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
-  const signature = req.get('stripe-signature') ?? '';
-  if (!signature) {
+  const rawPayload = req.rawBody.toString('utf8');
+  const headers = getPolarWebhookHeaders(req);
+  if (!headers['webhook-signature']) {
     res.status(400).json({ error: 'MISSING_SIGNATURE' });
     return;
   }
 
-  let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, signature, webhookSecret);
+    const wh = new Webhook(webhookSecret);
+    wh.verify(rawPayload, headers);
   } catch (error) {
-    functions.logger.error('Stripe webhook signature verification failed', error);
+    functions.logger.error('Polar webhook signature verification failed', error);
     res.status(400).json({ error: 'INVALID_SIGNATURE' });
     return;
   }
 
+  const event = JSON.parse(rawPayload) as PolarWebhookEvent;
+  const data = getObjectValue(event.data);
+  const metadata = getObjectValue(
+    data.metadata,
+    getObjectValue(data.checkout).metadata,
+    getObjectValue(data.order).metadata,
+  );
+  const providerPaymentId = getStringValue(
+    data.checkout_id,
+    data.checkoutId,
+    getObjectValue(data.checkout).id,
+    data.id,
+  );
+  const contextFromPayment = providerPaymentId ? await getPolarPaymentContext(providerPaymentId) : null;
+  const uid = getStringValue(metadata.uid, contextFromPayment?.uid);
+  const rawProductId = getStringValue(metadata.productId, contextFromPayment?.productId);
+  const eventType = getStringValue(event.type);
+  const checkoutStatus = getStringValue(data.status, getObjectValue(data.checkout).status).toLowerCase();
+  const isPaidEvent = eventType === 'order.paid' || (eventType === 'checkout.updated' && ['succeeded', 'confirmed', 'paid', 'completed'].includes(checkoutStatus));
+  const isFailedEvent = eventType === 'order.failed' || (eventType === 'checkout.updated' && ['failed'].includes(checkoutStatus));
+  const isCanceledEvent = eventType === 'checkout.expired' || (eventType === 'checkout.updated' && ['expired', 'canceled', 'cancelled'].includes(checkoutStatus));
+
   try {
-    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
-      await fulfillCheckoutSession(event.data.object as StripeCheckoutSession);
-    } else if (event.type === 'checkout.session.async_payment_failed') {
-      await markPaymentStatus(event.data.object as StripeCheckoutSession, 'failed');
-    } else if (event.type === 'checkout.session.expired') {
-      await markPaymentStatus(event.data.object as StripeCheckoutSession, 'canceled');
+    if (isPaidEvent) {
+      if (!providerPaymentId || !uid || !isPaymentProductId(rawProductId)) {
+        throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+      }
+
+      await fulfillCreditPurchase({
+        provider: POLAR_PROVIDER,
+        providerPaymentId,
+        uid,
+        productId: rawProductId,
+        amount: typeof data.amount === 'number' ? data.amount : null,
+        currency: getStringValue(data.currency, getObjectValue(data.checkout).currency),
+        paidAt: getStringValue(data.paid_at, data.paidAt),
+        rawPayload: event,
+      });
+    } else if (isFailedEvent) {
+      if (!providerPaymentId) {
+        throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+      }
+      await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId, status: 'failed' });
+    } else if (isCanceledEvent) {
+      if (!providerPaymentId) {
+        throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+      }
+      await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId, status: 'canceled' });
     }
 
     res.json({ received: true });
   } catch (error) {
-    functions.logger.error('Stripe webhook processing failed', {
-      eventType: event.type,
+    functions.logger.error('Polar webhook processing failed', {
+      eventType,
       message: error instanceof Error ? error.message : 'unknown',
       error,
     });
@@ -1816,8 +1909,8 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
     return;
   }
 
-  if (error instanceof Error && error.message === STRIPE_CONFIG_ERROR) {
-    res.status(500).json({ error: STRIPE_CONFIG_ERROR, message: STRIPE_CONFIG_MESSAGE });
+  if (error instanceof Error && error.message === PAYMENT_CONFIG_ERROR) {
+    res.status(500).json({ error: PAYMENT_CONFIG_ERROR, message: PAYMENT_CONFIG_MESSAGE });
     return;
   }
 
@@ -1894,7 +1987,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       paidCredit: chargeResult.paidCreditAfterCharge,
       creditsRemaining: chargeResult.creditsAfterCharge,
       totalGenerated: chargeResult.profile.totalGenerated + 1,
-      ...buildApiBonusFields(chargeResult.dailyRewardGranted),
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
     };
     res.json(response);
     return;
@@ -1914,7 +2007,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       dailyCredit: refundResult.dailyCreditAfter ?? chargeResult.dailyCreditAfterCharge,
       paidCredit: refundResult.paidCreditAfter ?? chargeResult.paidCreditAfterCharge,
       creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
-      ...buildApiBonusFields(chargeResult.dailyRewardGranted),
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
     });
   }
 };
@@ -1994,6 +2087,7 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
       creditsRemaining: chargeResult.creditsAfterCharge,
       estimatedCost: videoJob.estimatedCost,
       subjectType: resolvedSubjectType,
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'OpenAI video generation failed';
@@ -2008,6 +2102,7 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
       dailyCredit: refundResult.dailyCreditAfter ?? chargeResult.dailyCreditAfterCharge,
       paidCredit: refundResult.paidCreditAfter ?? chargeResult.paidCreditAfterCharge,
       creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
     });
   }
 };
@@ -2170,7 +2265,7 @@ export const api = functions
         const response: BootstrapResponse = {
           success: true,
           ...result,
-          ...buildApiBonusFields(result.dailyRewardGranted),
+          ...buildApiBonusFields(result.dailyRewardGranted, result.signupBonusGranted),
           generationCost: GENERATION_COST,
           videoGenerationCost: VIDEO_GENERATION_COST,
         };
@@ -2208,12 +2303,12 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/stripe/webhook') {
-      await handleStripeWebhookRequest(req, res);
+    if (normalizedPath === '/polar/webhook') {
+      await handlePolarWebhookRequest(req, res);
       return;
     }
 
-    if (normalizedPath === '/stripe/checkout') {
+    if (normalizedPath === '/polar/checkout') {
       try {
         await handleCreateCheckoutSessionRequest(req, res);
       } catch (error) {
@@ -2222,7 +2317,7 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/stripe/session') {
+    if (normalizedPath === '/polar/session') {
       try {
         await handleCheckoutSessionStatusRequest(req, res);
       } catch (error) {
