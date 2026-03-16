@@ -3,6 +3,18 @@ export default {
     const url = new URL(request.url);
     const isApiRequest = url.pathname.startsWith('/api/');
     const isLegacyTryOnRequest = url.pathname === '/generateTryOn';
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+          'Access-Control-Allow-Headers': '*',
+        },
+      });
+    }
+
     const targetUrl = new URL(request.url);
 
     if (isApiRequest) {
@@ -21,8 +33,6 @@ export default {
     });
 
     const proxyRequest = new Request(targetUrl.toString(), request);
-    proxyRequest.headers.set('Host', targetUrl.hostname);
-
     const response = await fetch(proxyRequest);
     console.log('[HAMDEVA-worker] proxy response', {
       path: url.pathname,
