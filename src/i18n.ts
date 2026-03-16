@@ -1,10 +1,10 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import { LANGUAGE_CODES, type LanguageCode } from './constants/languages';
 import { resources } from './i18n-resources';
+import type { LanguageCode } from './constants/languages';
 
-const SUPPORTED_LANGUAGES = new Set<LanguageCode>(LANGUAGE_CODES);
+const SUPPORTED_LANGUAGES = new Set<LanguageCode>(['en', 'ko', 'ja', 'zh']);
 
 const detectLanguage = (): LanguageCode => {
   if (typeof window !== 'undefined') {

@@ -330,5 +330,91 @@
     "email": "回信邮箱",
     "message": "留言",
     "send": "发送邮件"
+  },
+  "ui": {
+    "heroCta": "开始 AI 试穿",
+    "sampleBadge": "SAMPLE",
+    "firebaseConfigMissing": "Firebase 配置缺失",
+    "firebaseDisabledMessage": "由于 Firebase 未配置，当前无法登录。请检查管理员设置或确认 .env 配置。",
+    "emailLabel": "邮箱",
+    "passwordLabel": "密码"
+  },
+  "uploadGuides": {
+    "faceTips": [
+      "接近正面的清晰照片效果最好。",
+      "建议使用没有被头发、手、口罩、眼镜或道具遮挡脸部的照片。",
+      "光线越明亮、背景越简单，识别效果越好。",
+      "半身照或以脸部为中心的照片最合适。"
+    ],
+    "clothTips": [
+      "能清楚看到整件服装轮廓的照片效果最好。",
+      "建议使用服装未被裁切、背景简单的图片。",
+      "越接近正面、褶皱和遮挡越少，效果越好。"
+    ],
+    "faceCopyrightNotice": "人物照片请勿在未获授权的情况下使用名人照片。",
+    "clothingSafetyNotice": "上传服装图片时，请勿使用过度暴露或带有明显色情性质的图片。",
+    "resultPrivacyNotice": "本图片不会被保存，仅会为结果预览和下载进行临时处理。"
+  },
+  "emptyPreview": {
+    "faceBadge": "FACE GUIDE",
+    "styleBadge": "STYLE GUIDE"
+  },
+  "sampleModal": {
+    "title": "选择示例",
+    "subtitle": "请选择用于预览的示例图片。",
+    "error": "图片错误",
+    "disclaimer": "所有图片均由 AI 生成。",
+    "categories": {
+      "female": "女性",
+      "male": "男性",
+      "dog": "狗",
+      "cat": "猫"
+    }
+  },
+  "clothSampleModal": {
+    "title": "选择示例服装",
+    "subtitle": "请选择用于预览的示例服装。",
+    "error": "图片错误",
+    "disclaimer": "所有图片均由 AI 生成。",
+    "categories": {
+      "female": "女性",
+      "male": "男性",
+      "animal": "动物",
+      "fashin": "时尚",
+      "future": "未来",
+      "classic": "经典"
+    }
+  },
+  "login": {
+    "signedInAs": "当前登录账号：{{email}}。",
+    "googleUser": "Google 用户",
+    "signOut": "退出登录",
+    "loginWithEmail": "使用邮箱登录",
+    "createAccount": "创建账号",
+    "continueWithGoogle": "使用 Google 继续",
+    "needAccount": "还没有账号？立即注册",
+    "haveAccount": "已有账号？立即登录"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredential": "请检查邮箱或密码是否正确。",
+      "userNotFound": "未找到对应邮箱的账号。",
+      "emailAlreadyInUse": "该邮箱已被注册。",
+      "popupClosed": "Google 登录弹窗已关闭。",
+      "unauthorizedDomain": "当前域名未注册到 Firebase Auth 允许域名中。请联系管理员检查域名设置。",
+      "unauthorizedDomainWithHost": "当前域名 ({{hostname}}) 未注册到 Firebase Auth 允许域名中。请联系管理员检查域名设置。",
+      "invalidApiKey": "Firebase 配置尚未完成，请联系管理员。",
+      "tooManyRequests": "尝试次数过多，请稍后再试。",
+      "firebaseAuthNotConfigured": "Firebase Auth 尚未配置。",
+      "googleSignInNotConfigured": "Google 登录尚未配置。",
+      "enterEmailPassword": "请输入邮箱和密码。",
+      "authenticationFailed": "认证失败，请重试。"
+    },
+    "generation": {
+      "timeoutDetail": "服务器响应超时，请稍后再试。",
+      "prepTimeoutDetail": "准备上传图片耗时过长，请重新选择图片后再试。",
+      "authTimeoutDetail": "检查登录状态耗时过长，请重新登录后再试。",
+      "resultImageTimeoutDetail": "准备显示生成图片耗时过长，请稍后再试。"
+    }
   }
 }

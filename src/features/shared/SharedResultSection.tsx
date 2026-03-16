@@ -1,0 +1,103 @@
+import React from 'react';
+import type { PublicResultRecord } from '../../types/hamdeva';
+import ResultActionsPanel from '../tryon/ResultActionsPanel';
+
+interface SharedResultSectionProps {
+  loading: boolean;
+  error: string | null;
+  record: PublicResultRecord | null;
+  link: string | null;
+  copy: Record<string, any>;
+  shareStatus: string | null;
+  onTryAnotherOutfit: () => void;
+  onDownloadResult: (src: string) => void;
+  onShareLink: (link: string | null) => void;
+  onCopyLink: (link: string | null) => void;
+  onShareOnKakao: (link: string | null) => void;
+  onShareOnLine: (link: string | null) => void;
+  onShareOnX: (link: string | null) => void;
+  onShareOnFacebook: (link: string | null) => void;
+  onInstagramSave: (src: string | null) => void;
+  onRandomOutfit: () => void;
+}
+
+const SharedResultSection: React.FC<SharedResultSectionProps> = ({
+  loading,
+  error,
+  record,
+  link,
+  copy,
+  shareStatus,
+  onTryAnotherOutfit,
+  onDownloadResult,
+  onShareLink,
+  onCopyLink,
+  onShareOnKakao,
+  onShareOnLine,
+  onShareOnX,
+  onShareOnFacebook,
+  onInstagramSave,
+  onRandomOutfit,
+}) => (
+  <main className="section page-shell">
+    <div className="section-inner page-layout">
+      <article className="page-article shared-result-shell">
+        {loading ? (
+          <p>{copy.loadingSharedResult}</p>
+        ) : error || !record ? (
+          <>
+            <h2>{copy.sharedResultTitle}</h2>
+            <p>{error || copy.resultNotFound}</p>
+            <div className="result-action-grid single-row">
+              <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
+                {copy.tryAnotherOutfit}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="section-heading">{copy.resultTitle}</h2>
+            <div className="composite-result">
+              <img
+                src={record.resultImageUrl}
+                alt="Shared HAMDEVA fitting result"
+                className="is-visible"
+              />
+            </div>
+            <ResultActionsPanel
+              imageSrc={record.resultImageUrl}
+              link={link}
+              disableDownload={false}
+              showVideoControls={false}
+              showVideoPrompt={false}
+              isGeneratingVideo={false}
+              canAffordVideo={false}
+              generatedVideoUrl={null}
+              videoStatusMessage={null}
+              shareStatus={shareStatus}
+              copy={copy}
+              subjectUi={{
+                videoPrompt: '',
+                videoButton: '',
+                videoGenerating: '',
+              }}
+              onDownload={onDownloadResult}
+              onShareLink={onShareLink}
+              onCopyLink={onCopyLink}
+              onShareOnKakao={onShareOnKakao}
+              onShareOnLine={onShareOnLine}
+              onShareOnX={onShareOnX}
+              onShareOnFacebook={onShareOnFacebook}
+              onInstagramSave={onInstagramSave}
+              onTryAnotherOutfit={onTryAnotherOutfit}
+              onRandomOutfit={onRandomOutfit}
+              onGenerateVideo={() => {}}
+            />
+          </>
+        )}
+      </article>
+    </div>
+  </main>
+);
+
+export default SharedResultSection;

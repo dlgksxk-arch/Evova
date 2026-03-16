@@ -27,7 +27,9 @@ export type SitePage =
   | 'contact'
   | 'board'
   | 'site-management'
-  | 'mypage';
+  | 'mypage'
+  | 'payment-success'
+  | 'payment-failed';
 
 export const SITE_PAGES: SitePage[] = [
   'home',
@@ -43,6 +45,8 @@ export const SITE_PAGES: SitePage[] = [
   'board',
   'site-management',
   'mypage',
+  'payment-success',
+  'payment-failed',
 ];
 
 export const NAV_PAGES: SitePage[] = [

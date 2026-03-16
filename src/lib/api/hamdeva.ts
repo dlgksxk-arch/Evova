@@ -1,0 +1,237 @@
+import type { User } from 'firebase/auth';
+import type {
+  CheckoutProductId,
+  CheckoutSessionResponse,
+  CheckoutSessionStatusResponse,
+  CreditBootstrapResponse,
+  SubjectType,
+  TryOnResponse,
+  VideoGenerationResponse,
+} from '../../types/hamdeva';
+
+const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
+const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
+const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
+const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
+const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
+const SAME_ORIGIN_STRIPE_CHECKOUT_ENDPOINT = '/api/stripe/checkout';
+const SAME_ORIGIN_STRIPE_SESSION_ENDPOINT = '/api/stripe/session';
+
+const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
+  image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
+
+const parseApiError = async (res: Response): Promise<Error> => {
+  const errBody = await res.json().catch(() => ({})) as { error?: string; message?: string };
+  if (errBody.error === 'PAYMENT_REQUIRED' || errBody.error === 'INSUFFICIENT_CREDITS') {
+    return new Error('PAYMENT_REQUIRED');
+  }
+  if (errBody.error === 'AUTH_REQUIRED') {
+    return new Error('AUTH_REQUIRED');
+  }
+  if (errBody.error === 'DUPLICATE_REQUEST') {
+    return new Error('DUPLICATE_REQUEST');
+  }
+  if (errBody.error === 'PAYMENT_NOT_CONFIGURED') {
+    return new Error('PAYMENT_NOT_CONFIGURED');
+  }
+
+  return new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
+};
+
+export const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse> => {
+  const token = await user.getIdToken();
+  const res = await fetch(SAME_ORIGIN_BOOTSTRAP_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({}),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as CreditBootstrapResponse;
+};
+
+export const callTryOn = async (payload: {
+  authToken: string;
+  personImage: string;
+  garmentImage: string;
+  requestId: string;
+  subjectType: SubjectType;
+  bodyProfile?: unknown;
+}): Promise<TryOnResponse & { image: string }> => {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 60_000);
+
+  try {
+    console.info('[HAMDEVA] tryon request', {
+      endpoint: SAME_ORIGIN_TRYON_ENDPOINT,
+      method: 'POST',
+      requestId: payload.requestId,
+    });
+
+    const res = await fetch(SAME_ORIGIN_TRYON_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${payload.authToken}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    console.info('[HAMDEVA] tryon response', {
+      endpoint: res.url || SAME_ORIGIN_TRYON_ENDPOINT,
+      method: 'POST',
+      status: res.status,
+      requestId: payload.requestId,
+    });
+
+    if (!res.ok) {
+      throw await parseApiError(res);
+    }
+
+    const data = await res.json() as TryOnResponse;
+
+    if (!data.image) {
+      throw new Error('응답에서 이미지를 찾을 수 없습니다.');
+    }
+
+    return {
+      image: normalizeGeneratedImage(data.image, data.mimeType),
+      success: data.success,
+      subjectType: data.subjectType,
+      usedCreditType: data.usedCreditType,
+      watermarkApplied: data.watermarkApplied,
+      dailyCredit: data.dailyCredit,
+      paidCredit: data.paidCredit,
+      totalGenerated: data.totalGenerated,
+      creditsRemaining: data.creditsRemaining,
+      dailyRewardGranted: data.dailyRewardGranted,
+      signupBonusGranted: data.signupBonusGranted,
+      subscriptionBonusGranted: data.subscriptionBonusGranted,
+    };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('GENERATION_TIMEOUT');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
+};
+
+export const callCreateCheckoutSession = async (payload: {
+  authToken: string;
+  productId: CheckoutProductId;
+}): Promise<CheckoutSessionResponse> => {
+  const res = await fetch(SAME_ORIGIN_STRIPE_CHECKOUT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify({ productId: payload.productId }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as CheckoutSessionResponse;
+};
+
+export const callCheckoutSessionStatus = async (payload: {
+  authToken: string;
+  sessionId: string;
+}): Promise<CheckoutSessionStatusResponse> => {
+  const res = await fetch(`${SAME_ORIGIN_STRIPE_SESSION_ENDPOINT}?sessionId=${encodeURIComponent(payload.sessionId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as CheckoutSessionStatusResponse;
+};
+
+export const callSubjectClassifier = async (subjectImage: string): Promise<SubjectType> => {
+  const res = await fetch(SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ subjectImage }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as { subjectType?: SubjectType };
+  return data.subjectType === 'dog' || data.subjectType === 'cat' ? data.subjectType : 'human';
+};
+
+export const callVideoGeneration = async (payload: {
+  authToken: string;
+  image: string;
+  requestId: string;
+  subjectType: SubjectType;
+  sourceResultId?: string | null;
+}): Promise<VideoGenerationResponse> => {
+  const res = await fetch(SAME_ORIGIN_VIDEO_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as VideoGenerationResponse;
+};
+
+export const pollVideoGeneration = async (
+  authToken: string,
+  requestId: string,
+): Promise<VideoGenerationResponse & { contentUrl?: string }> => {
+  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as VideoGenerationResponse & { contentUrl?: string };
+};
+
+export const fetchVideoBlobUrl = async (authToken: string, requestId: string): Promise<string> => {
+  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT.replace('/video-status', '/video-content')}?requestId=${encodeURIComponent(requestId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return URL.createObjectURL(await res.blob());
+};

@@ -330,5 +330,91 @@
     "email": "회신용 이메일",
     "message": "메시지",
     "send": "이메일 보내기"
+  },
+  "ui": {
+    "heroCta": "AI 피팅 시작하기",
+    "sampleBadge": "SAMPLE",
+    "firebaseConfigMissing": "Firebase 설정 누락",
+    "firebaseDisabledMessage": "Firebase 설정이 누락되어 로그인 기능을 사용할 수 없습니다. 관리자에게 문의하거나 .env 값을 확인해 주세요.",
+    "emailLabel": "이메일",
+    "passwordLabel": "비밀번호"
+  },
+  "uploadGuides": {
+    "faceTips": [
+      "정면에 가깝고 얼굴이 선명한 사진이 가장 좋습니다.",
+      "머리카락, 손, 마스크, 안경, 소품 등에 얼굴이 가려지지 않은 사진을 권장합니다.",
+      "조명이 밝고 배경이 단순한 사진일수록 인식률이 좋습니다.",
+      "상반신 또는 얼굴 중심 사진이 가장 적합합니다."
+    ],
+    "clothTips": [
+      "의상 전체 형태가 잘 보이는 사진이 가장 좋습니다.",
+      "옷이 잘리지 않고 배경이 단순한 이미지를 권장합니다.",
+      "정면에 가깝고 주름이나 가림이 적은 사진일수록 결과가 좋습니다."
+    ],
+    "faceCopyrightNotice": "인물사진에는 유명인을 저작권 없이 사용해서는 안됩니다.",
+    "clothingSafetyNotice": "의상사진 등록 시 과도한 노출이나 선정적인 이미지는 업로드하지 마세요.",
+    "resultPrivacyNotice": "본 이미지는 저장되지 않으며, 결과 확인과 다운로드 용도로만 일시적으로 처리됩니다."
+  },
+  "emptyPreview": {
+    "faceBadge": "FACE GUIDE",
+    "styleBadge": "STYLE GUIDE"
+  },
+  "sampleModal": {
+    "title": "샘플 선택",
+    "subtitle": "미리보기에 사용할 샘플 이미지를 선택하세요.",
+    "error": "이미지 오류",
+    "disclaimer": "모든 이미지는 AI로 생성되었습니다.",
+    "categories": {
+      "female": "여성",
+      "male": "남성",
+      "dog": "강아지",
+      "cat": "고양이"
+    }
+  },
+  "clothSampleModal": {
+    "title": "샘플 의상 선택",
+    "subtitle": "미리보기에 사용할 샘플 의상을 선택하세요.",
+    "error": "이미지 오류",
+    "disclaimer": "모든 이미지는 AI로 생성되었습니다.",
+    "categories": {
+      "female": "여성",
+      "male": "남성",
+      "animal": "동물",
+      "fashin": "패션",
+      "future": "미래",
+      "classic": "클래식"
+    }
+  },
+  "login": {
+    "signedInAs": "{{email}} 계정으로 로그인됨.",
+    "googleUser": "Google 사용자",
+    "signOut": "로그아웃",
+    "loginWithEmail": "이메일로 로그인",
+    "createAccount": "계정 만들기",
+    "continueWithGoogle": "Google 로그인",
+    "needAccount": "계정이 없나요? 회원가입",
+    "haveAccount": "이미 계정이 있나요? 로그인"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredential": "이메일 또는 비밀번호를 다시 확인해 주세요.",
+      "userNotFound": "가입된 계정을 찾을 수 없습니다.",
+      "emailAlreadyInUse": "이미 가입된 이메일입니다.",
+      "popupClosed": "로그인 창이 닫혔습니다.",
+      "unauthorizedDomain": "현재 도메인이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.",
+      "unauthorizedDomainWithHost": "현재 도메인({{hostname}})이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.",
+      "invalidApiKey": "Firebase 설정이 아직 완료되지 않았습니다. 관리자에게 문의해 주세요.",
+      "tooManyRequests": "잠시 후 다시 시도해 주세요.",
+      "firebaseAuthNotConfigured": "Firebase Auth 설정이 완료되지 않았습니다.",
+      "googleSignInNotConfigured": "Google 로그인 설정이 완료되지 않았습니다.",
+      "enterEmailPassword": "이메일과 비밀번호를 모두 입력해 주세요.",
+      "authenticationFailed": "로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요."
+    },
+    "generation": {
+      "timeoutDetail": "응답이 지연되어 요청이 자동으로 종료되었습니다. 잠시 후 다시 시도해 주세요.",
+      "prepTimeoutDetail": "업로드한 이미지를 준비하는 중 시간이 초과되었습니다. 이미지를 다시 선택한 뒤 재시도해 주세요.",
+      "authTimeoutDetail": "로그인 정보를 확인하는 중 시간이 초과되었습니다. 다시 로그인한 뒤 재시도해 주세요.",
+      "resultImageTimeoutDetail": "생성된 이미지를 화면에 준비하는 중 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요."
+    }
   }
 }

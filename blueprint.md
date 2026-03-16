@@ -1,266 +1,126 @@
 # HAMDEVA Blueprint
 
-## Project Overview
+## Current Production Baseline
 
-HAMDEVA is a global AI-powered virtual try-on platform.
+HAMDEVA is an AI virtual try-on service where a signed-in user uploads:
 
-Users upload:
+1. a person or pet image
+2. a clothing image
 
-1. A person image
-2. A clothing image
+The system generates a fitted image and can optionally generate a short follow-up video.
 
-The system generates a photorealistic result showing the person wearing the clothing.
+This blueprint reflects the current repository implementation as of March 16, 2026.
 
-Primary goals:
-
-* fast AI generation
-* mobile friendly
-* viral sharing
-* scalable global architecture
-
----
-
-# Architecture
+## Actual Architecture
 
 Frontend
 
-React + Vite + TypeScript
+- React 19
+- Vite
+- TypeScript
+- Firebase Auth
+- Firestore direct reads/writes for profile, board, history, shared results, and admin views
 
 Hosting
 
-Firebase Hosting
+- Firebase Hosting
 
-Domain
+Backend Source Of Truth
 
-Cloudflare DNS
+- Firebase Functions in `functions/src/index.ts`
+- Region: `asia-northeast3`
 
-Backend
+Legacy Backend
 
-Google Cloud Run (Node.js Express)
+- `server/index.js`
+- legacy/local-only try-on stub
+- not feature-complete for current production flows
 
-AI Model
+AI / Payments
 
-Google Gemini image generation
+- OpenAI image editing for try-on generation
+- OpenAI video generation for result video flow
+- Stripe Checkout + webhook fulfillment
 
----
+## Request Flow
 
-# System Flow
-
-User uploads images
+User uploads images in the browser
 
 Browser
 ↓
 Firebase Hosting
 ↓
-Cloud Run API
+Hosting rewrite `/api/**`
 ↓
-Gemini AI
+Firebase Function `api`
 ↓
-Generated image returned
+OpenAI / Stripe / Firestore
 ↓
-Frontend display
-
----
-
-# Repository Structure
-
-root
-
-src/
-App.tsx
-main.tsx
-index.css
-
-server/
-index.js
-package.json
-Dockerfile
-
-public/
-
----
-
-# Frontend Responsibilities
-
-Frontend handles:
-
-* image upload
-* preview
-* API request
-* result display
-* download
-* usage counter
-* localization
-* UI layout
-
-Frontend must never contain API keys.
-
----
-
-# Backend Responsibilities
-
-Cloud Run API handles:
-
-* secure Gemini API calls
-* image processing
-* request validation
-* response formatting
-
-Endpoint:
-
-POST /generate
-
-Request:
-
-{
-personImage: base64,
-garmentImage: base64
-}
-
-Response:
-
-{
-image: base64
-}
-
----
-
-# Deployment
-
-Frontend
-
-Firebase Hosting
-
-Backend
-
-Cloud Run
-
-Region
-
-asia-northeast3
-
----
-
-# Performance Rules
-
-Always follow these rules:
-
-1. Minimize API calls
-2. Cache repeated generations
-3. Resize large images before sending to AI
-4. Avoid blocking UI
-5. Optimize mobile performance
-
----
-
-# Security Rules
-
-Never expose:
-
-Gemini API keys
-
-API keys must remain inside backend.
-
-Frontend only communicates with Cloud Run.
-
----
-
-# UI Design Principles
-
-Simple interface
-
-3 main steps:
-
-Upload person photo
-Upload clothing photo
-Generate result
-
-Focus on:
-
-* fast interaction
-* minimal clicks
-* clear CTA
-
----
-
-# Monetization Plan
-
-Phase 1
-
-AdSense ads
-
-Phase 2
-
-Premium generation limits
-
-Phase 3
-
-Affiliate clothing links
-
-Shop this look
-
----
-
-# Growth Strategy
-
-HAMDEVA growth relies on:
-
-User-generated content
-
-Features planned:
-
-Outfit Gallery
-Daily Outfit Challenge
-Share to social platforms
-Leaderboard
-
----
-
-# Future Infrastructure
-
-Image storage
-
-Google Cloud Storage
-
-User authentication
-
-Firebase Auth
-
-Analytics
-
-Google Analytics
-
-CDN
-
-Cloudflare
-
----
-
-# Development Rules For AI Assistants
-
-When modifying code:
-
-Do NOT refactor entire files.
-
-Modify only necessary sections.
-
-Preserve UI components.
-
-Avoid adding heavy dependencies.
-
-Keep code production ready.
-
-Explain changes clearly.
-
----
-
-# AI Assistant Role
-
-Act as a senior full-stack engineer.
-
-Goals:
-
-Improve stability
-Improve scalability
-Reduce AI costs
-Enhance user experience
+Response returned to frontend
+
+Legacy compatibility only:
+
+- `/generateTryOn` rewrites to Firebase Function `generateTryOn`
+
+## Main API Paths
+
+- `POST /api/bootstrap`
+- `POST /api/tryon`
+- `POST /api/classify-subject`
+- `POST /api/video`
+- `GET /api/video-status`
+- `GET /api/video-content`
+- `POST /api/stripe/checkout`
+- `GET /api/stripe/session`
+- `POST /api/stripe/webhook`
+
+## Important Runtime Rules
+
+- `POST /api/tryon` is not an anonymous smoke endpoint.
+- It requires:
+  - a valid Firebase ID token in `Authorization: Bearer <token>`
+  - `requestId`
+  - `personImage`
+  - `garmentImage`
+  - available user credits
+- Credits are initialized through `POST /api/bootstrap` after login.
+
+## Environment Configuration
+
+Frontend `.env`
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FUNCTIONS_BASE_URL` for local dev proxy, or rely on local emulator target derived from `VITE_FIREBASE_PROJECT_ID`
+- `VITE_KAKAO_JS_KEY` optional
+
+Functions `functions/.env`
+
+- `OPENAI_API_KEY`
+- `OPENAI_IMAGE_MODEL`
+- `OPENAI_CLASSIFICATION_MODEL`
+- `OPENAI_VIDEO_MODEL`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `APP_BASE_URL`
+
+## Operational Risks To Watch
+
+- Wrong Firebase project binding between `.firebaserc`, frontend `.env`, and deployed Functions
+- Missing `OPENAI_API_KEY`
+- Running Firebase Functions deploy without Blaze plan
+- Mistaking `server/index.js` for the production backend
+- Directly calling `/api/tryon` without auth token and credits
+
+## Repository Focus Areas
+
+- `src/App.tsx` remains the top-level orchestrator and is still large
+- API helpers live under `src/lib/api`
+- runtime hooks live under `src/hooks`
+- larger page sections live under `src/features`
+- source-of-truth route audit lives in `docs/api-route-audit.md`
+- current architecture summary lives in `docs/current-architecture.md`

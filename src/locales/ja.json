@@ -26,5 +26,91 @@
     "title": "クリッククリック、バーチャルフィッティング空間",
     "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA コンテンツ"
+  },
+  "ui": {
+    "heroCta": "AI フィッティングを開始",
+    "sampleBadge": "SAMPLE",
+    "firebaseConfigMissing": "Firebase 設定が未完了です",
+    "firebaseDisabledMessage": "Firebase が設定されていないため、ログインを利用できません。管理者設定または .env の値を確認してください。",
+    "emailLabel": "メールアドレス",
+    "passwordLabel": "パスワード"
+  },
+  "uploadGuides": {
+    "faceTips": [
+      "正面に近く、顔がはっきり見える写真が最適です。",
+      "髪、手、マスク、メガネ、小物などで顔が隠れていない写真をおすすめします。",
+      "明るく、背景がシンプルな写真ほど認識精度が上がります。",
+      "上半身または顔中心の写真が最も適しています。"
+    ],
+    "clothTips": [
+      "服全体の形がはっきり見える写真が最適です。",
+      "服が切れておらず、背景がシンプルな画像をおすすめします。",
+      "正面に近く、しわや遮りが少ない写真ほど結果が良くなります。"
+    ],
+    "faceCopyrightNotice": "人物写真には、権利なく有名人の写真を使用しないでください。",
+    "clothingSafetyNotice": "衣装写真には、過度な露出や性的に露骨な画像をアップロードしないでください。",
+    "resultPrivacyNotice": "この画像は保存されず、結果確認とダウンロードのために一時的に処理されます。"
+  },
+  "emptyPreview": {
+    "faceBadge": "FACE GUIDE",
+    "styleBadge": "STYLE GUIDE"
+  },
+  "sampleModal": {
+    "title": "サンプルを選択",
+    "subtitle": "プレビューに使うサンプル画像を選んでください。",
+    "error": "画像エラー",
+    "disclaimer": "すべての画像は AI により生成されています。",
+    "categories": {
+      "female": "女性",
+      "male": "男性",
+      "dog": "犬",
+      "cat": "猫"
+    }
+  },
+  "clothSampleModal": {
+    "title": "衣装サンプルを選択",
+    "subtitle": "プレビューに使うサンプル衣装を選んでください。",
+    "error": "画像エラー",
+    "disclaimer": "すべての画像は AI により生成されています。",
+    "categories": {
+      "female": "女性",
+      "male": "男性",
+      "animal": "動物",
+      "fashin": "ファッション",
+      "future": "未来",
+      "classic": "クラシック"
+    }
+  },
+  "login": {
+    "signedInAs": "{{email}} としてログイン中。",
+    "googleUser": "Google ユーザー",
+    "signOut": "ログアウト",
+    "loginWithEmail": "メールでログイン",
+    "createAccount": "アカウント作成",
+    "continueWithGoogle": "Google でログイン",
+    "needAccount": "アカウントをお持ちでないですか？ 会員登録",
+    "haveAccount": "すでにアカウントをお持ちですか？ ログイン"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredential": "メールアドレスまたはパスワードを確認してください。",
+      "userNotFound": "このメールアドレスのアカウントが見つかりません。",
+      "emailAlreadyInUse": "このメールアドレスはすでに登録されています。",
+      "popupClosed": "Google ログインのポップアップが閉じられました。",
+      "unauthorizedDomain": "現在のドメインは Firebase Auth の許可ドメインに登録されていません。管理者に確認してください。",
+      "unauthorizedDomainWithHost": "現在のドメイン ({{hostname}}) は Firebase Auth の許可ドメインに登録されていません。管理者に確認してください。",
+      "invalidApiKey": "Firebase 設定がまだ完了していません。管理者にお問い合わせください。",
+      "tooManyRequests": "しばらくしてからもう一度お試しください。",
+      "firebaseAuthNotConfigured": "Firebase Auth が設定されていません。",
+      "googleSignInNotConfigured": "Google ログインが設定されていません。",
+      "enterEmailPassword": "メールアドレスとパスワードを入力してください。",
+      "authenticationFailed": "認証に失敗しました。もう一度お試しください。"
+    },
+    "generation": {
+      "timeoutDetail": "応答が遅れたため、リクエストは自動的に終了しました。しばらくしてから再試行してください。",
+      "prepTimeoutDetail": "アップロード画像の準備に時間がかかりすぎました。画像を選び直して再試行してください。",
+      "authTimeoutDetail": "ログイン状態の確認に時間がかかりすぎました。再ログインして再試行してください。",
+      "resultImageTimeoutDetail": "生成画像を画面に表示する準備に時間がかかりすぎました。しばらくしてから再試行してください。"
+    }
   }
 }

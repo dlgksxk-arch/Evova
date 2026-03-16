@@ -1,4 +1,17 @@
-# React + TypeScript + Vite
+# HAMDEVA
+
+Current production baseline:
+
+- frontend: React + Vite on Firebase Hosting
+- backend source of truth: Firebase Functions in `functions/src/index.ts`
+- legacy/local-only stub: `server/index.js`
+- AI/payment stack: OpenAI image/video + Stripe + Firebase Auth/Firestore
+
+See:
+
+- `docs/api-route-audit.md`
+- `docs/current-architecture.md`
+- `docs/api-response-contract.md`
 
 ## Firebase Functions deploy notes
 
@@ -6,15 +19,37 @@
 - Create `functions/.env` before deploy and set:
   - `OPENAI_API_KEY=...`
   - `OPENAI_IMAGE_MODEL=gpt-image-1`
+  - `OPENAI_CLASSIFICATION_MODEL=gpt-4.1-nano`
+  - `OPENAI_VIDEO_MODEL=sora-2`
+  - `STRIPE_SECRET_KEY=...`
+  - `STRIPE_WEBHOOK_SECRET=...`
+  - `APP_BASE_URL=https://your-domain`
+- Create root `.env` before frontend dev/build and set:
+  - `VITE_FIREBASE_API_KEY=...`
+  - `VITE_FIREBASE_AUTH_DOMAIN=...`
+  - `VITE_FIREBASE_PROJECT_ID=...`
+  - `VITE_FIREBASE_STORAGE_BUCKET=...`
+  - `VITE_FIREBASE_MESSAGING_SENDER_ID=...`
+  - `VITE_FIREBASE_APP_ID=...`
+  - `VITE_FUNCTIONS_BASE_URL=http://127.0.0.1:5001/<project-id>/asia-northeast3` for local dev, or your deployed Functions base URL
 - Deploy Functions with:
   - `firebase deploy --only functions`
 - Local verification:
+  - confirm `.firebaserc` default project and root `.env` `VITE_FIREBASE_PROJECT_ID` point to the same Firebase project
   - `cd functions && npm install`
   - `cp .env.example .env` and fill in `OPENAI_API_KEY`
   - `npm run build`
   - `firebase emulators:start --only functions`
   - In another terminal run the app from the repo root with `npm run dev`
-  - Verify `POST /api/tryon` first, and confirm `/generateTryOn` also resolves in the same project
+  - sign in through the frontend first so the app can call `POST /api/bootstrap` and initialize credits
+  - verify `/api/tryon` through the app flow first, not as an anonymous request
+  - if testing `/api/tryon` directly, include:
+    - Firebase ID token in `Authorization: Bearer <token>`
+    - `requestId`
+    - `personImage`
+    - `garmentImage`
+    - a user account with available credits
+  - confirm `/generateTryOn` only as a legacy compatibility route
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

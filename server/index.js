@@ -1,3 +1,5 @@
+// Legacy/local-only try-on stub.
+// Production routing uses Firebase Hosting -> Firebase Functions in functions/src/index.ts.
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -163,7 +165,12 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
 };
 
 // Health check
-app.get('/', (req, res) => res.json({ status: 'ok' }));
+app.get('/', (req, res) => res.json({
+  status: 'ok',
+  legacy: true,
+  sourceOfTruth: 'firebase-functions',
+  supportedRoutes: ['/generate', '/tryon', '/generateTryOn', '/api/tryon'],
+}));
 app.options(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], (req, res) => {
   console.info('[HAMDEVA-server] preflight', { path: req.path, method: req.method });
   res.sendStatus(204);
@@ -217,4 +224,7 @@ app.all(['/generate', '/tryon', '/generateTryOn', '/api/tryon'], (req, res) => {
   res.status(405).json({ error: 'Method Not Allowed', method: req.method, path: req.path, allowed: 'POST, OPTIONS' });
 });
 
-app.listen(PORT, () => console.log(`HAMDEVA-server listening on port ${PORT}`));
+app.listen(PORT, () => {
+  console.warn('HAMDEVA-server listening in legacy mode. Production API source of truth is Firebase Functions.');
+  console.log(`HAMDEVA-server listening on port ${PORT}`);
+});

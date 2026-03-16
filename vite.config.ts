@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { execSync } from 'child_process'
 import fs from 'fs'
@@ -70,6 +70,22 @@ const appVersion = formatVersion(getBuildNumber(), getGitShortSha())
 
 const gitShortSha = getGitShortSha()
 
+const resolveFunctionsProxyTarget = (env: Record<string, string>) => {
+  const explicitBaseUrl = env.VITE_FUNCTIONS_BASE_URL?.trim()
+  if (explicitBaseUrl) {
+    return explicitBaseUrl.replace(/\/+$/, '')
+  }
+
+  const projectId = env.VITE_FIREBASE_PROJECT_ID?.trim()
+  if (projectId) {
+    return `http://127.0.0.1:5001/${projectId}/asia-northeast3`
+  }
+
+  throw new Error(
+    'Missing VITE_FUNCTIONS_BASE_URL or VITE_FIREBASE_PROJECT_ID. Refusing to proxy /api to an implicit production backend.',
+  )
+}
+
 function writeVersionFilePlugin() {
   const versionPayload = JSON.stringify({ version: appVersion, sha: gitShortSha }, null, 2)
 
@@ -131,26 +147,31 @@ function sampleScannerPlugin() {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), sampleScannerPlugin(), writeVersionFilePlugin()],
-  define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
-  },
-  server: {
-    fs: {
-      allow: ['Z:/HDD2/샘플사진', '..']
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const functionsProxyTarget = resolveFunctionsProxyTarget(env)
+
+  return {
+    plugins: [react(), sampleScannerPlugin(), writeVersionFilePlugin()],
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
     },
-    proxy: {
-      '/api': {
-        target: 'https://asia-northeast3-hamdeva.cloudfunctions.net',
-        changeOrigin: true,
-        secure: true,
+    server: {
+      fs: {
+        allow: ['Z:/HDD2/샘플사진', '..']
       },
-      '/generateTryOn': {
-        target: 'https://asia-northeast3-hamdeva.cloudfunctions.net',
-        changeOrigin: true,
-        secure: true,
+      proxy: {
+        '/api': {
+          target: functionsProxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        '/generateTryOn': {
+          target: functionsProxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
-  },
+  }
 })

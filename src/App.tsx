@@ -5,13 +5,33 @@ import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
-import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import AdminDashboard from './features/admin/AdminDashboard';
+import MyPageSection from './features/account/MyPageSection';
+import BoardPage from './features/board/BoardPage';
+import PaymentStatusPage from './features/payment/PaymentStatusPage';
+import SharedResultSection from './features/shared/SharedResultSection';
+import TryOnStudio from './features/tryon/TryOnStudio';
+import { useAdminDashboardData } from './hooks/useAdminDashboardData';
+import { useCreditBootstrap } from './hooks/useCreditBootstrap';
+import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
+import { useSharedResult } from './hooks/useSharedResult';
+import {
+  callCreateCheckoutSession,
+  callCreditBootstrap,
+  callSubjectClassifier,
+  callTryOn,
+  callVideoGeneration,
+  fetchVideoBlobUrl,
+  pollVideoGeneration,
+} from './lib/api/hamdeva';
+import { normalizeUserProfile } from './lib/profile';
+import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type KakaoSdk = {
   isInitialized?: () => boolean;
@@ -30,152 +50,58 @@ declare global {
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
-const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
 const MIN_GENERATION_ESTIMATE_MS = 12_000;
 const MAX_GENERATION_ESTIMATE_MS = 70_000;
 const GENERATION_ESTIMATE_BUFFER_MS = 10_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
-const GENERATION_PREP_TIMEOUT_MS = 20_000;
+const GENERATION_PREP_TIMEOUT_MS = 60_000;
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 75_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const VIDEO_GENERATION_COST = 1000;
-const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
-const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
-const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
+const CREDIT_PRODUCTS = [
+  { id: 'starter', label: 'Starter', priceLabel: '$4.99', paidCredit: 5000 },
+  { id: 'creator', label: 'Creator', priceLabel: '$9.99', paidCredit: 12000 },
+  { id: 'pro', label: 'Pro', priceLabel: '$19.99', paidCredit: 26000 },
+] as const;
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
+const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
+const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
+  SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
+);
 type SubjectType = typeof SUBJECT_TYPES[number];
-const OPENAI_IMAGE_TOKEN_PRICING = {
-  'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
-  'gpt-image-1-mini': { inputPer1M: 2.5, outputPer1M: 8 },
-  'gpt-image-1.5': { inputPer1M: 8, outputPer1M: 32 },
-  'chatgpt-image-latest': { inputPer1M: 8, outputPer1M: 32 },
-} as const;
-const OPENAI_IMAGE_UNIT_PRICING = {
-  'gpt-image-1': {
-    low: { '1024x1024': 0.011, '1024x1536': 0.016, '1536x1024': 0.016 },
-    medium: { '1024x1024': 0.042, '1024x1536': 0.063, '1536x1024': 0.063 },
-    high: { '1024x1024': 0.167, '1024x1536': 0.25, '1536x1024': 0.25 },
-  },
-  'gpt-image-1-mini': {
-    low: { '1024x1024': 0.005, '1024x1536': 0.006, '1536x1024': 0.006 },
-    medium: { '1024x1024': 0.011, '1024x1536': 0.015, '1536x1024': 0.015 },
-    high: { '1024x1024': 0.036, '1024x1536': 0.052, '1536x1024': 0.052 },
-  },
-  'gpt-image-1.5': {
-    low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
-    medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
-    high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
-  },
-  'chatgpt-image-latest': {
-    low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
-    medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
-    high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
-  },
-} as const;
+type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
+type CreditKind = 'daily' | 'paid';
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
 
 interface UserProfile {
   email: string;
+  dailyCredit: number;
+  paidCredit: number;
   credits: number;
+  totalGenerated: number;
   isSubscribed: boolean;
   subscriptionPlan: SubscriptionPlan;
   role: UserRole;
   createdAt?: Timestamp | null;
-  lastDailyRewardAt?: Timestamp | null;
+  lastDailyResetAt?: Timestamp | null;
   lastLoginAt?: Timestamp | null;
-}
-
-interface CreditBootstrapResponse {
-  success?: boolean;
-  profile?: {
-    credits: number;
-    isSubscribed: boolean;
-    subscriptionPlan: SubscriptionPlan;
-    role: UserRole;
-  };
-  signupBonusGranted?: number;
-  dailyRewardGranted?: number;
-  subscriptionBonusGranted?: number;
-  generationCost?: number;
-  videoGenerationCost?: number;
-}
-
-interface AdminUserRecord {
-  id: string;
-  email: string;
-  credits: number;
-  subscriptionPlan: SubscriptionPlan;
-  role: UserRole;
-  createdAt?: Timestamp | null;
-}
-
-interface CreditLogRecord {
-  id: string;
-  uid: string;
-  type: string;
-  amount: number;
-  balanceAfter: number;
-  note?: string;
-  email?: string;
-  createdAt?: Timestamp | null;
-}
-
-interface GenerationRequestRecord {
-  id: string;
-  uid: string;
-  email?: string;
-  requestId: string;
-  type?: 'image_generation' | 'video_generation';
-  subjectType?: SubjectType;
-  sourceResultId?: string | null;
-  openaiVideoId?: string;
-  model?: string;
-  quality?: string;
-  size?: string;
-  durationSeconds?: number;
-  estimatedCost?: number | null;
-  usage?: {
-    input_tokens?: number;
-    output_tokens?: number;
-  };
-  status?: string;
-  success?: boolean;
-  refunded?: boolean;
-  errorMessage?: string;
-  createdAt?: Timestamp | null;
-}
-
-interface VideoGenerationResponse {
-  success?: boolean;
-  requestId?: string;
-  openaiVideoId?: string;
-  status?: string;
-  creditsRemaining?: number;
-  estimatedCost?: number;
-  subjectType?: SubjectType;
-  refunded?: boolean;
+  updatedAt?: Timestamp | null;
 }
 
 interface GenerationRecord {
   id: string;
   uid: string;
-  faceImageUrl: string;
-  clothImageUrl: string;
-  resultImageUrl: string;
-  createdAt?: Timestamp | null;
-}
-
-interface PublicResultRecord {
-  id: string;
-  uid?: string | null;
-  resultImageUrl: string;
-  language?: LanguageCode;
+  imageUrl: string;
+  status?: string;
+  usedCreditType?: CreditKind;
+  usedCreditAmount?: number;
+  watermarkApplied?: boolean;
   createdAt?: Timestamp | null;
 }
 
@@ -279,6 +205,9 @@ const translations = {
     loginForFree: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
     credits: '크레딧',
     currentCredits: (n: number) => `현재 보유 크레딧: ${n}`,
+    dailyCreditLabel: '오늘 무료 크레딧',
+    paidCreditLabel: '유료 크레딧',
+    totalCreditLabel: '총 크레딧',
     generationCost: '1회 생성 = 100 크레딧',
     generationCostDetailed: (n: number) => `1회 생성 = ${n} 크레딧`,
     signUpGetCredits: '회원가입하고 300 크레딧 받기',
@@ -286,6 +215,7 @@ const translations = {
     subscriptionCreditBonus: '구독 시 매일 추가 크레딧 지급',
     notEnoughCredits: '크레딧이 부족합니다.',
     refundedAfterFailure: '이미지 생성에 실패하여 100 크레딧이 환불되었습니다.',
+    paymentConfigError: '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.',
     duplicateRequestBlocked: '이미 생성 요청이 처리 중입니다. 잠시 후 다시 시도해 주세요.',
     todayDailyRewardGranted: '오늘의 300 크레딧이 지급되었습니다.',
     todayDailyRewardAlreadyClaimed: '오늘은 이미 일일 크레딧을 받았습니다.',
@@ -298,6 +228,25 @@ const translations = {
     siteCreditsLabel: '현재 크레딧',
     siteCreditCostLabel: '생성 비용',
     authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
+    chargeCredits: '크레딧 충전',
+    chargeDescription: '무료 크레딧이 먼저 사용되고, 부족하면 유료 크레딧이 차감됩니다.',
+    purchaseNow: '구매하기',
+    paymentRedirecting: '결제창으로 이동 중...',
+    paymentSuccessTitle: '결제가 완료되었습니다',
+    paymentSuccessReady: '결제가 확인되어 유료 크레딧이 지급되었습니다.',
+    paymentFailedTitle: '결제가 완료되지 않았습니다',
+    paymentFailedDescription: '결제가 취소되었거나 실패했습니다. 다시 시도해 주세요.',
+    paymentVerifying: '결제 확인 중입니다. 잠시만 기다려 주세요.',
+    paymentVerifyFailed: '결제 상태를 확인하지 못했습니다. 잠시 후 마이페이지에서 다시 확인해 주세요.',
+    paymentSessionLabel: '결제 세션',
+    goToMyPage: '마이페이지로 이동',
+    starterProductName: 'starter',
+    creatorProductName: 'creator',
+    proProductName: 'pro',
+    freeResultNoticeTitle: '무료 생성 결과입니다.',
+    freeResultNoticeBody: '워터마크 없는 결과와 추가 생성을 원하면 크레딧을 충전하세요.',
+    watermarkEnabled: '워터마크 적용',
+    watermarkRemoved: '워터마크 없음',
     adminNav: '관리',
     adminTitle: '관리자 페이지',
     adminSubtitle: '운영 지표와 최근 활동을 한 화면에서 확인할 수 있습니다.',
@@ -472,6 +421,9 @@ const translations = {
     loginForFree: 'Get 300 credits on sign-up and 300 daily credits when you log in.',
     credits: 'Credits',
     currentCredits: (n: number) => `Current credits: ${n}`,
+    dailyCreditLabel: 'Free today',
+    paidCreditLabel: 'Paid credits',
+    totalCreditLabel: 'Total credits',
     generationCost: '1 generation = 100 credits',
     generationCostDetailed: (n: number) => `1 generation = ${n} credits`,
     signUpGetCredits: 'Sign up and get 300 credits',
@@ -479,6 +431,7 @@ const translations = {
     subscriptionCreditBonus: 'Subscribers can get extra daily credits',
     notEnoughCredits: 'Not enough credits.',
     refundedAfterFailure: '100 credits refunded due to generation failure.',
+    paymentConfigError: 'Payments are not configured yet. Please try again later.',
     duplicateRequestBlocked: 'A generation request is already being processed. Please try again shortly.',
     todayDailyRewardGranted: 'Today’s 300 credits have been added.',
     todayDailyRewardAlreadyClaimed: 'Today’s daily credits were already claimed.',
@@ -491,6 +444,25 @@ const translations = {
     siteCreditsLabel: 'Current credits',
     siteCreditCostLabel: 'Generation cost',
     authSignupCreditsHint: 'Sign up and get 300 credits',
+    chargeCredits: 'Buy credits',
+    chargeDescription: 'Daily free credits are used first. Paid credits are used only when the free balance is insufficient.',
+    purchaseNow: 'Purchase',
+    paymentRedirecting: 'Opening checkout...',
+    paymentSuccessTitle: 'Payment completed',
+    paymentSuccessReady: 'Your payment was verified and paid credits were added.',
+    paymentFailedTitle: 'Payment not completed',
+    paymentFailedDescription: 'The payment was canceled or failed. Please try again.',
+    paymentVerifying: 'Verifying your payment. Please wait a moment.',
+    paymentVerifyFailed: 'We could not confirm the payment yet. Please check again from My Page shortly.',
+    paymentSessionLabel: 'Session',
+    goToMyPage: 'Go to My Page',
+    starterProductName: 'starter',
+    creatorProductName: 'creator',
+    proProductName: 'pro',
+    freeResultNoticeTitle: 'This was generated with free credits.',
+    freeResultNoticeBody: 'If you want watermark-free results or more generations, charge paid credits.',
+    watermarkEnabled: 'Watermark on',
+    watermarkRemoved: 'Watermark off',
     adminNav: 'Admin',
     adminTitle: 'Admin Dashboard',
     adminSubtitle: 'Review the service overview and recent activity in one place.',
@@ -1534,10 +1506,6 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 };
 
 const GENERATION_COST = 100;
-const SIGNUP_BONUS_CREDITS = 300;
-const DAILY_LOGIN_CREDITS = 300;
-const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
-const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
 const RESULT_ROUTE_PREFIX = '/result/';
 const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.png';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
@@ -1574,9 +1542,7 @@ const getSharedResultIdFromPath = (pathname: string): string | null => {
 
 const buildSharedResultUrl = (resultId: string): string =>
   `https://hamdeva.com/result/${encodeURIComponent(resultId)}`;
-const getFirebaseDisabledMessage = (): string => (
-  'Firebase 설정이 누락되어 로그인 기능을 사용할 수 없습니다. 관리자에게 문의하거나 .env 값을 확인해 주세요.'
-);
+const getFirebaseDisabledMessage = (message: string): string => message;
 
 const requireDb = () => {
   if (!db) {
@@ -1584,17 +1550,6 @@ const requireDb = () => {
   }
   return db;
 };
-
-const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserProfile => ({
-  email: data?.email || email,
-  credits: typeof data?.credits === 'number' ? data.credits : 0,
-  isSubscribed: data?.isSubscribed === true,
-  subscriptionPlan: data?.subscriptionPlan === 'basic' || data?.subscriptionPlan === 'pro' ? data.subscriptionPlan : 'free',
-  role: data?.role === 'admin' || ADMIN_EMAILS.has((data?.email || email).toLowerCase()) ? 'admin' : 'user',
-  createdAt: data?.createdAt ?? null,
-  lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
-  lastLoginAt: data?.lastLoginAt ?? null,
-});
 
 const normalizeSubjectType = (value: unknown): SubjectType => (
   value === 'dog' || value === 'cat' ? value : 'human'
@@ -1747,40 +1702,24 @@ const getAdminVideoLabels = (lang: LanguageCode) => {
   };
 };
 
-const roundEstimatedCost = (value: number): number =>
-  Math.round(value * 1_000_000) / 1_000_000;
-
-const estimateGenerationCost = (record: Partial<GenerationRequestRecord>): number | null => {
-  if (typeof record.estimatedCost === 'number' && Number.isFinite(record.estimatedCost)) {
-    return roundEstimatedCost(record.estimatedCost);
-  }
-
-  const model = typeof record.model === 'string' ? record.model : '';
-  const quality = typeof record.quality === 'string' ? record.quality : '';
-  const size = typeof record.size === 'string' ? record.size : '';
-  const inputTokens = typeof record.usage?.input_tokens === 'number' ? Math.max(0, record.usage.input_tokens) : 0;
-  const outputTokens = typeof record.usage?.output_tokens === 'number' ? Math.max(0, record.usage.output_tokens) : 0;
-  const tokenPricing = OPENAI_IMAGE_TOKEN_PRICING[model as keyof typeof OPENAI_IMAGE_TOKEN_PRICING];
-
-  if (tokenPricing && (inputTokens > 0 || outputTokens > 0)) {
-    return roundEstimatedCost(
-      (inputTokens / 1_000_000) * tokenPricing.inputPer1M
-      + (outputTokens / 1_000_000) * tokenPricing.outputPer1M,
-    );
-  }
-
-  const qualityPricing = OPENAI_IMAGE_UNIT_PRICING[model as keyof typeof OPENAI_IMAGE_UNIT_PRICING];
-  const sizePricing = qualityPricing?.[quality as keyof typeof qualityPricing];
-  const fallback = sizePricing?.[size as keyof typeof sizePricing];
-  return typeof fallback === 'number' ? roundEstimatedCost(fallback) : null;
-};
-
 const createRequestId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string => {
+const buildAuthErrorMessage = (
+  error: unknown,
+  fallbackMessage: string,
+  messages: {
+    invalidCredential: string;
+    emailAlreadyInUse: string;
+    popupClosed: string;
+    unauthorizedDomain: string;
+    unauthorizedDomainWithHost: string;
+    invalidApiKey: string;
+    tooManyRequests: string;
+  },
+): string => {
   const errorCode = typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code?: string }).code)
     : '';
@@ -1790,25 +1729,25 @@ const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string 
   }
 
   if (errorCode.includes('auth/invalid-credential') || errorCode.includes('auth/wrong-password')) {
-    return '이메일 또는 비밀번호를 다시 확인해 주세요.';
+    return messages.invalidCredential;
   }
   if (errorCode.includes('auth/email-already-in-use')) {
-    return '이미 가입된 이메일입니다.';
+    return messages.emailAlreadyInUse;
   }
   if (errorCode.includes('auth/popup-closed-by-user')) {
-    return '로그인 창이 닫혔습니다.';
+    return messages.popupClosed;
   }
   if (errorCode.includes('auth/unauthorized-domain')) {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     return hostname
-      ? `현재 도메인(${hostname})이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.`
-      : '현재 도메인이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.';
+      ? messages.unauthorizedDomainWithHost.replace('{{hostname}}', hostname)
+      : messages.unauthorizedDomain;
   }
   if (errorCode.includes('auth/invalid-api-key') || errorCode.includes('auth/api-key-not-valid')) {
-    return 'Firebase 설정이 아직 완료되지 않았습니다. 관리자에게 문의해 주세요.';
+    return messages.invalidApiKey;
   }
   if (errorCode.includes('auth/too-many-requests')) {
-    return '잠시 후 다시 시도해 주세요.';
+    return messages.tooManyRequests;
   }
 
   return error instanceof Error ? error.message || fallbackMessage : fallbackMessage;
@@ -1901,8 +1840,18 @@ const ensureDataUrl = async (src: string): Promise<string> => {
   return blobToDataUrl(await res.blob());
 };
 
-const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
-  image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
+const fetchAssetDataUrl = async (src: string): Promise<string> => {
+  if (src.startsWith('data:')) {
+    return src;
+  }
+
+  const response = await fetch(src, { cache: 'force-cache' });
+  if (!response.ok) {
+    throw new Error('샘플 이미지를 불러오지 못했습니다.');
+  }
+
+  return blobToDataUrl(await response.blob());
+};
 
 const preloadImageSource = (src: string): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -1932,7 +1881,13 @@ const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, errorCode
 
 const getGenerateErrorMessage = (
   error: unknown,
-  t: { alertError: string; generationConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string; duplicateRequestBlocked: string },
+  t: { alertError: string; generationConfigError: string; paymentConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string; duplicateRequestBlocked: string },
+  details: {
+    timeoutDetail: string;
+    prepTimeoutDetail: string;
+    authTimeoutDetail: string;
+    resultImageTimeoutDetail: string;
+  },
 ): string => {
   const raw = error instanceof Error ? error.message : '';
   if (
@@ -1944,7 +1899,11 @@ const getGenerateErrorMessage = (
     return t.generationConfigError;
   }
 
-  if (raw === 'INSUFFICIENT_CREDITS') {
+  if (raw === 'PAYMENT_NOT_CONFIGURED') {
+    return t.paymentConfigError;
+  }
+
+  if (raw === 'PAYMENT_REQUIRED' || raw === 'INSUFFICIENT_CREDITS') {
     return t.notEnoughCredits;
   }
 
@@ -1957,19 +1916,19 @@ const getGenerateErrorMessage = (
   }
 
   if (raw === 'GENERATION_TIMEOUT') {
-    return `${t.alertError}\n\n응답이 지연되어 요청이 자동으로 종료되었습니다. 잠시 후 다시 시도해 주세요.`;
+    return `${t.alertError}\n\n${details.timeoutDetail}`;
   }
 
   if (raw === 'GENERATION_PREP_TIMEOUT') {
-    return `${t.alertError}\n\n업로드한 이미지를 준비하는 중 시간이 초과되었습니다. 이미지를 다시 선택한 뒤 재시도해 주세요.`;
+    return `${t.alertError}\n\n${details.prepTimeoutDetail}`;
   }
 
   if (raw === 'GENERATION_AUTH_TIMEOUT') {
-    return `${t.alertError}\n\n로그인 정보를 확인하는 중 시간이 초과되었습니다. 다시 로그인한 뒤 재시도해 주세요.`;
+    return `${t.alertError}\n\n${details.authTimeoutDetail}`;
   }
 
   if (raw === 'RESULT_IMAGE_TIMEOUT') {
-    return `${t.alertError}\n\n생성된 이미지를 화면에 준비하는 중 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.`;
+    return `${t.alertError}\n\n${details.resultImageTimeoutDetail}`;
   }
 
   if (raw.includes('100 credits refunded')) {
@@ -1977,167 +1936,6 @@ const getGenerateErrorMessage = (
   }
 
   return raw ? `${t.alertError}\n\n${raw}` : t.alertError;
-};
-
-const isGenerationConfigError = (message: string): boolean =>
-  message.includes('IMAGE_GENERATION_NOT_CONFIGURED')
-  || message.includes('OPENAI_API_KEY')
-  || message.includes('설정이 아직 완료되지 않았습니다')
-  || message.includes('not configured yet');
-
-const parseTryOnError = async (res: Response): Promise<Error> => {
-  const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
-  if (errBody.error === 'INSUFFICIENT_CREDITS') {
-    return new Error('INSUFFICIENT_CREDITS');
-  }
-  if (errBody.error === 'INSUFFICIENT_VIDEO_CREDITS') {
-    return new Error('INSUFFICIENT_VIDEO_CREDITS');
-  }
-  if (errBody.error === 'AUTH_REQUIRED') {
-    return new Error('AUTH_REQUIRED');
-  }
-  if (errBody.error === 'DUPLICATE_REQUEST') {
-    return new Error('DUPLICATE_REQUEST');
-  }
-
-  return new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
-};
-
-const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse> => {
-  const token = await user.getIdToken();
-  const res = await fetch(SAME_ORIGIN_BOOTSTRAP_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({}),
-  });
-
-  if (!res.ok) {
-    throw await parseTryOnError(res);
-  }
-
-  return await res.json() as CreditBootstrapResponse;
-};
-
-const callNanoBanana = async (payload: { authToken: string, personImage: string, garmentImage: string, requestId: string, subjectType: SubjectType, bodyProfile?: any }): Promise<{ image: string; subjectType?: SubjectType; creditsRemaining?: number; signupBonusGranted?: number; dailyRewardGranted?: number; subscriptionBonusGranted?: number }> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60_000);
-  try {
-    console.info('[HAMDEVA] tryon request', { endpoint: SAME_ORIGIN_TRYON_ENDPOINT, method: 'POST', requestId: payload.requestId });
-    const res = await fetch(SAME_ORIGIN_TRYON_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${payload.authToken}`,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-    console.info('[HAMDEVA] tryon response', { endpoint: res.url || SAME_ORIGIN_TRYON_ENDPOINT, method: 'POST', status: res.status, requestId: payload.requestId });
-
-    if (!res.ok) {
-      throw await parseTryOnError(res);
-    }
-
-    const data = await res.json() as {
-      success?: boolean;
-      image?: string;
-      mimeType?: string;
-      subjectType?: SubjectType;
-      creditsRemaining?: number;
-      signupBonusGranted?: number;
-      dailyRewardGranted?: number;
-      subscriptionBonusGranted?: number;
-    };
-    if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-    return {
-      image: normalizeGeneratedImage(data.image, data.mimeType),
-      subjectType: normalizeSubjectType(data.subjectType),
-      creditsRemaining: data.creditsRemaining,
-      signupBonusGranted: data.signupBonusGranted,
-      dailyRewardGranted: data.dailyRewardGranted,
-      subscriptionBonusGranted: data.subscriptionBonusGranted,
-    };
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('GENERATION_TIMEOUT');
-    }
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
-const callSubjectClassifier = async (subjectImage: string): Promise<SubjectType> => {
-  const res = await fetch(SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ subjectImage }),
-  });
-
-  if (!res.ok) {
-    throw await parseTryOnError(res);
-  }
-
-  const data = await res.json() as { subjectType?: SubjectType };
-  return normalizeSubjectType(data.subjectType);
-};
-
-const callVideoGeneration = async (payload: {
-  authToken: string;
-  image: string;
-  requestId: string;
-  subjectType: SubjectType;
-  sourceResultId?: string | null;
-}): Promise<VideoGenerationResponse> => {
-  const res = await fetch(SAME_ORIGIN_VIDEO_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${payload.authToken}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw await parseTryOnError(res);
-  }
-
-  return await res.json() as VideoGenerationResponse;
-};
-
-const pollVideoGeneration = async (authToken: string, requestId: string): Promise<VideoGenerationResponse & { contentUrl?: string }> => {
-  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw await parseTryOnError(res);
-  }
-
-  return await res.json() as VideoGenerationResponse & { contentUrl?: string };
-};
-
-const fetchVideoBlobUrl = async (authToken: string, requestId: string): Promise<string> => {
-  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT.replace('/video-status', '/video-content')}?requestId=${encodeURIComponent(requestId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw await parseTryOnError(res);
-  }
-
-  return URL.createObjectURL(await res.blob());
 };
 
 type CountryShowcaseCard = {
@@ -2183,6 +1981,16 @@ const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
 
 const createHistoryPreview = (dataUrl: string, maxPx = 480): Promise<string> =>
   resizeImage(dataUrl, maxPx);
+
+const prepareGenerationInput = async (source: File | string, maxPx = 1280): Promise<string> => {
+  const dataUrl = source instanceof File
+    ? await blobToDataUrl(source)
+    : source.startsWith('data:')
+      ? source
+      : await ensureDataUrl(source);
+
+  return resizeImage(dataUrl, maxPx);
+};
 
 const downloadImageFile = async (src: string, filename = 'hamdeva-ai-fitting.png'): Promise<void> => {
   const response = await fetch(src);
@@ -2270,7 +2078,7 @@ const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms /
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.value === lang) ?? LANGUAGE_OPTIONS[0];
+  const currentLanguage = VISIBLE_LANGUAGE_OPTIONS.find((option) => option.value === lang) ?? VISIBLE_LANGUAGE_OPTIONS[0];
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', h);
@@ -2284,7 +2092,7 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
       </button>
       {open && (
         <div className="lang-dropdown-menu" style={{ maxHeight: '320px', overflowY: 'auto', minWidth: '220px' }}>
-          {LANGUAGE_OPTIONS.map((opt) => (
+          {VISIBLE_LANGUAGE_OPTIONS.map((opt) => (
             <button key={opt.value} className={`lang-option ${lang === opt.value ? 'active' : ''}`}
               onClick={() => { onChange(opt.value); setOpen(false); }}
               type="button">
@@ -2296,20 +2104,6 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
     </div>
   );
 };
-
-const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ title, tips, type }) => (
-  <div className={`empty-preview empty-preview-${type}`}>
-    <div className="empty-preview-badge">{type === 'face' ? 'FACE GUIDE' : 'STYLE GUIDE'}</div>
-    <strong className="empty-preview-title">{title}</strong>
-    <div className="empty-preview-tips">
-      {tips.map((tip) => (
-        <p key={tip} className="empty-preview-tip">
-          {tip}
-        </p>
-      ))}
-    </div>
-  </div>
-);
 
 const PAGE_PATHS: Record<SitePage, string> = {
   home: '/',
@@ -2325,6 +2119,8 @@ const PAGE_PATHS: Record<SitePage, string> = {
   board: '/board',
   'site-management': '/site-management',
   mypage: '/mypage',
+  'payment-success': '/payment-success',
+  'payment-failed': '/payment-failed',
 };
 
 const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
@@ -2343,11 +2139,11 @@ const getPageFromLocation = (pathname: string, hash: string): SitePage => {
   return SITE_PAGES.includes(normalizedHash as SitePage) ? normalizedHash as SitePage : 'home';
 };
 
-const SUPPORTED_LANGUAGE_CODES = LANGUAGE_CODES;
+const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
 const DEFAULT_LANGUAGE: LanguageCode = 'en';
 
 const isSupportedLanguageCode = (value: string | null): value is LanguageCode =>
-  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as LanguageCode);
+  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]);
 
 const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {
   const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
@@ -2356,7 +2152,7 @@ const normalizeLanguageCode = (value: string | null | undefined): LanguageCode =
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
-  const { i18n: i18next } = useTranslation();
+  const { i18n: i18next, t: translate } = useTranslation();
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
@@ -2386,19 +2182,20 @@ const App: React.FC = () => {
 
   const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-  const [generatedVideoRequestId, setGeneratedVideoRequestId] = useState<string | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
   const [showVideoPrompt, setShowVideoPrompt] = useState(false);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
-  const [sharedResultRecord, setSharedResultRecord] = useState<PublicResultRecord | null>(null);
-  const [sharedResultLoading, setSharedResultLoading] = useState(false);
-  const [sharedResultError, setSharedResultError] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [creditNotice, setCreditNotice] = useState<string | null>(null);
+  const [resultWatermarkApplied, setResultWatermarkApplied] = useState(false);
+  const [resultUsedCreditType, setResultUsedCreditType] = useState<CreditKind | null>(null);
+  const [isStartingCheckout, setIsStartingCheckout] = useState<CheckoutProductId | null>(null);
+  const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromLocation(window.location.pathname, window.location.hash));
+  const [routeSearch, setRouteSearch] = useState(() => window.location.search);
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [bbsForm, setBbsForm] = useState({ nickname: '', content: '', tempPassword: '' });
   const [bbsStatus, setBbsStatus] = useState<string | null>(null);
@@ -2411,23 +2208,6 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [historyItems, setHistoryItems] = useState<GenerationRecord[]>([]);
-  const [adminSummary, setAdminSummary] = useState({
-    users: 0,
-    posts: 0,
-    generations: 0,
-    sharedResults: 0,
-    todayGenerations: 0,
-    todayEstimatedCost: 0,
-    totalEstimatedCost: 0,
-    recent7DaysEstimatedCost: 0,
-    totalVideoGenerations: 0,
-    todayVideoGenerations: 0,
-    estimatedVideoCost: 0,
-  });
-  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
-  const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
-  const [adminCreditLogs, setAdminCreditLogs] = useState<CreditLogRecord[]>([]);
-  const [adminLoading, setAdminLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
@@ -2438,22 +2218,51 @@ const App: React.FC = () => {
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
   const [generationEstimateMs, setGenerationEstimateMs] = useState(DEFAULT_GENERATION_ESTIMATE_MS);
   const generationLockRef = useRef(false);
+  const videoGenerationSessionRef = useRef(0);
+  const activeVideoRequestIdRef = useRef<string | null>(null);
   
-  const lang = normalizeLanguageCode(i18next.language);
+  const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
   const contentLocale = getContentLocale(lang);
   const t = uiTranslations[lang];
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
-  const emptyFaceTips = FACE_TIPS[lang];
-  const emptyClothTips = CLOTH_TIPS[lang];
+  const emptyFaceTips = translate('uploadGuides.faceTips', { returnObjects: true }) as string[];
+  const emptyClothTips = translate('uploadGuides.clothTips', { returnObjects: true }) as string[];
+  const heroCtaLabel = translate('ui.heroCta');
+  const firebaseConfigMissingLabel = translate('ui.firebaseConfigMissing');
+  const firebaseDisabledBaseMessage = translate('ui.firebaseDisabledMessage');
+  const emptyPreviewCopy = translate('emptyPreview', { returnObjects: true }) as {
+    faceBadge: string;
+    styleBadge: string;
+  };
+  const sampleBadgeLabel = translate('ui.sampleBadge');
+  const generationErrorCopy = translate('errors.generation', { returnObjects: true }) as {
+    timeoutDetail: string;
+    prepTimeoutDetail: string;
+    authTimeoutDetail: string;
+    resultImageTimeoutDetail: string;
+  };
+  const authErrorCopy = translate('errors.auth', { returnObjects: true }) as {
+    invalidCredential: string;
+    emailAlreadyInUse: string;
+    popupClosed: string;
+    unauthorizedDomain: string;
+    unauthorizedDomainWithHost: string;
+    invalidApiKey: string;
+    tooManyRequests: string;
+  };
   const shareResultLink = latestSharedResultId ? buildSharedResultUrl(latestSharedResultId) : null;
   const sharedPageLink = sharedResultRouteId ? buildSharedResultUrl(sharedResultRouteId) : null;
-  const sharedPageImage = sharedResultRecord?.resultImageUrl ?? null;
   const firebaseDisabledMessage = firebaseConfigError
-    ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
+    ? `${getFirebaseDisabledMessage(firebaseDisabledBaseMessage)}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
   const currentCredits = userProfile?.credits ?? 0;
+  const currentDailyCredit = userProfile?.dailyCredit ?? 0;
+  const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
+  const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
+  const canAffordVideo = currentDailyCredit >= VIDEO_GENERATION_COST || currentPaidCredit >= VIDEO_GENERATION_COST;
+  const paymentSessionId = new URLSearchParams(routeSearch).get('session_id');
   const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
   const generationProgressRatio = isGenerating
     ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
@@ -2463,6 +2272,44 @@ const App: React.FC = () => {
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const adminVideoLabels = getAdminVideoLabels(lang);
+  const {
+    adminSummary,
+    adminUsers,
+    adminGenerationLogs,
+    adminCreditLogs,
+    adminLoading,
+  } = useAdminDashboardData({
+    db,
+    enabled: Boolean(isAdminUser),
+  });
+  const {
+    sharedResultRecord,
+    sharedResultLoading,
+    sharedResultError,
+  } = useSharedResult({
+    db,
+    sharedResultRouteId,
+    notFoundMessage: t.resultNotFound,
+  });
+  useCreditBootstrap({
+    currentUser,
+    rewardMessage: t.todayDailyRewardGranted,
+    setCreditNotice,
+    setUserProfile,
+  });
+  usePaymentSessionStatus({
+    currentPage,
+    currentUser,
+    paymentSessionId,
+    statusMessages: {
+      verifying: t.paymentVerifying,
+      success: t.paymentSuccessReady,
+      failed: t.paymentFailedMessage,
+      verifyFailed: t.paymentVerifyFailed,
+    },
+    setPaymentStatusMessage,
+    setUserProfile,
+  });
   const generationStatusLabel = lang === 'ko'
     ? '예상 완료까지'
     : lang === 'ja'
@@ -2513,6 +2360,7 @@ const App: React.FC = () => {
     const syncRoute = () => {
       setCurrentPage(getPageFromLocation(window.location.pathname, window.location.hash));
       setSharedResultRouteId(getSharedResultIdFromPath(window.location.pathname));
+      setRouteSearch(window.location.search);
     };
 
     window.addEventListener('hashchange', syncRoute);
@@ -2597,144 +2445,6 @@ const App: React.FC = () => {
     };
   }, [currentUser]);
   useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
-
-    let cancelled = false;
-
-    callCreditBootstrap(currentUser)
-      .then((response) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (response.profile) {
-          setUserProfile((prev) => ({
-            ...normalizeUserProfile(currentUser.email || '', prev ?? {}),
-            ...response.profile,
-          }));
-        }
-
-        const notices = [
-          response.signupBonusGranted ? t.signupBonusGranted(response.signupBonusGranted) : '',
-          response.dailyRewardGranted ? t.todayDailyRewardGranted : '',
-          response.subscriptionBonusGranted ? t.subscriptionBonusGranted(response.subscriptionBonusGranted) : '',
-        ].filter(Boolean);
-
-        if (notices.length > 0) {
-          setCreditNotice(notices.join(' '));
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to bootstrap credits:', error);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser, t]);
-  useEffect(() => {
-    if (!isAdminUser || !db) {
-      setAdminSummary({
-        users: 0,
-        posts: 0,
-        generations: 0,
-        sharedResults: 0,
-        todayGenerations: 0,
-        todayEstimatedCost: 0,
-        totalEstimatedCost: 0,
-        recent7DaysEstimatedCost: 0,
-        totalVideoGenerations: 0,
-        todayVideoGenerations: 0,
-        estimatedVideoCost: 0,
-      });
-      setAdminUsers([]);
-      setAdminGenerationLogs([]);
-      setAdminCreditLogs([]);
-      setAdminLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setAdminLoading(true);
-
-    const loadAdminData = async () => {
-      const [
-        usersCountSnapshot,
-        postsCountSnapshot,
-        sharedResultsCountSnapshot,
-        usersSnapshot,
-        generationSnapshot,
-        creditSnapshot,
-      ] = await Promise.all([
-        getCountFromServer(collection(db, 'users')),
-        getCountFromServer(collection(db, 'bbsPosts')),
-        getCountFromServer(collection(db, 'publicResults')),
-        getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20))),
-        getDocs(query(collection(db, 'generationRequests'), orderBy('createdAt', 'desc'))),
-        getDocs(query(collection(db, 'creditLogs'), orderBy('createdAt', 'desc'), limit(20))),
-      ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      const now = Date.now();
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-      const allGenerationLogs = generationSnapshot.docs.map((snapshot) => ({
-        id: snapshot.id,
-        ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
-      }));
-      const imageGenerationLogs = allGenerationLogs.filter((item) => (item.type || 'image_generation') === 'image_generation');
-      const videoGenerationLogs = allGenerationLogs.filter((item) => item.type === 'video_generation');
-      const todayGenerations = imageGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
-      const todayVideoGenerations = videoGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
-      const recent7DayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= sevenDaysAgo);
-      const totalEstimatedCost = allGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
-      const todayEstimatedCost = todayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
-      const recent7DaysEstimatedCost = recent7DayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
-      const estimatedVideoCost = videoGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
-
-      setAdminSummary({
-        users: usersCountSnapshot.data().count,
-        posts: postsCountSnapshot.data().count,
-        generations: allGenerationLogs.length,
-        sharedResults: sharedResultsCountSnapshot.data().count,
-        todayGenerations: todayGenerations.length,
-        todayEstimatedCost,
-        totalEstimatedCost,
-        recent7DaysEstimatedCost,
-        totalVideoGenerations: videoGenerationLogs.length,
-        todayVideoGenerations: todayVideoGenerations.length,
-        estimatedVideoCost,
-      });
-      setAdminUsers(usersSnapshot.docs.map((snapshot) => ({
-        id: snapshot.id,
-        ...(snapshot.data() as Omit<AdminUserRecord, 'id'>),
-      })));
-      setAdminGenerationLogs(allGenerationLogs.slice(0, 20));
-      setAdminCreditLogs(creditSnapshot.docs.map((snapshot) => ({
-        id: snapshot.id,
-        ...(snapshot.data() as Omit<CreditLogRecord, 'id'>),
-      })));
-      setAdminLoading(false);
-    };
-
-    loadAdminData().catch((error) => {
-      if (!cancelled) {
-        console.error('Failed to load admin data:', error);
-        setAdminLoading(false);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [db, isAdminUser]);
-  useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -2786,60 +2496,7 @@ const App: React.FC = () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
     if (generatedVideoUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedVideoUrl);
-  }, [generatedVideoUrl, personImage, clothImage]);
-  useEffect(() => {
-    if (!sharedResultRouteId) {
-      setSharedResultRecord(null);
-      setSharedResultError(null);
-      setSharedResultLoading(false);
-      return;
-    }
-
-    if (!db) {
-      setSharedResultRecord(null);
-      setSharedResultError(t.resultNotFound);
-      setSharedResultLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setSharedResultLoading(true);
-    setSharedResultError(null);
-
-    getDoc(doc(db, 'publicResults', sharedResultRouteId))
-      .then((snapshot) => {
-        if (cancelled) {
-          return;
-        }
-
-        if (!snapshot.exists()) {
-          setSharedResultRecord(null);
-          setSharedResultError(t.resultNotFound);
-          return;
-        }
-
-        setSharedResultRecord({
-          id: snapshot.id,
-          ...(snapshot.data() as Omit<PublicResultRecord, 'id'>),
-        });
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to load shared result:', error);
-          setSharedResultRecord(null);
-          setSharedResultError(t.resultNotFound);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setSharedResultLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [db, sharedResultRouteId, t.resultNotFound]);
+  }, []);
   useEffect(() => {
     const pageMeta = sharedResultRouteId
       ? {
@@ -2850,6 +2507,16 @@ const App: React.FC = () => {
         ? {
             title: `${t.adminTitle} | HAMDEVA`,
             description: t.adminSubtitle,
+          }
+      : currentPage === 'payment-success'
+        ? {
+            title: `${t.paymentSuccessTitle} | HAMDEVA`,
+            description: paymentStatusMessage || t.paymentVerifying,
+          }
+      : currentPage === 'payment-failed'
+        ? {
+            title: `${t.paymentFailedTitle} | HAMDEVA`,
+            description: t.paymentFailedDescription,
           }
       : currentPage === 'home'
         ? {
@@ -2892,14 +2559,15 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
-  }, [contentLocale, currentPage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.sharedResultDescription, t.sharedResultTitle]);
+  }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const clearGeneratedVideo = () => {
+    videoGenerationSessionRef.current += 1;
+    activeVideoRequestIdRef.current = null;
     if (generatedVideoUrl?.startsWith('blob:')) {
       URL.revokeObjectURL(generatedVideoUrl);
     }
     setGeneratedVideoUrl(null);
-    setGeneratedVideoRequestId(null);
     setVideoStatusMessage(null);
     setShowVideoPrompt(false);
     setIsGeneratingVideo(false);
@@ -2954,6 +2622,56 @@ const App: React.FC = () => {
     clearGeneratedVideo();
   };
 
+  const loadPersonSample = async (url: string, category: 'female' | 'male' | 'dog' | 'cat') => {
+    if (isGenerating) {
+      return;
+    }
+
+    if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+    setSelectedSampleUrl(url);
+    setGender(category);
+    setSubjectTypeManualOverride(false);
+    setDetectedSubjectType(null);
+    setPersonImage(null);
+    setPersonFile(null);
+    setPersonUploadMessage(null);
+    setPersonPreviewState('loading');
+    clearGeneratedVideo();
+
+    try {
+      const sampleDataUrl = await fetchAssetDataUrl(url);
+      setPersonImage(sampleDataUrl);
+      setPersonPreviewState('ready');
+      void detectSubjectTypeFromImage(sampleDataUrl);
+    } catch (error) {
+      console.error('[HAMDEVA] failed to prepare face sample', { url, error });
+      setPersonPreviewState('error');
+    }
+  };
+
+  const loadClothSample = async (url: string) => {
+    if (isGenerating) {
+      return;
+    }
+
+    if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+    setSelectedClothSampleUrl(url);
+    setClothImage(null);
+    setClothFile(null);
+    setClothUploadMessage(null);
+    setClothPreviewState('loading');
+    clearGeneratedVideo();
+
+    try {
+      const sampleDataUrl = await fetchAssetDataUrl(url);
+      setClothImage(sampleDataUrl);
+      setClothPreviewState('ready');
+    } catch (error) {
+      console.error('[HAMDEVA] failed to prepare cloth sample', { url, error });
+      setClothPreviewState('error');
+    }
+  };
+
   const handleOpenPersonSampleModal = () => {
     if (isGenerating) {
       return;
@@ -2986,6 +2704,8 @@ const App: React.FC = () => {
     setLatestSharedResultId(null);
     setShareStatus(null);
     setResultPreviewState('idle');
+    setResultWatermarkApplied(false);
+    setResultUsedCreditType(null);
     clearGeneratedVideo();
   };
   const handleRandomOutfit = () => {
@@ -3001,12 +2721,8 @@ const App: React.FC = () => {
     }
 
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-    setClothImage(null);
-    setClothFile(null);
-    setSelectedClothSampleUrl(randomSample.image);
-    setClothUploadMessage(null);
-    setClothPreviewState('loading');
     clearGeneratedResult();
+    void loadClothSample(randomSample.image);
     if (currentPage !== 'home' || sharedResultRouteId) {
       navigateToPage('home');
     }
@@ -3155,17 +2871,20 @@ const App: React.FC = () => {
     if (!currentUser || !finalImageSrc || isGeneratingVideo) {
       return;
     }
-    if (currentCredits < VIDEO_GENERATION_COST) {
+    if (!canAffordVideo) {
       alert(t.notEnoughCredits);
       return;
     }
 
     clearGeneratedVideo();
+    const videoSession = videoGenerationSessionRef.current + 1;
+    videoGenerationSessionRef.current = videoSession;
     setIsGeneratingVideo(true);
     setVideoStatusMessage(subjectUi.videoGenerating);
     try {
       const authToken = await currentUser.getIdToken();
       const requestId = createRequestId();
+      activeVideoRequestIdRef.current = requestId;
       const result = await callVideoGeneration({
         authToken,
         image: finalImageSrc,
@@ -3173,9 +2892,13 @@ const App: React.FC = () => {
         subjectType,
         sourceResultId: latestSharedResultId,
       });
-      setGeneratedVideoRequestId(requestId);
+      if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
+        return;
+      }
       setUserProfile((prev) => prev ? {
         ...prev,
+        dailyCredit: typeof result.dailyCredit === 'number' ? result.dailyCredit : prev.dailyCredit,
+        paidCredit: typeof result.paidCredit === 'number' ? result.paidCredit : prev.paidCredit,
         credits: typeof result.creditsRemaining === 'number' ? result.creditsRemaining : prev.credits,
       } : prev);
 
@@ -3183,14 +2906,27 @@ const App: React.FC = () => {
       while (attempts < 40) {
         attempts += 1;
         await new Promise((resolve) => window.setTimeout(resolve, 5000));
+        if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
+          return;
+        }
         const status = await pollVideoGeneration(authToken, requestId);
+        if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
+          return;
+        }
         if (typeof status.creditsRemaining === 'number') {
           setUserProfile((prev) => prev ? { ...prev, credits: status.creditsRemaining as number } : prev);
         }
         if (status.status === 'completed') {
           const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
+          if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
+            if (videoUrl.startsWith('blob:')) {
+              URL.revokeObjectURL(videoUrl);
+            }
+            return;
+          }
           setGeneratedVideoUrl(videoUrl);
           setVideoStatusMessage(subjectUi.videoReady);
+          activeVideoRequestIdRef.current = null;
           return;
         }
         if (status.status === 'failed' || status.status === 'canceled') {
@@ -3200,93 +2936,47 @@ const App: React.FC = () => {
 
       throw new Error(subjectUi.videoFailed);
     } catch (error) {
+      if (videoGenerationSessionRef.current !== videoSession) {
+        return;
+      }
       console.error('Failed to generate video:', error);
       setVideoStatusMessage(error instanceof Error ? error.message : subjectUi.videoFailed);
     } finally {
-      setIsGeneratingVideo(false);
+      if (videoGenerationSessionRef.current === videoSession) {
+        activeVideoRequestIdRef.current = null;
+        setIsGeneratingVideo(false);
+      }
     }
   };
-  const renderResultActions = (imageSrc: string, link: string | null, disableDownload = false, showVideoControls = false) => (
-    <>
-      <div className="page-article share-section">
-        <div className="share-section-copy">
-          <h3>{t.shareSectionTitle}</h3>
-          <p>{t.shareHelperText}</p>
-        </div>
-        <div className="result-action-grid share-grid-primary">
-          <button aria-label={t.shareKakao} className="outline-btn result-action-btn share-platform-btn" onClick={() => { void handleShareOnKakao(link); }} type="button">
-            <span aria-hidden="true" className="share-platform-icon">💬</span>
-            <span>{t.shareKakao}</span>
-          </button>
-          <button aria-label={t.shareLine} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnLine(link)} type="button">
-            <span aria-hidden="true" className="share-platform-icon">🟢</span>
-            <span>{t.shareLine}</span>
-          </button>
-          <button aria-label={t.shareXShort} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnX(link)} type="button">
-            <span aria-hidden="true" className="share-platform-icon">✕</span>
-            <span>{t.shareXShort}</span>
-          </button>
-          <button aria-label={t.shareFacebookShort} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnFacebook(link)} type="button">
-            <span aria-hidden="true" className="share-platform-icon">f</span>
-            <span>{t.shareFacebookShort}</span>
-          </button>
-        </div>
-        <div className="result-action-grid share-grid-secondary">
-          <button aria-label={t.share} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => { void handleShareLink(link); }} type="button">
-            <span aria-hidden="true" className="share-platform-icon">↗</span>
-            <span>{t.share}</span>
-          </button>
-          <button aria-label={t.copyLink} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => { void handleCopyLink(link); }} type="button">
-            <span aria-hidden="true" className="share-platform-icon">🔗</span>
-            <span>{t.copyLink}</span>
-          </button>
-          <button aria-label={t.downloadImage} className="download-btn result-action-btn share-platform-btn utility" disabled={disableDownload} onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
-            <span aria-hidden="true" className="share-platform-icon">⬇</span>
-            <span>{t.downloadImage}</span>
-          </button>
-          <button aria-label={t.saveForInstagram} className="outline-btn result-action-btn share-platform-btn utility" disabled={disableDownload} onClick={() => { void handleInstagramSave(imageSrc); }} type="button">
-            <span aria-hidden="true" className="share-platform-icon">📷</span>
-            <span>{t.saveForInstagram}</span>
-          </button>
-        </div>
-      </div>
-      <div className="result-action-grid result-utility-grid">
-        <button className="outline-btn result-action-btn" onClick={handleTryAnotherOutfit} type="button">
-          {t.tryAnotherOutfit}
-        </button>
-        <button className="outline-btn result-action-btn" onClick={handleRandomOutfit} type="button">
-          {t.randomOutfit}
-        </button>
-      </div>
-      {showVideoControls && (showVideoPrompt || isGeneratingVideo || generatedVideoUrl) && (
-        <div className="page-article result-video-panel">
-          <p>{subjectUi.videoPrompt}</p>
-          <button
-            className="generate-btn"
-            disabled={disableDownload || isGeneratingVideo || currentCredits < VIDEO_GENERATION_COST}
-            onClick={() => { void handleVideoGenerate(); }}
-            type="button"
-          >
-            {isGeneratingVideo ? subjectUi.videoGenerating : subjectUi.videoButton}
-          </button>
-          {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
-          {generatedVideoUrl && (
-            <div className="composite-result result-video-shell">
-              <video controls playsInline preload="metadata" className="is-visible">
-                <source src={generatedVideoUrl} type="video/mp4" />
-              </video>
-            </div>
-          )}
-        </div>
-      )}
-      {shareStatus && <p className="result-status-text">{shareStatus}</p>}
-    </>
-  );
+  const handleStartCheckout = async (productId: CheckoutProductId) => {
+    if (!currentUser || isStartingCheckout) {
+      if (!currentUser) {
+        openAuthModal('login');
+      }
+      return;
+    }
+
+    setIsStartingCheckout(productId);
+    try {
+      const authToken = await currentUser.getIdToken();
+      const session = await callCreateCheckoutSession({ authToken, productId });
+      if (!session.url) {
+        throw new Error('CHECKOUT_URL_MISSING');
+      }
+      window.location.href = session.url;
+    } catch (error) {
+      console.error('Failed to start checkout session:', error);
+      alert(getGenerateErrorMessage(error, t, generationErrorCopy));
+    } finally {
+      setIsStartingCheckout(null);
+    }
+  };
   const navigateToPage = (page: SitePage) => {
-    const nextUrl = `${PAGE_PATHS[page]}${window.location.search}`;
+    const nextUrl = PAGE_PATHS[page];
     window.history.pushState(null, '', nextUrl);
     setCurrentPage(page);
     setSharedResultRouteId(null);
+    setRouteSearch('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const openContentModal = (tab: ModalTab) => {
@@ -3315,7 +3005,7 @@ const App: React.FC = () => {
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
       setAuthMode(mode);
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       setShowAuthModal(true);
       return;
     }
@@ -3331,9 +3021,7 @@ const App: React.FC = () => {
       }
 
       const notices = [
-        response.signupBonusGranted ? t.signupBonusGranted(response.signupBonusGranted) : '',
         response.dailyRewardGranted ? t.todayDailyRewardGranted : '',
-        response.subscriptionBonusGranted ? t.subscriptionBonusGranted(response.subscriptionBonusGranted) : '',
       ].filter(Boolean);
 
       if (notices.length > 0) {
@@ -3349,7 +3037,7 @@ const App: React.FC = () => {
   };
   const handleAuthSubmit = async () => {
     if (!auth) {
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
     if (!authForm.email || !authForm.password) {
@@ -3372,14 +3060,14 @@ const App: React.FC = () => {
       setAuthForm({ email: '', password: '' });
       void syncUserCreditsAfterAuth(signedInUser);
     } catch (error) {
-      setAuthError(buildAuthErrorMessage(error, t.authFailed));
+      setAuthError(buildAuthErrorMessage(error, t.authFailed, authErrorCopy));
     } finally {
       setAuthSubmitting(false);
     }
   };
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
     setAuthSubmitting(true);
@@ -3390,7 +3078,7 @@ const App: React.FC = () => {
       setAuthForm({ email: '', password: '' });
       void syncUserCreditsAfterAuth(credential.user);
     } catch (error) {
-      setAuthError(buildAuthErrorMessage(error, t.authFailed));
+      setAuthError(buildAuthErrorMessage(error, t.authFailed, authErrorCopy));
     } finally {
       setAuthSubmitting(false);
     }
@@ -3421,7 +3109,7 @@ const App: React.FC = () => {
     event.preventDefault();
 
     if (!db) {
-      setBbsStatus(getFirebaseDisabledMessage());
+      setBbsStatus(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
 
@@ -3471,7 +3159,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to submit board post:', error);
-      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed));
+      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed, authErrorCopy));
     } finally {
       setBbsSubmitting(false);
     }
@@ -3489,7 +3177,7 @@ const App: React.FC = () => {
 
   const handleBbsDelete = async (post: BbsPostRecord) => {
     if (!db) {
-      setBbsStatus(getFirebaseDisabledMessage());
+      setBbsStatus(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
 
@@ -3520,7 +3208,7 @@ const App: React.FC = () => {
       setBbsStatus(t.boardDeleted);
     } catch (error) {
       console.error('Failed to delete board post:', error);
-      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed));
+      setBbsStatus(isFirestorePermissionError(error) ? t.boardFailed : buildAuthErrorMessage(error, t.boardFailed, authErrorCopy));
     } finally {
       setBbsSubmitting(false);
     }
@@ -3535,14 +3223,14 @@ const App: React.FC = () => {
       return;
     }
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-    if (currentCredits < GENERATION_COST) {
+    if (!canAffordGeneration) {
       alert(t.notEnoughCredits);
       return;
     }
 
+    clearGeneratedVideo();
     generationLockRef.current = true;
     setIsGenerating(true);
-    clearGeneratedVideo();
     const startedAt = Date.now();
     setGenerationStartedAt(startedAt);
     setGenerationElapsedMs(0);
@@ -3555,12 +3243,8 @@ const App: React.FC = () => {
     try {
       const [preparedPersonImage, preparedClothImage] = await withTimeout(
         Promise.all([
-          personFile
-            ? blobToDataUrl(personFile).then((src) => resizeImage(src, 1280))
-            : ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
-          clothFile
-            ? blobToDataUrl(clothFile).then((src) => resizeImage(src, 1280))
-            : ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
+          prepareGenerationInput(personFile ?? activePersonImage, 1280),
+          prepareGenerationInput(clothFile ?? activeClothImage, 1280),
         ]),
         GENERATION_PREP_TIMEOUT_MS,
         'GENERATION_PREP_TIMEOUT',
@@ -3583,7 +3267,7 @@ const App: React.FC = () => {
       const requestId = createRequestId();
       const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
       const resultPayload = await withTimeout(
-        callNanoBanana({
+        callTryOn({
           authToken,
           requestId,
           personImage: preparedPersonImage,
@@ -3602,6 +3286,8 @@ const App: React.FC = () => {
       setResultPreviewState('loading');
       setFinalImageSrc(result);
       setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
+      setResultWatermarkApplied(resultPayload.watermarkApplied === true);
+      setResultUsedCreditType(resultPayload.usedCreditType ?? null);
       setShowVideoPrompt(true);
       writeGenerationDuration(Date.now() - startedAt);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -3612,40 +3298,28 @@ const App: React.FC = () => {
       try {
         setUserProfile((prev) => prev ? {
           ...prev,
+          dailyCredit: typeof resultPayload.dailyCredit === 'number' ? resultPayload.dailyCredit : prev.dailyCredit,
+          paidCredit: typeof resultPayload.paidCredit === 'number' ? resultPayload.paidCredit : prev.paidCredit,
+          totalGenerated: typeof resultPayload.totalGenerated === 'number' ? resultPayload.totalGenerated : prev.totalGenerated,
           credits: typeof resultPayload.creditsRemaining === 'number' ? resultPayload.creditsRemaining : prev.credits,
         } : prev);
 
         const notices = [
-          resultPayload.signupBonusGranted ? t.signupBonusGranted(resultPayload.signupBonusGranted) : '',
           resultPayload.dailyRewardGranted ? t.todayDailyRewardGranted : '',
-          resultPayload.subscriptionBonusGranted ? t.subscriptionBonusGranted(resultPayload.subscriptionBonusGranted) : '',
         ].filter(Boolean);
         if (notices.length > 0) {
           setCreditNotice(notices.join(' '));
         }
 
-        const [historyFaceImage, historyClothImage, historyResultImage] = await Promise.all([
-          createHistoryPreview(preparedPersonImage, 360),
-          createHistoryPreview(preparedClothImage, 360),
-          createHistoryPreview(result, 720),
-        ]);
+        const historyResultImage = await createHistoryPreview(result, 720);
         const publicResultRef = doc(collection(requireDb(), 'publicResults'));
 
-        await Promise.all([
-          addDoc(collection(requireDb(), 'generations'), {
-            uid: currentUser.uid,
-            faceImageUrl: historyFaceImage,
-            clothImageUrl: historyClothImage,
-            resultImageUrl: historyResultImage,
-            createdAt: serverTimestamp(),
-          }),
-          setDoc(publicResultRef, {
-            uid: currentUser.uid,
-            resultImageUrl: historyResultImage,
-            language: lang,
-            createdAt: serverTimestamp(),
-          }),
-        ]);
+        await setDoc(publicResultRef, {
+          uid: currentUser.uid,
+          resultImageUrl: historyResultImage,
+          language: lang,
+          createdAt: serverTimestamp(),
+        });
         setLatestSharedResultId(publicResultRef.id);
       } catch (error) {
         console.error('Failed to persist generation history:', error);
@@ -3654,7 +3328,7 @@ const App: React.FC = () => {
       setCached(cacheKey, result);
     } catch (err) {
       setResultPreviewState('error');
-      alert(getGenerateErrorMessage(err, t));
+      alert(getGenerateErrorMessage(err, t, generationErrorCopy));
     } finally {
       generationLockRef.current = false;
       setIsGenerating(false);
@@ -3695,9 +3369,20 @@ const App: React.FC = () => {
           <div className="nav-right">
             {currentUser && (
               <div className="credit-pill" aria-label={t.currentCredits(currentCredits)}>
-                <span>{t.credits}</span>
-                <strong>{currentCredits}</strong>
+                <div className="credit-pill-copy">
+                  <span>{t.dailyCreditLabel}</span>
+                  <strong>{currentDailyCredit}</strong>
+                </div>
+                <div className="credit-pill-copy">
+                  <span>{t.paidCreditLabel}</span>
+                  <strong>{currentPaidCredit}</strong>
+                </div>
               </div>
+            )}
+            {currentUser && (
+              <button className="outline-btn auth-nav-btn" onClick={() => navigateToPage('mypage')} type="button">
+                {t.chargeCredits}
+              </button>
             )}
             {currentUser ? (
               <div className="user-menu" ref={userMenuRef}>
@@ -3745,7 +3430,7 @@ const App: React.FC = () => {
       {firebaseDisabledMessage && (
         <div className="config-banner" role="alert">
           <div className="section-inner">
-            <strong>Firebase 설정 누락</strong>
+            <strong>{firebaseConfigMissingLabel}</strong>
             <p>{firebaseDisabledMessage}</p>
           </div>
         </div>
@@ -3776,16 +3461,28 @@ const App: React.FC = () => {
             </>
           ) : currentPage === 'home' ? (
             <>
-              <div className="hero-eyebrow">{t.heroEyebrow}</div>
+              <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
               <h1 className="hero-title">
-                {t.heroTitle.split('\n')[0] ?? t.heroTitle}
+                {contentLocale.hero.titleLine1 ?? contentLocale.hero.title}
                 <br />
-                {t.heroTitle.split('\n')[1] ?? ''}
+                {contentLocale.hero.titleLine2 ?? ''}
               </h1>
               <p className="hero-subtitle">{contentLocale.hero.subtitle}</p>
               <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
-                {t.heroCta}
+                {heroCtaLabel}
               </button>
+            </>
+          ) : currentPage === 'payment-success' ? (
+            <>
+              <div className="hero-eyebrow">{t.chargeCredits}</div>
+              <h1 className="hero-title page-title">{t.paymentSuccessTitle}</h1>
+              <p className="hero-sub">{paymentStatusMessage || t.paymentVerifying}</p>
+            </>
+          ) : currentPage === 'payment-failed' ? (
+            <>
+              <div className="hero-eyebrow">{t.chargeCredits}</div>
+              <h1 className="hero-title page-title">{t.paymentFailedTitle}</h1>
+              <p className="hero-sub">{t.paymentFailedDescription}</p>
             </>
           ) : (
             <>
@@ -3798,38 +3495,24 @@ const App: React.FC = () => {
       </section>
 
       {sharedResultRouteId ? (
-        <main className="section page-shell">
-          <div className="section-inner page-layout">
-            <article className="page-article shared-result-shell">
-              {sharedResultLoading ? (
-                <p>{t.loadingSharedResult}</p>
-              ) : sharedResultError || !sharedResultRecord ? (
-                <>
-                  <h2>{t.sharedResultTitle}</h2>
-                  <p>{sharedResultError || t.resultNotFound}</p>
-                  <div className="result-action-grid single-row">
-                    <button className="outline-btn result-action-btn" onClick={handleTryAnotherOutfit} type="button">
-                      {t.tryAnotherOutfit}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2 className="section-heading">{t.resultTitle}</h2>
-                  <div className="composite-result">
-                    <img
-                      src={sharedResultRecord.resultImageUrl}
-                      alt="Shared HAMDEVA fitting result"
-                      className="is-visible"
-                    />
-                    <div className="watermark">HAMDEVA AI</div>
-                  </div>
-                  {renderResultActions(sharedResultRecord.resultImageUrl, sharedPageLink, false, false)}
-                </>
-              )}
-            </article>
-          </div>
-        </main>
+        <SharedResultSection
+          loading={sharedResultLoading}
+          error={sharedResultError}
+          record={sharedResultRecord}
+          link={sharedPageLink}
+          copy={t}
+          shareStatus={shareStatus}
+          onTryAnotherOutfit={handleTryAnotherOutfit}
+          onDownloadResult={(src) => { void handleDownloadResult(src); }}
+          onShareLink={(link) => { void handleShareLink(link); }}
+          onCopyLink={(link) => { void handleCopyLink(link); }}
+          onShareOnKakao={(link) => { void handleShareOnKakao(link); }}
+          onShareOnLine={handleShareOnLine}
+          onShareOnX={handleShareOnX}
+          onShareOnFacebook={handleShareOnFacebook}
+          onInstagramSave={(src) => { void handleInstagramSave(src); }}
+          onRandomOutfit={handleRandomOutfit}
+        />
       ) : currentPage === 'home' ? (
         <>
           <section className="section editorial-section">
@@ -3847,517 +3530,155 @@ const App: React.FC = () => {
               </div>
             </div>
           </section>
-
-          <section id="try" className="section try-section">
-            <div className="section-inner">
-              <div className="usage-bar">
-                {currentUser ? t.currentCredits(currentCredits) : t.loginForFree}
-              </div>
-              {creditNotice && <div className="credit-notice-banner">{creditNotice}</div>}
-              {!currentUser && (
-                <div className="credit-cta-panel">
-                  <p>{t.authSignupCreditsHint}</p>
-                  <p>{t.dailyLoginCredits}</p>
-                  <p>{t.subscriptionCreditBonus}</p>
-                  <div className="credit-cta-actions">
-                    <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('signup')} type="button">
-                      {t.signUpGetCredits}
-                    </button>
-                    <button className="outline-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
-                      {t.login}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="try-layout">
-                <div className="try-column">
-                  <div className="card-header">
-                    <span className="section-label">{t.step1Label}</span>
-                    <h3 className="card-title">{t.step1Title}</h3>
-                  </div>
-                  
-                  <div className="try-actions">
-                    <button className="outline-btn primary" disabled={isGenerating} onClick={handleOpenPersonSampleModal}>
-                      {t.chooseSample}
-                    </button>
-                    <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()}>
-                      {t.uploadMyPhoto}
-                    </button>
-                    <input
-                      id="p-up"
-                      ref={personInputRef}
-                      type="file"
-                      hidden
-                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                      onClick={(e) => { e.currentTarget.value = ''; }}
-                      onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (f) {
-                        void loadPersonUpload(f);
-                      }
-                    }}
-                    />
-                  </div>
-
-                  <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
-                    {activePersonImage ? (
-                      <>
-                        {personPreviewState === 'loading' && (
-                          <div className="preview-overlay">
-                            <span className="spinner"></span>
-                            <span>{personUploadMessage || t.loadingImage}</span>
-                          </div>
-                        )}
-                        {personPreviewState === 'error' && (
-                          <div className="img-error-msg">{t.imageLoadError}</div>
-                        )}
-                        <img 
-                          src={activePersonImage} 
-                          alt="Face" 
-                          onLoad={() => {
-                            setPersonPreviewState('ready');
-                            setPersonUploadMessage(null);
-                          }}
-                          onError={() => {
-                            setPersonUploadMessage(null);
-                            setPersonPreviewState('error');
-                          }}
-                          className={`${personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
-                        />
-                      </>
-                    ) : (
-                      <EmptyPreviewState
-                        title={t.facePlaceholderTitle}
-                        tips={emptyFaceTips}
-                        type="face"
-                      />
-                    )}
-                    {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
-                    {(personImage || selectedSampleUrl) && (
-                      <button className="clear-img-btn" disabled={isGenerating} onClick={() => {
-                        if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
-                        setPersonImage(null);
-                        setPersonFile(null);
-                        setSelectedSampleUrl(null);
-                        setSubjectType('human');
-                        setDetectedSubjectType(null);
-                        setSubjectDetectionStatus('idle');
-                        setSubjectTypeManualOverride(false);
-                        setPersonUploadMessage(null);
-                        setPersonPreviewState('idle');
-                      }}>&times;</button>
-                    )}
-                  </div>
-                  <p className="upload-guidance-text">{t.faceCopyrightNotice}</p>
-                </div>
-
-                <div className="try-column">
-                  <div className="card-header">
-                    <span className="section-label">{t.step2Label}</span>
-                    <h3 className="card-title">{t.step2Title}</h3>
-                  </div>
-                  <div className="try-actions">
-                    <button className="outline-btn primary" disabled={isGenerating} onClick={handleOpenClothSampleModal}>
-                      {t.chooseClothingSample}
-                    </button>
-                    <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()}>
-                      {t.uploadClothing}
-                    </button>
-                    <input
-                      id="c-up"
-                      ref={clothInputRef}
-                      type="file"
-                      hidden
-                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                      onClick={(e) => { e.currentTarget.value = ''; }}
-                      onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (f) {
-                        void loadClothUpload(f);
-                      }
-                    }}
-                    />
-                  </div>
-                  <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
-                    {activeClothImage ? (
-                      <>
-                        {clothPreviewState === 'loading' && (
-                          <div className="preview-overlay">
-                            <span className="spinner"></span>
-                            <span>{clothUploadMessage || t.loadingImage}</span>
-                          </div>
-                        )}
-                        {clothPreviewState === 'error' ? (
-                          <div className="img-error-msg">{t.imageLoadError}</div>
-                        ) : (
-                          <img
-                            src={activeClothImage}
-                            alt="Cloth"
-                            className={clothPreviewState === 'ready' ? 'is-visible' : ''}
-                            onLoad={() => {
-                              setClothPreviewState('ready');
-                              setClothUploadMessage(null);
-                            }}
-                            onError={() => {
-                              setClothUploadMessage(null);
-                              setClothPreviewState('error');
-                            }}
-                          />
-                        )}
-                        {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
-                        {(clothImage || selectedClothSampleUrl) && (
-                          <button className="clear-img-btn" disabled={isGenerating} onClick={() => {
-                            if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-                            setClothImage(null);
-                            setClothFile(null);
-                            setSelectedClothSampleUrl(null);
-                            setClothUploadMessage(null);
-                            setClothPreviewState('idle');
-                          }}>&times;</button>
-                        )}
-                      </>
-                    ) : (
-                      <EmptyPreviewState
-                        title={t.clothingPlaceholderTitle}
-                        tips={emptyClothTips}
-                        type="cloth"
-                      />
-                    )}
-                  </div>
-                  <p className="upload-guidance-text">{t.clothingSafetyNotice}</p>
-                </div>
-              </div>
-
-              <div className="subject-type-panel page-article">
-                <div className="subject-type-head">
-                  <strong>{subjectUi.title}</strong>
-                  <button className="outline-btn subject-detect-btn" disabled={isGenerating} onClick={() => {
-                    const source = personFile || activePersonImage;
-                    if (source) {
-                      setSubjectTypeManualOverride(false);
-                      void detectSubjectTypeFromImage(source);
-                    }
-                  }} type="button">
-                    {subjectUi.auto}
-                  </button>
-                </div>
-                <div className="subject-type-controls">
-                  <select
-                    className="subject-type-select"
-                    disabled={isGenerating}
-                    value={subjectType}
-                    onChange={(event) => handleSubjectTypeChange(normalizeSubjectType(event.target.value))}
-                  >
-                    {SUBJECT_TYPES.map((item) => (
-                      <option key={item} value={item}>{getSubjectTypeLabel(lang, item)}</option>
-                    ))}
-                  </select>
-                  <span className="subject-type-status">
-                    {subjectDetectionStatus === 'detecting'
-                      ? subjectUi.autoDetecting
-                      : subjectDetectionStatus === 'ready' && detectedSubjectType
-                        ? `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, detectedSubjectType)}`
-                        : subjectDetectionStatus === 'error'
-                          ? subjectUi.autoFailed
-                          : `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, subjectType)}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="action-section">
-                <p className="real-generation-label">{t.realGenerationCta}</p>
-                <p className="credit-cost-text">{t.generationCostDetailed(GENERATION_COST)}</p>
-                <p className="credit-balance-text">{t.currentCredits(currentCredits)}</p>
-                <button
-                  className="generate-btn"
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !currentUser || !activePersonImage || !activeClothImage || currentCredits < GENERATION_COST}
-                >
-                  {isGenerating ? (
-                    <><span className="spinner"></span>{t.generating}</>
-                  ) : t.generate}
-                </button>
-                {currentUser && currentCredits < GENERATION_COST && (
-                  <p className="loading-subtext">{t.notEnoughCredits}</p>
-                )}
-                {isGenerating && (
-                  <>
-                    <p className="loading-subtext">{t.loadingDetail}</p>
-                    <div className="generation-gauge" aria-live="polite">
-                      <div className="generation-gauge-head">
-                        <strong>{generationStatusLabel}</strong>
-                        <span>{formatSecondsLabel(generationRemainingMs)}</span>
-                      </div>
-                      <div
-                        className="generation-gauge-track"
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={generationProgressPercent}
-                      >
-                        <div className="generation-gauge-fill" style={{ width: `${generationProgressPercent}%` }} />
-                        <div className="generation-gauge-ticks">
-                          <span />
-                          <span />
-                          <span />
-                          <span />
-                        </div>
-                      </div>
-                      <div className="generation-gauge-meta">
-                        <span>0s</span>
-                        <span>{formatSecondsLabel(generationElapsedMs)}</span>
-                        <span>{formatSecondsLabel(generationEstimateMs)}</span>
-                      </div>
-                    </div>
-                    <p className="generation-estimate-notice">{t.generationEstimateNotice}</p>
-                  </>
-                )}
-              </div>
-
-              {finalImageSrc && (
-                <div id="result-area" className="results-section">
-                  <h2 className="section-heading">{t.resultTitle}</h2>
-                  <div className="composite-result">
-                    {resultPreviewState === 'loading' && (
-                      <div className="preview-overlay result-overlay">
-                        <span className="spinner"></span>
-                        <span>{t.renderingResult}</span>
-                      </div>
-                    )}
-                    {resultPreviewState === 'error' ? (
-                      <div className="img-error-msg">{t.resultDisplayError}</div>
-                    ) : (
-                      <img 
-                        src={finalImageSrc}
-                        alt="Result"
-                        className={resultPreviewState === 'ready' ? 'is-visible' : ''}
-                        onLoad={() => setResultPreviewState('ready')}
-                        onError={() => setResultPreviewState('error')}
-                      />
-                    )}
-                    <div className="watermark">HAMDEVA AI</div>
-                  </div>
-                  {renderResultActions(finalImageSrc, shareResultLink, resultPreviewState !== 'ready', true)}
-                  <p className="result-disclaimer-text">{t.resultPrivacyNotice}</p>
-                </div>
-              )}
-            </div>
-          </section>
-
+          <TryOnStudio
+            currentUser={currentUser}
+            isGenerating={isGenerating}
+            activePersonImage={activePersonImage}
+            activeClothImage={activeClothImage}
+            personImage={personImage}
+            clothImage={clothImage}
+            selectedSampleUrl={selectedSampleUrl}
+            selectedClothSampleUrl={selectedClothSampleUrl}
+            personPreviewState={personPreviewState}
+            clothPreviewState={clothPreviewState}
+            resultPreviewState={resultPreviewState}
+            personUploadMessage={personUploadMessage}
+            clothUploadMessage={clothUploadMessage}
+            subjectType={subjectType}
+            detectedSubjectType={detectedSubjectType}
+            subjectDetectionStatus={subjectDetectionStatus}
+            finalImageSrc={finalImageSrc}
+            creditNotice={creditNotice}
+            currentDailyCredit={currentDailyCredit}
+            currentPaidCredit={currentPaidCredit}
+            canAffordGeneration={canAffordGeneration}
+            canAffordVideo={canAffordVideo}
+            generationCost={GENERATION_COST}
+            generationStatusLabel={generationStatusLabel}
+            generationRemainingMs={generationRemainingMs}
+            generationElapsedMs={generationElapsedMs}
+            generationEstimateMs={generationEstimateMs}
+            generationProgressPercent={generationProgressPercent}
+            resultWatermarkApplied={resultWatermarkApplied}
+            shareResultLink={shareResultLink}
+            generatedVideoUrl={generatedVideoUrl}
+            isGeneratingVideo={isGeneratingVideo}
+            showVideoPrompt={showVideoPrompt}
+            videoStatusMessage={videoStatusMessage}
+            shareStatus={shareStatus}
+            subjectUi={subjectUi}
+            lang={lang}
+            subjectTypes={SUBJECT_TYPES}
+            emptyFaceTips={emptyFaceTips}
+            emptyClothTips={emptyClothTips}
+            emptyPreviewCopy={emptyPreviewCopy}
+            sampleBadgeLabel={sampleBadgeLabel}
+            copy={{
+              ...t,
+              faceCopyrightNotice: translate('uploadGuides.faceCopyrightNotice'),
+              clothingSafetyNotice: translate('uploadGuides.clothingSafetyNotice'),
+              resultPrivacyNotice: translate('uploadGuides.resultPrivacyNotice'),
+              openAuthModal,
+              setPersonPreviewReady: () => {
+                setPersonPreviewState('ready');
+                setPersonUploadMessage(null);
+              },
+              setPersonPreviewError: () => {
+                setPersonUploadMessage(null);
+                setPersonPreviewState('error');
+              },
+              setClothPreviewReady: () => {
+                setClothPreviewState('ready');
+                setClothUploadMessage(null);
+              },
+              setClothPreviewError: () => {
+                setClothUploadMessage(null);
+                setClothPreviewState('error');
+              },
+              setResultPreviewReady: () => setResultPreviewState('ready'),
+              setResultPreviewError: () => setResultPreviewState('error'),
+            }}
+            personInputRef={personInputRef}
+            clothInputRef={clothInputRef}
+            onOpenPersonSampleModal={handleOpenPersonSampleModal}
+            onOpenClothSampleModal={handleOpenClothSampleModal}
+            onPersonFileChange={(file) => { void loadPersonUpload(file); }}
+            onClothFileChange={(file) => { void loadClothUpload(file); }}
+            onClearPerson={() => {
+              if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+              setPersonImage(null);
+              setPersonFile(null);
+              setSelectedSampleUrl(null);
+              setSubjectType('human');
+              setDetectedSubjectType(null);
+              setSubjectDetectionStatus('idle');
+              setSubjectTypeManualOverride(false);
+              setPersonUploadMessage(null);
+              setPersonPreviewState('idle');
+            }}
+            onClearCloth={() => {
+              if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+              setClothImage(null);
+              setClothFile(null);
+              setSelectedClothSampleUrl(null);
+              setClothUploadMessage(null);
+              setClothPreviewState('idle');
+            }}
+            onAutoDetectSubject={() => {
+              const source = personFile || activePersonImage;
+              if (source) {
+                setSubjectTypeManualOverride(false);
+                void detectSubjectTypeFromImage(source);
+              }
+            }}
+            onSubjectTypeChange={(value) => handleSubjectTypeChange(normalizeSubjectType(value))}
+            onGenerate={() => { void handleGenerate(); }}
+            onNavigateToMyPage={() => navigateToPage('mypage')}
+            onDownloadResult={(src) => { void handleDownloadResult(src); }}
+            onShareLink={(link) => { void handleShareLink(link); }}
+            onCopyLink={(link) => { void handleCopyLink(link); }}
+            onShareOnKakao={(link) => { void handleShareOnKakao(link); }}
+            onShareOnLine={handleShareOnLine}
+            onShareOnX={handleShareOnX}
+            onShareOnFacebook={handleShareOnFacebook}
+            onInstagramSave={(src) => { void handleInstagramSave(src); }}
+            onTryAnotherOutfit={handleTryAnotherOutfit}
+            onRandomOutfit={handleRandomOutfit}
+            onGenerateVideo={() => { void handleVideoGenerate(); }}
+            getSubjectTypeLabel={getSubjectTypeLabel}
+            formatSecondsLabel={formatSecondsLabel}
+          />
         </>
       ) : (
         <main className="section page-shell">
           <div className="section-inner page-layout">
             {currentPage === 'admin' && (
-              !currentUser ? (
-                <article className="page-article">
-                  <h2>{t.adminTitle}</h2>
-                  <p>{t.authRequired}</p>
-                  <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
-                    {t.login}
-                  </button>
-                </article>
-              ) : !userProfile ? (
-                <article className="page-article">
-                  <h2>{t.adminTitle}</h2>
-                  <p>{t.loadingSharedResult}</p>
-                </article>
-              ) : !isAdminUser ? (
-                <article className="page-article">
-                  <h2>{t.adminTitle}</h2>
-                  <p>{t.adminAccessDenied}</p>
-                  <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('home')} type="button">
-                    {t.heroCta}
-                  </button>
-                </article>
-              ) : (
-                <div className="admin-layout">
-                  <article className="page-article">
-                    <h2>{t.adminTitle}</h2>
-                    <p>{currentUser.email}</p>
-                    <p>{t.adminSubtitle}</p>
-                  </article>
-                  <div className="management-grid admin-summary-grid">
-                    <article className="page-article">
-                      <h3>{t.adminTotalUsers}</h3>
-                      <p>{adminSummary.users}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTotalPosts}</h3>
-                      <p>{adminSummary.posts}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTotalGenerations}</h3>
-                      <p>{adminSummary.generations}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTotalSharedResults}</h3>
-                      <p>{adminSummary.sharedResults}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTodayGenerations}</h3>
-                      <p>{adminSummary.todayGenerations}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTodayEstimatedCost}</h3>
-                      <p>{formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminTotalEstimatedCost}</h3>
-                      <p>{formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{t.adminRecent7DaysEstimatedCost}</h3>
-                      <p>{formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{adminVideoLabels.totalVideoCount}</h3>
-                      <p>{adminSummary.totalVideoGenerations}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{adminVideoLabels.todayVideoCount}</h3>
-                      <p>{adminSummary.todayVideoGenerations}</p>
-                    </article>
-                    <article className="page-article">
-                      <h3>{adminVideoLabels.estimatedVideoCost}</h3>
-                      <p>{formatEstimatedCostLabel(adminSummary.estimatedVideoCost)}</p>
-                    </article>
-                  </div>
-                  <article className="page-article">
-                    <h3>{t.adminSystemSection}</h3>
-                    <p>{t.siteVersionLabel}: {appVersion}</p>
-                    <p>{t.siteFirebaseLabel}: {isFirebaseConfigured ? t.siteFirebaseReady : t.siteFirebaseBlocked}</p>
-                    <p>{t.siteCreditCostLabel}: {GENERATION_COST}</p>
-                    {adminLoading && <p>{t.loadingSharedResult}</p>}
-                  </article>
-                  <article className="page-article">
-                    <h3>{t.adminUsersSection}</h3>
-                    <div className="admin-table">
-                      <div className="admin-table-head">
-                        <span>{t.emailLabel}</span>
-                        <span>{t.adminJoinedAt}</span>
-                        <span>{t.adminCreditsColumn}</span>
-                        <span>{t.subscriptionPlanLabel}</span>
-                        <span>{t.adminRole}</span>
-                      </div>
-                      {adminUsers.length > 0 ? adminUsers.map((item) => (
-                        <div key={item.id} className="admin-table-row">
-                          <span>{item.email || '-'}</span>
-                          <span>{formatTimestampLabel(item.createdAt)}</span>
-                          <span>{item.credits ?? 0}</span>
-                          <span>{t.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
-                          <span>{item.role || 'user'}</span>
-                        </div>
-                      )) : (
-                        <p>{t.adminNoData}</p>
-                      )}
-                    </div>
-                  </article>
-                  <article className="page-article">
-                    <h3>{t.adminBoardSection}</h3>
-                    <div className="admin-table">
-                      <div className="admin-table-head admin-board-head">
-                        <span>{t.boardNicknameLabel}</span>
-                        <span>{t.boardContentLabel}</span>
-                        <span>{t.adminCreatedAt}</span>
-                        <span>{t.boardDelete}</span>
-                      </div>
-                      {bbsPosts.length > 0 ? bbsPosts.slice(0, 20).map((post) => (
-                        <div key={post.id} className="admin-table-row admin-board-row">
-                          <span>{post.nickname || t.boardMetaAnonymous}</span>
-                          <span>{post.content}</span>
-                          <span>{formatTimestampLabel(post.createdAt)}</span>
-                          <button className="bbs-icon-btn danger" disabled={bbsSubmitting} onClick={() => { void handleBbsDelete(post); }} title={t.adminDeletePost} type="button">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
-                            </svg>
-                          </button>
-                        </div>
-                      )) : (
-                        <p>{t.adminNoData}</p>
-                      )}
-                    </div>
-                  </article>
-                  <article className="page-article">
-                    <h3>{t.adminGenerationSection}</h3>
-                    <div className="admin-table">
-                      <div className="admin-table-head">
-                        <span>{t.emailLabel}</span>
-                        <span>{t.adminCreatedAt}</span>
-                        <span>{adminVideoLabels.requestType}</span>
-                        <span>{adminVideoLabels.subjectType}</span>
-                        <span>{t.adminStatus}</span>
-                        <span>{t.adminModel}</span>
-                        <span>{t.adminEstimatedCost}</span>
-                        <span>{t.adminResultId}</span>
-                      </div>
-                      {adminGenerationLogs.length > 0 ? adminGenerationLogs.map((item) => (
-                        <div key={item.id} className="admin-table-row">
-                          <span>{item.email || item.uid}</span>
-                          <span>{formatTimestampLabel(item.createdAt)}</span>
-                          <span>{item.type || 'image_generation'}</span>
-                          <span>{item.subjectType || '-'}</span>
-                          <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
-                          <span>{item.model || '-'}</span>
-                          <span>{formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
-                          <span>{item.requestId}</span>
-                        </div>
-                      )) : (
-                        <p>{t.adminNoData}</p>
-                      )}
-                    </div>
-                  </article>
-                  <article className="page-article">
-                    <h3>{adminVideoLabels.recentVideos}</h3>
-                    <div className="admin-table">
-                      <div className="admin-table-head">
-                        <span>{t.emailLabel}</span>
-                        <span>{t.adminCreatedAt}</span>
-                        <span>{adminVideoLabels.subjectType}</span>
-                        <span>{t.adminStatus}</span>
-                        <span>{t.adminEstimatedCost}</span>
-                        <span>{t.adminResultId}</span>
-                      </div>
-                      {adminGenerationLogs.filter((item) => item.type === 'video_generation').length > 0 ? adminGenerationLogs.filter((item) => item.type === 'video_generation').map((item) => (
-                        <div key={item.id} className="admin-table-row">
-                          <span>{item.email || item.uid}</span>
-                          <span>{formatTimestampLabel(item.createdAt)}</span>
-                          <span>{item.subjectType || '-'}</span>
-                          <span>{item.status || (item.success ? 'completed' : 'unknown')}</span>
-                          <span>{formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
-                          <span>{item.requestId}</span>
-                        </div>
-                      )) : (
-                        <p>{t.adminNoData}</p>
-                      )}
-                    </div>
-                  </article>
-                  <article className="page-article">
-                    <h3>{t.adminCreditsSection}</h3>
-                    <div className="admin-table">
-                      <div className="admin-table-head">
-                        <span>{t.emailLabel}</span>
-                        <span>{t.adminStatus}</span>
-                        <span>{t.adminCreditsColumn}</span>
-                        <span>{t.adminCreatedAt}</span>
-                      </div>
-                      {adminCreditLogs.length > 0 ? adminCreditLogs.map((item) => (
-                        <div key={item.id} className="admin-table-row">
-                          <span>{item.email || item.uid}</span>
-                          <span>{item.type}</span>
-                          <span>{item.amount}</span>
-                          <span>{formatTimestampLabel(item.createdAt)}</span>
-                        </div>
-                      )) : (
-                        <p>{t.adminNoData}</p>
-                      )}
-                    </div>
-                  </article>
-                </div>
-              )
+              <AdminDashboard
+                currentUser={currentUser}
+                userProfile={userProfile}
+                isAdminUser={isAdminUser}
+                adminSummary={adminSummary}
+                adminUsers={adminUsers}
+                adminGenerationLogs={adminGenerationLogs}
+                adminCreditLogs={adminCreditLogs}
+                adminLoading={adminLoading}
+                appVersion={appVersion}
+                isFirebaseConfigured={isFirebaseConfigured}
+                bbsPosts={bbsPosts}
+                bbsSubmitting={bbsSubmitting}
+                copy={{
+                  ...t,
+                  generationCost: GENERATION_COST,
+                  formatEstimatedCostLabel,
+                }}
+                adminVideoLabels={adminVideoLabels}
+                onOpenAuth={() => openAuthModal('login')}
+                onGoHome={() => navigateToPage('home')}
+                onDeletePost={(post) => { void handleBbsDelete(post); }}
+                formatTimestampLabel={formatTimestampLabel}
+              />
             )}
-            {currentPage !== 'admin' && contentLocale.pages[currentPage].sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && contentLocale.pages[currentPage].sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -4382,93 +3703,22 @@ const App: React.FC = () => {
             )}
 
             {currentPage === 'board' && (
-              <div className="bbs-layout">
-                <article className="page-article">
-                  <h2>{contentLocale.pages.board.title}</h2>
-                  <p>{contentLocale.pages.board.description}</p>
-                  <form className="suggestion-form bbs-form" onSubmit={handleBbsSubmit}>
-                    <label>
-                      {t.boardNicknameLabel}
-                      <input
-                        placeholder={t.boardNicknamePlaceholder}
-                        type="text"
-                        value={bbsForm.nickname}
-                        onChange={(event) => setBbsForm((prev) => ({ ...prev, nickname: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      {t.boardContentLabel}
-                      <textarea
-                        placeholder={t.boardContentPlaceholder}
-                        rows={5}
-                        value={bbsForm.content}
-                        onChange={(event) => setBbsForm((prev) => ({ ...prev, content: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      {t.boardTempPasswordLabel}
-                      <input
-                        placeholder={t.boardTempPasswordPlaceholder}
-                        type="password"
-                        value={bbsForm.tempPassword}
-                        onChange={(event) => setBbsForm((prev) => ({ ...prev, tempPassword: event.target.value }))}
-                      />
-                    </label>
-                    <div className="bbs-form-footer">
-                      <button className="generate-btn suggestion-submit-btn" disabled={bbsSubmitting} type="submit">
-                        {bbsSubmitting ? t.boardSubmitting : editingBbsPostId ? t.boardUpdate : t.boardSubmit}
-                      </button>
-                      {editingBbsPostId && (
-                        <button className="outline-btn auth-inline-btn" onClick={resetBbsEditor} type="button">
-                          {t.boardCancelEdit}
-                        </button>
-                      )}
-                      {bbsStatus && <p className="suggestion-status">{bbsStatus}</p>}
-                    </div>
-                  </form>
-                </article>
-
-                <div className="bbs-post-list">
-                  {bbsPosts.length > 0 ? bbsPosts.map((post) => (
-                    <article key={post.id} className="page-article bbs-post-card">
-                      <div className="bbs-post-header">
-                        <div className="bbs-post-meta">
-                          <strong>{post.nickname || t.boardMetaAnonymous}</strong>
-                          {post.createdAt && <span>{formatTimestampLabel(post.updatedAt || post.createdAt)}</span>}
-                        </div>
-                        <div className="bbs-post-actions">
-                          <button
-                            className="bbs-icon-btn"
-                            onClick={() => handleBbsEditStart(post)}
-                            title={t.boardEdit}
-                            type="button"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M4 20h4l10-10-4-4L4 16v4zm12.7-12.3 1.6-1.6a1 1 0 0 1 1.4 0l1.3 1.3a1 1 0 0 1 0 1.4L19.4 10l-2.7-2.3z" fill="currentColor" />
-                            </svg>
-                          </button>
-                          <button
-                            className="bbs-icon-btn danger"
-                            disabled={bbsSubmitting}
-                            onClick={() => { void handleBbsDelete(post); }}
-                            title={t.boardDelete}
-                            type="button"
-                          >
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      <p>{post.content}</p>
-                    </article>
-                  )) : (
-                    <article className="page-article">
-                      <p>{t.boardEmpty}</p>
-                    </article>
-                  )}
-                </div>
-              </div>
+              <BoardPage
+                pageTitle={contentLocale.pages.board.title}
+                pageDescription={contentLocale.pages.board.description}
+                posts={bbsPosts}
+                form={bbsForm}
+                status={bbsStatus}
+                submitting={bbsSubmitting}
+                editingPostId={editingBbsPostId}
+                copy={t}
+                onFormChange={setBbsForm}
+                onSubmit={handleBbsSubmit}
+                onResetEdit={resetBbsEditor}
+                onEditStart={handleBbsEditStart}
+                onDelete={(post) => { void handleBbsDelete(post); }}
+                formatTimestampLabel={formatTimestampLabel}
+              />
             )}
 
             {currentPage === 'site-management' && (
@@ -4499,13 +3749,43 @@ const App: React.FC = () => {
                 </article>
                 <article className="page-article">
                   <h3>{t.siteCreditsLabel}</h3>
-                  <p>{currentCredits}</p>
+                  <p>{t.totalCreditLabel}: {currentCredits}</p>
+                  <p>{t.dailyCreditLabel}: {currentDailyCredit}</p>
+                  <p>{t.paidCreditLabel}: {currentPaidCredit}</p>
                 </article>
                 <article className="page-article">
                   <h3>{t.siteCreditCostLabel}</h3>
                   <p>{GENERATION_COST}</p>
                 </article>
               </div>
+            )}
+
+            {currentPage === 'payment-success' && (
+              <PaymentStatusPage
+                title={t.paymentSuccessTitle}
+                description={paymentStatusMessage || t.paymentVerifying}
+                sessionId={paymentSessionId}
+                dailyCredit={currentDailyCredit}
+                paidCredit={currentPaidCredit}
+                copy={t}
+                success={true}
+                onPrimary={() => navigateToPage('mypage')}
+                onSecondary={() => navigateToPage('home')}
+              />
+            )}
+
+            {currentPage === 'payment-failed' && (
+              <PaymentStatusPage
+                title={t.paymentFailedTitle}
+                description={t.paymentFailedDescription}
+                sessionId={null}
+                dailyCredit={currentDailyCredit}
+                paidCredit={currentPaidCredit}
+                copy={t}
+                success={false}
+                onPrimary={() => navigateToPage('mypage')}
+                onSecondary={() => navigateToPage('home')}
+              />
             )}
 
             {(currentPage === 'contact' || currentPage === 'terms') && (
@@ -4553,54 +3833,24 @@ const App: React.FC = () => {
               </div>
             )}
             {currentPage === 'mypage' && (
-              <div className="mypage-layout">
-                <article className="page-article">
-                  <h2>{t.myPage}</h2>
-                  {currentUser && userProfile ? (
-                    <div className="mypage-summary">
-                      <p><strong>{t.emailLabel}</strong> {currentUser.email}</p>
-                      <p><strong>{t.currentCredits(currentCredits)}</strong></p>
-                      <p><strong>{t.subscriptionPlanLabel}</strong> {t.subscriptionPlanValue(userProfile.subscriptionPlan)}</p>
-                      <div className="credit-cta-actions">
-                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('site-management')} type="button">
-                          {t.creditCheck}
-                        </button>
-                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('terms')} type="button">
-                          {t.viewSubscription}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mypage-empty">
-                      <p>{firebaseDisabledMessage || t.authRequired}</p>
-                      {isFirebaseConfigured && (
-                        <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
-                          {t.login}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </article>
-                {currentUser && (
-                  <div className="history-grid">
-                    {historyItems.length > 0 ? historyItems.map((item) => (
-                      <article key={item.id} className="history-card">
-                        <div className="history-card-row">
-                          <img src={item.faceImageUrl} alt="Face history" />
-                          <img src={item.clothImageUrl} alt="Cloth history" />
-                        </div>
-                        <div className="history-result-box">
-                          <img src={item.resultImageUrl} alt="Generated result history" />
-                        </div>
-                      </article>
-                    )) : (
-                      <article className="page-article">
-                        <p>{t.noHistory}</p>
-                      </article>
-                    )}
-                  </div>
-                )}
-              </div>
+              <MyPageSection
+                currentUser={currentUser}
+                userProfile={userProfile}
+                currentDailyCredit={currentDailyCredit}
+                currentPaidCredit={currentPaidCredit}
+                currentCredits={currentCredits}
+                historyItems={historyItems}
+                isFirebaseConfigured={isFirebaseConfigured}
+                firebaseDisabledMessage={firebaseDisabledMessage}
+                isStartingCheckout={isStartingCheckout}
+                products={CREDIT_PRODUCTS}
+                copy={t}
+                onLogin={() => openAuthModal('login')}
+                onNavigateSiteManagement={() => navigateToPage('site-management')}
+                onNavigateTerms={() => navigateToPage('terms')}
+                onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
+                formatTimestampLabel={formatTimestampLabel}
+              />
             )}
           </div>
         </main>
@@ -4629,23 +3879,10 @@ const App: React.FC = () => {
 
       {showSampleModal && (
         <SampleModal 
-          currentUrl={activePersonImage}
+          currentUrl={selectedSampleUrl ?? activePersonImage}
           lang={lang}
           onSelect={(url, category) => {
-            if (isGenerating) {
-              return;
-            }
-            if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
-            setSelectedSampleUrl(url);
-            setGender(category);
-            setSubjectTypeManualOverride(false);
-            setDetectedSubjectType(null);
-            setPersonImage(null);
-            setPersonFile(null);
-            setPersonUploadMessage(null);
-            setPersonPreviewState('loading');
-            clearGeneratedVideo();
-            void detectSubjectTypeFromImage(url);
+            void loadPersonSample(url, category);
           }}
           onClose={() => setShowSampleModal(false)}
         />
@@ -4653,19 +3890,10 @@ const App: React.FC = () => {
 
       {showClothSampleModal && (
         <ClothSampleModal
-          currentUrl={activeClothImage}
+          currentUrl={selectedClothSampleUrl ?? activeClothImage}
           lang={lang}
           onSelect={(url) => {
-            if (isGenerating) {
-              return;
-            }
-            if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-            setSelectedClothSampleUrl(url);
-            setClothImage(null);
-            setClothFile(null);
-            setClothUploadMessage(null);
-            setClothPreviewState('loading');
-            clearGeneratedVideo();
+            void loadClothSample(url);
           }}
           onClose={() => setShowClothSampleModal(false)}
         />

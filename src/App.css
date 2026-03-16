@@ -266,16 +266,28 @@ a { color: inherit; text-decoration: none; }
 
 .credit-pill {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 10px;
   min-height: 40px;
-  padding: 0 14px;
+  padding: 8px 14px;
   border-radius: var(--r-pill);
   background: var(--surface-alt);
   border: 1px solid var(--border);
   color: var(--primary);
   font-size: 13px;
   font-weight: 700;
+}
+
+.credit-pill-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 78px;
+}
+
+.credit-pill-copy span {
+  font-size: 11px;
+  color: var(--text-sub);
 }
 
 .credit-pill strong {
@@ -1179,9 +1191,55 @@ a { color: inherit; text-decoration: none; }
 .mypage-summary {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
   font-size: 16px;
   color: var(--text-sub);
+}
+
+.credit-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.credit-balance-card,
+.credit-product-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.credit-balance-card span,
+.credit-product-card p {
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.credit-balance-card strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 24px;
+  color: var(--text);
+}
+
+.credit-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.credit-product-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.credit-product-card strong {
+  font-size: 20px;
+  color: var(--text);
 }
 
 .credit-cta-actions {
@@ -1216,14 +1274,6 @@ a { color: inherit; text-decoration: none; }
   box-shadow: var(--shadow-sm);
 }
 
-.history-card-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.history-card-row img,
 .history-result-box img {
   width: 100%;
   display: block;
@@ -1232,12 +1282,24 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg-alt);
 }
 
-.history-card-row img {
-  aspect-ratio: 3 / 4;
-}
-
 .history-result-box img {
   aspect-ratio: 16 / 10;
+}
+
+.history-meta {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.history-meta span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
 }
 
 .usage-bar {
@@ -1276,6 +1338,24 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
   text-align: center;
   color: var(--text-sub);
+}
+
+.credit-result-notice,
+.payment-page-shell {
+  max-width: 760px;
+  margin: 20px auto 0;
+}
+
+.credit-result-notice {
+  text-align: left;
+}
+
+.credit-result-notice strong {
+  color: var(--text);
+}
+
+.credit-result-notice p {
+  margin: 8px 0 16px;
 }
 
 .credit-cta-panel .credit-cta-actions {
@@ -1707,12 +1787,6 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   display: block;
 }
-.watermark {
-  position: absolute; bottom: 16px; right: 16px;
-  background: rgba(255,255,255,0.9); padding: 4px 12px;
-  border-radius: var(--r-pill); font-size: 12px; font-weight: 800; color: var(--primary);
-}
-
 /* ════════════════════════════════════════════════════════════════
    Modal (Sample Selection)
    ════════════════════════════════════════════════════════════════ */

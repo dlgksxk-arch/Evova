@@ -3,12 +3,12 @@ import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseEnv = {
-  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY?.trim() || 'AIzaSyB8GiHF6PVRNKIO7IfKldX29Flm1lCIfgg',
-  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || 'hamdeva.firebaseapp.com',
-  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim() || 'hamdeva',
-  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || 'hamdeva.firebasestorage.app',
-  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || '983641392832',
-  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID?.trim() || '1:983641392832:web:7292262881707bd920cf25',
+  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY?.trim() || '',
+  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || '',
+  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim() || '',
+  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || '',
+  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || '',
+  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID?.trim() || '',
 } as const;
 
 export const firebaseConfig = {
@@ -25,7 +25,7 @@ export const missingFirebaseEnvKeys = Object.entries(firebaseEnv)
   .map(([key]) => key);
 
 let firebaseConfigError: string | null = missingFirebaseEnvKeys.length > 0
-  ? `Firebase 설정 누락: ${missingFirebaseEnvKeys.join(', ')}`
+  ? `Firebase 설정 누락: ${missingFirebaseEnvKeys.join(', ')}. .env 또는 배포 환경변수에 현재 프로젝트 값을 설정해 주세요.`
   : null;
 
 let app: FirebaseApp | null = null;

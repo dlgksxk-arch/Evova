@@ -10,7 +10,7 @@ export interface ClothSampleOption {
   countryLabelEn: string;
 }
 
-const SAMPLE_ASSET_ORIGIN = 'https://hamdeva.web.app';
+const SAMPLE_ASSET_BASE_PATH = '/sample/cloth';
 
 type SampleSeed = {
   id: string;
@@ -25,7 +25,7 @@ const createSamples = (category: ClothSampleCategory, seeds: SampleSeed[]): Clot
   seeds.map((seed) => ({
     id: seed.id,
     label: seed.label,
-    image: `${SAMPLE_ASSET_ORIGIN}/sample/cloth/${category}/${seed.file}`,
+    image: `${SAMPLE_ASSET_BASE_PATH}/${category}/${seed.file}`,
     category,
     country: seed.country,
     countryLabelKo: seed.countryLabelKo,

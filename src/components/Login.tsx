@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -15,38 +16,41 @@ interface LoginProps {
   className?: string;
 }
 
-const buildAuthErrorMessage = (error: unknown): string => {
-  const errorCode =
-    typeof error === 'object' && error && 'code' in error && typeof error.code === 'string'
-      ? error.code
-      : '';
-
-  if (errorCode.includes('auth/invalid-credential') || errorCode.includes('auth/wrong-password')) {
-    return 'Invalid email or password.';
-  }
-  if (errorCode.includes('auth/user-not-found')) {
-    return 'No account exists for this email.';
-  }
-  if (errorCode.includes('auth/email-already-in-use')) {
-    return 'This email is already registered.';
-  }
-  if (errorCode.includes('auth/popup-closed-by-user')) {
-    return 'The Google sign-in popup was closed.';
-  }
-  if (errorCode.includes('auth/too-many-requests')) {
-    return 'Too many attempts. Please try again later.';
-  }
-
-  return error instanceof Error && error.message ? error.message : 'Authentication failed.';
-};
-
 const Login: React.FC<LoginProps> = ({ className }) => {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const buildAuthErrorMessage = (nextError: unknown): string => {
+    const errorCode =
+      typeof nextError === 'object' && nextError && 'code' in nextError && typeof nextError.code === 'string'
+        ? nextError.code
+        : '';
+
+    if (errorCode.includes('auth/invalid-credential') || errorCode.includes('auth/wrong-password')) {
+      return t('errors.auth.invalidCredential');
+    }
+    if (errorCode.includes('auth/user-not-found')) {
+      return t('errors.auth.userNotFound');
+    }
+    if (errorCode.includes('auth/email-already-in-use')) {
+      return t('errors.auth.emailAlreadyInUse');
+    }
+    if (errorCode.includes('auth/popup-closed-by-user')) {
+      return t('errors.auth.popupClosed');
+    }
+    if (errorCode.includes('auth/too-many-requests')) {
+      return t('errors.auth.tooManyRequests');
+    }
+
+    return nextError instanceof Error && nextError.message
+      ? nextError.message
+      : t('errors.auth.authenticationFailed');
+  };
 
   useEffect(() => {
     if (!auth) {
@@ -66,11 +70,11 @@ const Login: React.FC<LoginProps> = ({ className }) => {
     event.preventDefault();
 
     if (!auth) {
-      setError(firebaseConfigError || 'Firebase Auth is not configured.');
+      setError(firebaseConfigError || t('errors.auth.firebaseAuthNotConfigured'));
       return;
     }
     if (!email.trim() || !password) {
-      setError('Enter both email and password.');
+      setError(t('errors.auth.enterEmailPassword'));
       return;
     }
 
@@ -92,7 +96,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
 
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
-      setError(firebaseConfigError || 'Google sign-in is not configured.');
+      setError(firebaseConfigError || t('errors.auth.googleSignInNotConfigured'));
       return;
     }
 
@@ -129,15 +133,15 @@ const Login: React.FC<LoginProps> = ({ className }) => {
     <section className={className}>
       {currentUser ? (
         <div className="auth-modal-body">
-          <p>Signed in as {currentUser.email || 'Google user'}.</p>
+          <p>{t('login.signedInAs', { email: currentUser.email || t('login.googleUser') })}</p>
           <button className="outline-btn auth-google-btn" disabled={isSubmitting} onClick={handleLogout} type="button">
-            Sign out
+            {t('login.signOut')}
           </button>
         </div>
       ) : (
         <form className="auth-modal-body" onSubmit={handleEmailSubmit}>
           <label className="auth-field">
-            <span>Email</span>
+            <span>{t('ui.emailLabel', { defaultValue: 'Email' })}</span>
             <input
               autoComplete="email"
               onChange={(event) => setEmail(event.target.value)}
@@ -147,7 +151,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
           </label>
 
           <label className="auth-field">
-            <span>Password</span>
+            <span>{t('ui.passwordLabel', { defaultValue: 'Password' })}</span>
             <input
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               onChange={(event) => setPassword(event.target.value)}
@@ -159,7 +163,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
           {error && <p className="auth-error-text">{error}</p>}
 
           <button className="generate-btn auth-submit-btn" disabled={isSubmitting} type="submit">
-            {mode === 'login' ? 'Log in with email' : 'Create account'}
+            {mode === 'login' ? t('login.loginWithEmail') : t('login.createAccount')}
           </button>
 
           <button
@@ -168,7 +172,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
             onClick={handleGoogleLogin}
             type="button"
           >
-            Continue with Google
+            {t('login.continueWithGoogle')}
           </button>
 
           <button
@@ -177,7 +181,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             type="button"
           >
-            {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Log in'}
+            {mode === 'login' ? t('login.needAccount') : t('login.haveAccount')}
           </button>
         </form>
       )}

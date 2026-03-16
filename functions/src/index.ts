@@ -1,5 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
+import sharp from 'sharp';
+import Stripe from 'stripe';
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -13,17 +15,17 @@ const CORS_ORIGIN = [
 ];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = 'OpenAI API key is missing. Set OPENAI_API_KEY or firebase functions:config:set openai.key="YOUR_OPENAI_API_KEY".';
+const STRIPE_CONFIG_ERROR = 'PAYMENT_NOT_CONFIGURED';
+const STRIPE_CONFIG_MESSAGE = '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.';
 const AUTH_REQUIRED_MESSAGE = '로그인이 필요합니다.';
-const NOT_ENOUGH_CREDITS_ERROR = 'INSUFFICIENT_CREDITS';
+const NOT_ENOUGH_CREDITS_ERROR = 'PAYMENT_REQUIRED';
 const NOT_ENOUGH_CREDITS_MESSAGE = '크레딧이 부족합니다.';
-const NOT_ENOUGH_VIDEO_CREDITS_ERROR = 'INSUFFICIENT_VIDEO_CREDITS';
 const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
 const DUPLICATE_REQUEST_MESSAGE = '이미 처리 중인 생성 요청입니다.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30_000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1000;
-const SIGNUP_BONUS_CREDITS = 300;
-const DAILY_BASE_CREDITS = 300;
+const DAILY_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 const OPENAI_IMAGE_SIZE = '1536x1024';
@@ -33,18 +35,43 @@ const VIDEO_MODEL = process.env['OPENAI_VIDEO_MODEL'] ?? 'sora-2';
 const VIDEO_SECONDS = '4';
 const VIDEO_SIZE = '1280x720';
 const VIDEO_ESTIMATED_COST = 0.4;
+const GENERATED_HISTORY_IMAGE_WIDTH = 960;
+const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
+const STRIPE_PROVIDER = 'stripe';
+const STRIPE_CURRENCY = 'usd';
 const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
 Return ONLY one word:
 
 human
 dog
 cat`;
-const SUBSCRIPTION_DAILY_BONUS = {
-  free: 0,
-  basic: 500,
-  pro: 1500,
-} as const;
 const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
+const STRIPE_PRODUCTS = {
+  starter: {
+    id: 'starter',
+    amountCents: 499,
+    amountUsd: 4.99,
+    currency: STRIPE_CURRENCY,
+    paidCredit: 5000,
+    name: 'HAMDEVA Starter Credits',
+  },
+  creator: {
+    id: 'creator',
+    amountCents: 999,
+    amountUsd: 9.99,
+    currency: STRIPE_CURRENCY,
+    paidCredit: 12000,
+    name: 'HAMDEVA Creator Credits',
+  },
+  pro: {
+    id: 'pro',
+    amountCents: 1999,
+    amountUsd: 19.99,
+    currency: STRIPE_CURRENCY,
+    paidCredit: 26000,
+    name: 'HAMDEVA Pro Credits',
+  },
+} as const;
 const OPENAI_IMAGE_TOKEN_PRICING = {
   'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
   'gpt-image-1-mini': { inputPer1M: 2.5, outputPer1M: 8 },
@@ -238,17 +265,19 @@ Choose a realistic background that matches the mood and style of the outfit, wit
 
 Create a short fashion showcase clip, approximately 3 to 5 seconds long.`;
 
-type SubscriptionPlan = keyof typeof SUBSCRIPTION_DAILY_BONUS;
+type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type AccountRole = 'user' | 'admin';
 type SubjectType = 'human' | 'dog' | 'cat';
 type GenerationRequestType = 'image_generation' | 'video_generation';
-type CreditLogType =
-  | 'signup_bonus'
-  | 'daily_reward'
-  | 'subscription_bonus'
-  | 'generate_use'
-  | 'generate_refund'
-  | 'admin_adjust';
+type CreditType = 'daily' | 'paid';
+type CreditTransactionType =
+  | 'daily_reset'
+  | 'charge'
+  | 'use_daily'
+  | 'use_paid'
+  | 'refund';
+type PaymentProductId = keyof typeof STRIPE_PRODUCTS;
+type PaymentStatus = 'pending' | 'paid' | 'failed' | 'canceled';
 type OpenAIKeySource = 'env' | 'config' | 'missing';
 type OpenAIKeyState = {
   key: string;
@@ -266,32 +295,73 @@ type AuthenticatedUser = {
 };
 type UserAccount = {
   email: string;
+  dailyCredit: number;
+  paidCredit: number;
   credits: number;
+  totalGenerated: number;
   isSubscribed: boolean;
   subscriptionPlan: SubscriptionPlan;
   role: AccountRole;
   createdAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
-  lastDailyRewardAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
+  lastDailyResetAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
   lastLoginAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
+  updatedAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
 };
 type BootstrapResult = {
   profile: {
+    dailyCredit: number;
+    paidCredit: number;
     credits: number;
+    totalGenerated: number;
     isSubscribed: boolean;
     subscriptionPlan: SubscriptionPlan;
     role: AccountRole;
   };
-  signupBonusGranted: number;
   dailyRewardGranted: number;
+};
+type ApiBonusFields = {
+  dailyRewardGranted: number;
+  signupBonusGranted: number;
   subscriptionBonusGranted: number;
+};
+type BootstrapResponse = BootstrapResult & ApiBonusFields & {
+  success: true;
+  generationCost: number;
+  videoGenerationCost: number;
+};
+type TryOnSuccessResponse = ApiBonusFields & {
+  success: true;
+  image: string;
+  mimeType: string;
+  subjectType: SubjectType;
+  usedCreditType: CreditType;
+  watermarkApplied: boolean;
+  dailyCredit: number;
+  paidCredit: number;
+  creditsRemaining: number;
+  totalGenerated: number;
 };
 type ChargeResult = BootstrapResult & {
   requestId: string;
+  dailyCreditAfterCharge: number;
+  paidCreditAfterCharge: number;
   creditsAfterCharge: number;
+  usedCreditType: CreditType;
+  chargedAmount: number;
 };
 type RefundResult = {
   refunded: boolean;
+  dailyCreditAfter: number | null;
+  paidCreditAfter: number | null;
   balanceAfter: number | null;
+};
+type PaymentSessionStatusResult = {
+  status: PaymentStatus | 'processing';
+  paymentId: string | null;
+  paidCredit: number;
+  dailyCredit: number | null;
+  paidCreditBalance: number | null;
+  totalCreditBalance: number | null;
 };
 type GenerationUsageMetadata = {
   type?: GenerationRequestType;
@@ -305,6 +375,10 @@ type GenerationUsageMetadata = {
   };
   estimatedCost: number | null;
 };
+type CheckoutSessionRequest = {
+  productId?: PaymentProductId;
+};
+type StripeCheckoutSession = Stripe.Checkout.Session;
 
 interface OpenAIImageResponse {
   model?: string;
@@ -348,6 +422,7 @@ interface OpenAIVideoStatusResponse {
 }
 
 let lastLoggedOpenAIKeySource: OpenAIKeySource | null = null;
+let stripeClient: Stripe | null = null;
 
 const formatSeoulDateKey = (date: Date): string => {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -378,7 +453,7 @@ const timestampToSeoulDateKey = (value: unknown): string | null => {
 };
 
 const normalizeSubscriptionPlan = (value: unknown): SubscriptionPlan => {
-  if (typeof value === 'string' && value in SUBSCRIPTION_DAILY_BONUS) {
+  if (value === 'free' || value === 'basic' || value === 'pro') {
     return value as SubscriptionPlan;
   }
 
@@ -401,28 +476,36 @@ const normalizeSubjectType = (value: unknown): SubjectType => {
   return 'human';
 };
 
-const getDailyCreditReward = (plan: SubscriptionPlan): { base: number; subscriptionBonus: number; total: number } => {
-  const subscriptionBonus = SUBSCRIPTION_DAILY_BONUS[plan];
-  return {
-    base: DAILY_BASE_CREDITS,
-    subscriptionBonus,
-    total: DAILY_BASE_CREDITS + subscriptionBonus,
-  };
-};
+const isPaymentProductId = (value: unknown): value is PaymentProductId =>
+  typeof value === 'string' && value in STRIPE_PRODUCTS;
 
 const normalizeUserAccount = (email: string, data?: FirebaseFirestore.DocumentData): UserAccount => {
   const subscriptionPlan = normalizeSubscriptionPlan(data?.subscriptionPlan);
   const isSubscribed = data?.isSubscribed === true || subscriptionPlan !== 'free';
+  const legacyCredits = typeof data?.credits === 'number' && Number.isFinite(data.credits) ? Math.max(0, data.credits) : 0;
+  const dailyCredit = typeof data?.dailyCredit === 'number' && Number.isFinite(data.dailyCredit)
+    ? Math.max(0, data.dailyCredit)
+    : 0;
+  const paidCredit = typeof data?.paidCredit === 'number' && Number.isFinite(data.paidCredit)
+    ? Math.max(0, data.paidCredit)
+    : Math.max(0, legacyCredits);
+  const credits = dailyCredit + paidCredit;
 
   return {
     email: typeof data?.email === 'string' && data.email ? data.email : email,
-    credits: typeof data?.credits === 'number' && Number.isFinite(data.credits) ? data.credits : 0,
+    dailyCredit,
+    paidCredit,
+    credits,
+    totalGenerated: typeof data?.totalGenerated === 'number' && Number.isFinite(data.totalGenerated)
+      ? Math.max(0, data.totalGenerated)
+      : 0,
     isSubscribed,
     subscriptionPlan: isSubscribed ? subscriptionPlan : 'free',
     role: normalizeAccountRole(data?.role, email),
     createdAt: data?.createdAt ?? null,
-    lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
+    lastDailyResetAt: data?.lastDailyResetAt ?? data?.lastDailyRewardAt ?? null,
     lastLoginAt: data?.lastLoginAt ?? null,
+    updatedAt: data?.updatedAt ?? null,
   };
 };
 
@@ -453,6 +536,39 @@ const getOpenAIApiKey = (): string => {
   const state = getOpenAIApiKeyState();
   logOpenAIApiKeySource(state.source);
   return state.key;
+};
+
+const getStripeSecretKey = (): string => {
+  const envKey = process.env['STRIPE_SECRET_KEY'];
+  if (typeof envKey === 'string' && envKey.trim()) {
+    return envKey.trim();
+  }
+
+  const configKey = functions.config()?.stripe?.secret;
+  return typeof configKey === 'string' ? configKey.trim() : '';
+};
+
+const getStripeWebhookSecret = (): string => {
+  const envKey = process.env['STRIPE_WEBHOOK_SECRET'];
+  if (typeof envKey === 'string' && envKey.trim()) {
+    return envKey.trim();
+  }
+
+  const configKey = functions.config()?.stripe?.webhook_secret;
+  return typeof configKey === 'string' ? configKey.trim() : '';
+};
+
+const requireStripe = (): Stripe => {
+  const secretKey = getStripeSecretKey();
+  if (!secretKey) {
+    throw new Error(STRIPE_CONFIG_ERROR);
+  }
+
+  if (!stripeClient) {
+    stripeClient = new Stripe(secretKey);
+  }
+
+  return stripeClient;
 };
 
 const roundEstimatedCost = (value: number): number =>
@@ -773,100 +889,163 @@ const requireAuthenticatedUser = async (req: functions.https.Request): Promise<A
   };
 };
 
-const createCreditLogRef = () => db.collection('creditLogs').doc();
+const createCreditTransactionRef = () => db.collection('credit_transactions').doc();
 
-const writeCreditLog = (
-  transaction: FirebaseFirestore.Transaction,
-  uid: string,
+const buildPaymentDocId = (providerPaymentId: string): string =>
+  `${STRIPE_PROVIDER}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+
+const createGenerationDocRef = (uid: string, requestId: string) =>
+  db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
+
+const buildUserAccountPayload = (
+  account: UserAccount,
   email: string,
-  type: CreditLogType,
-  amount: number,
-  balanceAfter: number,
-  note: string,
+  options: {
+    setCreatedAt?: boolean;
+    setLastDailyResetAt?: boolean;
+    touchLogin?: boolean;
+  } = {},
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    email: email || account.email,
+    dailyCredit: account.dailyCredit,
+    paidCredit: account.paidCredit,
+    credits: account.dailyCredit + account.paidCredit,
+    totalGenerated: account.totalGenerated,
+    isSubscribed: account.isSubscribed,
+    subscriptionPlan: account.subscriptionPlan,
+    role: account.role,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (options.setCreatedAt) {
+    payload['createdAt'] = admin.firestore.FieldValue.serverTimestamp();
+  }
+  if (options.setLastDailyResetAt) {
+    payload['lastDailyResetAt'] = admin.firestore.FieldValue.serverTimestamp();
+  }
+  if (options.touchLogin) {
+    payload['lastLoginAt'] = admin.firestore.FieldValue.serverTimestamp();
+  }
+
+  return payload;
+};
+
+const writeCreditTransaction = (
+  transaction: FirebaseFirestore.Transaction,
+  params: {
+    uid: string;
+    email: string;
+    type: CreditTransactionType;
+    amount: number;
+    balanceDailyAfter: number;
+    balancePaidAfter: number;
+    relatedPaymentId?: string | null;
+    relatedGenerationId?: string | null;
+    memo?: string | null;
+  },
 ) => {
-  transaction.set(createCreditLogRef(), {
-    uid,
-    email,
-    type,
-    amount,
-    balanceAfter,
-    note,
+  transaction.set(createCreditTransactionRef(), {
+    uid: params.uid,
+    email: params.email,
+    type: params.type,
+    amount: params.amount,
+    balanceDailyAfter: params.balanceDailyAfter,
+    balancePaidAfter: params.balancePaidAfter,
+    relatedPaymentId: params.relatedPaymentId ?? null,
+    relatedGenerationId: params.relatedGenerationId ?? null,
+    memo: params.memo ?? null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 };
 
+const applyDailyResetIfNeeded = (
+  transaction: FirebaseFirestore.Transaction,
+  user: AuthenticatedUser,
+  account: UserAccount,
+): { account: UserAccount; dailyRewardGranted: number; dailyResetApplied: boolean } => {
+  const todayKey = getTodayKeyInSeoul();
+  const lastDailyResetKey = timestampToSeoulDateKey(account.lastDailyResetAt);
+  if (lastDailyResetKey === todayKey) {
+    return {
+      account,
+      dailyRewardGranted: 0,
+      dailyResetApplied: false,
+    };
+  }
+
+  const nextAccount: UserAccount = {
+    ...account,
+    dailyCredit: DAILY_CREDIT_AMOUNT,
+    credits: DAILY_CREDIT_AMOUNT + account.paidCredit,
+  };
+
+  writeCreditTransaction(transaction, {
+    uid: user.uid,
+    email: user.email || account.email,
+    type: 'daily_reset',
+    amount: DAILY_CREDIT_AMOUNT,
+    balanceDailyAfter: nextAccount.dailyCredit,
+    balancePaidAfter: nextAccount.paidCredit,
+    memo: `daily credit reset ${todayKey}`,
+  });
+
+  return {
+    account: nextAccount,
+    dailyRewardGranted: DAILY_CREDIT_AMOUNT,
+    dailyResetApplied: true,
+  };
+};
+
+const buildBootstrapProfile = (account: UserAccount): BootstrapResult['profile'] => ({
+  dailyCredit: account.dailyCredit,
+  paidCredit: account.paidCredit,
+  credits: account.dailyCredit + account.paidCredit,
+  totalGenerated: account.totalGenerated,
+  isSubscribed: account.isSubscribed,
+  subscriptionPlan: account.subscriptionPlan,
+  role: account.role,
+});
+
+const buildApiBonusFields = (dailyRewardGranted = 0): ApiBonusFields => ({
+  dailyRewardGranted,
+  signupBonusGranted: 0,
+  subscriptionBonusGranted: 0,
+});
+
 const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapResult> => {
   const userRef = db.collection('users').doc(user.uid);
-  const todayKey = getTodayKeyInSeoul();
   const result: BootstrapResult = {
     profile: {
+      dailyCredit: 0,
+      paidCredit: 0,
       credits: 0,
+      totalGenerated: 0,
       isSubscribed: false,
       subscriptionPlan: 'free',
       role: 'user',
     },
-    signupBonusGranted: 0,
     dailyRewardGranted: 0,
-    subscriptionBonusGranted: 0,
   };
 
   await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(userRef);
-    const currentProfile = normalizeUserAccount(user.email, snapshot.data());
-    let nextCredits = currentProfile.credits;
+    let account = normalizeUserAccount(user.email, snapshot.data());
+    const reset = applyDailyResetIfNeeded(transaction, user, account);
+    account = reset.account;
+    result.dailyRewardGranted = reset.dailyRewardGranted;
 
-    if (!snapshot.exists) {
-      nextCredits += SIGNUP_BONUS_CREDITS;
-      result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
-    }
+    transaction.set(
+      userRef,
+      buildUserAccountPayload(account, user.email || account.email, {
+        setCreatedAt: !snapshot.exists,
+        setLastDailyResetAt: reset.dailyResetApplied,
+        touchLogin: true,
+      }),
+      { merge: true },
+    );
 
-    const lastDailyRewardKey = timestampToSeoulDateKey(currentProfile.lastDailyRewardAt);
-    if (lastDailyRewardKey !== todayKey) {
-      const reward = getDailyCreditReward(currentProfile.subscriptionPlan);
-      nextCredits += reward.base;
-      result.dailyRewardGranted = reward.base;
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
-
-      if (reward.subscriptionBonus > 0) {
-        nextCredits += reward.subscriptionBonus;
-        result.subscriptionBonusGranted = reward.subscriptionBonus;
-        writeCreditLog(
-          transaction,
-          user.uid,
-          user.email || currentProfile.email,
-          'subscription_bonus',
-          reward.subscriptionBonus,
-          nextCredits,
-          `subscription bonus ${currentProfile.subscriptionPlan} ${todayKey}`,
-        );
-      }
-    }
-
-    const updatePayload: Record<string, unknown> = {
-      email: user.email || currentProfile.email,
-      credits: nextCredits,
-      isSubscribed: currentProfile.isSubscribed,
-      subscriptionPlan: currentProfile.subscriptionPlan,
-      role: currentProfile.role,
-      lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
-
-    if (!snapshot.exists) {
-      updatePayload['createdAt'] = admin.firestore.FieldValue.serverTimestamp();
-    }
-    if (result.dailyRewardGranted > 0 || result.subscriptionBonusGranted > 0) {
-      updatePayload['lastDailyRewardAt'] = admin.firestore.FieldValue.serverTimestamp();
-    }
-
-    transaction.set(userRef, updatePayload, { merge: true });
-
-    result.profile = {
-      credits: nextCredits,
-      isSubscribed: currentProfile.isSubscribed,
-      subscriptionPlan: currentProfile.subscriptionPlan,
-      role: currentProfile.role,
-    };
+    result.profile = buildBootstrapProfile(account);
   });
 
   return result;
@@ -901,19 +1080,23 @@ const beginChargedRequest = async (
   const userRef = db.collection('users').doc(user.uid);
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
   const generationLockRef = db.collection(options.lockCollection).doc(user.uid);
-  const todayKey = getTodayKeyInSeoul();
   const result: ChargeResult = {
     profile: {
+      dailyCredit: 0,
+      paidCredit: 0,
       credits: 0,
+      totalGenerated: 0,
       isSubscribed: false,
       subscriptionPlan: 'free',
       role: 'user',
     },
-    signupBonusGranted: 0,
     dailyRewardGranted: 0,
-    subscriptionBonusGranted: 0,
     requestId,
+    dailyCreditAfterCharge: 0,
+    paidCreditAfterCharge: 0,
     creditsAfterCharge: 0,
+    usedCreditType: 'daily',
+    chargedAmount: options.cost,
   };
 
   await db.runTransaction(async (transaction) => {
@@ -937,81 +1120,74 @@ const beginChargedRequest = async (
       }
     }
 
-    const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
-    let nextCredits = currentProfile.credits;
+    let account = normalizeUserAccount(user.email, userSnapshot.data());
+    const reset = applyDailyResetIfNeeded(transaction, user, account);
+    account = reset.account;
+    result.dailyRewardGranted = reset.dailyRewardGranted;
     const generationCost = options.cost;
 
-    if (!userSnapshot.exists) {
-      nextCredits += SIGNUP_BONUS_CREDITS;
-      result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
+    let usedCreditType: CreditType | null = null;
+    if (account.dailyCredit >= generationCost) {
+      usedCreditType = 'daily';
+      account = {
+        ...account,
+        dailyCredit: account.dailyCredit - generationCost,
+      };
+    } else if (account.paidCredit >= generationCost) {
+      usedCreditType = 'paid';
+      account = {
+        ...account,
+        paidCredit: account.paidCredit - generationCost,
+      };
     }
 
-    const lastDailyRewardKey = timestampToSeoulDateKey(currentProfile.lastDailyRewardAt);
-    if (lastDailyRewardKey !== todayKey) {
-      const reward = getDailyCreditReward(currentProfile.subscriptionPlan);
-      nextCredits += reward.base;
-      result.dailyRewardGranted = reward.base;
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
-
-      if (reward.subscriptionBonus > 0) {
-        nextCredits += reward.subscriptionBonus;
-        result.subscriptionBonusGranted = reward.subscriptionBonus;
-        writeCreditLog(
-          transaction,
-          user.uid,
-          user.email || currentProfile.email,
-          'subscription_bonus',
-          reward.subscriptionBonus,
-          nextCredits,
-          `subscription bonus ${currentProfile.subscriptionPlan} ${todayKey}`,
-        );
-      }
-    }
-
-    if (nextCredits < generationCost) {
+    if (!usedCreditType) {
       throw new Error(options.insufficientErrorCode);
     }
 
-    nextCredits -= generationCost;
-    if (generationCost > 0) {
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_use', -generationCost, nextCredits, `generate request ${requestId}`);
-    }
-
-    const updatePayload: Record<string, unknown> = {
-      email: user.email || currentProfile.email,
-      credits: nextCredits,
-      isSubscribed: currentProfile.isSubscribed,
-      subscriptionPlan: currentProfile.subscriptionPlan,
-      role: currentProfile.role,
-      lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
+    account = {
+      ...account,
+      credits: account.dailyCredit + account.paidCredit,
     };
+    writeCreditTransaction(transaction, {
+      uid: user.uid,
+      email: user.email || account.email,
+      type: usedCreditType === 'daily' ? 'use_daily' : 'use_paid',
+      amount: -generationCost,
+      balanceDailyAfter: account.dailyCredit,
+      balancePaidAfter: account.paidCredit,
+      relatedGenerationId: buildGenerationRequestDocId(user.uid, requestId),
+      memo: `${options.requestType} request ${requestId}`,
+    });
 
-    if (!userSnapshot.exists) {
-      updatePayload['createdAt'] = admin.firestore.FieldValue.serverTimestamp();
-    }
-    if (result.dailyRewardGranted > 0 || result.subscriptionBonusGranted > 0) {
-      updatePayload['lastDailyRewardAt'] = admin.firestore.FieldValue.serverTimestamp();
-    }
-
-    transaction.set(userRef, updatePayload, { merge: true });
+    transaction.set(
+      userRef,
+      buildUserAccountPayload(account, user.email || account.email, {
+        setCreatedAt: !userSnapshot.exists,
+        setLastDailyResetAt: reset.dailyResetApplied,
+        touchLogin: true,
+      }),
+      { merge: true },
+    );
     transaction.set(requestRef, {
       uid: user.uid,
-      email: user.email || currentProfile.email,
+      email: user.email || account.email,
       requestId,
       type: options.requestType,
       cost: generationCost,
+      usedCreditType,
+      usedCreditAmount: generationCost,
       ...options.metadata,
       status: 'charged',
       success: false,
       refunded: false,
-      role: currentProfile.role,
+      role: account.role,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     transaction.set(generationLockRef, {
       uid: user.uid,
-      email: user.email || currentProfile.email,
+      email: user.email || account.email,
       requestId,
       type: options.requestType,
       status: 'charged',
@@ -1019,13 +1195,11 @@ const beginChargedRequest = async (
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    result.profile = {
-      credits: nextCredits,
-      isSubscribed: currentProfile.isSubscribed,
-      subscriptionPlan: currentProfile.subscriptionPlan,
-      role: currentProfile.role,
-    };
-    result.creditsAfterCharge = nextCredits;
+    result.profile = buildBootstrapProfile(account);
+    result.dailyCreditAfterCharge = account.dailyCredit;
+    result.paidCreditAfterCharge = account.paidCredit;
+    result.creditsAfterCharge = account.credits;
+    result.usedCreditType = usedCreditType;
   });
 
   return result;
@@ -1043,6 +1217,7 @@ const beginGenerationCharge = async (
     insufficientErrorCode: NOT_ENOUGH_CREDITS_ERROR,
     metadata: {
       subjectType,
+      watermarkApplied: false,
       model: OPENAI_IMAGE_MODEL,
       quality: OPENAI_IMAGE_QUALITY,
       size: OPENAI_IMAGE_SIZE,
@@ -1064,7 +1239,7 @@ const beginVideoGenerationCharge = async (
     cost: VIDEO_GENERATION_COST,
     requestType: 'video_generation',
     lockCollection: 'videoGenerationLocks',
-    insufficientErrorCode: NOT_ENOUGH_VIDEO_CREDITS_ERROR,
+    insufficientErrorCode: NOT_ENOUGH_CREDITS_ERROR,
     metadata: {
       subjectType,
       sourceResultId: sourceResultId || null,
@@ -1104,29 +1279,69 @@ const markGenerationCompleted = async (
   user: AuthenticatedUser,
   requestId: string,
   metadata: GenerationUsageMetadata,
+  options: {
+    imageUrl: string;
+    usedCreditType: CreditType;
+    usedCreditAmount: number;
+    watermarkApplied: boolean;
+  },
 ): Promise<void> => {
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
   const generationLockRef = db.collection('generationLocks').doc(user.uid);
-  await requestRef.set({
-    type: metadata.type || 'image_generation',
-    subjectType: metadata.subjectType || 'human',
-    model: metadata.model,
-    quality: metadata.quality,
-    size: metadata.size,
-    usage: metadata.usage,
-    estimatedCost: metadata.estimatedCost,
-    status: 'completed',
-    success: true,
-    refunded: false,
-    completedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-  await generationLockRef.set({
-    requestId,
-    status: 'completed',
-    releasedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
+  const generationRef = createGenerationDocRef(user.uid, requestId);
+  const userRef = db.collection('users').doc(user.uid);
+
+  await db.runTransaction(async (transaction) => {
+    const userSnapshot = await transaction.get(userRef);
+    const account = normalizeUserAccount(user.email, userSnapshot.data());
+    const nextAccount: UserAccount = {
+      ...account,
+      totalGenerated: account.totalGenerated + 1,
+      credits: account.dailyCredit + account.paidCredit,
+    };
+
+    transaction.set(generationRef, {
+      uid: user.uid,
+      email: user.email || account.email,
+      requestId,
+      subjectType: metadata.subjectType || 'human',
+      usedCreditType: options.usedCreditType,
+      usedCreditAmount: options.usedCreditAmount,
+      watermarkApplied: options.watermarkApplied,
+      status: 'completed',
+      imageUrl: options.imageUrl,
+      model: metadata.model,
+      quality: metadata.quality,
+      size: metadata.size,
+      estimatedCost: metadata.estimatedCost,
+      usage: metadata.usage,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(requestRef, {
+      type: metadata.type || 'image_generation',
+      subjectType: metadata.subjectType || 'human',
+      model: metadata.model,
+      quality: metadata.quality,
+      size: metadata.size,
+      usage: metadata.usage,
+      estimatedCost: metadata.estimatedCost,
+      watermarkApplied: options.watermarkApplied,
+      imageUrl: options.imageUrl,
+      status: 'completed',
+      success: true,
+      refunded: false,
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(generationLockRef, {
+      requestId,
+      status: 'completed',
+      releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(userRef, buildUserAccountPayload(nextAccount, user.email || account.email), { merge: true });
+  });
 };
 
 const markVideoGenerationCompleted = async (
@@ -1163,6 +1378,8 @@ const refundChargedRequest = async (
   const generationLockRef = db.collection(lockCollection).doc(user.uid);
   const result: RefundResult = {
     refunded: false,
+    dailyCreditAfter: null,
+    paidCreditAfter: null,
     balanceAfter: null,
   };
 
@@ -1187,12 +1404,22 @@ const refundChargedRequest = async (
     const chargedCost = typeof requestData?.cost === 'number' && Number.isFinite(requestData.cost)
       ? Math.max(0, requestData.cost)
       : GENERATION_COST;
-    const nextCredits = currentProfile.credits + chargedCost;
+    const usedCreditType = requestData?.usedCreditType === 'paid' ? 'paid' : 'daily';
+    const nextProfile: UserAccount = usedCreditType === 'paid'
+      ? {
+          ...currentProfile,
+          paidCredit: currentProfile.paidCredit + chargedCost,
+          credits: currentProfile.dailyCredit + currentProfile.paidCredit + chargedCost,
+        }
+      : {
+          ...currentProfile,
+          dailyCredit: currentProfile.dailyCredit + chargedCost,
+          credits: currentProfile.dailyCredit + chargedCost + currentProfile.paidCredit,
+        };
 
-    transaction.set(userRef, {
-      credits: nextCredits,
-      lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    transaction.set(userRef, buildUserAccountPayload(nextProfile, user.email || currentProfile.email, {
+      touchLogin: true,
+    }), { merge: true });
     transaction.set(requestRef, {
       status: 'refunded',
       success: false,
@@ -1208,11 +1435,22 @@ const refundChargedRequest = async (
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     if (chargedCost > 0) {
-      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_refund', chargedCost, nextCredits, `refund request ${requestId}`);
+      writeCreditTransaction(transaction, {
+        uid: user.uid,
+        email: user.email || currentProfile.email,
+        type: 'refund',
+        amount: chargedCost,
+        balanceDailyAfter: nextProfile.dailyCredit,
+        balancePaidAfter: nextProfile.paidCredit,
+        relatedGenerationId: buildGenerationRequestDocId(user.uid, requestId),
+        memo: `refund request ${requestId}`,
+      });
     }
 
     result.refunded = chargedCost > 0;
-    result.balanceAfter = nextCredits;
+    result.dailyCreditAfter = nextProfile.dailyCredit;
+    result.paidCreditAfter = nextProfile.paidCredit;
+    result.balanceAfter = nextProfile.credits;
   });
 
   return result;
@@ -1224,9 +1462,352 @@ const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string
 const refundVideoGenerationCharge = async (user: AuthenticatedUser, requestId: string, errorMessage: string): Promise<RefundResult> =>
   refundChargedRequest(user, requestId, errorMessage, 'videoGenerationLocks');
 
+const buildWatermarkSvg = (width: number, height: number): Buffer => Buffer.from(`
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="rgba(0,0,0,0.35)"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="${Math.max(16, width - 260)}" y="${Math.max(16, height - 84)}" rx="24" ry="24" width="220" height="52" fill="rgba(255,255,255,0.88)"/>
+    <text
+      x="${Math.max(16, width - 150)}"
+      y="${Math.max(16, height - 50)}"
+      font-size="24"
+      font-family="Arial, Helvetica, sans-serif"
+      font-weight="700"
+      text-anchor="middle"
+      fill="#8f361a"
+    >HAMDEVA AI</text>
+  </g>
+</svg>`.trim());
+
+const applyWatermarkToImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
+  const image = sharp(imageBuffer);
+  const metadata = await image.metadata();
+  const width = metadata.width ?? GENERATED_RESPONSE_IMAGE_WIDTH;
+  const height = metadata.height ?? 1024;
+
+  return image
+    .composite([{ input: buildWatermarkSvg(width, height), top: 0, left: 0 }])
+    .png()
+    .toBuffer();
+};
+
+const createStoredImageDataUrl = async (imageBuffer: Buffer): Promise<string> => {
+  const resized = await sharp(imageBuffer)
+    .resize({ width: GENERATED_HISTORY_IMAGE_WIDTH, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 88 })
+    .toBuffer();
+
+  return `data:image/jpeg;base64,${resized.toString('base64')}`;
+};
+
+const buildGeneratedImageAssets = async (
+  mimeType: string,
+  imageData: string,
+  watermarkApplied: boolean,
+): Promise<{ responseDataUrl: string; responseMimeType: string; storedImageUrl: string }> => {
+  const sourceBuffer = Buffer.from(imageData, 'base64');
+  const responseBuffer = watermarkApplied ? await applyWatermarkToImageBuffer(sourceBuffer) : sourceBuffer;
+  const responseMimeType = watermarkApplied ? 'image/png' : mimeType;
+
+  return {
+    responseDataUrl: `data:${responseMimeType};base64,${responseBuffer.toString('base64')}`,
+    responseMimeType,
+    storedImageUrl: await createStoredImageDataUrl(responseBuffer),
+  };
+};
+
+const getAppBaseUrl = (req: functions.https.Request): string => {
+  const configuredBaseUrl = process.env['APP_BASE_URL']?.trim() || functions.config()?.app?.base_url?.trim() || '';
+  if (configuredBaseUrl) {
+    return configuredBaseUrl.replace(/\/+$/, '');
+  }
+
+  const origin = req.get('origin') ?? '';
+  if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return origin.replace(/\/+$/, '');
+  }
+
+  return CORS_ORIGIN[0];
+};
+
+const getStripeProductFromSession = (session: StripeCheckoutSession) => {
+  const rawProductId = session.metadata?.productId;
+  if (!isPaymentProductId(rawProductId)) {
+    throw new Error('INVALID_PRODUCT');
+  }
+
+  return STRIPE_PRODUCTS[rawProductId];
+};
+
+const getStripeSessionUid = (session: StripeCheckoutSession): string => {
+  const metadataUid = session.metadata?.uid;
+  if (typeof metadataUid === 'string' && metadataUid) {
+    return metadataUid;
+  }
+
+  return typeof session.client_reference_id === 'string' ? session.client_reference_id : '';
+};
+
+const markPaymentStatus = async (
+  session: StripeCheckoutSession,
+  status: Exclude<PaymentStatus, 'paid'>,
+): Promise<void> => {
+  const uid = getStripeSessionUid(session);
+  const product = getStripeProductFromSession(session);
+  const paymentRef = db.collection('payments').doc(buildPaymentDocId(session.id));
+
+  await paymentRef.set({
+    uid,
+    provider: STRIPE_PROVIDER,
+    providerPaymentId: session.id,
+    productId: product.id,
+    amount: product.amountUsd,
+    amountCents: product.amountCents,
+    currency: product.currency,
+    paidCredit: product.paidCredit,
+    status,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+};
+
+const fulfillCheckoutSession = async (session: StripeCheckoutSession): Promise<void> => {
+  const uid = getStripeSessionUid(session);
+  const product = getStripeProductFromSession(session);
+  if (!uid) {
+    throw new Error('INVALID_PAYMENT_UID');
+  }
+
+  const paymentRef = db.collection('payments').doc(buildPaymentDocId(session.id));
+  const userRef = db.collection('users').doc(uid);
+  const email = session.customer_details?.email || session.customer_email || '';
+
+  await db.runTransaction(async (transaction) => {
+    const [paymentSnapshot, userSnapshot] = await Promise.all([
+      transaction.get(paymentRef),
+      transaction.get(userRef),
+    ]);
+
+    const existingPayment = paymentSnapshot.data();
+    if (existingPayment?.status === 'paid') {
+      return;
+    }
+
+    let account = normalizeUserAccount(email, userSnapshot.data());
+    const reset = applyDailyResetIfNeeded(transaction, { uid, email }, account);
+    account = reset.account;
+    account = {
+      ...account,
+      paidCredit: account.paidCredit + product.paidCredit,
+      credits: account.dailyCredit + account.paidCredit + product.paidCredit,
+    };
+
+    transaction.set(
+      userRef,
+      buildUserAccountPayload(account, email || account.email, {
+        setCreatedAt: !userSnapshot.exists,
+        setLastDailyResetAt: reset.dailyResetApplied,
+      }),
+      { merge: true },
+    );
+    transaction.set(paymentRef, {
+      uid,
+      provider: STRIPE_PROVIDER,
+      providerPaymentId: session.id,
+      productId: product.id,
+      amount: product.amountUsd,
+      amountCents: product.amountCents,
+      currency: product.currency,
+      paidCredit: product.paidCredit,
+      status: 'paid',
+      createdAt: paymentSnapshot.exists ? existingPayment?.createdAt ?? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    writeCreditTransaction(transaction, {
+      uid,
+      email: email || account.email,
+      type: 'charge',
+      amount: product.paidCredit,
+      balanceDailyAfter: account.dailyCredit,
+      balancePaidAfter: account.paidCredit,
+      relatedPaymentId: paymentRef.id,
+      memo: `${product.id} checkout credit charge`,
+    });
+  });
+};
+
+const getCheckoutSessionStatus = async (
+  user: AuthenticatedUser,
+  sessionId: string,
+): Promise<PaymentSessionStatusResult> => {
+  const paymentRef = db.collection('payments').doc(buildPaymentDocId(sessionId));
+  const [paymentSnapshot, userSnapshot] = await Promise.all([
+    paymentRef.get(),
+    db.collection('users').doc(user.uid).get(),
+  ]);
+  const account = normalizeUserAccount(user.email, userSnapshot.data());
+
+  if (paymentSnapshot.exists) {
+    const paymentData = paymentSnapshot.data() ?? {};
+    if (paymentData.uid !== user.uid) {
+      throw new Error('FORBIDDEN');
+    }
+
+    return {
+      status: (paymentData.status as PaymentStatus | undefined) ?? 'pending',
+      paymentId: paymentRef.id,
+      paidCredit: typeof paymentData.paidCredit === 'number' ? paymentData.paidCredit : 0,
+      dailyCredit: account.dailyCredit,
+      paidCreditBalance: account.paidCredit,
+      totalCreditBalance: account.credits,
+    };
+  }
+
+  const stripe = requireStripe();
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  if (getStripeSessionUid(session) !== user.uid) {
+    throw new Error('FORBIDDEN');
+  }
+
+  const product = getStripeProductFromSession(session);
+  return {
+    status: session.payment_status === 'paid' ? 'processing' : session.status === 'expired' ? 'canceled' : 'pending',
+    paymentId: null,
+    paidCredit: product.paidCredit,
+    dailyCredit: account.dailyCredit,
+    paidCreditBalance: account.paidCredit,
+    totalCreditBalance: account.credits,
+  };
+};
+
+const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const { productId } = req.body as CheckoutSessionRequest;
+  if (!isPaymentProductId(productId)) {
+    res.status(400).json({ error: 'INVALID_PRODUCT', message: '유효하지 않은 상품입니다.' });
+    return;
+  }
+
+  const stripe = requireStripe();
+  const product = STRIPE_PRODUCTS[productId];
+  const baseUrl = getAppBaseUrl(req);
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    success_url: `${baseUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/payment-failed`,
+    client_reference_id: user.uid,
+    customer_email: user.email || undefined,
+    metadata: {
+      uid: user.uid,
+      productId: product.id,
+      paidCredit: String(product.paidCredit),
+    },
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: product.currency,
+          unit_amount: product.amountCents,
+          product_data: {
+            name: product.name,
+            description: `${product.paidCredit} paid credits`,
+          },
+        },
+      },
+    ],
+  });
+
+  res.json({
+    success: true,
+    sessionId: session.id,
+    url: session.url,
+  });
+};
+
+const handleCheckoutSessionStatusRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : '';
+  if (!sessionId) {
+    res.status(400).json({ error: 'SESSION_ID_REQUIRED', message: 'sessionId is required.' });
+    return;
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const status = await getCheckoutSessionStatus(user, sessionId);
+  res.json({
+    success: true,
+    ...status,
+  });
+};
+
+const handleStripeWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const stripe = requireStripe();
+  const webhookSecret = getStripeWebhookSecret();
+  if (!webhookSecret) {
+    throw new Error(STRIPE_CONFIG_ERROR);
+  }
+
+  const signature = req.get('stripe-signature') ?? '';
+  if (!signature) {
+    res.status(400).json({ error: 'MISSING_SIGNATURE' });
+    return;
+  }
+
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, signature, webhookSecret);
+  } catch (error) {
+    functions.logger.error('Stripe webhook signature verification failed', error);
+    res.status(400).json({ error: 'INVALID_SIGNATURE' });
+    return;
+  }
+
+  try {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
+      await fulfillCheckoutSession(event.data.object as StripeCheckoutSession);
+    } else if (event.type === 'checkout.session.async_payment_failed') {
+      await markPaymentStatus(event.data.object as StripeCheckoutSession, 'failed');
+    } else if (event.type === 'checkout.session.expired') {
+      await markPaymentStatus(event.data.object as StripeCheckoutSession, 'canceled');
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    functions.logger.error('Stripe webhook processing failed', {
+      eventType: event.type,
+      message: error instanceof Error ? error.message : 'unknown',
+      error,
+    });
+    res.status(500).json({ error: 'WEBHOOK_PROCESSING_FAILED' });
+  }
+};
+
 const handleApiError = (res: functions.Response, error: unknown, fallbackStatus = 500) => {
   if (error instanceof Error && error.message === 'AUTH_REQUIRED') {
     res.status(401).json({ error: 'AUTH_REQUIRED', message: AUTH_REQUIRED_MESSAGE });
+    return;
+  }
+
+  if (error instanceof Error && error.message === 'FORBIDDEN') {
+    res.status(403).json({ error: 'FORBIDDEN', message: '접근 권한이 없습니다.' });
     return;
   }
 
@@ -1235,8 +1816,8 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
     return;
   }
 
-  if (error instanceof Error && error.message === NOT_ENOUGH_VIDEO_CREDITS_ERROR) {
-    res.status(402).json({ error: NOT_ENOUGH_VIDEO_CREDITS_ERROR, message: NOT_ENOUGH_CREDITS_MESSAGE, cost: VIDEO_GENERATION_COST });
+  if (error instanceof Error && error.message === STRIPE_CONFIG_ERROR) {
+    res.status(500).json({ error: STRIPE_CONFIG_ERROR, message: STRIPE_CONFIG_MESSAGE });
     return;
   }
 
@@ -1294,25 +1875,35 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
 
   try {
     const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
-    await markGenerationCompleted(user, requestId, generatedImage.metadata);
-    const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
-    res.json({
-      success: true,
-      image: resultDataUrl,
-      mimeType: generatedImage.mimeType,
-      subjectType: resolvedSubjectType,
-      creditsRemaining: chargeResult.creditsAfterCharge,
-      signupBonusGranted: chargeResult.signupBonusGranted,
-      dailyRewardGranted: chargeResult.dailyRewardGranted,
-      subscriptionBonusGranted: chargeResult.subscriptionBonusGranted,
+    const watermarkApplied = chargeResult.usedCreditType === 'daily';
+    const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
+    await markGenerationCompleted(user, requestId, generatedImage.metadata, {
+      imageUrl: imageAssets.storedImageUrl,
+      usedCreditType: chargeResult.usedCreditType,
+      usedCreditAmount: chargeResult.chargedAmount,
+      watermarkApplied,
     });
+    const response: TryOnSuccessResponse = {
+      success: true,
+      image: imageAssets.responseDataUrl,
+      mimeType: imageAssets.responseMimeType,
+      subjectType: resolvedSubjectType,
+      usedCreditType: chargeResult.usedCreditType,
+      watermarkApplied,
+      dailyCredit: chargeResult.dailyCreditAfterCharge,
+      paidCredit: chargeResult.paidCreditAfterCharge,
+      creditsRemaining: chargeResult.creditsAfterCharge,
+      totalGenerated: chargeResult.profile.totalGenerated + 1,
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted),
+    };
+    res.json(response);
     return;
   } catch (error) {
     functions.logger.error(`OpenAI ${label} request failed`, error);
     const errorMessage = error instanceof Error ? error.message : 'OpenAI image generation failed';
     const refundResult = await refundGenerationCharge(user, requestId, errorMessage).catch((refundError) => {
       functions.logger.error('Failed to refund credits after generation error', refundError);
-      return { refunded: false, balanceAfter: null } satisfies RefundResult;
+      return { refunded: false, dailyCreditAfter: null, paidCreditAfter: null, balanceAfter: null } satisfies RefundResult;
     });
     const refundedMessage = refundResult.refunded ? ' 100 credits refunded due to generation failure.' : '';
     const errorCode = errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage;
@@ -1320,7 +1911,10 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       error: errorCode,
       message: `${errorMessage}${refundedMessage}`.trim(),
       refunded: refundResult.refunded,
+      dailyCredit: refundResult.dailyCreditAfter ?? chargeResult.dailyCreditAfterCharge,
+      paidCredit: refundResult.paidCreditAfter ?? chargeResult.paidCreditAfterCharge,
       creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
+      ...buildApiBonusFields(chargeResult.dailyRewardGranted),
     });
   }
 };
@@ -1395,6 +1989,8 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
       requestId,
       openaiVideoId: videoJob.id,
       status: videoJob.status,
+      dailyCredit: chargeResult.dailyCreditAfterCharge,
+      paidCredit: chargeResult.paidCreditAfterCharge,
       creditsRemaining: chargeResult.creditsAfterCharge,
       estimatedCost: videoJob.estimatedCost,
       subjectType: resolvedSubjectType,
@@ -1403,12 +1999,14 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     const errorMessage = error instanceof Error ? error.message : 'OpenAI video generation failed';
     const refundResult = await refundVideoGenerationCharge(user, requestId, errorMessage).catch((refundError) => {
       functions.logger.error('Failed to refund credits after video generation error', refundError);
-      return { refunded: false, balanceAfter: null } satisfies RefundResult;
+      return { refunded: false, dailyCreditAfter: null, paidCreditAfter: null, balanceAfter: null } satisfies RefundResult;
     });
     res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({
       error: errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage,
       message: errorMessage,
       refunded: refundResult.refunded,
+      dailyCredit: refundResult.dailyCreditAfter ?? chargeResult.dailyCreditAfterCharge,
+      paidCredit: refundResult.paidCreditAfter ?? chargeResult.paidCreditAfterCharge,
       creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
     });
   }
@@ -1569,7 +2167,14 @@ export const api = functions
       try {
         const user = await requireAuthenticatedUser(req);
         const result = await bootstrapUserCredits(user);
-        res.json({ success: true, ...result, generationCost: GENERATION_COST, videoGenerationCost: VIDEO_GENERATION_COST });
+        const response: BootstrapResponse = {
+          success: true,
+          ...result,
+          ...buildApiBonusFields(result.dailyRewardGranted),
+          generationCost: GENERATION_COST,
+          videoGenerationCost: VIDEO_GENERATION_COST,
+        };
+        res.json(response);
       } catch (error) {
         handleApiError(res, error, 500);
       }
@@ -1582,7 +2187,10 @@ export const api = functions
         const snapshot = await db.collection('users').doc(user.uid).get();
         const profile = normalizeUserAccount(user.email, snapshot.data());
         res.json({
+          dailyCredit: profile.dailyCredit,
+          paidCredit: profile.paidCredit,
           credits: profile.credits,
+          totalGenerated: profile.totalGenerated,
           isSubscribed: profile.isSubscribed,
           subscriptionPlan: profile.subscriptionPlan,
           role: profile.role,
@@ -1597,6 +2205,29 @@ export const api = functions
 
     if (req.method === 'POST' && normalizedPath === '/classify-subject') {
       await handleSubjectClassificationRequest(req, res);
+      return;
+    }
+
+    if (normalizedPath === '/stripe/webhook') {
+      await handleStripeWebhookRequest(req, res);
+      return;
+    }
+
+    if (normalizedPath === '/stripe/checkout') {
+      try {
+        await handleCreateCheckoutSessionRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (normalizedPath === '/stripe/session') {
+      try {
+        await handleCheckoutSessionStatusRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
       return;
     }
 

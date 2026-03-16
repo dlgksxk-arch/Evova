@@ -330,5 +330,91 @@
     "email": "Reply email",
     "message": "Message",
     "send": "Send Email"
+  },
+  "ui": {
+    "heroCta": "Start AI Fitting",
+    "sampleBadge": "SAMPLE",
+    "firebaseConfigMissing": "Firebase configuration missing",
+    "firebaseDisabledMessage": "Firebase is not configured, so login is unavailable. Check the administrator settings or verify the .env values.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password"
+  },
+  "uploadGuides": {
+    "faceTips": [
+      "A clear photo close to the front view works best.",
+      "Use a photo where the face is not blocked by hair, hands, masks, glasses, or props.",
+      "Bright lighting and a simple background improve recognition.",
+      "Upper-body or face-focused photos work best."
+    ],
+    "clothTips": [
+      "A photo that clearly shows the full clothing shape works best.",
+      "Use an image where the outfit is not cropped and the background is simple.",
+      "Front-facing clothing photos with fewer wrinkles or obstructions produce better results."
+    ],
+    "faceCopyrightNotice": "Do not use celebrity photos without permission or rights.",
+    "clothingSafetyNotice": "Do not upload overly revealing or sexually explicit clothing images.",
+    "resultPrivacyNotice": "This image is not stored and is processed temporarily only for preview and download."
+  },
+  "emptyPreview": {
+    "faceBadge": "FACE GUIDE",
+    "styleBadge": "STYLE GUIDE"
+  },
+  "sampleModal": {
+    "title": "Choose Sample",
+    "subtitle": "Select a sample image for the preview.",
+    "error": "Image error",
+    "disclaimer": "All images were generated with AI.",
+    "categories": {
+      "female": "Women",
+      "male": "Men",
+      "dog": "Dog",
+      "cat": "Cat"
+    }
+  },
+  "clothSampleModal": {
+    "title": "Choose Clothing Sample",
+    "subtitle": "Select a sample outfit for the preview.",
+    "error": "Image error",
+    "disclaimer": "All images were generated with AI.",
+    "categories": {
+      "female": "Women",
+      "male": "Men",
+      "animal": "Animal",
+      "fashin": "Fashion",
+      "future": "Future",
+      "classic": "Classic"
+    }
+  },
+  "login": {
+    "signedInAs": "Signed in as {{email}}.",
+    "googleUser": "Google user",
+    "signOut": "Sign out",
+    "loginWithEmail": "Log in with email",
+    "createAccount": "Create account",
+    "continueWithGoogle": "Continue with Google",
+    "needAccount": "Need an account? Sign up",
+    "haveAccount": "Already have an account? Log in"
+  },
+  "errors": {
+    "auth": {
+      "invalidCredential": "Invalid email or password.",
+      "userNotFound": "No account exists for this email.",
+      "emailAlreadyInUse": "This email is already registered.",
+      "popupClosed": "The Google sign-in popup was closed.",
+      "unauthorizedDomain": "This domain is not registered in Firebase Auth allowed domains. Ask the administrator to verify the domain settings.",
+      "unauthorizedDomainWithHost": "This domain ({{hostname}}) is not registered in Firebase Auth allowed domains. Ask the administrator to verify the domain settings.",
+      "invalidApiKey": "Firebase configuration is not ready yet. Please contact the administrator.",
+      "tooManyRequests": "Too many attempts. Please try again later.",
+      "firebaseAuthNotConfigured": "Firebase Auth is not configured.",
+      "googleSignInNotConfigured": "Google sign-in is not configured.",
+      "enterEmailPassword": "Enter both email and password.",
+      "authenticationFailed": "Authentication failed."
+    },
+    "generation": {
+      "timeoutDetail": "The request timed out while waiting for the server response. Please try again in a moment.",
+      "prepTimeoutDetail": "Preparing the uploaded images took too long. Re-select the images and try again.",
+      "authTimeoutDetail": "Checking your login state took too long. Please sign in again and retry.",
+      "resultImageTimeoutDetail": "Preparing the generated image for display took too long. Please try again in a moment."
+    }
   }
 }
