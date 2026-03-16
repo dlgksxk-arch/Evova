@@ -4,6 +4,7 @@ export default {
     const isApiRequest = url.pathname.startsWith('/api/');
     const isLegacyTryOnRequest = url.pathname === '/generateTryOn';
 
+    // Preflight handling
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
@@ -11,6 +12,7 @@ export default {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
           'Access-Control-Allow-Headers': '*',
+          'Access-Control-Max-Age': '86400',
         },
       });
     }
@@ -19,7 +21,7 @@ export default {
 
     if (isApiRequest) {
       targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
-      targetUrl.pathname = url.pathname.replace(/^\/api/, '/api');
+      targetUrl.pathname = url.pathname;
     } else if (isLegacyTryOnRequest) {
       targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
     } else {
@@ -34,6 +36,7 @@ export default {
 
     const proxyRequest = new Request(targetUrl.toString(), request);
     const response = await fetch(proxyRequest);
+
     console.log('[HAMDEVA-worker] proxy response', {
       path: url.pathname,
       method: request.method,
@@ -41,5 +44,5 @@ export default {
     });
 
     return response;
-  }
+  },
 };
