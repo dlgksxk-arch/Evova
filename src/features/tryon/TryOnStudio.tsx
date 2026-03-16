@@ -176,7 +176,16 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onOpenResultPreview,
   getSubjectTypeLabel,
   formatSecondsLabel,
-}) => (
+}) => {
+  const videoHelperText = lang === 'ko'
+    ? '생성된 이미지를 기반으로 영상을 생성합니다.'
+    : lang === 'ja'
+      ? '生成された画像をもとに動画を生成します。'
+      : lang === 'zh'
+        ? '视频会基于已生成的图片创建。'
+        : 'The video is generated from the created image.';
+
+  return (
   <section id="try" className="section try-section">
     <div className="section-inner">
       <div className="usage-bar">
@@ -411,6 +420,29 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         )}
       </div>
 
+      <div className="action-section video-action-section page-article">
+        <p className="real-generation-label">{subjectUi.videoPrompt}</p>
+        <p className="credit-cost-text">{videoHelperText}</p>
+        <button
+          className="generate-btn"
+          disabled={!finalImageSrc || isGeneratingVideo || !canAffordVideo}
+          onClick={onGenerateVideo}
+          type="button"
+        >
+          {isGeneratingVideo ? <><span className="spinner"></span>{subjectUi.videoGenerating}</> : subjectUi.videoButton}
+        </button>
+        {!finalImageSrc && <p className="loading-subtext">{videoHelperText}</p>}
+        {finalImageSrc && !canAffordVideo && <p className="loading-subtext">{copy.notEnoughCredits}</p>}
+        {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
+        {generatedVideoUrl && (
+          <div className="composite-result result-video-shell">
+            <video controls playsInline preload="metadata" className="is-visible">
+              <source src={generatedVideoUrl} type="video/mp4" />
+            </video>
+          </div>
+        )}
+      </div>
+
       {finalImageSrc && (
         <div id="result-area" className="results-section">
           <h2 className="section-heading">{copy.resultTitle}</h2>
@@ -442,7 +474,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             imageSrc={finalImageSrc}
             link={shareResultLink}
             disableDownload={resultPreviewState !== 'ready'}
-            showVideoControls={true}
+            showVideoControls={false}
             showVideoPrompt={showVideoPrompt}
             isGeneratingVideo={isGeneratingVideo}
             canAffordVideo={canAffordVideo}
@@ -478,5 +510,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     </div>
   </section>
 );
+};
 
 export default TryOnStudio;

@@ -1915,6 +1915,10 @@ a { color: inherit; text-decoration: none; }
    Action
    ════════════════════════════════════════════════════════════════ */
 .action-section { text-align: center; }
+.video-action-section {
+  max-width: 760px;
+  margin: 22px auto 0;
+}
 .subject-type-panel {
   max-width: 760px;
   margin: 0 auto 20px;
@@ -2167,6 +2171,9 @@ a { color: inherit; text-decoration: none; }
 .result-video-panel {
   margin-top: 18px;
   text-align: center;
+}
+.video-action-section .result-video-shell {
+  margin-top: 18px;
 }
 .result-video-panel p {
   margin-bottom: 14px;

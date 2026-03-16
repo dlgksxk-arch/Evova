@@ -32,6 +32,23 @@ const EMPTY_SUMMARY: AdminSummary = {
   estimatedVideoCost: 0,
 };
 
+const getTimestampMillis = (value: unknown): number => {
+  if (!value || typeof value !== 'object') {
+    return 0;
+  }
+
+  const candidate = value as { toDate?: () => Date };
+  if (typeof candidate.toDate === 'function') {
+    try {
+      return candidate.toDate().getTime();
+    } catch {
+      return 0;
+    }
+  }
+
+  return 0;
+};
+
 export const useAdminDashboardData = ({
   db,
   enabled,
@@ -61,13 +78,13 @@ export const useAdminDashboardData = ({
 
     const loadAdminData = async () => {
       const [
-        usersCountSnapshot,
-        postsCountSnapshot,
-        sharedResultsCountSnapshot,
-        usersSnapshot,
-        generationSnapshot,
-        creditSnapshot,
-      ] = await Promise.all([
+        usersCountResult,
+        postsCountResult,
+        sharedResultsCountResult,
+        usersResult,
+        generationResult,
+        creditResult,
+      ] = await Promise.allSettled([
         getCountFromServer(collection(db, 'users')),
         getCountFromServer(collection(db, 'bbsPosts')),
         getCountFromServer(collection(db, 'publicResults')),
@@ -80,29 +97,47 @@ export const useAdminDashboardData = ({
         return;
       }
 
+      const getCount = (result: PromiseSettledResult<Awaited<ReturnType<typeof getCountFromServer>>>) => {
+        if (result.status === 'fulfilled') {
+          return result.value.data().count;
+        }
+        console.error('Failed to load admin count:', result.reason);
+        return 0;
+      };
+      const getSnapshots = <T,>(result: PromiseSettledResult<T[] | any>) => {
+        if (result.status === 'fulfilled') {
+          return result.value.docs ?? [];
+        }
+        console.error('Failed to load admin snapshot:', result.reason);
+        return [];
+      };
+
+      const userDocs = getSnapshots(usersResult);
+      const generationDocs = getSnapshots(generationResult);
+      const creditDocs = getSnapshots(creditResult);
       const now = Date.now();
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-      const allGenerationLogs = generationSnapshot.docs.map((snapshot) => ({
+      const allGenerationLogs = generationDocs.map((snapshot: any) => ({
         id: snapshot.id,
         ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
       }));
       const imageGenerationLogs = allGenerationLogs.filter((item) => (item.type || 'image_generation') === 'image_generation');
       const videoGenerationLogs = allGenerationLogs.filter((item) => item.type === 'video_generation');
-      const todayGenerations = imageGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
-      const todayVideoGenerations = videoGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
-      const recent7DayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= sevenDaysAgo);
+      const todayGenerations = imageGenerationLogs.filter((item) => getTimestampMillis(item.createdAt) >= todayStart.getTime());
+      const todayVideoGenerations = videoGenerationLogs.filter((item) => getTimestampMillis(item.createdAt) >= todayStart.getTime());
+      const recent7DayGenerations = allGenerationLogs.filter((item) => getTimestampMillis(item.createdAt) >= sevenDaysAgo);
       const totalEstimatedCost = allGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
       const todayEstimatedCost = todayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
       const recent7DaysEstimatedCost = recent7DayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
       const estimatedVideoCost = videoGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
 
       setAdminSummary({
-        users: usersCountSnapshot.data().count,
-        posts: postsCountSnapshot.data().count,
+        users: getCount(usersCountResult),
+        posts: getCount(postsCountResult),
         generations: allGenerationLogs.length,
-        sharedResults: sharedResultsCountSnapshot.data().count,
+        sharedResults: getCount(sharedResultsCountResult),
         todayGenerations: todayGenerations.length,
         todayEstimatedCost,
         totalEstimatedCost,
@@ -111,12 +146,12 @@ export const useAdminDashboardData = ({
         todayVideoGenerations: todayVideoGenerations.length,
         estimatedVideoCost,
       });
-      setAdminUsers(usersSnapshot.docs.map((snapshot) => ({
+      setAdminUsers(userDocs.map((snapshot: any) => ({
         id: snapshot.id,
         ...(snapshot.data() as Omit<AdminUserRecord, 'id'>),
       })));
       setAdminGenerationLogs(allGenerationLogs.slice(0, 20));
-      setAdminCreditLogs(creditSnapshot.docs.map((snapshot) => ({
+      setAdminCreditLogs(creditDocs.map((snapshot: any) => ({
         id: snapshot.id,
         ...(snapshot.data() as Omit<CreditLogRecord, 'id'>),
       })));
