@@ -2455,11 +2455,39 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
   useEffect(() => {
-    setPersonPreviewState(!activePersonImage ? 'idle' : personFile ? 'ready' : 'loading');
-  }, [activePersonImage, personFile]);
+    if (!activePersonImage) {
+      setPersonPreviewState('idle');
+      return;
+    }
+
+    if (personFile) {
+      setPersonPreviewState('ready');
+      return;
+    }
+
+    if (personImage?.startsWith('data:')) {
+      return;
+    }
+
+    setPersonPreviewState('loading');
+  }, [activePersonImage, personFile, personImage]);
   useEffect(() => {
-    setClothPreviewState(!activeClothImage ? 'idle' : clothFile ? 'ready' : 'loading');
-  }, [activeClothImage, clothFile]);
+    if (!activeClothImage) {
+      setClothPreviewState('idle');
+      return;
+    }
+
+    if (clothFile) {
+      setClothPreviewState('ready');
+      return;
+    }
+
+    if (clothImage?.startsWith('data:')) {
+      return;
+    }
+
+    setClothPreviewState('loading');
+  }, [activeClothImage, clothFile, clothImage]);
   useEffect(() => {
     if (!finalImageSrc) {
       setResultPreviewState('idle');
