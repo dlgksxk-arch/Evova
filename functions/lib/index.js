@@ -177,10 +177,13 @@ One model only.
 One image only.
 Full body visible from head to toe.
 Show the entire head, full hair, full body, both hands, both feet, and the complete outfit inside the frame.
+Show the complete hairstyle and all hair volume clearly inside the frame.
 Use a slightly wider, zoomed-out camera framing so the subject is fully visible.
+Use a wider full-body long shot instead of a close fashion crop.
 Frame the shot with clear space above the head and below the feet.
+Leave noticeable margin above the hair and below the shoes.
 Keep the full silhouette comfortably inside the image boundaries.
-Do not crop the top of the head, hair, arms, hands, legs, or feet.
+Do not crop the top of the head, any part of the hair, arms, hands, legs, or feet.
 Leave comfortable space around the subject so the full body fits naturally in frame.
 Avoid close-up or tight crop composition.
 No face distortion.
