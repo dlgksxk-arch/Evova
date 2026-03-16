@@ -18,6 +18,8 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ className }) => {
   const { t } = useTranslation();
+  const loginComingSoonLabel = `${t('login.loginWithEmail')} (Coming Soon)`;
+  const googleLoginComingSoonLabel = `${t('login.continueWithGoogle')} (Coming Soon)`;
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -162,22 +164,26 @@ const Login: React.FC<LoginProps> = ({ className }) => {
 
           {error && <p className="auth-error-text">{error}</p>}
 
-          <button className="generate-btn auth-submit-btn" disabled={isSubmitting} type="submit">
-            {mode === 'login' ? t('login.loginWithEmail') : t('login.createAccount')}
+          <button
+            className={`generate-btn auth-submit-btn ${mode === 'login' ? 'auth-disabled-btn' : ''}`}
+            disabled={mode === 'login' ? true : isSubmitting}
+            type="submit"
+          >
+            {mode === 'login' ? loginComingSoonLabel : t('login.createAccount')}
           </button>
 
           <button
-            className="outline-btn auth-google-btn"
-            disabled={isSubmitting}
+            className="outline-btn auth-google-btn auth-disabled-btn"
+            disabled={true}
             onClick={handleGoogleLogin}
             type="button"
           >
-            {t('login.continueWithGoogle')}
+            {googleLoginComingSoonLabel}
           </button>
 
           <button
             className="text-link-btn auth-switch-btn"
-            disabled={isSubmitting}
+            disabled={mode === 'signup'}
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             type="button"
           >

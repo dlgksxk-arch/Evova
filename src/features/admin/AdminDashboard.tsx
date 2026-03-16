@@ -57,8 +57,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <article className="page-article">
         <h2>{copy.adminTitle}</h2>
         <p>{copy.authRequired}</p>
-        <button className="generate-btn auth-inline-btn" onClick={onOpenAuth} type="button">
-          {copy.login}
+        <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={onOpenAuth} type="button">
+          {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
         </button>
       </article>
     );

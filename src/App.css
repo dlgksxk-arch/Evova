@@ -178,6 +178,11 @@ body {
 button { font-family: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
+.auth-disabled-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* ════════════════════════════════════════════════════════════════
    Navbar
    ════════════════════════════════════════════════════════════════ */
@@ -1269,9 +1274,54 @@ a { color: inherit; text-decoration: none; }
   font-size: 14px;
 }
 
+.credit-plan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.credit-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.credit-plan-badge.accent {
+  background: color-mix(in srgb, #f29d2e 18%, transparent);
+  color: #9a5200;
+}
+
 .credit-plan-copy strong {
   color: var(--text);
   font-size: 16px;
+}
+
+.credit-plan-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.credit-plan-compare-price {
+  color: var(--text-muted);
+  font-size: 14px;
+  text-decoration: line-through;
+}
+
+.credit-plan-sale-price {
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 900;
 }
 
 .mypage-modal-shell .mypage-layout,
@@ -2125,6 +2175,29 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   display: block;
 }
+.result-preview-image.is-zoomable {
+  cursor: zoom-in;
+}
+.result-preview-shell {
+  max-width: min(92vw, 980px);
+}
+.result-preview-shell .account-modal-body {
+  padding-top: 0;
+}
+.result-preview-modal-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.result-preview-modal-image {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(78vh, 920px);
+  border-radius: 18px;
+  object-fit: contain;
+  background: color-mix(in srgb, var(--bg-alt) 92%, transparent);
+}
 /* ════════════════════════════════════════════════════════════════
    Modal (Sample Selection)
    ════════════════════════════════════════════════════════════════ */
@@ -2693,6 +2766,13 @@ a { color: inherit; text-decoration: none; }
   .content-modal {
     max-width: calc(100vw - 12px) !important;
     padding: 12px 10px !important;
+  }
+  .result-preview-shell {
+    max-width: calc(100vw - 12px);
+  }
+  .result-preview-modal-image {
+    max-height: 72vh;
+    border-radius: 14px;
   }
   .sample-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));

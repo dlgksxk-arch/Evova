@@ -20,6 +20,7 @@ interface AuthModalProps {
   password: string;
   error: string | null;
   isSubmitting: boolean;
+  loginDisabled?: boolean;
   mode: AuthMode;
   onClose: () => void;
   onEmailChange: (value: string) => void;
@@ -35,6 +36,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   password,
   error,
   isSubmitting,
+  loginDisabled = false,
   mode,
   onClose,
   onEmailChange,
@@ -43,6 +45,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
   onSubmit,
   onSwitchMode,
 }) => {
+  const loginActionsDisabled = loginDisabled || isSubmitting;
+  const loginSwitchDisabled = loginDisabled && mode === 'signup';
+
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -87,16 +92,27 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
           {error && <p className="auth-error-text">{error}</p>}
 
-          <button className="generate-btn auth-submit-btn" disabled={isSubmitting} onClick={onSubmit} type="button">
+          <button
+            className={`generate-btn auth-submit-btn ${mode === 'login' ? 'auth-disabled-btn' : ''}`}
+            disabled={mode === 'login' ? loginActionsDisabled : isSubmitting}
+            onClick={onSubmit}
+            type="button"
+          >
             {mode === 'login' ? copy.loginButton : copy.signupButton}
           </button>
 
-          <button className="outline-btn auth-google-btn" disabled={isSubmitting} onClick={onGoogleLogin} type="button">
+          <button
+            className="outline-btn auth-google-btn auth-disabled-btn"
+            disabled={loginActionsDisabled}
+            onClick={onGoogleLogin}
+            type="button"
+          >
             {copy.googleButton}
           </button>
 
           <button
             className="text-link-btn auth-switch-btn"
+            disabled={loginSwitchDisabled}
             onClick={() => onSwitchMode(mode === 'login' ? 'signup' : 'login')}
             type="button"
           >
@@ -109,4 +125,3 @@ const AuthModal: React.FC<AuthModalProps> = ({
 };
 
 export default AuthModal;
-

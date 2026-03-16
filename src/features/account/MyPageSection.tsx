@@ -15,8 +15,11 @@ interface MyPageSectionProps {
   products: ReadonlyArray<{
     id: CheckoutProductId;
     label: string;
-    priceLabel: string;
+    salePriceUsd: number;
+    compareAtPriceUsd: number;
     paidCredit: number;
+    badge?: string;
+    extraBadge?: string;
   }>;
   copy: Record<string, any>;
   onLogin: () => void;
@@ -67,8 +70,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         <div className="mypage-empty">
           <p>{firebaseDisabledMessage || copy.authRequired}</p>
           {isFirebaseConfigured && (
-            <button className="generate-btn auth-inline-btn" onClick={onLogin} type="button">
-              {copy.login}
+            <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={onLogin} type="button">
+              {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
             </button>
           )}
         </div>
@@ -81,9 +84,16 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         <div className="credit-product-grid">
           {products.map((product) => (
             <article key={product.id} className="credit-product-card">
-              <div>
-                <strong>{product.label}</strong>
-                <p>{product.priceLabel}</p>
+              <div className="credit-plan-copy">
+                <div className="credit-plan-badges">
+                  {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
+                  {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+                </div>
+                <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                <p className="credit-plan-price-row">
+                  <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
+                  <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
+                </p>
                 <p>{copy.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
               </div>
               <button

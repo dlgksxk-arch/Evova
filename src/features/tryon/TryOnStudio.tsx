@@ -101,6 +101,7 @@ interface TryOnStudioProps {
   onTryAnotherOutfit: () => void;
   onRandomOutfit: () => void;
   onGenerateVideo: () => void;
+  onOpenResultPreview: (src: string) => void;
   getSubjectTypeLabel: (lang: LanguageCode, subjectType: SubjectType) => string;
   formatSecondsLabel: (ms: number) => string;
 }
@@ -172,6 +173,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onTryAnotherOutfit,
   onRandomOutfit,
   onGenerateVideo,
+  onOpenResultPreview,
   getSubjectTypeLabel,
   formatSecondsLabel,
 }) => (
@@ -190,8 +192,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <button className="generate-btn auth-inline-btn" onClick={() => copy.openAuthModal('signup')} type="button">
               {copy.signUpGetCredits}
             </button>
-            <button className="outline-btn auth-inline-btn" onClick={() => copy.openAuthModal('login')} type="button">
-              {copy.login}
+            <button className="outline-btn auth-inline-btn auth-disabled-btn" disabled onClick={() => copy.openAuthModal('login')} type="button">
+              {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
             </button>
           </div>
         </div>
@@ -425,9 +427,14 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <img
                 src={finalImageSrc}
                 alt="Result"
-                className={resultPreviewState === 'ready' ? 'is-visible' : ''}
+                className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
                 onLoad={() => copy.setResultPreviewReady()}
                 onError={() => copy.setResultPreviewError()}
+                onClick={() => {
+                  if (resultPreviewState === 'ready') {
+                    onOpenResultPreview(finalImageSrc);
+                  }
+                }}
               />
             )}
           </div>

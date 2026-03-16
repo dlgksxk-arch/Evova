@@ -68,12 +68,13 @@ const GENERATION_PREP_TIMEOUT_MS = 60_000;
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 75_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
-const VIDEO_GENERATION_COST = 1000;
+const VIDEO_GENERATION_COST = 1500;
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
 const CREDIT_PRODUCTS = [
-  { id: 'starter', label: 'Starter', priceLabel: '$4.99', paidCredit: 5000 },
-  { id: 'creator', label: 'Creator', priceLabel: '$9.99', paidCredit: 12000 },
-  { id: 'pro', label: 'Pro', priceLabel: '$19.99', paidCredit: 26000 },
+  { id: 'starter', label: 'Starter', paidCredit: 1000, salePriceUsd: 3.99, compareAtPriceUsd: 5.69, badge: '30% OFF' },
+  { id: 'creator', label: 'Popular', paidCredit: 5000, salePriceUsd: 15.99, compareAtPriceUsd: 24.99, badge: '36% OFF' },
+  { id: 'pro', label: 'Pro', paidCredit: 10000, salePriceUsd: 29.99, compareAtPriceUsd: 46.99, badge: '36% OFF' },
+  { id: 'studio', label: 'Studio', paidCredit: 25000, salePriceUsd: 59.99, compareAtPriceUsd: 99.99, badge: '40% OFF', extraBadge: 'Best Value' },
 ] as const;
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
@@ -145,7 +146,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: '얼굴 사진 업로드', h1Desc: '정면을 바라보는 전신 또는 상반신 사진을 업로드하세요. 배경이 단순하고 전체적인 체형이 보이면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 체험해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
+    tryTitle: '지금 바로 체험해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
     faceCopyrightNotice: '인물사진에는 유명인을 저작권 없이 사용해서는 안됩니다.',
@@ -214,7 +215,7 @@ const translations = {
     switchToSignup: '계정이 없나요? 회원가입',
     switchToLogin: '이미 계정이 있나요? 로그인',
     authRequired: '생성을 계속하려면 로그인해 주세요.',
-    loginForFree: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
+    loginForFree: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
     credits: '크레딧',
     currentCredits: (n: number) => `현재 보유 크레딧: ${n}`,
     dailyCreditLabel: '오늘 무료 크레딧',
@@ -223,13 +224,13 @@ const translations = {
     generationCost: '1회 생성 = 100 크레딧',
     generationCostDetailed: (n: number) => `1회 생성 = ${n} 크레딧`,
     signUpGetCredits: '회원가입하고 300 크레딧 받기',
-    dailyLoginCredits: '매일 로그인하면 300 크레딧 지급',
+    dailyLoginCredits: '매일 로그인하면 100 크레딧 지급',
     subscriptionCreditBonus: '구독 시 매일 추가 크레딧 지급',
     notEnoughCredits: '크레딧이 부족합니다.',
     refundedAfterFailure: '이미지 생성에 실패하여 100 크레딧이 환불되었습니다.',
     paymentConfigError: '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.',
     duplicateRequestBlocked: '이미 생성 요청이 처리 중입니다. 잠시 후 다시 시도해 주세요.',
-    todayDailyRewardGranted: '오늘의 300 크레딧이 지급되었습니다.',
+    todayDailyRewardGranted: '오늘의 100 크레딧이 지급되었습니다.',
     todayDailyRewardAlreadyClaimed: '오늘은 이미 일일 크레딧을 받았습니다.',
     subscriptionBonusGranted: (n: number) => `구독 보너스 ${n} 크레딧이 추가 지급되었습니다.`,
     signupBonusGranted: (n: number) => `회원가입 보너스 ${n} 크레딧이 지급되었습니다.`,
@@ -337,7 +338,7 @@ const translations = {
     noHistory: '아직 생성된 결과가 없습니다.',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
-      { q: '크레딧은 어떻게 지급되나요?', a: '회원가입 시 300 크레딧이 지급되고, 이후에는 매일 로그인 시 300 크레딧이 추가됩니다. 구독자는 플랜에 따라 추가 일일 크레딧을 받을 수 있습니다.' },
+      { q: '크레딧은 어떻게 지급되나요?', a: '회원가입 시 300 크레딧이 지급되고, 이후에는 매일 로그인 시 100 크레딧이 추가됩니다. 구독자는 플랜에 따라 추가 일일 크레딧을 받을 수 있습니다.' },
       { q: '어떤 사진을 올려야 가장 좋은 결과가 나오나요?', a: '인물 사진은 배경이 단순하고 전신 또는 상반신이 잘 보이는 정면 사진을 권장합니다. 의상 사진은 제품 단독 컷이나 착용 모델 사진이 적합합니다.' },
       { q: '합성 결과가 마음에 들지 않으면 어떻게 하나요?', a: '다른 사진으로 다시 시도해보세요. 인물 사진의 배경이 단순할수록, 의상 사진이 선명할수록 더 좋은 결과가 나옵니다.' },
       { q: '모바일에서도 사용할 수 있나요?', a: '네. HAMDEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
@@ -361,7 +362,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: 'Upload Your Photo', h1Desc: 'Upload a front-facing full-body or upper-body photo. A simple background improves result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Try It Now', trySub: 'Get 300 credits on sign-up and 300 more credits every day you log in.',
+    tryTitle: 'Try It Now', trySub: 'Get 300 credits on sign-up and 100 more credits every day you log in.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     faceCopyrightNotice: 'Do not use celebrity photos without permission or rights.',
@@ -430,7 +431,7 @@ const translations = {
     switchToSignup: "Don't have an account? Sign up",
     switchToLogin: 'Already have an account? Log in',
     authRequired: 'Please log in to continue generation.',
-    loginForFree: 'Get 300 credits on sign-up and 300 daily credits when you log in.',
+    loginForFree: 'Get 300 credits on sign-up and 100 daily credits when you log in.',
     credits: 'Credits',
     currentCredits: (n: number) => `Current credits: ${n}`,
     dailyCreditLabel: 'Free today',
@@ -439,13 +440,13 @@ const translations = {
     generationCost: '1 generation = 100 credits',
     generationCostDetailed: (n: number) => `1 generation = ${n} credits`,
     signUpGetCredits: 'Sign up and get 300 credits',
-    dailyLoginCredits: 'Get 300 daily credits',
+    dailyLoginCredits: 'Get 100 daily credits',
     subscriptionCreditBonus: 'Subscribers can get extra daily credits',
     notEnoughCredits: 'Not enough credits.',
     refundedAfterFailure: '100 credits refunded due to generation failure.',
     paymentConfigError: 'Payments are not configured yet. Please try again later.',
     duplicateRequestBlocked: 'A generation request is already being processed. Please try again shortly.',
-    todayDailyRewardGranted: 'Today’s 300 credits have been added.',
+    todayDailyRewardGranted: 'Today’s 100 credits have been added.',
     todayDailyRewardAlreadyClaimed: 'Today’s daily credits were already claimed.',
     subscriptionBonusGranted: (n: number) => `${n} subscription bonus credits were added.`,
     signupBonusGranted: (n: number) => `${n} sign-up bonus credits were added.`,
@@ -553,7 +554,7 @@ const translations = {
     noHistory: 'No saved generations yet.',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
-      { q: 'How do credits work?', a: 'You get 300 credits when you sign up and 300 more credits each day you log in. Subscribers can receive additional daily credits based on their plan.' },
+      { q: 'How do credits work?', a: 'You get 300 credits when you sign up and 100 more credits each day you log in. Subscribers can receive additional daily credits based on their plan.' },
       { q: 'What kind of photos work best?', a: 'For person photos, use a front-facing shot with a simple background showing your full or upper body. For clothing, solo product shots work best.' },
       { q: "What if I don't like the result?", a: "Try again with different photos. Simpler backgrounds and clearer clothing images produce better results." },
       { q: 'Can I use it on mobile?', a: 'Yes. HAMDEVA is mobile-first and fully optimized for smartphones and tablets.' },
@@ -653,18 +654,18 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '分享试穿结果',
     sharedResultDescription: '查看 HAMDEVA 生成结果，下载图片，或再次尝试其他服装。',
     loadingSharedResult: '正在加载分享结果...',
-    loginForFree: '注册可获得 300 积分，每日登录再获得 300 积分。',
+    loginForFree: '注册可获得 300 积分，每日登录再获得 100 积分。',
     credits: '积分',
     currentCredits: (n: number) => `当前积分：${n}`,
     generationCost: '1 次生成 = 100 积分',
     generationCostDetailed: (n: number) => `1 次生成 = ${n} 积分`,
     signUpGetCredits: '注册并领取 300 积分',
-    dailyLoginCredits: '每日登录可获得 300 积分',
+    dailyLoginCredits: '每日登录可获得 100 积分',
     subscriptionCreditBonus: '订阅后可获得额外每日积分',
     notEnoughCredits: '积分不足。',
     refundedAfterFailure: '由于生成失败，100 积分已退回。',
     duplicateRequestBlocked: '生成请求正在处理中，请稍后再试。',
-    todayDailyRewardGranted: '今天的 300 积分已发放。',
+    todayDailyRewardGranted: '今天的 100 积分已发放。',
     todayDailyRewardAlreadyClaimed: '今天的每日积分已领取。',
     subscriptionBonusGranted: (n: number) => `已额外发放 ${n} 订阅奖励积分。`,
     signupBonusGranted: (n: number) => `已发放 ${n} 注册奖励积分。`,
@@ -766,18 +767,18 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '共有された試着結果',
     sharedResultDescription: 'HAMDEVA の生成結果を表示し、保存したり別の衣装を試したりできます。',
     loadingSharedResult: '共有結果を読み込み中...',
-    loginForFree: '新規登録で 300 クレジット、毎日ログインで 300 クレジットを受け取れます。',
+    loginForFree: '新規登録で 300 クレジット、毎日ログインで 100 クレジットを受け取れます。',
     credits: 'クレジット',
     currentCredits: (n: number) => `現在のクレジット: ${n}`,
     generationCost: '1 回の生成 = 100 クレジット',
     generationCostDetailed: (n: number) => `1 回の生成 = ${n} クレジット`,
     signUpGetCredits: '登録して 300 クレジットを受け取る',
-    dailyLoginCredits: '毎日ログインで 300 クレジット',
+    dailyLoginCredits: '毎日ログインで 100 クレジット',
     subscriptionCreditBonus: '購読すると毎日追加クレジット',
     notEnoughCredits: 'クレジットが不足しています。',
     refundedAfterFailure: '生成に失敗したため 100 クレジットが返金されました。',
     duplicateRequestBlocked: '生成リクエストはすでに処理中です。少し待ってから再試行してください。',
-    todayDailyRewardGranted: '本日の 300 クレジットが付与されました。',
+    todayDailyRewardGranted: '本日の 100 クレジットが付与されました。',
     todayDailyRewardAlreadyClaimed: '本日のデイリークレジットはすでに受け取り済みです。',
     subscriptionBonusGranted: (n: number) => `購読ボーナス ${n} クレジットが追加されました。`,
     signupBonusGranted: (n: number) => `登録ボーナス ${n} クレジットが付与されました。`,
@@ -1587,7 +1588,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetected: '자동 감지 결과',
       autoFailed: '자동 감지에 실패해 기본값(사람)을 유지합니다.',
       videoPrompt: '이 사진으로 영상을 제작 하시겠습니까?',
-      videoButton: '🎬 영상 제작하기 (1000 credits)',
+      videoButton: '🎬 영상 제작하기 (1500 credits)',
       videoGenerating: '영상 생성 중...',
       videoReady: '영상 생성이 완료되었습니다.',
       videoFailed: '영상 생성에 실패했습니다.',
@@ -1602,7 +1603,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetected: '自動検出結果',
       autoFailed: '自動検出に失敗したため、既定値の Human を使用します。',
       videoPrompt: 'この画像から動画を生成しますか？',
-      videoButton: '🎬 動画を生成する (1000 credits)',
+      videoButton: '🎬 動画を生成する (1500 credits)',
       videoGenerating: '動画を生成中...',
       videoReady: '動画生成が完了しました。',
       videoFailed: '動画生成に失敗しました。',
@@ -1617,7 +1618,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetected: '自动识别结果',
       autoFailed: '自动识别失败，已保留默认值 Human。',
       videoPrompt: '要基于这张图片生成视频吗？',
-      videoButton: '🎬 生成视频 (1000 credits)',
+      videoButton: '🎬 生成视频 (1500 credits)',
       videoGenerating: '正在生成视频...',
       videoReady: '视频生成完成。',
       videoFailed: '视频生成失败。',
@@ -1631,7 +1632,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
     autoDetected: 'Detected subject',
     autoFailed: 'Subject detection failed. Keeping the default Human setting.',
     videoPrompt: 'Would you like to create a video from this image?',
-    videoButton: '🎬 Generate Video (1000 credits)',
+    videoButton: '🎬 Generate Video (1500 credits)',
     videoGenerating: 'Generating video...',
     videoReady: 'Video generation completed.',
     videoFailed: 'Video generation failed.',
@@ -2448,6 +2449,8 @@ const App: React.FC = () => {
   const [showMyPageModal, setShowMyPageModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+  const [showResultPreviewModal, setShowResultPreviewModal] = useState(false);
+  const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
@@ -2497,6 +2500,8 @@ const App: React.FC = () => {
   const isAdminUser = userProfile?.role === 'admin';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
   const canAffordVideo = currentDailyCredit >= VIDEO_GENERATION_COST || currentPaidCredit >= VIDEO_GENERATION_COST;
+  const loginComingSoonLabel = `${t.login} (Coming Soon)`;
+  const googleLoginComingSoonLabel = `${t.googleLogin} (Coming Soon)`;
   const paymentSessionId = new URLSearchParams(routeSearch).get('session_id');
   const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
   const generationProgressRatio = isGenerating
@@ -2578,6 +2583,7 @@ const App: React.FC = () => {
   useCreditBootstrap({
     currentUser,
     rewardMessage: t.todayDailyRewardGranted,
+    signupBonusMessage: t.signupBonusGranted,
     setCreditNotice,
     setUserProfile,
   });
@@ -2746,6 +2752,8 @@ const App: React.FC = () => {
     setShowMyPageModal(false);
     setShowAdminModal(false);
     setShowLogoutConfirmModal(false);
+    setShowResultPreviewModal(false);
+    setResultPreviewModalSrc(null);
   }, [currentPage]);
   useEffect(() => {
     if (currentUser) {
@@ -2777,7 +2785,11 @@ const App: React.FC = () => {
     };
   }, [mobileMenuOpen]);
   useEffect(() => {
-    const hasOverlayModal = showCreditPlanModal || showMyPageModal || showAdminModal || showLogoutConfirmModal;
+    const hasOverlayModal = showCreditPlanModal
+      || showMyPageModal
+      || showAdminModal
+      || showLogoutConfirmModal
+      || showResultPreviewModal;
     if (!hasOverlayModal) {
       return;
     }
@@ -2788,7 +2800,7 @@ const App: React.FC = () => {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [showCreditPlanModal, showMyPageModal, showAdminModal, showLogoutConfirmModal]);
+  }, [showCreditPlanModal, showMyPageModal, showAdminModal, showLogoutConfirmModal, showResultPreviewModal]);
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 1024) {
@@ -3397,6 +3409,10 @@ const App: React.FC = () => {
     setShowMyPageModal(false);
     setShowAdminModal(true);
   };
+  const openResultPreviewModal = (src: string) => {
+    setResultPreviewModalSrc(src);
+    setShowResultPreviewModal(true);
+  };
   const openLogoutConfirmModal = () => {
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
@@ -3459,6 +3475,7 @@ const App: React.FC = () => {
       }
 
       const notices = [
+        response.signupBonusGranted ? t.signupBonusGranted(response.signupBonusGranted) : '',
         response.dailyRewardGranted ? t.todayDailyRewardGranted : '',
       ].filter(Boolean);
 
@@ -3850,13 +3867,13 @@ const App: React.FC = () => {
               </div>
             ) : (
               <button
-                className="outline-btn auth-nav-btn"
-                disabled={!isFirebaseConfigured}
+                className="outline-btn auth-nav-btn auth-disabled-btn"
+                disabled
                 onClick={() => openAuthModal('login')}
-                title={firebaseDisabledMessage || undefined}
+                title="Coming Soon"
                 type="button"
               >
-                {t.login}
+                {loginComingSoonLabel}
               </button>
             )}
             <LangDropdown lang={lang} onChange={handleLanguageChange} />
@@ -3865,9 +3882,9 @@ const App: React.FC = () => {
             </button>
           </div>
           <button
-            className="mobile-account-button"
-            aria-label={currentUser ? t.myPage : t.login}
-            disabled={!currentUser && !isFirebaseConfigured}
+            className={`mobile-account-button ${!currentUser ? 'auth-disabled-btn' : ''}`}
+            aria-label={currentUser ? t.myPage : loginComingSoonLabel}
+            disabled={!currentUser}
             onClick={() => {
               if (currentUser) {
                 openMyPageModal();
@@ -3876,7 +3893,7 @@ const App: React.FC = () => {
 
               openAuthModal('login');
             }}
-            title={!currentUser ? firebaseDisabledMessage || undefined : undefined}
+            title={!currentUser ? 'Coming Soon' : undefined}
             type="button"
           >
             {currentUser ? '👤' : '↗'}
@@ -4007,15 +4024,15 @@ const App: React.FC = () => {
               )}
               {!currentUser && (
                 <button
-                  className="mobile-menu-link mobile-menu-action"
-                  disabled={!isFirebaseConfigured}
+                  className="mobile-menu-link mobile-menu-action auth-disabled-btn"
+                  disabled
                   onClick={() => {
                     openAuthModal('login');
                     setMobileMenuOpen(false);
                   }}
                   type="button"
                 >
-                  {t.login}
+                  {loginComingSoonLabel}
                 </button>
               )}
               {currentUser && (
@@ -4180,6 +4197,7 @@ const App: React.FC = () => {
             sampleBadgeLabel={sampleBadgeLabel}
             copy={{
               ...t,
+              loginComingSoon: loginComingSoonLabel,
               faceCopyrightNotice: translate('uploadGuides.faceCopyrightNotice'),
               clothingSafetyNotice: translate('uploadGuides.clothingSafetyNotice'),
               resultPrivacyNotice: translate('uploadGuides.resultPrivacyNotice'),
@@ -4250,6 +4268,7 @@ const App: React.FC = () => {
             onTryAnotherOutfit={handleTryAnotherOutfit}
             onRandomOutfit={handleRandomOutfit}
             onGenerateVideo={() => { void handleVideoGenerate(); }}
+            onOpenResultPreview={openResultPreviewModal}
             getSubjectTypeLabel={getSubjectTypeLabel}
             formatSecondsLabel={formatSecondsLabel}
           />
@@ -4275,6 +4294,7 @@ const App: React.FC = () => {
                 bbsSubmitting={bbsSubmitting}
                 copy={{
                   ...t,
+                  loginComingSoon: loginComingSoonLabel,
                   generationCost: GENERATION_COST,
                   formatEstimatedCostLabel,
                 }}
@@ -4332,8 +4352,8 @@ const App: React.FC = () => {
               <article className="page-article">
                 <h2>{t.siteManagementTitle}</h2>
                 <p>{t.authRequired}</p>
-                <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
-                  {t.login}
+                <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={() => openAuthModal('login')} type="button">
+                  {loginComingSoonLabel}
                 </button>
               </article>
             )}
@@ -4472,7 +4492,7 @@ const App: React.FC = () => {
                 firebaseDisabledMessage={firebaseDisabledMessage}
                 isStartingCheckout={isStartingCheckout}
                 products={CREDIT_PRODUCTS}
-                copy={t}
+                copy={{ ...t, loginComingSoon: loginComingSoonLabel }}
                 onLogin={() => openAuthModal('login')}
                 onNavigateSiteManagement={openAdminModal}
                 onNavigateTerms={() => navigateToPage('terms')}
@@ -4512,8 +4532,15 @@ const App: React.FC = () => {
             {CREDIT_PRODUCTS.map((product) => (
               <article key={product.id} className="credit-plan-card">
                 <div className="credit-plan-copy">
-                  <strong>{product.label}</strong>
-                  <p>{product.priceLabel}</p>
+                  <div className="credit-plan-badges">
+                    {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
+                    {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+                  </div>
+                  <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                  <p className="credit-plan-price-row">
+                    <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
+                    <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
+                  </p>
                   <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
                 </div>
                 <button
@@ -4547,7 +4574,7 @@ const App: React.FC = () => {
             firebaseDisabledMessage={firebaseDisabledMessage}
             isStartingCheckout={isStartingCheckout}
             products={CREDIT_PRODUCTS}
-            copy={t}
+            copy={{ ...t, loginComingSoon: loginComingSoonLabel }}
             onLogin={() => openAuthModal('login')}
             onNavigateSiteManagement={openAdminModal}
             onNavigateTerms={() => {
@@ -4581,6 +4608,7 @@ const App: React.FC = () => {
             bbsSubmitting={bbsSubmitting}
             copy={{
               ...t,
+              loginComingSoon: loginComingSoonLabel,
               generationCost: GENERATION_COST,
               formatEstimatedCostLabel,
             }}
@@ -4609,6 +4637,21 @@ const App: React.FC = () => {
             <button className="generate-btn auth-inline-btn" onClick={() => { void handleConfirmedLogout(); }} type="button">
               {logoutModalCopy.confirm}
             </button>
+          </div>
+        </ShellModal>
+      )}
+
+      {showResultPreviewModal && resultPreviewModalSrc && (
+        <ShellModal
+          title={t.resultTitle}
+          className="result-preview-shell"
+          onClose={() => {
+            setShowResultPreviewModal(false);
+            setResultPreviewModalSrc(null);
+          }}
+        >
+          <div className="result-preview-modal-body">
+            <img className="result-preview-modal-image" src={resultPreviewModalSrc} alt="Expanded result" />
           </div>
         </ShellModal>
       )}
@@ -4652,15 +4695,16 @@ const App: React.FC = () => {
             signupTitle: t.signup,
             emailLabel: t.emailLabel,
             passwordLabel: t.passwordLabel,
-            loginButton: t.login,
+            loginButton: loginComingSoonLabel,
             signupButton: t.signup,
-            googleButton: t.googleLogin,
+            googleButton: googleLoginComingSoonLabel,
             switchToSignup: t.switchToSignup,
             switchToLogin: t.switchToLogin,
           }}
           email={authForm.email}
           error={authError}
           isSubmitting={authSubmitting}
+          loginDisabled
           mode={authMode}
           password={authForm.password}
           onClose={() => setShowAuthModal(false)}
