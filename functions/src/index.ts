@@ -113,10 +113,23 @@ const OPENAI_IMAGE_UNIT_PRICING = {
 } as const;
 const HUMAN_PROMPT = `Create a single full-body fashion photograph.
 
+The first uploaded image is the face reference image.
+The second uploaded image is the clothing reference image.
+
+Identity preservation is the highest priority.
 Use the exact same person from the face reference image.
+Keep the exact same identity, face shape, eyes, nose, lips, skin tone, and hairstyle.
+Do not change the person into a different model.
+Do not beautify the face into a different face.
+Do not alter facial structure.
+Keep the face truly recognizable as the same person.
+
+Dress that same person in the clothing from the clothing reference image.
 Preserve the uploaded clothing exactly as shown in the clothing reference image.
 Do not redesign the outfit.
 Do not change the outfit's design, color, pattern, silhouette, or material appearance.
+Do not invent a different outfit.
+Do not ignore the uploaded clothing reference.
 
 Natural attractive light makeup.
 A natural pose that matches the outfit concept.
@@ -126,6 +139,9 @@ Balanced head-to-body ratio.
 One model only.
 One image only.
 Full body visible from head to toe.
+Show the entire head, full hair, full body, both hands, both feet, and the complete outfit inside the frame.
+Do not crop the top of the head, hair, arms, hands, legs, or feet.
+Leave comfortable space around the subject so the full body fits naturally in frame.
 No face distortion.
 No identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.

@@ -50,6 +50,7 @@ const CORS_ORIGIN = [
     'https://hamdeva.firebaseapp.com',
     'https://hamdeva.dlgksxk.workers.dev',
 ];
+const PREVIEW_ORIGIN_SUFFIXES = ['.pages.dev', '.workers.dev'];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = 'OpenAI API key is missing. Set OPENAI_API_KEY or firebase functions:config:set openai.key="YOUR_OPENAI_API_KEY".';
 const PAYMENT_CONFIG_ERROR = 'PAYMENT_NOT_CONFIGURED';
@@ -149,35 +150,37 @@ const OPENAI_IMAGE_UNIT_PRICING = {
 };
 const HUMAN_PROMPT = `Create a single full-body fashion photograph.
 
-Character lock:
-use the exact same woman from the reference face image, identical identity, identical facial structure, identical eyes, identical nose, identical lips, identical skin tone, identical hairstyle, same person, no identity change.
+The first uploaded image is the face reference image.
+The second uploaded image is the clothing reference image.
 
-Makeup:
-natural but attractive beauty makeup, soft skin, subtle blush, natural lip color, light professional makeup.
+Identity preservation is the highest priority.
+Use the exact same person from the face reference image.
+Keep the exact same identity, face shape, eyes, nose, lips, skin tone, and hairstyle.
+Do not change the person into a different model.
+Do not beautify the face into a different face.
+Do not alter facial structure.
+Keep the face truly recognizable as the same person.
 
-Clothing accuracy:
-the model is wearing the provided dark blue embroidered cheongsam dress with phoenix patterns exactly as given, preserve the original design, fabric, embroidery, color and silhouette.
+Dress that same person in the clothing from the clothing reference image.
+Preserve the uploaded clothing exactly as shown in the clothing reference image.
+Do not redesign the outfit.
+Do not change the outfit's design, color, pattern, silhouette, or material appearance.
+Do not invent a different outfit.
+Do not ignore the uploaded clothing reference.
 
-Pose:
-elegant fashion pose matching traditional Chinese clothing, graceful posture, one hand slightly extended, body slightly turned, confident but calm expression.
+Natural attractive light makeup.
+A natural pose that matches the outfit concept.
+A fitting background that supports the outfit without distracting from it.
+Balanced head-to-body ratio.
 
-Body proportion:
-well-proportioned fashion model body, balanced head-to-body ratio, elegant posture.
-
-Background:
-cinematic night street with warm Chinese lanterns and historic architecture, atmospheric lighting matching the outfit mood.
-
-Composition:
-single model only, full body visible from head to toe, centered framing.
-
-Lighting:
-professional fashion photography lighting, cinematic shadows, high detail.
-
-Image quality:
-ultra clean image quality, sharp facial details, crisp eyes, clean skin texture, detailed embroidery, high clarity fabric texture, realistic hands and fingers, realistic body anatomy, no blur, no low resolution look, no extra limbs, no distorted hands, no broken facial features, no warped clothing edges.
-
-Restrictions:
-one image only, one model only, no face distortion, no identity change.`;
+One model only.
+One image only.
+Full body visible from head to toe.
+Show the entire head, full hair, full body, both hands, both feet, and the complete outfit inside the frame.
+Do not crop the top of the head, hair, arms, hands, legs, or feet.
+Leave comfortable space around the subject so the full body fits naturally in frame.
+No face distortion.
+No identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
@@ -598,7 +601,8 @@ const streamOpenAIVideoContent = async (videoId) => {
 };
 const setCors = (req, res) => {
     const origin = req.headers.origin || '';
-    if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('cloudworkstations.dev')) {
+    const isPreviewOrigin = PREVIEW_ORIGIN_SUFFIXES.some((suffix) => origin.includes(suffix));
+    if (CORS_ORIGIN.includes(origin) || isPreviewOrigin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('cloudworkstations.dev')) {
         res.set('Access-Control-Allow-Origin', origin);
     }
     else {
@@ -1152,7 +1156,8 @@ const getAppBaseUrl = (req) => {
         return configuredBaseUrl.replace(/\/+$/, '');
     }
     const origin = req.get('origin') ?? '';
-    if (CORS_ORIGIN.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    const isPreviewOrigin = PREVIEW_ORIGIN_SUFFIXES.some((suffix) => origin.includes(suffix));
+    if (CORS_ORIGIN.includes(origin) || isPreviewOrigin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return origin.replace(/\/+$/, '');
     }
     return CORS_ORIGIN[0];
