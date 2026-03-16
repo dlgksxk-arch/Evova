@@ -113,10 +113,10 @@ const futureSamples = createSamples('future', [
 ]);
 
 const classicSamples = createSamples('classic', [
-  { id: 'classic-uk70s-0', label: '클래식 70년대 1', file: '2026-03-13-14-09-05-uk70s.png', country: 'uk70s', countryLabelKo: '영국 70년대', countryLabelEn: 'UK 70s' },
-  { id: 'classic-uk70s-1', label: '클래식 70년대 2', file: '2026-03-13-14-09-48-uk70s.png', country: 'uk70s', countryLabelKo: '영국 70년대', countryLabelEn: 'UK 70s' },
-  { id: 'classic-uk80s-0', label: '클래식 80년대 1', file: '2026-03-13-14-10-26-uk80s.png', country: 'uk80s', countryLabelKo: '영국 80년대', countryLabelEn: 'UK 80s' },
-  { id: 'classic-uk80s-1', label: '클래식 80년대 2', file: '2026-03-13-14-11-17-uk80s.png', country: 'uk80s', countryLabelKo: '영국 80년대', countryLabelEn: 'UK 80s' },
+  { id: 'classic-uk70s-0', label: '70스타일 수트 1', file: '2026-03-13-14-09-05-uk70s.png', country: 'uk70s', countryLabelKo: '70스타일 수트', countryLabelEn: '70s Style Suit' },
+  { id: 'classic-uk70s-1', label: '70스타일 수트 2', file: '2026-03-13-14-09-48-uk70s.png', country: 'uk70s', countryLabelKo: '70스타일 수트', countryLabelEn: '70s Style Suit' },
+  { id: 'classic-uk80s-0', label: '80년대 스타일 수트 1', file: '2026-03-13-14-10-26-uk80s.png', country: 'uk80s', countryLabelKo: '80년대 스타일 수트', countryLabelEn: '80s Style Suit' },
+  { id: 'classic-uk80s-1', label: '80년대 스타일 수트 2', file: '2026-03-13-14-11-17-uk80s.png', country: 'uk80s', countryLabelKo: '80년대 스타일 수트', countryLabelEn: '80s Style Suit' },
 ]);
 
 const fashinSamples = createSamples('fashin', [
