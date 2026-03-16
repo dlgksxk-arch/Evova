@@ -2965,9 +2965,9 @@ const App: React.FC = () => {
     const byGender = subjectType === 'dog' || subjectType === 'cat'
       ? clothSampleOptions.filter((sample) => sample.category === 'animal' && sample.country === subjectType)
       : gender === 'female'
-      ? clothSampleOptions.filter((sample) => sample.category === 'female' || sample.category === 'future' || sample.category === 'classic')
+      ? clothSampleOptions.filter((sample) => sample.category === 'female' || sample.category === 'future' || sample.category === 'classic' || sample.category === 'fashin')
       : gender === 'male'
-        ? clothSampleOptions.filter((sample) => sample.category === 'male' || sample.category === 'future' || sample.category === 'classic')
+        ? clothSampleOptions.filter((sample) => sample.category === 'male' || sample.category === 'future' || sample.category === 'classic' || sample.category === 'fashin')
         : clothSampleOptions.filter((sample) => sample.category === 'animal' && sample.country === gender);
     const pool = byGender.length > 0 ? byGender : clothSampleOptions;
     return pool[Math.floor(Math.random() * pool.length)] ?? null;

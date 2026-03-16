@@ -30,6 +30,7 @@ const CLOTH_CATEGORY_LABELS: Record<'ko' | 'default', Record<ClothSampleCategory
     female: '여성',
     male: '남성',
     animal: '동물',
+    fashin: '패션',
     future: '미래',
     classic: '클래식',
   },
@@ -37,6 +38,7 @@ const CLOTH_CATEGORY_LABELS: Record<'ko' | 'default', Record<ClothSampleCategory
     female: 'Women',
     male: 'Men',
     animal: 'Animal',
+    fashin: 'Fashion',
     future: 'Future',
     classic: 'Classic',
   },
@@ -49,7 +51,7 @@ interface ClothSampleModalProps {
   onSelect: (url: string) => void;
 }
 
-const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'future', 'classic'];
+const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'fashin', 'future', 'classic'];
 
 const findCategoryByUrl = (url: string | null): ClothSampleCategory => {
   if (!url) {
