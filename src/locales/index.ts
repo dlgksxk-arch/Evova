@@ -51,9 +51,7 @@ export const NAV_PAGES: SitePage[] = [
   'how-it-works',
   'traditional-clothing',
   'board',
-  'privacy',
   'terms',
-  'contact',
 ];
 
 const locales: Partial<Record<LanguageCode, DeepPartial<ContentLocale>>> = {

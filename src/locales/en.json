@@ -200,20 +200,34 @@
     },
     "about": {
       "title": "About HAMDEVA",
-      "description": "Learn about the mission, technology vision, and purpose behind HAMDEVA.",
+      "description": "Learn what HAMDEVA does, why it exists, and how the platform combines AI fitting with rich cultural fashion content.",
       "sections": [
         {
-          "heading": "Mission",
+          "heading": "What HAMDEVA is building",
           "paragraphs": [
-            "HAMDEVA exists to make traditional clothing easier to explore through a combination of educational content and AI try-on previews.",
-            "The goal is to support curiosity, confidence, and cultural respect at the same time."
+            "HAMDEVA is an AI virtual fitting platform built to make outfit exploration faster, easier, and more visually convincing. The service is centered on one practical question: how will this clothing actually look on a person before purchase, rental, travel, or content production?",
+            "Rather than acting like a simple image toy, HAMDEVA combines fitting generation with structured content. Visitors can move from sample outfits, guides, and cultural references into an actual try-on flow without losing context."
           ]
         },
         {
-          "heading": "Why virtual fashion matters",
+          "heading": "Why the content layer matters",
           "paragraphs": [
-            "Digital previews help users understand silhouette and styling before purchase, rental, travel, or family events.",
-            "For heritage fashion, that visual bridge can lower the barrier to exploration without replacing the value of real garments."
+            "Many users do not just want a generated picture. They want to understand silhouette, styling mood, fabric impression, and the cultural meaning behind a garment. HAMDEVA is designed to support that deeper reading of fashion.",
+            "This matters even more for traditional dress, because users often need explanation alongside visualization. A stronger content layer helps people choose better references, interpret the result more accurately, and approach cultural garments with more respect."
+          ]
+        },
+        {
+          "heading": "How HAMDEVA uses AI fitting",
+          "paragraphs": [
+            "The platform takes a face image as the identity anchor and a clothing image as the outfit reference, then generates one coordinated 1x4 fitting sheet. That structure makes it easier to compare front, angled, and back views in one place.",
+            "The aim is not to replace real fitting or craftsmanship. The aim is to reduce uncertainty, increase visual confidence, and help users make better styling decisions before they commit time or money."
+          ]
+        },
+        {
+          "heading": "Where the platform is going",
+          "paragraphs": [
+            "HAMDEVA is being shaped as both a tool and a content destination. Over time, the goal is to make the service more useful for everyday outfit previews, sample look exploration, cultural fashion education, and community feedback.",
+            "In short, HAMDEVA is not only about generating an image. It is about helping people understand clothing more clearly and decide with more confidence."
           ]
         }
       ]
@@ -240,7 +254,7 @@
     },
     "terms": {
       "title": "Terms of Service",
-      "description": "Read the core responsibilities and content rules for using HAMDEVA.",
+      "description": "Review the core terms, privacy principles, and support information for using HAMDEVA in one place.",
       "sections": [
         {
           "heading": "User responsibility",
@@ -254,6 +268,20 @@
           "paragraphs": [
             "Do not upload copyrighted or personal material without permission.",
             "Users remain responsible for how they use generated outputs in public, commercial, or editorial contexts."
+          ]
+        },
+        {
+          "heading": "Privacy and image handling",
+          "paragraphs": [
+            "Uploaded images are used to generate the requested fitting result and related service functions. HAMDEVA is not intended to operate as a permanent personal photo archive.",
+            "Users should avoid uploading highly sensitive material they do not want processed through an AI-based image workflow. The service is designed around fitting generation, not long-term storage of personal source images."
+          ]
+        },
+        {
+          "heading": "Support and contact",
+          "paragraphs": [
+            "For support, partnership questions, or content feedback, users can contact HAMDEVA through the support form and the published support email on this page.",
+            "When reporting a problem, include the action you attempted and the message shown on screen. Clear details make technical support and quality review much faster."
           ]
         }
       ]

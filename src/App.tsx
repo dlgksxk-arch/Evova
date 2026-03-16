@@ -3534,7 +3534,7 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {currentPage === 'contact' && (
+            {(currentPage === 'contact' || currentPage === 'terms') && (
               <div className="contact-layout">
                 <article className="page-article">
                   <h2>{contentLocale.contact.supportTitle}</h2>
@@ -3591,7 +3591,7 @@ const App: React.FC = () => {
                         <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('site-management')} type="button">
                           {t.creditCheck}
                         </button>
-                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('contact')} type="button">
+                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('terms')} type="button">
                           {t.viewSubscription}
                         </button>
                       </div>
