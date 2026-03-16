@@ -7,7 +7,6 @@ import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
-import { modelSamples } from './data/samples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
@@ -186,15 +185,6 @@ interface BbsPostRecord {
   updatedAt?: Timestamp | null;
 }
 
-type SamplePreviewItem = {
-  id: string;
-  subjectType: SubjectType;
-  title: string;
-  imageUrl: string;
-  tag: string;
-  isSample: true;
-};
-
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
   ko: {
@@ -215,6 +205,9 @@ const translations = {
     tryTitle: '지금 바로 체험해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
+    faceCopyrightNotice: '인물사진에는 유명인을 저작권 없이 사용해서는 안됩니다.',
+    clothingSafetyNotice: '의상사진 등록 시 과도한 노출이나 선정적인 이미지는 업로드하지 마세요.',
+    resultPrivacyNotice: '본 이미지는 저장되지 않으며, 결과 확인과 다운로드 용도로만 일시적으로 처리됩니다.',
     chooseSample: '샘플 선택',
     uploadMyPhoto: '내 사진 업로드',
     chooseClothingSample: '샘플 의상 선택',
@@ -233,10 +226,6 @@ const translations = {
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
     share: '공유하기',
-    samplePreview: '샘플 프리뷰',
-    sampleBadge: 'SAMPLE',
-    expectedResultStyle: '이런 느낌으로 생성됩니다',
-    generateForReal: '실제로 생성하기',
     realGenerationCta: '실제로 생성하기',
     shareSectionTitle: '공유하기',
     shareHelperText: '친구들과 결과를 공유해보세요',
@@ -408,6 +397,9 @@ const translations = {
     tryTitle: 'Try It Now', trySub: 'Get 300 credits on sign-up and 300 more credits every day you log in.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
+    faceCopyrightNotice: 'Do not use celebrity photos without permission or rights.',
+    clothingSafetyNotice: 'Do not upload overly revealing or sexually explicit clothing images.',
+    resultPrivacyNotice: 'This image is not stored and is processed temporarily only for preview and download.',
     chooseSample: 'Choose Sample',
     uploadMyPhoto: 'Upload My Photo',
     chooseClothingSample: 'Choose Clothing Sample',
@@ -426,10 +418,6 @@ const translations = {
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
     resultTitle: 'Fitting Result', download: 'Save Image',
     share: 'Share',
-    samplePreview: 'Sample Preview',
-    sampleBadge: 'SAMPLE',
-    expectedResultStyle: 'This is the style of result you can expect',
-    generateForReal: 'Generate for Real',
     realGenerationCta: 'Generate for Real',
     shareSectionTitle: 'Share',
     shareHelperText: 'Share your result with friends',
@@ -643,11 +631,10 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     alertError: '图像生成失败，请重试。',
     resultTitle: '试穿结果',
     download: '保存图片',
+    faceCopyrightNotice: '人物照片请勿在未获授权的情况下使用名人照片。',
+    clothingSafetyNotice: '上传服装图片时，请勿使用过度暴露或带有明显色情性质的图片。',
+    resultPrivacyNotice: '本图片不会被保存，仅会为结果预览和下载进行临时处理。',
     share: '分享',
-    samplePreview: '示例预览',
-    sampleBadge: 'SAMPLE',
-    expectedResultStyle: '将生成类似这种风格的结果',
-    generateForReal: '真实生成',
     realGenerationCta: '真实生成',
     shareSectionTitle: '分享',
     shareHelperText: '和朋友分享你的结果',
@@ -756,11 +743,10 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     alertError: '画像の生成に失敗しました。もう一度お試しください。',
     resultTitle: '試着結果',
     download: '画像を保存',
+    faceCopyrightNotice: '人物写真には、権利なく有名人の写真を使用しないでください。',
+    clothingSafetyNotice: '衣装写真には、過度な露出や性的に露骨な画像をアップロードしないでください。',
+    resultPrivacyNotice: 'この画像は保存されず、結果確認とダウンロードのために一時的に処理されます。',
     share: '共有',
-    samplePreview: 'サンプルプレビュー',
-    sampleBadge: 'SAMPLE',
-    expectedResultStyle: 'このような雰囲気で生成されます',
-    generateForReal: '実際に生成する',
     realGenerationCta: '実際に生成する',
     shareSectionTitle: '共有',
     shareHelperText: '結果を友達と共有してみましょう',
@@ -1677,45 +1663,6 @@ const getSubjectUiText = (lang: LanguageCode) => {
   };
 };
 
-const SAMPLE_PREVIEW_ITEMS: SamplePreviewItem[] = [
-  ...modelSamples
-    .filter((item) => item.gender === 'female' || item.gender === 'male')
-    .slice(0, 4)
-    .map((item, index) => ({
-      id: `human-${item.id}`,
-      subjectType: 'human' as const,
-      title: item.label ?? `Human Sample ${index + 1}`,
-      imageUrl: item.image,
-      tag: index % 2 === 0 ? 'lookbook' : 'studio',
-      isSample: true as const,
-    })),
-  ...modelSamples
-    .filter((item) => item.gender === 'dog')
-    .slice(0, 4)
-    .map((item, index) => ({
-      id: `dog-${item.id}`,
-      subjectType: 'dog' as const,
-      title: item.label ?? `Dog Sample ${index + 1}`,
-      imageUrl: item.image,
-      tag: 'pet-studio',
-      isSample: true as const,
-    })),
-  ...modelSamples
-    .filter((item) => item.gender === 'cat')
-    .slice(0, 4)
-    .map((item, index) => ({
-      id: `cat-${item.id}`,
-      subjectType: 'cat' as const,
-      title: item.label ?? `Cat Sample ${index + 1}`,
-      imageUrl: item.image,
-      tag: 'pet-lookbook',
-      isSample: true as const,
-    })),
-];
-
-const getSamplePreviewItems = (subjectType: SubjectType): SamplePreviewItem[] =>
-  SAMPLE_PREVIEW_ITEMS.filter((item) => item.subjectType === subjectType).slice(0, 4);
-
 const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
   if (!KAKAO_JS_KEY) {
     return null;
@@ -2467,7 +2414,6 @@ const App: React.FC = () => {
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const adminVideoLabels = getAdminVideoLabels(lang);
-  const subjectPreviewItems = getSamplePreviewItems(subjectType);
   const generationStatusLabel = lang === 'ko'
     ? '예상 완료까지'
     : lang === 'ja'
@@ -3941,6 +3887,7 @@ const App: React.FC = () => {
                       }}>&times;</button>
                     )}
                   </div>
+                  <p className="upload-guidance-text">{t.faceCopyrightNotice}</p>
                 </div>
 
                 <div className="try-column">
@@ -4016,6 +3963,7 @@ const App: React.FC = () => {
                       />
                     )}
                   </div>
+                  <p className="upload-guidance-text">{t.clothingSafetyNotice}</p>
                 </div>
               </div>
 
@@ -4051,28 +3999,6 @@ const App: React.FC = () => {
                           ? subjectUi.autoFailed
                           : `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, subjectType)}`}
                   </span>
-                </div>
-              </div>
-
-              <div className="page-article subject-sample-preview">
-                <div className="subject-sample-copy">
-                  <span className="empty-preview-badge">{t.samplePreview}</span>
-                  <h3>{t.expectedResultStyle}</h3>
-                  <p>{getSubjectTypeLabel(lang, subjectType)} · {t.sampleBadge}</p>
-                </div>
-                <div className="subject-sample-grid">
-                  {subjectPreviewItems.map((item) => (
-                    <article key={item.id} className="subject-sample-card">
-                      <div className="subject-sample-media">
-                        <img src={item.imageUrl} alt={item.title} loading="lazy" />
-                        <span className="sample-badge">{t.sampleBadge}</span>
-                      </div>
-                      <div className="subject-sample-meta">
-                        <strong>{item.title}</strong>
-                        <span>{getSubjectTypeLabel(lang, item.subjectType)} · {item.tag}</span>
-                      </div>
-                    </article>
-                  ))}
                 </div>
               </div>
 
@@ -4149,6 +4075,7 @@ const App: React.FC = () => {
                     <div className="watermark">HAMDEVA AI</div>
                   </div>
                   {renderResultActions(finalImageSrc, shareResultLink, resultPreviewState !== 'ready', true)}
+                  <p className="result-disclaimer-text">{t.resultPrivacyNotice}</p>
                 </div>
               )}
             </div>
