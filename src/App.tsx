@@ -33,7 +33,8 @@ const APP_VERSION = __APP_VERSION__;
 const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
 const MIN_GENERATION_ESTIMATE_MS = 12_000;
-const MAX_GENERATION_ESTIMATE_MS = 45_000;
+const MAX_GENERATION_ESTIMATE_MS = 70_000;
+const GENERATION_ESTIMATE_BUFFER_MS = 10_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const VIDEO_GENERATION_COST = 1000;
 const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
@@ -223,6 +224,7 @@ const translations = {
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
     generate: 'AI 피팅 시작하기', generating: 'AI 분석 중... (최대 30초)',
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
+    generationEstimateNotice: '인터넷 상태와 업로드 이미지 크기에 따라 실제 완료 시간은 달라질 수 있습니다.',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
     share: '공유하기',
@@ -415,6 +417,7 @@ const translations = {
     clothingSamplesPending: 'Clothing samples are being prepared.',
     generate: 'Generate AI Fitting', generating: 'AI Processing... (up to 30s)',
     loadingDetail: 'HAMDEVA AI is analyzing and compositing the images...',
+    generationEstimateNotice: 'Actual completion time may vary depending on network conditions and image size.',
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
     resultTitle: 'Fitting Result', download: 'Save Image',
     share: 'Share',
@@ -627,6 +630,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     generate: '生成 AI 试穿',
     generating: 'AI 处理中...（最多 30 秒）',
     loadingDetail: 'HAMDEVA AI 正在分析并合成图像...',
+    generationEstimateNotice: '实际完成时间可能会因网络状态和图片大小而有所不同。',
     alertBoth: '请同时上传人物照片和服装照片。',
     alertError: '图像生成失败，请重试。',
     resultTitle: '试穿结果',
@@ -739,6 +743,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     generate: 'AI 試着を生成',
     generating: 'AI 処理中...（最大 30 秒）',
     loadingDetail: 'HAMDEVA AI が画像を解析して合成しています...',
+    generationEstimateNotice: 'ネットワーク状況や画像サイズによって、実際の完了時間は変動する場合があります。',
     alertBoth: '人物写真と服の写真の両方をアップロードしてください。',
     alertError: '画像の生成に失敗しました。もう一度お試しください。',
     resultTitle: '試着結果',
@@ -2209,11 +2214,13 @@ const writeGenerationDuration = (durationMs: number) => {
 const getEstimatedGenerationDuration = (): number => {
   const durations = readGenerationDurations();
   if (durations.length === 0) {
-    return DEFAULT_GENERATION_ESTIMATE_MS;
+    return Math.min(MAX_GENERATION_ESTIMATE_MS, DEFAULT_GENERATION_ESTIMATE_MS + GENERATION_ESTIMATE_BUFFER_MS);
   }
 
-  const average = durations.reduce((sum, value) => sum + value, 0) / durations.length;
-  return Math.min(MAX_GENERATION_ESTIMATE_MS, Math.max(MIN_GENERATION_ESTIMATE_MS, Math.round(average)));
+  const sorted = [...durations].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] ?? DEFAULT_GENERATION_ESTIMATE_MS;
+  const bufferedEstimate = median + GENERATION_ESTIMATE_BUFFER_MS;
+  return Math.min(MAX_GENERATION_ESTIMATE_MS, Math.max(MIN_GENERATION_ESTIMATE_MS, Math.round(bufferedEstimate)));
 };
 
 const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms / 1000))}s`;
@@ -4047,6 +4054,7 @@ const App: React.FC = () => {
                         <span>{formatSecondsLabel(generationEstimateMs)}</span>
                       </div>
                     </div>
+                    <p className="generation-estimate-notice">{t.generationEstimateNotice}</p>
                   </>
                 )}
               </div>
