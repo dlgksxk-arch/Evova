@@ -139,21 +139,36 @@ const getOpenAIApiKey = () => {
 const buildTryOnPrompt = (bodyProfile) => {
     const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
     const identityGuide = subjectType === 'pet'
-        ? 'Use the second input image as the identity reference and preserve the subject’s face, fur pattern, body shape, and species traits consistently across all four panels.'
-        : 'Use the second input image as the identity reference for the face, hairstyle, skin tone, and overall person, and keep that same identity in all four panels.';
+        ? [
+            'Use the first input image as the identity anchor for the exact same pet.',
+            'Preserve the same face, fur pattern, species traits, body shape, proportions, and overall identity.',
+            'Do not invent a new animal, do not stylize, and do not change the identity in any panel.',
+        ].join(' ')
+        : [
+            'Use the first input image as the identity anchor for the exact same person.',
+            'Preserve the exact identity of the uploaded face and keep the same person in all four panels.',
+            'Keep the same facial features, face shape, eyes, nose, mouth, jawline, skin tone, hairline, and overall likeness.',
+            'Do not change ethnicity, age, facial structure, or identity.',
+            'Do not beautify, idealize, stylize, or invent a new face.',
+            'Keep facial resemblance high and maintain the same hairstyle or hairline whenever visible.',
+        ].join(' ');
     const bodyGuide = [
         bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
         bodyProfile?.weightKg ? `Reflect a natural body volume using ${bodyProfile.weightKg} kg weight as guidance.` : null,
     ].filter(Boolean).join(' ');
     return [
-        'Use the first input image as the clothing reference and reproduce the garment faithfully.',
-        'Preserve the garment silhouette, color, fabric feel, embroidery, ribbon, accessories, length, sleeve shape, trim, and decorative details exactly.',
-        'Do not invent a new outfit. Do not simplify the outfit. Do not redesign the clothing. Preserve traditional clothing details exactly.',
+        'Using the first input image as the identity anchor and the second input image as the clothing reference, generate a realistic virtual fitting result.',
         identityGuide,
-        'Generate one single wide 1x4 fashion try-on sheet in one image.',
-        'The four panels must be ordered left to right as: front view, left 45-degree view, right 45-degree view, and back view.',
-        'The same subject and the same garment must appear consistently in all four panels.',
-        'The back view must still clearly match the exact same garment from the front views.',
+        'Transfer only the clothing from the second input image and keep the person from the first input image.',
+        'Preserve the garment color, silhouette, fabric texture, garment proportions, visible ornament details, skirt volume, top proportions, sleeve shape, trim, accessories, embroidery, ribbon, and decorative details as faithfully as possible.',
+        'Do not invent a new outfit. Do not simplify the outfit. Do not redesign the clothing.',
+        'Generate a realistic photo, not an illustration, painting, cartoon, or stylized fashion artwork.',
+        'Generate one single wide 1x4 fashion lookbook grid of the same person in all four views.',
+        'The same person must appear in all four panels with consistent face, body proportions, identity, and hairstyle or hairline if visible.',
+        'The four panels must be ordered left to right as: front view, left 3/4 view, right 3/4 or semi-back view, and back view.',
+        'All four panels must clearly depict the same exact person wearing the same exact garment.',
+        'Do not allow the face, age, ethnicity, or identity to drift between panels.',
+        'The back view must still clearly match the exact same garment and the exact same person from the front views.',
         'Show full body in all four panels when possible, with enough space to see the full clothing silhouette and elegant fashion posture.',
         'Use realistic premium studio fashion photography, clean soft neutral background, and consistent catalog lighting across all four panels.',
         'Do not create separate files. Return one combined wide lookbook sheet only.',
@@ -236,8 +251,8 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
         throw new Error(responseBody.error?.message || `OpenAI API error ${openAIRes.status}`);
     }
     const image = responseBody.data?.[0]?.b64_json;
-    if (!image) {
-        throw new Error('OpenAI response did not include an image.');
+    if (!image || image.length < 1000) {
+        throw new Error('OpenAI response did not include a usable image.');
     }
     return { mimeType: 'image/png', data: image };
 };
