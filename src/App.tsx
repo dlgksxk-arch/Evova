@@ -16,6 +16,7 @@ declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
+const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
@@ -1409,7 +1410,7 @@ const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserP
   credits: typeof data?.credits === 'number' ? data.credits : 0,
   isSubscribed: data?.isSubscribed === true,
   subscriptionPlan: data?.subscriptionPlan === 'basic' || data?.subscriptionPlan === 'pro' ? data.subscriptionPlan : 'free',
-  role: data?.role === 'admin' ? 'admin' : 'user',
+  role: data?.role === 'admin' || ADMIN_EMAILS.has((data?.email || email).toLowerCase()) ? 'admin' : 'user',
   createdAt: data?.createdAt ?? null,
   lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
   lastLoginAt: data?.lastLoginAt ?? null,
@@ -1729,10 +1730,25 @@ const simpleHash = (a: string, b: string): string => {
   return Math.abs(h).toString(36);
 };
 
-const getCached = (k: string) => JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}')[k] ?? null;
+const getCached = (k: string) => {
+  try {
+    return JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}')[k] ?? null;
+  } catch {
+    return null;
+  }
+};
 const setCached = (k: string, v: string) => {
-  const c = JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}'); c[k] = v;
-  localStorage.setItem('HAMDEVA-cache', JSON.stringify(c));
+  try {
+    const c = JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}');
+    c[k] = v;
+    localStorage.setItem('HAMDEVA-cache', JSON.stringify(c));
+  } catch (error) {
+    try {
+      localStorage.removeItem('HAMDEVA-cache');
+    } catch {
+    }
+    console.warn('Failed to persist HAMDEVA cache:', error);
+  }
 };
 
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
@@ -1912,10 +1928,18 @@ const App: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-    localStorage.setItem('HAMDEVA-dark', String(darkMode));
+    try {
+      localStorage.setItem('HAMDEVA-dark', String(darkMode));
+    } catch (error) {
+      console.warn('Failed to persist theme preference:', error);
+    }
   }, [darkMode]);
   useEffect(() => {
-    localStorage.setItem('HAMDEVA-lang', lang);
+    try {
+      localStorage.setItem('HAMDEVA-lang', lang);
+    } catch (error) {
+      console.warn('Failed to persist language preference:', error);
+    }
     document.documentElement.lang = lang;
   }, [lang]);
   useEffect(() => {
@@ -2700,7 +2724,7 @@ const App: React.FC = () => {
       return;
     }
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-    if (currentCredits < GENERATION_COST) {
+    if (!isAdminUser && currentCredits < GENERATION_COST) {
       alert(t.notEnoughCredits);
       return;
     }

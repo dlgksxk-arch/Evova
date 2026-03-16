@@ -202,12 +202,19 @@ const buildTryOnPrompt = (bodyProfile?: BodyProfile): string => {
         'Do not invent a new animal, do not stylize, and do not change the identity in any panel.',
       ].join(' ')
     : [
-        'Use the first input image as the identity anchor for the exact same person.',
-        'Preserve the exact identity of the uploaded face and keep the same person in all four panels.',
-        'Keep the same facial features, face shape, eyes, nose, mouth, jawline, skin tone, hairline, and overall likeness.',
-        'Do not change ethnicity, age, facial structure, or identity.',
-        'Do not beautify, idealize, stylize, or invent a new face.',
-        'Keep facial resemblance high and maintain the same hairstyle or hairline whenever visible.',
+        'Use the uploaded face photo as the identity anchor and the uploaded clothing image as the outfit reference.',
+        'Create a realistic virtual fitting image of the exact same person from the uploaded face photo.',
+        'Identity preservation is the highest priority.',
+        'Strict identity rules: keep the same person.',
+        'Preserve the exact identity and facial resemblance of the uploaded face.',
+        'Do not invent a new face.',
+        'Do not change ethnicity.',
+        'Do not change age.',
+        'Do not beautify, idealize, or stylize the face.',
+        'Do not make the person look like a different model.',
+        'Keep the same eyes, nose, mouth, jawline, chin shape, cheek structure, face shape, skin tone, forehead ratio, eye spacing, lip shape, and hairline.',
+        'Keep the same overall likeness and real-person appearance.',
+        'If there is any conflict between fashion styling and facial identity, preserve facial identity first.',
       ].join(' ');
   const bodyGuide = [
     bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
@@ -215,21 +222,34 @@ const buildTryOnPrompt = (bodyProfile?: BodyProfile): string => {
   ].filter(Boolean).join(' ');
 
   return [
-    'Using the first input image as the identity anchor and the second input image as the clothing reference, generate a realistic virtual fitting result.',
     identityGuide,
-    'Transfer only the clothing from the second input image and keep the person from the first input image.',
-    'Preserve the garment color, silhouette, fabric texture, garment proportions, visible ornament details, skirt volume, top proportions, sleeve shape, trim, accessories, embroidery, ribbon, and decorative details as faithfully as possible.',
-    'Do not invent a new outfit. Do not simplify the outfit. Do not redesign the clothing.',
-    'Generate a realistic photo, not an illustration, painting, cartoon, or stylized fashion artwork.',
-    'Generate one single wide 1x4 fashion lookbook grid of the same person in all four views.',
-    'The same person must appear in all four panels with consistent face, body proportions, identity, and hairstyle or hairline if visible.',
-    'The four panels must be ordered left to right as: front view, left 3/4 view, right 3/4 or semi-back view, and back view.',
-    'All four panels must clearly depict the same exact person wearing the same exact garment.',
-    'Do not allow the face, age, ethnicity, or identity to drift between panels.',
-    'The back view must still clearly match the exact same garment and the exact same person from the front views.',
-    'Show full body in all four panels when possible, with enough space to see the full clothing silhouette and elegant fashion posture.',
-    'Use realistic premium studio fashion photography, clean soft neutral background, and consistent catalog lighting across all four panels.',
-    'Do not create separate files. Return one combined wide lookbook sheet only.',
+    'Garment transfer rules: transfer only the outfit from the uploaded clothing image.',
+    'Preserve the garment color, silhouette, texture, visible ornament details, sleeve shape, skirt volume, top-to-bottom proportions, and overall design.',
+    'Do not replace the outfit with a different design.',
+    'Keep the clothing faithful to the reference image.',
+    'Output requirements: generate one clean 1x4 fashion lookbook grid.',
+    'The same person must appear in all 4 panels.',
+    'Keep the face consistent across all 4 panels.',
+    'Keep the body proportions consistent across all 4 panels.',
+    'Panel 1: front view.',
+    'Panel 2: 3/4 front view.',
+    'Panel 3: side or semi-back view.',
+    'Panel 4: back view.',
+    'Style requirements: realistic studio photo.',
+    'Natural lighting.',
+    'Clean simple background.',
+    'Full-body fitting result.',
+    'Realistic fabric appearance.',
+    'No illustration.',
+    'No cartoon.',
+    'No fantasy styling.',
+    'No extra accessories unless clearly visible in the clothing reference.',
+    'Face consistency constraints: The uploaded face photo must remain the identity source.',
+    'Do not reinterpret the face.',
+    'Do not optimize the face for beauty.',
+    'Do not change the person into a more glamorous or more generic fashion model.',
+    'Keep the facial geometry close to the uploaded face.',
+    'Same person in all 4 panels. No panel may show a different face.',
     bodyGuide,
   ].filter(Boolean).join(' ');
 };
@@ -522,6 +542,7 @@ const beginGenerationCharge = async (
 
     const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
     let nextCredits = currentProfile.credits;
+    const generationCost = currentProfile.role === 'admin' ? 0 : GENERATION_COST;
 
     if (!userSnapshot.exists) {
       nextCredits += SIGNUP_BONUS_CREDITS;
@@ -551,12 +572,14 @@ const beginGenerationCharge = async (
       }
     }
 
-    if (nextCredits < GENERATION_COST) {
+    if (nextCredits < generationCost) {
       throw new Error(NOT_ENOUGH_CREDITS_ERROR);
     }
 
-    nextCredits -= GENERATION_COST;
-    writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_use', -GENERATION_COST, nextCredits, `generate request ${requestId}`);
+    nextCredits -= generationCost;
+    if (generationCost > 0) {
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_use', -generationCost, nextCredits, `generate request ${requestId}`);
+    }
 
     const updatePayload: Record<string, unknown> = {
       email: user.email || currentProfile.email,
@@ -579,10 +602,11 @@ const beginGenerationCharge = async (
       uid: user.uid,
       email: user.email || currentProfile.email,
       requestId,
-      cost: GENERATION_COST,
+      cost: generationCost,
       status: 'charged',
       success: false,
       refunded: false,
+      role: currentProfile.role,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
@@ -652,7 +676,10 @@ const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string
     }
 
     const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
-    const nextCredits = currentProfile.credits + GENERATION_COST;
+    const chargedCost = typeof requestData?.cost === 'number' && Number.isFinite(requestData.cost)
+      ? Math.max(0, requestData.cost)
+      : GENERATION_COST;
+    const nextCredits = currentProfile.credits + chargedCost;
 
     transaction.set(userRef, {
       credits: nextCredits,
@@ -672,9 +699,11 @@ const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string
       releasedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_refund', GENERATION_COST, nextCredits, `refund request ${requestId}`);
+    if (chargedCost > 0) {
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_refund', chargedCost, nextCredits, `refund request ${requestId}`);
+    }
 
-    result.refunded = true;
+    result.refunded = chargedCost > 0;
     result.balanceAfter = nextCredits;
   });
 
