@@ -82,7 +82,8 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'board', 'terms', 'privacy', 'contact'];
+const HEADER_NAV_PAGES = NAV_PAGES.filter((page) => page !== 'terms');
+const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'board', 'privacy', 'contact'];
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -2297,6 +2298,42 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
   );
 };
 
+const ShellModal: React.FC<{
+  title: string;
+  subtitle?: string;
+  className?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ title, subtitle, className = '', onClose, children }) => {
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className={`auth-modal account-modal ${className}`.trim()} onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header account-modal-header">
+          <div>
+            <h3>{title}</h3>
+            {subtitle ? <p className="modal-subtitle">{subtitle}</p> : null}
+          </div>
+          <button className="close-btn" onClick={onClose} type="button">
+            &times;
+          </button>
+        </div>
+        <div className="account-modal-body">{children}</div>
+      </div>
+    </div>
+  );
+};
+
 const PAGE_PATHS: Record<SitePage, string> = {
   home: '/',
   admin: '/admin',
@@ -2407,6 +2444,10 @@ const App: React.FC = () => {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showCreditPlanModal, setShowCreditPlanModal] = useState(false);
+  const [showMyPageModal, setShowMyPageModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
@@ -2466,6 +2507,9 @@ const App: React.FC = () => {
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const adminVideoLabels = getAdminVideoLabels(lang);
+  const logoutModalCopy = lang === 'ko'
+    ? { title: '로그아웃', body: '정말 로그아웃 하시겠습니까?', cancel: '취소', confirm: '로그아웃' }
+    : { title: 'Log out', body: 'Are you sure you want to log out?', cancel: 'Cancel', confirm: 'Log out' };
   const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const isContactRoute = normalizedPathname === '/contact';
   const currentFaqItems = getFaqItemsForPage(currentPage);
@@ -2698,6 +2742,21 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
   }, [currentPage, lang]);
   useEffect(() => {
+    setShowCreditPlanModal(false);
+    setShowMyPageModal(false);
+    setShowAdminModal(false);
+    setShowLogoutConfirmModal(false);
+  }, [currentPage]);
+  useEffect(() => {
+    if (currentUser) {
+      return;
+    }
+
+    setShowCreditPlanModal(false);
+    setShowMyPageModal(false);
+    setShowAdminModal(false);
+  }, [currentUser]);
+  useEffect(() => {
     if (!mobileMenuOpen) {
       return;
     }
@@ -2717,6 +2776,19 @@ const App: React.FC = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [mobileMenuOpen]);
+  useEffect(() => {
+    const hasOverlayModal = showCreditPlanModal || showMyPageModal || showAdminModal || showLogoutConfirmModal;
+    if (!hasOverlayModal) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showCreditPlanModal, showMyPageModal, showAdminModal, showLogoutConfirmModal]);
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 1024) {
@@ -3286,6 +3358,57 @@ const App: React.FC = () => {
       setIsStartingCheckout(null);
     }
   };
+  const openCreditPlanModal = () => {
+    if (!currentUser) {
+      openAuthModal('login');
+      return;
+    }
+
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowMyPageModal(false);
+    setShowAdminModal(false);
+    setShowCreditPlanModal(true);
+  };
+  const openMyPageModal = () => {
+    if (!currentUser) {
+      openAuthModal('login');
+      return;
+    }
+
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowCreditPlanModal(false);
+    setShowAdminModal(false);
+    setShowMyPageModal(true);
+  };
+  const openAdminModal = () => {
+    if (!currentUser) {
+      openAuthModal('login');
+      return;
+    }
+    if (!isAdminUser) {
+      return;
+    }
+
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowCreditPlanModal(false);
+    setShowMyPageModal(false);
+    setShowAdminModal(true);
+  };
+  const openLogoutConfirmModal = () => {
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowLogoutConfirmModal(true);
+  };
+  const handleConfirmedLogout = async () => {
+    await handleLogout();
+    setShowMyPageModal(false);
+    setShowAdminModal(false);
+    setShowCreditPlanModal(false);
+    setShowLogoutConfirmModal(false);
+  };
   const navigateToPage = (page: SitePage) => {
     const nextUrl = PAGE_PATHS[page];
     window.history.pushState(null, '', nextUrl);
@@ -3672,7 +3795,7 @@ const App: React.FC = () => {
             <span className="app-version">{appVersion}</span>
           </div>
           <div className="nav-links desktop-nav">
-            {NAV_PAGES.map((page) => (
+            {HEADER_NAV_PAGES.map((page) => (
               <button
                 key={page}
                 className={`nav-link ${currentPage === page ? 'active' : ''}`}
@@ -3685,7 +3808,7 @@ const App: React.FC = () => {
             {isAdminUser && (
               <button
                 className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}
-                onClick={() => navigateToPage('admin')}
+                onClick={openAdminModal}
                 type="button"
               >
                 {t.adminNav}
@@ -3694,19 +3817,13 @@ const App: React.FC = () => {
           </div>
           <div className="nav-right desktop-header-actions">
             {currentUser && (
-              <div className="credit-pill" aria-label={t.currentCredits(currentCredits)}>
-                <div className="credit-pill-copy">
-                  <span>{t.dailyCreditLabel}</span>
-                  <strong>{currentDailyCredit}</strong>
-                </div>
-                <div className="credit-pill-copy">
-                  <span>{t.paidCreditLabel}</span>
-                  <strong>{currentPaidCredit}</strong>
-                </div>
+              <div className="credit-summary" aria-label={t.currentCredits(currentCredits)}>
+                <span className="credit-summary-chip">{t.dailyCreditLabel} {currentDailyCredit}</span>
+                <span className="credit-summary-chip">{t.paidCreditLabel} {currentPaidCredit}</span>
               </div>
             )}
             {currentUser && (
-              <button className="outline-btn auth-nav-btn" onClick={() => navigateToPage('mypage')} type="button">
+              <button className="outline-btn auth-nav-btn" onClick={openCreditPlanModal} type="button">
                 {t.chargeCredits}
               </button>
             )}
@@ -3717,15 +3834,15 @@ const App: React.FC = () => {
                 </button>
                 {userMenuOpen && (
                   <div className="user-menu-dropdown">
-                    <button className="lang-option" onClick={() => { navigateToPage('mypage'); setUserMenuOpen(false); }} type="button">
+                    <button className="lang-option" onClick={openMyPageModal} type="button">
                       {t.myPage}
                     </button>
                     {isAdminUser && (
-                      <button className="lang-option" onClick={() => { navigateToPage('admin'); setUserMenuOpen(false); }} type="button">
+                      <button className="lang-option" onClick={openAdminModal} type="button">
                         {t.adminNav}
                       </button>
                     )}
-                    <button className="lang-option" onClick={() => { void handleLogout(); setUserMenuOpen(false); }} type="button">
+                    <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
                       {t.logout}
                     </button>
                   </div>
@@ -3753,7 +3870,7 @@ const App: React.FC = () => {
             disabled={!currentUser && !isFirebaseConfigured}
             onClick={() => {
               if (currentUser) {
-                navigateToPage('mypage');
+                openMyPageModal();
                 return;
               }
 
@@ -3818,8 +3935,8 @@ const App: React.FC = () => {
                 <button
                   className="mobile-menu-link mobile-menu-action"
                   onClick={() => {
-                    navigateToPage('mypage');
                     setMobileMenuOpen(false);
+                    setShowCreditPlanModal(true);
                   }}
                   type="button"
                 >
@@ -3872,12 +3989,20 @@ const App: React.FC = () => {
                 <button
                   className="mobile-menu-link mobile-menu-action"
                   onClick={() => {
-                    navigateToPage('mypage');
-                    setMobileMenuOpen(false);
+                    openMyPageModal();
                   }}
                   type="button"
                 >
                   {t.myPage}
+                </button>
+              )}
+              {isAdminUser && (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  onClick={openAdminModal}
+                  type="button"
+                >
+                  {t.adminNav}
                 </button>
               )}
               {!currentUser && (
@@ -3896,10 +4021,7 @@ const App: React.FC = () => {
               {currentUser && (
                 <button
                   className="mobile-menu-link mobile-menu-action"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    void handleLogout();
-                  }}
+                  onClick={openLogoutConfirmModal}
                   type="button"
                 >
                   {t.logout}
@@ -4352,7 +4474,7 @@ const App: React.FC = () => {
                 products={CREDIT_PRODUCTS}
                 copy={t}
                 onLogin={() => openAuthModal('login')}
-                onNavigateSiteManagement={() => navigateToPage('site-management')}
+                onNavigateSiteManagement={openAdminModal}
                 onNavigateTerms={() => navigateToPage('terms')}
                 onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
                 formatTimestampLabel={formatTimestampLabel}
@@ -4378,6 +4500,118 @@ const App: React.FC = () => {
           ))}
         </div>
       </footer>
+
+      {showCreditPlanModal && (
+        <ShellModal
+          title={t.chargeCredits}
+          subtitle={t.chargeDescription}
+          className="credit-plan-modal"
+          onClose={() => setShowCreditPlanModal(false)}
+        >
+          <div className="credit-plan-grid">
+            {CREDIT_PRODUCTS.map((product) => (
+              <article key={product.id} className="credit-plan-card">
+                <div className="credit-plan-copy">
+                  <strong>{product.label}</strong>
+                  <p>{product.priceLabel}</p>
+                  <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
+                </div>
+                <button
+                  className="generate-btn auth-inline-btn"
+                  disabled={isStartingCheckout === product.id}
+                  onClick={() => { void handleStartCheckout(product.id); }}
+                  type="button"
+                >
+                  {isStartingCheckout === product.id ? t.paymentRedirecting : t.purchaseNow}
+                </button>
+              </article>
+            ))}
+          </div>
+        </ShellModal>
+      )}
+
+      {showMyPageModal && (
+        <ShellModal
+          title={t.myPage}
+          className="mypage-modal-shell"
+          onClose={() => setShowMyPageModal(false)}
+        >
+          <MyPageSection
+            currentUser={currentUser}
+            userProfile={userProfile}
+            currentDailyCredit={currentDailyCredit}
+            currentPaidCredit={currentPaidCredit}
+            currentCredits={currentCredits}
+            historyItems={historyItems}
+            isFirebaseConfigured={isFirebaseConfigured}
+            firebaseDisabledMessage={firebaseDisabledMessage}
+            isStartingCheckout={isStartingCheckout}
+            products={CREDIT_PRODUCTS}
+            copy={t}
+            onLogin={() => openAuthModal('login')}
+            onNavigateSiteManagement={openAdminModal}
+            onNavigateTerms={() => {
+              setShowMyPageModal(false);
+              navigateToPage('terms');
+            }}
+            onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
+            formatTimestampLabel={formatTimestampLabel}
+          />
+        </ShellModal>
+      )}
+
+      {showAdminModal && (
+        <ShellModal
+          title={t.adminTitle}
+          className="admin-modal-shell"
+          onClose={() => setShowAdminModal(false)}
+        >
+          <AdminDashboard
+            currentUser={currentUser}
+            userProfile={userProfile}
+            isAdminUser={isAdminUser}
+            adminSummary={adminSummary}
+            adminUsers={adminUsers}
+            adminGenerationLogs={adminGenerationLogs}
+            adminCreditLogs={adminCreditLogs}
+            adminLoading={adminLoading}
+            appVersion={appVersion}
+            isFirebaseConfigured={isFirebaseConfigured}
+            bbsPosts={bbsPosts}
+            bbsSubmitting={bbsSubmitting}
+            copy={{
+              ...t,
+              generationCost: GENERATION_COST,
+              formatEstimatedCostLabel,
+            }}
+            adminVideoLabels={adminVideoLabels}
+            onOpenAuth={() => openAuthModal('login')}
+            onGoHome={() => setShowAdminModal(false)}
+            onDeletePost={(post) => { void handleBbsDelete(post); }}
+            formatTimestampLabel={formatTimestampLabel}
+          />
+        </ShellModal>
+      )}
+
+      {showLogoutConfirmModal && (
+        <ShellModal
+          title={logoutModalCopy.title}
+          className="confirm-modal-shell"
+          onClose={() => setShowLogoutConfirmModal(false)}
+        >
+          <div className="confirm-modal-copy">
+            <p>{logoutModalCopy.body}</p>
+          </div>
+          <div className="confirm-modal-actions">
+            <button className="outline-btn auth-inline-btn" onClick={() => setShowLogoutConfirmModal(false)} type="button">
+              {logoutModalCopy.cancel}
+            </button>
+            <button className="generate-btn auth-inline-btn" onClick={() => { void handleConfirmedLogout(); }} type="button">
+              {logoutModalCopy.confirm}
+            </button>
+          </div>
+        </ShellModal>
+      )}
 
       {showContentModal && (
         <ContentModal

@@ -279,6 +279,27 @@ a { color: inherit; text-decoration: none; }
   min-width: fit-content;
 }
 
+.credit-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.credit-summary-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .mobile-menu-toggle,
 .mobile-account-button {
   display: none;
@@ -1202,6 +1223,73 @@ a { color: inherit; text-decoration: none; }
 .auth-submit-btn,
 .auth-google-btn {
   width: 100%;
+}
+
+.account-modal {
+  max-width: min(960px, calc(100vw - 24px)) !important;
+  max-height: 85vh;
+  padding: 24px;
+}
+
+.account-modal.credit-plan-modal,
+.account-modal.confirm-modal-shell {
+  max-width: min(640px, calc(100vw - 24px)) !important;
+}
+
+.account-modal-header {
+  margin-bottom: 18px;
+}
+
+.account-modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.credit-plan-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.credit-plan-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-alt) 92%, transparent);
+}
+
+.credit-plan-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.credit-plan-copy strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.mypage-modal-shell .mypage-layout,
+.admin-modal-shell .admin-layout {
+  gap: 18px;
+}
+
+.confirm-modal-copy {
+  color: var(--text-sub);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 .auth-google-btn {
@@ -2250,6 +2338,12 @@ a { color: inherit; text-decoration: none; }
     min-height: 60vh;
     padding: 104px 20px 42px;
   }
+  .section {
+    padding: 40px 0;
+  }
+  .section-inner {
+    padding: 0 18px;
+  }
   .suggestion-board-card {
     flex-direction: column;
     align-items: flex-start;
@@ -2300,6 +2394,318 @@ a { color: inherit; text-decoration: none; }
   }
   .mobile-language-list {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 54vh;
+    padding: 96px 14px 30px;
+  }
+  .hero-eyebrow {
+    min-height: 32px;
+    padding: 0 12px;
+    margin-bottom: 12px;
+    font-size: 11px;
+  }
+  .hero-title {
+    font-size: clamp(34px, 9vw, 56px);
+    line-height: 1.02;
+  }
+  .hero-subtitle {
+    font-size: clamp(42px, 13vw, 72px);
+    margin-top: 6px;
+  }
+  .hero-sub {
+    font-size: 15px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .section {
+    padding: 32px 0;
+  }
+  .section-inner {
+    padding: 0 14px;
+  }
+  .usage-bar {
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 8px 14px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .credit-notice-banner,
+  .credit-cta-panel {
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    border-radius: 20px;
+  }
+  .credit-cta-panel {
+    gap: 6px;
+  }
+  .credit-cta-panel .credit-cta-actions {
+    margin-top: 2px;
+    gap: 8px;
+  }
+  .try-layout {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .try-column {
+    padding: 18px;
+    gap: 12px;
+    border-radius: 22px;
+  }
+  .card-header {
+    margin-bottom: 2px;
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+  .card-title {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+  .try-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .outline-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .preview-box {
+    min-height: 180px;
+    padding: 10px;
+    border-radius: 20px;
+  }
+  .empty-preview {
+    gap: 8px;
+    padding: 16px;
+    border-radius: 18px;
+    box-shadow: 0 10px 20px rgba(44,24,16,0.05);
+  }
+  .empty-preview-badge {
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .empty-preview-title {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+  .empty-preview-tips {
+    gap: 6px;
+  }
+  .empty-preview-tip {
+    padding-left: 14px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .empty-preview-tip::before {
+    top: 0.66em;
+    width: 6px;
+    height: 6px;
+    box-shadow: 0 0 0 3px var(--guide-dot-shadow);
+  }
+  .upload-guidance-text,
+  .result-disclaimer-text {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .subject-type-panel {
+    margin-bottom: 12px;
+  }
+  .subject-type-head {
+    margin-bottom: 8px;
+  }
+  .real-generation-label {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  .generate-btn {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+  .modal-backdrop {
+    padding: 10px;
+  }
+  .modal-content.sample-modal {
+    max-width: calc(100vw - 20px);
+    max-height: 88vh;
+    padding: 16px 14px;
+    border-radius: 22px;
+  }
+  .sample-modal-body {
+    padding-right: 0;
+  }
+  .modal-header {
+    margin-bottom: 14px;
+  }
+  .modal-header h3 {
+    font-size: 18px;
+  }
+  .modal-subtitle {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .close-btn {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .sample-category-tabs {
+    margin-bottom: 12px;
+    gap: 6px;
+    padding: 4px;
+  }
+  .sample-category-tabs button {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .sample-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .cloth-country-group {
+    margin-bottom: 14px;
+  }
+  .cloth-country-title {
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+  .sample-card {
+    aspect-ratio: 1 / 1.18;
+    border-width: 2px;
+    border-radius: 12px;
+  }
+  .sample-card:hover {
+    transform: none;
+  }
+  .sample-spinner {
+    width: 14px;
+    height: 14px;
+  }
+  .modal-disclaimer {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .content-modal {
+    max-width: calc(100vw - 20px) !important;
+    max-height: 88vh;
+    padding: 16px 14px !important;
+    border-radius: 22px !important;
+  }
+  .content-modal .sample-category-tabs {
+    margin-bottom: 12px;
+  }
+  .content-modal .sample-category-tabs button {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .content-modal-body {
+    padding-right: 0;
+  }
+  .content-modal-article {
+    padding: 18px;
+  }
+  .content-modal-article h2 {
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+  .content-modal-article p,
+  .content-modal-intro {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .content-modal .country-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .content-modal .country-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .content-modal .country-card-thumb {
+    margin-bottom: 10px;
+    border-radius: 14px;
+  }
+  .content-modal .country-card-name {
+    font-size: 10px;
+  }
+  .content-modal .country-card h4 {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+  .content-modal .country-card p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    min-height: 50vh;
+    padding: 90px 10px 24px;
+  }
+  .section-inner {
+    padding: 0 10px;
+  }
+  .try-column {
+    padding: 14px;
+    gap: 10px;
+  }
+  .card-title {
+    font-size: 17px;
+  }
+  .preview-box {
+    min-height: 155px;
+    padding: 8px;
+  }
+  .empty-preview {
+    padding: 12px;
+    gap: 6px;
+  }
+  .empty-preview-title {
+    font-size: 16px;
+  }
+  .empty-preview-tip {
+    font-size: 11px;
+  }
+  .upload-guidance-text,
+  .result-disclaimer-text {
+    font-size: 11px;
+  }
+  .modal-backdrop {
+    padding: 8px;
+  }
+  .modal-content.sample-modal,
+  .content-modal {
+    max-width: calc(100vw - 12px) !important;
+    padding: 12px 10px !important;
+  }
+  .sample-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .sample-card {
+    border-radius: 10px;
+  }
+  .content-modal .country-card-grid {
+    gap: 8px;
+  }
+  .content-modal .country-card {
+    padding: 12px;
   }
 }
 
