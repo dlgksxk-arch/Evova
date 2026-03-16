@@ -136,6 +136,9 @@ single model only, full body visible from head to toe, centered framing.
 Lighting:
 professional fashion photography lighting, cinematic shadows, high detail.
 
+Image quality:
+ultra clean image quality, sharp facial details, crisp eyes, clean skin texture, detailed embroidery, high clarity fabric texture, realistic hands and fingers, realistic body anatomy, no blur, no low resolution look, no extra limbs, no distorted hands, no broken facial features, no warped clothing edges.
+
 Restrictions:
 one image only, one model only, no face distortion, no identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
