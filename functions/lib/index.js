@@ -177,8 +177,12 @@ One model only.
 One image only.
 Full body visible from head to toe.
 Show the entire head, full hair, full body, both hands, both feet, and the complete outfit inside the frame.
+Use a slightly wider, zoomed-out camera framing so the subject is fully visible.
+Frame the shot with clear space above the head and below the feet.
+Keep the full silhouette comfortably inside the image boundaries.
 Do not crop the top of the head, hair, arms, hands, legs, or feet.
 Leave comfortable space around the subject so the full body fits naturally in frame.
+Avoid close-up or tight crop composition.
 No face distortion.
 No identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
