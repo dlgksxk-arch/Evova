@@ -2891,6 +2891,9 @@ const App: React.FC = () => {
   };
 
   const loadPersonUpload = async (file: File) => {
+    if (isGenerating) {
+      return;
+    }
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     const previewUrl = URL.createObjectURL(file);
     setSelectedSampleUrl(null);
@@ -2905,6 +2908,9 @@ const App: React.FC = () => {
   };
 
   const loadClothUpload = async (file: File) => {
+    if (isGenerating) {
+      return;
+    }
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
     const previewUrl = URL.createObjectURL(file);
     setSelectedClothSampleUrl(null);
@@ -2915,8 +2921,16 @@ const App: React.FC = () => {
     clearGeneratedVideo();
   };
 
-  const handleOpenPersonSampleModal = () => setShowSampleModal(true);
+  const handleOpenPersonSampleModal = () => {
+    if (isGenerating) {
+      return;
+    }
+    setShowSampleModal(true);
+  };
   const handleOpenClothSampleModal = () => {
+    if (isGenerating) {
+      return;
+    }
     if (clothSampleOptions.length === 0) {
       alert(t.clothingSamplesPending);
       return;
@@ -3830,10 +3844,10 @@ const App: React.FC = () => {
                   </div>
                   
                   <div className="try-actions">
-                    <button className="outline-btn primary" onClick={handleOpenPersonSampleModal}>
+                    <button className="outline-btn primary" disabled={isGenerating} onClick={handleOpenPersonSampleModal}>
                       {t.chooseSample}
                     </button>
-                    <button className="outline-btn" onClick={() => personInputRef.current?.click()}>
+                    <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()}>
                       {t.uploadMyPhoto}
                     </button>
                     <input
@@ -3887,7 +3901,7 @@ const App: React.FC = () => {
                     )}
                     {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
                     {(personImage || selectedSampleUrl) && (
-                      <button className="clear-img-btn" onClick={() => {
+                      <button className="clear-img-btn" disabled={isGenerating} onClick={() => {
                         if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
                         setPersonImage(null);
                         setPersonFile(null);
@@ -3910,10 +3924,10 @@ const App: React.FC = () => {
                     <h3 className="card-title">{t.step2Title}</h3>
                   </div>
                   <div className="try-actions">
-                    <button className="outline-btn primary" onClick={handleOpenClothSampleModal}>
+                    <button className="outline-btn primary" disabled={isGenerating} onClick={handleOpenClothSampleModal}>
                       {t.chooseClothingSample}
                     </button>
-                    <button className="outline-btn" onClick={() => clothInputRef.current?.click()}>
+                    <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()}>
                       {t.uploadClothing}
                     </button>
                     <input
@@ -3959,7 +3973,7 @@ const App: React.FC = () => {
                         )}
                         {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
                         {(clothImage || selectedClothSampleUrl) && (
-                          <button className="clear-img-btn" onClick={() => {
+                          <button className="clear-img-btn" disabled={isGenerating} onClick={() => {
                             if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
                             setClothImage(null);
                             setClothFile(null);
@@ -3984,7 +3998,7 @@ const App: React.FC = () => {
               <div className="subject-type-panel page-article">
                 <div className="subject-type-head">
                   <strong>{subjectUi.title}</strong>
-                  <button className="outline-btn subject-detect-btn" onClick={() => {
+                  <button className="outline-btn subject-detect-btn" disabled={isGenerating} onClick={() => {
                     const source = personFile || activePersonImage;
                     if (source) {
                       setSubjectTypeManualOverride(false);
@@ -3997,6 +4011,7 @@ const App: React.FC = () => {
                 <div className="subject-type-controls">
                   <select
                     className="subject-type-select"
+                    disabled={isGenerating}
                     value={subjectType}
                     onChange={(event) => handleSubjectTypeChange(normalizeSubjectType(event.target.value))}
                   >
@@ -4583,6 +4598,9 @@ const App: React.FC = () => {
           currentUrl={activePersonImage}
           lang={lang}
           onSelect={(url, category) => {
+            if (isGenerating) {
+              return;
+            }
             if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
             setSelectedSampleUrl(url);
             setGender(category);
@@ -4604,6 +4622,9 @@ const App: React.FC = () => {
           currentUrl={activeClothImage}
           lang={lang}
           onSelect={(url) => {
+            if (isGenerating) {
+              return;
+            }
             if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
             setSelectedClothSampleUrl(url);
             setClothImage(null);
