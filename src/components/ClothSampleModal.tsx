@@ -20,7 +20,7 @@ const findCategoryByUrl = (url: string | null): ClothSampleCategory => {
   return clothSampleOptions.find((sample) => sample.image === url)?.category ?? 'female';
 };
 
-const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, onClose, onSelect }) => {
+const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _lang, onClose, onSelect }) => {
   const { t } = useTranslation();
   const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
   const [erroredUrls, setErroredUrls] = useState<Record<string, boolean>>({});
@@ -37,14 +37,6 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, o
     () => clothSampleOptions.filter((sample) => sample.category === category),
     [category],
   );
-  const groupedSamples = categorySamples.reduce<Record<string, typeof categorySamples>>((acc, sample) => {
-    if (!acc[sample.country]) {
-      acc[sample.country] = [];
-    }
-    acc[sample.country].push(sample);
-    return acc;
-  }, {});
-
   useEffect(() => {
     setCategory(findCategoryByUrl(currentUrl));
   }, [currentUrl]);
@@ -87,44 +79,37 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang, o
             ))}
           </div>
 
-          {Object.values(groupedSamples).map((samples) => (
-            <div key={samples[0].country} className="cloth-country-group">
-              <div className="cloth-country-title">
-                {lang === 'ko' ? samples[0].countryLabelKo : samples[0].countryLabelEn}
-              </div>
-              <div className="sample-grid">
-                {samples.map((sample) => (
-                  <button
-                    key={sample.id}
-                    className={`sample-card ${currentUrl === sample.image ? 'selected' : ''} ${erroredUrls[sample.image] ? 'error' : ''}`}
-                    onClick={() => {
-                      onSelect(sample.image);
-                      onClose();
-                    }}
-                    type="button"
-                  >
-                    {!loadedUrls[sample.image] && !erroredUrls[sample.image] && (
-                      <div className="sample-card-overlay">
-                        <span className="spinner sample-spinner"></span>
-                      </div>
-                    )}
-                    <img
-                      src={sample.image}
-                      alt={sample.label}
-                      className={loadedUrls[sample.image] ? 'is-visible' : ''}
-                      loading="eager"
-                      onError={() => {
-                        console.error('[HAMDEVA] cloth sample thumbnail failed', sample.image);
-                        setErroredUrls((prev) => ({ ...prev, [sample.image]: true }));
-                      }}
-                      onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
-                    />
-                    <div className="error-placeholder">{copy.error}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+          <div className="sample-grid">
+            {categorySamples.map((sample, index) => (
+              <button
+                key={sample.id}
+                className={`sample-card ${currentUrl === sample.image ? 'selected' : ''} ${erroredUrls[sample.image] ? 'error' : ''}`}
+                onClick={() => {
+                  onSelect(sample.image);
+                  onClose();
+                }}
+                type="button"
+              >
+                {!loadedUrls[sample.image] && !erroredUrls[sample.image] && (
+                  <div className="sample-card-overlay">
+                    <span className="spinner sample-spinner"></span>
+                  </div>
+                )}
+                <img
+                  src={sample.image}
+                  alt={`Outfit sample ${index + 1}`}
+                  className={loadedUrls[sample.image] ? 'is-visible' : ''}
+                  loading="eager"
+                  onError={() => {
+                    console.error('[HAMDEVA] cloth sample thumbnail failed', sample.image);
+                    setErroredUrls((prev) => ({ ...prev, [sample.image]: true }));
+                  }}
+                  onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
+                />
+                <div className="error-placeholder">{copy.error}</div>
+              </button>
+            ))}
+          </div>
         </div>
         <p className="modal-disclaimer">{copy.disclaimer}</p>
       </div>
