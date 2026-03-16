@@ -110,26 +110,34 @@ const OPENAI_IMAGE_UNIT_PRICING = {
     high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
   },
 } as const;
-const HUMAN_PROMPT = `Use the first input image as the face reference and identity lock.
-Use the second input image as the clothing reference.
+const HUMAN_PROMPT = `Create a single full-body fashion photograph.
 
-Generate a single realistic full-body fashion image of the same person wearing the referenced outfit.
+Character lock:
+use the exact same woman from the reference face image, identical identity, identical facial structure, identical eyes, identical nose, identical lips, identical skin tone, identical hairstyle, same person, no identity change.
 
-Requirements:
-- preserve the exact facial identity from the face reference
-- character lock: do not change the person into a different model
-- keep natural beauty makeup only
-- preserve the clothing accurately, including color, silhouette, fabric feel, ornament details, and overall design
-- use a fashion pose that matches the clothing concept
-- use a cinematic background that matches the clothing style
-- keep balanced and natural body proportions
-- use professional fashion lighting
-- show a single model only
-- full body shot
-- one image only
-- no collage, no multi-panel layout, no duplicate subject
-- no extra accessories unless they are clearly implied by the clothing reference
-- if identity and styling conflict, preserve identity first`;
+Makeup:
+natural but attractive beauty makeup, soft skin, subtle blush, natural lip color, light professional makeup.
+
+Clothing accuracy:
+the model is wearing the provided dark blue embroidered cheongsam dress with phoenix patterns exactly as given, preserve the original design, fabric, embroidery, color and silhouette.
+
+Pose:
+elegant fashion pose matching traditional Chinese clothing, graceful posture, one hand slightly extended, body slightly turned, confident but calm expression.
+
+Body proportion:
+well-proportioned fashion model body, balanced head-to-body ratio, elegant posture.
+
+Background:
+cinematic night street with warm Chinese lanterns and historic architecture, atmospheric lighting matching the outfit mood.
+
+Composition:
+single model only, full body visible from head to toe, centered framing.
+
+Lighting:
+professional fashion photography lighting, cinematic shadows, high detail.
+
+Restrictions:
+one image only, one model only, no face distortion, no identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.

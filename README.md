@@ -5,7 +5,7 @@ Current production baseline:
 - frontend: React + Vite on Firebase Hosting
 - backend source of truth: Firebase Functions in `functions/src/index.ts`
 - legacy/local-only stub: `server/index.js`
-- AI/payment stack: OpenAI image/video + Stripe + Firebase Auth/Firestore
+- AI/payment stack: OpenAI image/video + Polar + Firebase Auth/Firestore
 
 See:
 
@@ -21,8 +21,12 @@ See:
   - `OPENAI_IMAGE_MODEL=gpt-image-1`
   - `OPENAI_CLASSIFICATION_MODEL=gpt-4.1-nano`
   - `OPENAI_VIDEO_MODEL=sora-2`
-  - `STRIPE_SECRET_KEY=...`
-  - `STRIPE_WEBHOOK_SECRET=...`
+  - `POLAR_API_KEY=...`
+  - `POLAR_WEBHOOK_SECRET=...`
+  - `POLAR_PRODUCT_ID_STARTER=...`
+  - `POLAR_PRODUCT_ID_CREATOR=...`
+  - `POLAR_PRODUCT_ID_PRO=...`
+  - `POLAR_PRODUCT_ID_STUDIO=...`
   - `APP_BASE_URL=https://your-domain`
 - Create root `.env` before frontend dev/build and set:
   - `VITE_FIREBASE_API_KEY=...`

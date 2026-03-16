@@ -26,7 +26,7 @@ export const usePaymentSessionStatus = ({
   setUserProfile: Dispatch<SetStateAction<UserProfile | null>>;
 }) => {
   useEffect(() => {
-    if (currentPage !== 'payment-success' || !currentUser || !paymentSessionId) {
+    if (currentPage !== 'payment-success' || !currentUser) {
       return;
     }
 

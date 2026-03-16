@@ -14,8 +14,8 @@ const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
 const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
 const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
 const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
-const SAME_ORIGIN_STRIPE_CHECKOUT_ENDPOINT = '/api/stripe/checkout';
-const SAME_ORIGIN_STRIPE_SESSION_ENDPOINT = '/api/stripe/session';
+const SAME_ORIGIN_POLAR_CHECKOUT_ENDPOINT = '/api/polar/checkout';
+const SAME_ORIGIN_POLAR_SESSION_ENDPOINT = '/api/polar/session';
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -129,7 +129,7 @@ export const callCreateCheckoutSession = async (payload: {
   authToken: string;
   productId: CheckoutProductId;
 }): Promise<CheckoutSessionResponse> => {
-  const res = await fetch(SAME_ORIGIN_STRIPE_CHECKOUT_ENDPOINT, {
+  const res = await fetch(SAME_ORIGIN_POLAR_CHECKOUT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -147,9 +147,10 @@ export const callCreateCheckoutSession = async (payload: {
 
 export const callCheckoutSessionStatus = async (payload: {
   authToken: string;
-  sessionId: string;
+  sessionId?: string | null;
 }): Promise<CheckoutSessionStatusResponse> => {
-  const res = await fetch(`${SAME_ORIGIN_STRIPE_SESSION_ENDPOINT}?sessionId=${encodeURIComponent(payload.sessionId)}`, {
+  const query = payload.sessionId ? `?sessionId=${encodeURIComponent(payload.sessionId)}` : '';
+  const res = await fetch(`${SAME_ORIGIN_POLAR_SESSION_ENDPOINT}${query}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${payload.authToken}`,

@@ -37,9 +37,9 @@ Configured in [`firebase.json`](/home/user/evova/firebase.json):
 - `POST /api/video`
 - `GET /api/video-status`
 - `GET /api/video-content`
-- `POST /api/stripe/checkout`
-- `GET /api/stripe/session`
-- `POST /api/stripe/webhook`
+- `POST /api/polar/checkout`
+- `GET /api/polar/session`
+- `POST /api/polar/webhook`
 
 ## Environment Variables
 
@@ -62,8 +62,12 @@ Frontend Firebase config now fails closed when required values are missing. It n
 - `OPENAI_IMAGE_MODEL`
 - `OPENAI_CLASSIFICATION_MODEL`
 - `OPENAI_VIDEO_MODEL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `POLAR_API_KEY`
+- `POLAR_WEBHOOK_SECRET`
+- `POLAR_PRODUCT_ID_STARTER`
+- `POLAR_PRODUCT_ID_CREATOR`
+- `POLAR_PRODUCT_ID_PRO`
+- `POLAR_PRODUCT_ID_STUDIO`
 - `APP_BASE_URL`
 
 ## Legacy Elements

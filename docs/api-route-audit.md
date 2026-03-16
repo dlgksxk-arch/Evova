@@ -20,8 +20,8 @@ This document records the actual API paths used by the frontend and compares the
 | Video generation | `/api/video` | `callVideoGeneration` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/video` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
 | Video status | `/api/video-status` | `pollVideoGeneration` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/video-status` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
 | Video content | `/api/video-content` | `fetchVideoBlobUrl` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/video-content` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
-| Stripe checkout | `/api/stripe/checkout` | `callCreateCheckoutSession` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/stripe/checkout` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
-| Stripe session status | `/api/stripe/session` | `callCheckoutSessionStatus` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/stripe/session` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
+| Polar checkout | `/api/polar/checkout` | `callCreateCheckoutSession` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/polar/checkout` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
+| Polar session status | `/api/polar/session` | `callCheckoutSessionStatus` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | `api` function, normalized to `/polar/session` | Yes | No | Express cannot support current frontend flow | Keep Functions path; mark Express as legacy/incomplete |
 | Shared result fetch | Firestore direct read | `getDoc(doc(db, 'publicResults', ...))` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | N/A | N/A | N/A | Not an HTTP API; still part of runtime behavior | Leave as Firestore read |
 | Board CRUD | Firestore direct writes/reads | `addDoc`, `updateDoc`, `deleteDoc`, `onSnapshot` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | N/A | N/A | N/A | Not routed through backend | Leave as Firestore-based behavior |
 | Admin dashboard | Firestore direct reads | `getCountFromServer`, `getDocs` in [`src/App.tsx`](/home/user/evova/src/App.tsx) | N/A | N/A | N/A | Not routed through backend | Leave as Firestore-based behavior |
@@ -35,9 +35,9 @@ This document records the actual API paths used by the frontend and compares the
 - `POST /bootstrap`
 - `GET /credits`
 - `POST /classify-subject`
-- `POST /stripe/checkout`
-- `GET /stripe/session`
-- `POST /stripe/webhook`
+- `POST /polar/checkout`
+- `GET /polar/session`
+- `POST /polar/webhook`
 - `POST /video`
 - `GET /video-status`
 - `GET /video-content`
@@ -69,9 +69,9 @@ Missing from Express compared with current frontend:
 - `/api/video`
 - `/api/video-status`
 - `/api/video-content`
-- `/api/stripe/checkout`
-- `/api/stripe/session`
-- `/api/stripe/webhook`
+- `/api/polar/checkout`
+- `/api/polar/session`
+- `/api/polar/webhook`
 
 ## Conclusion
 

@@ -40,7 +40,7 @@ AI / Payments
 
 - OpenAI image editing for try-on generation
 - OpenAI video generation for result video flow
-- Stripe Checkout + webhook fulfillment
+- Polar checkout + webhook fulfillment
 
 ## Request Flow
 
@@ -54,7 +54,7 @@ Hosting rewrite `/api/**`
 ↓
 Firebase Function `api`
 ↓
-OpenAI / Stripe / Firestore
+OpenAI / Polar / Firestore
 ↓
 Response returned to frontend
 
@@ -70,9 +70,9 @@ Legacy compatibility only:
 - `POST /api/video`
 - `GET /api/video-status`
 - `GET /api/video-content`
-- `POST /api/stripe/checkout`
-- `GET /api/stripe/session`
-- `POST /api/stripe/webhook`
+- `POST /api/polar/checkout`
+- `GET /api/polar/session`
+- `POST /api/polar/webhook`
 
 ## Important Runtime Rules
 
@@ -104,8 +104,12 @@ Functions `functions/.env`
 - `OPENAI_IMAGE_MODEL`
 - `OPENAI_CLASSIFICATION_MODEL`
 - `OPENAI_VIDEO_MODEL`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `POLAR_API_KEY`
+- `POLAR_WEBHOOK_SECRET`
+- `POLAR_PRODUCT_ID_STARTER`
+- `POLAR_PRODUCT_ID_CREATOR`
+- `POLAR_PRODUCT_ID_PRO`
+- `POLAR_PRODUCT_ID_STUDIO`
 - `APP_BASE_URL`
 
 ## Operational Risks To Watch
