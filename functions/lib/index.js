@@ -169,7 +169,8 @@ Do not invent a different outfit.
 Do not ignore the uploaded clothing reference.
 
 Natural attractive light makeup.
-A natural pose that matches the outfit concept.
+A gentle natural smile.
+An elegant but slightly more active fashion pose that matches the outfit concept.
 A fitting background that supports the outfit without distracting from it.
 Balanced head-to-body ratio.
 
