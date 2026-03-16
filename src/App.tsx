@@ -36,6 +36,10 @@ const MIN_GENERATION_ESTIMATE_MS = 12_000;
 const MAX_GENERATION_ESTIMATE_MS = 70_000;
 const GENERATION_ESTIMATE_BUFFER_MS = 10_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
+const GENERATION_PREP_TIMEOUT_MS = 20_000;
+const GENERATION_AUTH_TIMEOUT_MS = 15_000;
+const GENERATION_REQUEST_TIMEOUT_MS = 75_000;
+const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const VIDEO_GENERATION_COST = 1000;
 const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
 const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
@@ -1909,6 +1913,23 @@ const preloadImageSource = (src: string): Promise<string> =>
     img.src = src;
   });
 
+const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, errorCode: string): Promise<T> => {
+  let timer: number | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = window.setTimeout(() => reject(new Error(errorCode)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== null) {
+      window.clearTimeout(timer);
+    }
+  }
+};
+
 const getGenerateErrorMessage = (
   error: unknown,
   t: { alertError: string; generationConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string; duplicateRequestBlocked: string },
@@ -1937,6 +1958,18 @@ const getGenerateErrorMessage = (
 
   if (raw === 'GENERATION_TIMEOUT') {
     return `${t.alertError}\n\n응답이 지연되어 요청이 자동으로 종료되었습니다. 잠시 후 다시 시도해 주세요.`;
+  }
+
+  if (raw === 'GENERATION_PREP_TIMEOUT') {
+    return `${t.alertError}\n\n업로드한 이미지를 준비하는 중 시간이 초과되었습니다. 이미지를 다시 선택한 뒤 재시도해 주세요.`;
+  }
+
+  if (raw === 'GENERATION_AUTH_TIMEOUT') {
+    return `${t.alertError}\n\n로그인 정보를 확인하는 중 시간이 초과되었습니다. 다시 로그인한 뒤 재시도해 주세요.`;
+  }
+
+  if (raw === 'RESULT_IMAGE_TIMEOUT') {
+    return `${t.alertError}\n\n생성된 이미지를 화면에 준비하는 중 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.`;
   }
 
   if (raw.includes('100 credits refunded')) {
@@ -3520,14 +3553,18 @@ const App: React.FC = () => {
     setShowVideoPrompt(false);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
-      const [preparedPersonImage, preparedClothImage] = await Promise.all([
-        personFile
-          ? blobToDataUrl(personFile).then((src) => resizeImage(src, 1280))
-          : ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
-        clothFile
-          ? blobToDataUrl(clothFile).then((src) => resizeImage(src, 1280))
-          : ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
-      ]);
+      const [preparedPersonImage, preparedClothImage] = await withTimeout(
+        Promise.all([
+          personFile
+            ? blobToDataUrl(personFile).then((src) => resizeImage(src, 1280))
+            : ensureDataUrl(activePersonImage).then((src) => resizeImage(src, 1280)),
+          clothFile
+            ? blobToDataUrl(clothFile).then((src) => resizeImage(src, 1280))
+            : ensureDataUrl(activeClothImage).then((src) => resizeImage(src, 1280)),
+        ]),
+        GENERATION_PREP_TIMEOUT_MS,
+        'GENERATION_PREP_TIMEOUT',
+      );
 
       const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
       const cached = getCached(cacheKey);
@@ -3541,30 +3578,27 @@ const App: React.FC = () => {
         return;
       }
 
-      let resolvedSubjectType = subjectType;
-      if (subjectDetectionStatus !== 'ready' && !subjectTypeManualOverride) {
-        try {
-          resolvedSubjectType = await callSubjectClassifier(preparedPersonImage);
-          setDetectedSubjectType(resolvedSubjectType);
-          setSubjectType(resolvedSubjectType);
-          setSubjectDetectionStatus('ready');
-        } catch (error) {
-          console.error('Failed to auto-detect subject before generation:', error);
-          setSubjectDetectionStatus('error');
-        }
-      }
+      const resolvedSubjectType = subjectType;
 
       const requestId = createRequestId();
-      const authToken = await currentUser.getIdToken();
-      const resultPayload = await callNanoBanana({
-        authToken,
-        requestId,
-        personImage: preparedPersonImage,
-        garmentImage: preparedClothImage,
-        subjectType: resolvedSubjectType,
-        bodyProfile: { gender },
-      });
-      const result = await preloadImageSource(resultPayload.image);
+      const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
+      const resultPayload = await withTimeout(
+        callNanoBanana({
+          authToken,
+          requestId,
+          personImage: preparedPersonImage,
+          garmentImage: preparedClothImage,
+          subjectType: resolvedSubjectType,
+          bodyProfile: { gender },
+        }),
+        GENERATION_REQUEST_TIMEOUT_MS,
+        'GENERATION_TIMEOUT',
+      );
+      const result = await withTimeout(
+        preloadImageSource(resultPayload.image),
+        GENERATION_IMAGE_READY_TIMEOUT_MS,
+        'RESULT_IMAGE_TIMEOUT',
+      );
       setResultPreviewState('loading');
       setFinalImageSrc(result);
       setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
