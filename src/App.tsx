@@ -11,22 +11,36 @@ import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage }
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
 const MASTER_EMAIL = 'dlgksxk@gmail.com';
 type AuthMode = 'login' | 'signup';
-type UserPlan = 'free';
+type SubscriptionPlan = 'free' | 'basic' | 'pro';
 
 interface UserProfile {
   email: string;
-  plan: UserPlan;
-  dailyQuota: number;
-  usedToday: number;
-  lastUsageDate: string;
+  credits: number;
+  isSubscribed: boolean;
+  subscriptionPlan: SubscriptionPlan;
   createdAt?: Timestamp | null;
+  lastDailyRewardAt?: Timestamp | null;
+  lastLoginAt?: Timestamp | null;
+}
+
+interface CreditBootstrapResponse {
+  success?: boolean;
+  profile?: {
+    credits: number;
+    isSubscribed: boolean;
+    subscriptionPlan: SubscriptionPlan;
+  };
+  signupBonusGranted?: number;
+  dailyRewardGranted?: number;
+  subscriptionBonusGranted?: number;
+  generationCost?: number;
 }
 
 interface GenerationRecord {
@@ -74,7 +88,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: '얼굴 사진 업로드', h1Desc: '정면을 바라보는 전신 또는 상반신 사진을 업로드하세요. 배경이 단순하고 전체적인 체형이 보이면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 체험해보세요', trySub: '로그인 후 하루 3회 무료로 사용할 수 있습니다.',
+    tryTitle: '지금 바로 체험해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
     step1Label: 'Step 1', step1Title: '인물 사진 등록', step1Desc: '정면을 바라보는 전신 또는 상반신 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
     chooseSample: '샘플 선택',
@@ -107,8 +121,8 @@ const translations = {
     sharedResultTitle: '공유된 피팅 결과',
     sharedResultDescription: 'HAMDEVA에서 생성된 결과 이미지를 확인하고 저장하거나 다시 체험해 보세요.',
     loadingSharedResult: '공유 결과를 불러오는 중입니다...',
-    freeLeft: (n: number) => `오늘 무료 사용 가능 횟수: ${n}회`,
-    freeExhausted: '오늘 무료 사용 횟수(3회)를 모두 사용했습니다.',
+    freeLeft: (n: number) => `현재 보유 크레딧: ${n}`,
+    freeExhausted: '크레딧이 부족합니다.',
     payTitle: '무료 횟수 소진',
     payDesc: '오늘의 무료 피팅(3회)을 모두 사용하셨습니다.\n추가 이용을 위해 결제가 필요합니다.',
     payBtn: '결제하고 계속 이용하기',
@@ -125,7 +139,27 @@ const translations = {
     switchToSignup: '계정이 없나요? 회원가입',
     switchToLogin: '이미 계정이 있나요? 로그인',
     authRequired: '생성을 계속하려면 로그인해 주세요.',
-    loginForFree: '로그인 후 하루 3회 무료로 피팅할 수 있습니다.',
+    loginForFree: '회원가입 시 300 크레딧, 매일 로그인 시 300 크레딧이 지급됩니다.',
+    credits: '크레딧',
+    currentCredits: (n: number) => `현재 보유 크레딧: ${n}`,
+    generationCost: '1회 생성 = 100 크레딧',
+    generationCostDetailed: (n: number) => `1회 생성 = ${n} 크레딧`,
+    signUpGetCredits: '회원가입하고 300 크레딧 받기',
+    dailyLoginCredits: '매일 로그인하면 300 크레딧 지급',
+    subscriptionCreditBonus: '구독 시 매일 추가 크레딧 지급',
+    notEnoughCredits: '크레딧이 부족합니다.',
+    refundedAfterFailure: '이미지 생성에 실패하여 100 크레딧이 환불되었습니다.',
+    todayDailyRewardGranted: '오늘의 300 크레딧이 지급되었습니다.',
+    todayDailyRewardAlreadyClaimed: '오늘은 이미 일일 크레딧을 받았습니다.',
+    subscriptionBonusGranted: (n: number) => `구독 보너스 ${n} 크레딧이 추가 지급되었습니다.`,
+    signupBonusGranted: (n: number) => `회원가입 보너스 ${n} 크레딧이 지급되었습니다.`,
+    viewSubscription: '구독 보기',
+    creditCheck: '크레딧 확인',
+    subscriptionPlanLabel: '구독 플랜',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    siteCreditsLabel: '현재 크레딧',
+    siteCreditCostLabel: '생성 비용',
+    authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
     authInvalid: '이메일과 비밀번호를 모두 입력해 주세요.',
     authFailed: '로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.',
     suggestionTitleLabel: '제안 제목',
@@ -167,12 +201,12 @@ const translations = {
     siteLoginLabel: '현재 로그인 계정',
     siteBoardCountLabel: '게시판 글 수',
     siteHistoryCountLabel: '내 생성 기록 수',
-    siteQuotaLabel: '오늘 남은 무료 횟수',
-    remainingDaily: (n: number) => `오늘 남은 생성 횟수: ${n}회`,
+    siteQuotaLabel: '현재 크레딧',
+    remainingDaily: (n: number) => `현재 보유 크레딧: ${n}`,
     noHistory: '아직 생성된 결과가 없습니다.',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
-      { q: '하루 무료 횟수는 몇 번인가요?', a: '매일 자정 기준으로 3회 무료 사용이 제공됩니다. 추가 사용은 일일 이용권 또는 월정액 구독을 통해 가능합니다.' },
+      { q: '크레딧은 어떻게 지급되나요?', a: '회원가입 시 300 크레딧이 지급되고, 이후에는 매일 로그인 시 300 크레딧이 추가됩니다. 구독자는 플랜에 따라 추가 일일 크레딧을 받을 수 있습니다.' },
       { q: '어떤 사진을 올려야 가장 좋은 결과가 나오나요?', a: '인물 사진은 배경이 단순하고 전신 또는 상반신이 잘 보이는 정면 사진을 권장합니다. 의상 사진은 제품 단독 컷이나 착용 모델 사진이 적합합니다.' },
       { q: '합성 결과가 마음에 들지 않으면 어떻게 하나요?', a: '다른 사진으로 다시 시도해보세요. 인물 사진의 배경이 단순할수록, 의상 사진이 선명할수록 더 좋은 결과가 나옵니다.' },
       { q: '모바일에서도 사용할 수 있나요?', a: '네. HAMDEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
@@ -196,7 +230,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: 'Upload Your Photo', h1Desc: 'Upload a front-facing full-body or upper-body photo. A simple background improves result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Try It Now', trySub: 'Log in to get 3 free try-ons per day.',
+    tryTitle: 'Try It Now', trySub: 'Get 300 credits on sign-up and 300 more credits every day you log in.',
     step1Label: 'Step 1', step1Title: 'Upload Person Photo', step1Desc: 'Drag or click to upload a front-facing photo',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     chooseSample: 'Choose Sample',
@@ -229,8 +263,8 @@ const translations = {
     sharedResultTitle: 'Shared fitting result',
     sharedResultDescription: 'View the generated HAMDEVA result, download it, or try another outfit.',
     loadingSharedResult: 'Loading shared result...',
-    freeLeft: (n: number) => `Free uses remaining today: ${n}`,
-    freeExhausted: "You've used all 3 free tries for today.",
+    freeLeft: (n: number) => `Current credits: ${n}`,
+    freeExhausted: 'Not enough credits.',
     payTitle: 'Daily Limit Reached',
     payDesc: "You've used all 3 free fittings for today.\nUpgrade to continue.",
     payBtn: 'Unlock More',
@@ -247,7 +281,27 @@ const translations = {
     switchToSignup: "Don't have an account? Sign up",
     switchToLogin: 'Already have an account? Log in',
     authRequired: 'Please log in to continue generation.',
-    loginForFree: 'Log in to get 3 free try-ons per day.',
+    loginForFree: 'Get 300 credits on sign-up and 300 daily credits when you log in.',
+    credits: 'Credits',
+    currentCredits: (n: number) => `Current credits: ${n}`,
+    generationCost: '1 generation = 100 credits',
+    generationCostDetailed: (n: number) => `1 generation = ${n} credits`,
+    signUpGetCredits: 'Sign up and get 300 credits',
+    dailyLoginCredits: 'Get 300 daily credits',
+    subscriptionCreditBonus: 'Subscribers can get extra daily credits',
+    notEnoughCredits: 'Not enough credits.',
+    refundedAfterFailure: '100 credits refunded due to generation failure.',
+    todayDailyRewardGranted: 'Today’s 300 credits have been added.',
+    todayDailyRewardAlreadyClaimed: 'Today’s daily credits were already claimed.',
+    subscriptionBonusGranted: (n: number) => `${n} subscription bonus credits were added.`,
+    signupBonusGranted: (n: number) => `${n} sign-up bonus credits were added.`,
+    viewSubscription: 'View subscription',
+    creditCheck: 'Check credits',
+    subscriptionPlanLabel: 'Subscription plan',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    siteCreditsLabel: 'Current credits',
+    siteCreditCostLabel: 'Generation cost',
+    authSignupCreditsHint: 'Sign up and get 300 credits',
     authInvalid: 'Please enter both email and password.',
     authFailed: 'Authentication failed. Please try again.',
     suggestionTitleLabel: 'Suggestion title',
@@ -289,12 +343,12 @@ const translations = {
     siteLoginLabel: 'Signed-in account',
     siteBoardCountLabel: 'Board posts',
     siteHistoryCountLabel: 'Saved generations',
-    siteQuotaLabel: 'Remaining daily free uses',
-    remainingDaily: (n: number) => `Remaining daily generations: ${n}`,
+    siteQuotaLabel: 'Current credits',
+    remainingDaily: (n: number) => `Current credits: ${n}`,
     noHistory: 'No saved generations yet.',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
-      { q: 'How many free uses do I get per day?', a: '3 free virtual try-ons are provided daily, resetting at midnight. Additional usage requires a Day Pass or monthly subscription.' },
+      { q: 'How do credits work?', a: 'You get 300 credits when you sign up and 300 more credits each day you log in. Subscribers can receive additional daily credits based on their plan.' },
       { q: 'What kind of photos work best?', a: 'For person photos, use a front-facing shot with a simple background showing your full or upper body. For clothing, solo product shots work best.' },
       { q: "What if I don't like the result?", a: "Try again with different photos. Simpler backgrounds and clearer clothing images produce better results." },
       { q: 'Can I use it on mobile?', a: 'Yes. HAMDEVA is mobile-first and fully optimized for smartphones and tablets.' },
@@ -376,6 +430,24 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '分享试穿结果',
     sharedResultDescription: '查看 HAMDEVA 生成结果，下载图片，或再次尝试其他服装。',
     loadingSharedResult: '正在加载分享结果...',
+    loginForFree: '注册可获得 300 积分，每日登录再获得 300 积分。',
+    credits: '积分',
+    currentCredits: (n: number) => `当前积分：${n}`,
+    generationCost: '1 次生成 = 100 积分',
+    generationCostDetailed: (n: number) => `1 次生成 = ${n} 积分`,
+    signUpGetCredits: '注册并领取 300 积分',
+    dailyLoginCredits: '每日登录可获得 300 积分',
+    subscriptionCreditBonus: '订阅后可获得额外每日积分',
+    notEnoughCredits: '积分不足。',
+    refundedAfterFailure: '由于生成失败，100 积分已退回。',
+    todayDailyRewardGranted: '今天的 300 积分已发放。',
+    todayDailyRewardAlreadyClaimed: '今天的每日积分已领取。',
+    subscriptionBonusGranted: (n: number) => `已额外发放 ${n} 订阅奖励积分。`,
+    signupBonusGranted: (n: number) => `已发放 ${n} 注册奖励积分。`,
+    viewSubscription: '查看订阅',
+    creditCheck: '查看积分',
+    subscriptionPlanLabel: '订阅方案',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
     freeLeft: (n: number) => `今日剩余免费次数：${n}`,
     freeExhausted: '你今天的 3 次免费试穿已全部用完。',
     renderingResult: '正在渲染结果图...',
@@ -420,6 +492,24 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '共有された試着結果',
     sharedResultDescription: 'HAMDEVA の生成結果を表示し、保存したり別の衣装を試したりできます。',
     loadingSharedResult: '共有結果を読み込み中...',
+    loginForFree: '新規登録で 300 クレジット、毎日ログインで 300 クレジットを受け取れます。',
+    credits: 'クレジット',
+    currentCredits: (n: number) => `現在のクレジット: ${n}`,
+    generationCost: '1 回の生成 = 100 クレジット',
+    generationCostDetailed: (n: number) => `1 回の生成 = ${n} クレジット`,
+    signUpGetCredits: '登録して 300 クレジットを受け取る',
+    dailyLoginCredits: '毎日ログインで 300 クレジット',
+    subscriptionCreditBonus: '購読すると毎日追加クレジット',
+    notEnoughCredits: 'クレジットが不足しています。',
+    refundedAfterFailure: '生成に失敗したため 100 クレジットが返金されました。',
+    todayDailyRewardGranted: '本日の 300 クレジットが付与されました。',
+    todayDailyRewardAlreadyClaimed: '本日のデイリークレジットはすでに受け取り済みです。',
+    subscriptionBonusGranted: (n: number) => `購読ボーナス ${n} クレジットが追加されました。`,
+    signupBonusGranted: (n: number) => `登録ボーナス ${n} クレジットが付与されました。`,
+    viewSubscription: '購読を見る',
+    creditCheck: 'クレジット確認',
+    subscriptionPlanLabel: '購読プラン',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
     freeLeft: (n: number) => `本日の無料利用残り回数: ${n}`,
     freeExhausted: '本日の無料 3 回分をすべて使いました。',
     renderingResult: '結果画像を描画中...',
@@ -1120,9 +1210,13 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
   ],
 };
 
-const FREE_LIMIT = 3;
+const GENERATION_COST = 100;
+const SIGNUP_BONUS_CREDITS = 300;
+const DAILY_LOGIN_CREDITS = 300;
 const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
 const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
+const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
+const DIRECT_BOOTSTRAP_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/bootstrap';
 const DIRECT_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/tryon';
 const DIRECT_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/generateTryOn';
 const RESULT_ROUTE_PREFIX = '/result/';
@@ -1149,7 +1243,6 @@ const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   vi: 'latin',
   it: 'latin',
 };
-const getTodayKey = (): string => new Date().toISOString().slice(0, 10);
 const getSharedResultIdFromPath = (pathname: string): string | null => {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/';
   if (!normalizedPath.startsWith(RESULT_ROUTE_PREFIX)) {
@@ -1162,7 +1255,6 @@ const getSharedResultIdFromPath = (pathname: string): string | null => {
 
 const buildSharedResultUrl = (resultId: string): string =>
   `https://hamdeva.com/result/${encodeURIComponent(resultId)}`;
-
 const getFirebaseDisabledMessage = (): string => (
   'Firebase 설정이 누락되어 로그인 기능을 사용할 수 없습니다. 관리자에게 문의하거나 .env 값을 확인해 주세요.'
 );
@@ -1176,83 +1268,18 @@ const requireDb = () => {
 
 const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserProfile => ({
   email: data?.email || email,
-  plan: data?.plan || 'free',
-  dailyQuota: typeof data?.dailyQuota === 'number' ? data.dailyQuota : FREE_LIMIT,
-  usedToday: typeof data?.usedToday === 'number' ? data.usedToday : 0,
-  lastUsageDate: data?.lastUsageDate || getTodayKey(),
+  credits: typeof data?.credits === 'number' ? data.credits : 0,
+  isSubscribed: data?.isSubscribed === true,
+  subscriptionPlan: data?.subscriptionPlan === 'basic' || data?.subscriptionPlan === 'pro' ? data.subscriptionPlan : 'free',
   createdAt: data?.createdAt ?? null,
+  lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
+  lastLoginAt: data?.lastLoginAt ?? null,
 });
 
-const ensureUserProfileDoc = async (user: User): Promise<UserProfile> => {
-  const userRef = doc(requireDb(), 'users', user.uid);
-  const snapshot = await getDoc(userRef);
-
-  if (!snapshot.exists()) {
-    const nextProfile = normalizeUserProfile(user.email || '', {
-      email: user.email || '',
-      usedToday: 0,
-      lastUsageDate: getTodayKey(),
-    });
-    await setDoc(userRef, {
-      ...nextProfile,
-      createdAt: serverTimestamp(),
-    });
-    return nextProfile;
-  }
-
-  const currentProfile = normalizeUserProfile(user.email || '', snapshot.data() as Partial<UserProfile>);
-  if (currentProfile.email !== user.email) {
-    await setDoc(userRef, { email: user.email || currentProfile.email }, { merge: true });
-  }
-  return currentProfile;
-};
-
-const refreshUserQuota = async (user: User): Promise<UserProfile> => {
-  const userRef = doc(requireDb(), 'users', user.uid);
-  const currentProfile = await ensureUserProfileDoc(user);
-  const today = getTodayKey();
-
-  if (currentProfile.lastUsageDate === today) {
-    return currentProfile;
-  }
-
-  const resetProfile = {
-    usedToday: 0,
-    lastUsageDate: today,
-  };
-  await setDoc(userRef, resetProfile, { merge: true });
-  return {
-    ...currentProfile,
-    ...resetProfile,
-  };
-};
-
-const incrementUserUsage = async (user: User): Promise<UserProfile> => {
-  const firestore = requireDb();
-  const userRef = doc(firestore, 'users', user.uid);
-  const today = getTodayKey();
-
-  await runTransaction(firestore, async (transaction) => {
-    const snapshot = await transaction.get(userRef);
-    const profile = normalizeUserProfile(user.email || '', snapshot.data() as Partial<UserProfile>);
-    const currentUsedToday = profile.lastUsageDate === today ? profile.usedToday : 0;
-
-    if (currentUsedToday >= profile.dailyQuota) {
-      throw new Error('LIMIT_EXCEEDED');
-    }
-
-    transaction.set(userRef, {
-      email: user.email || profile.email,
-      plan: profile.plan,
-      dailyQuota: profile.dailyQuota,
-      usedToday: currentUsedToday + 1,
-      lastUsageDate: today,
-      createdAt: profile.createdAt ?? serverTimestamp(),
-    }, { merge: true });
-  });
-
-  return refreshUserQuota(user);
-};
+const createRequestId = (): string =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string => {
   const errorCode = typeof error === 'object' && error !== null && 'code' in error
@@ -1370,7 +1397,7 @@ const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string 
 
 const getGenerateErrorMessage = (
   error: unknown,
-  t: { alertError: string; generationConfigError: string },
+  t: { alertError: string; generationConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string },
 ): string => {
   const raw = error instanceof Error ? error.message : '';
   if (
@@ -1380,6 +1407,18 @@ const getGenerateErrorMessage = (
     || raw.includes('not configured yet')
   ) {
     return t.generationConfigError;
+  }
+
+  if (raw === 'INSUFFICIENT_CREDITS') {
+    return t.notEnoughCredits;
+  }
+
+  if (raw === 'AUTH_REQUIRED') {
+    return t.authRequired;
+  }
+
+  if (raw.includes('100 credits refunded')) {
+    return `${t.alertError}\n\n${t.refundedAfterFailure}`;
   }
 
   return raw ? `${t.alertError}\n\n${raw}` : t.alertError;
@@ -1393,14 +1432,57 @@ const isGenerationConfigError = (message: string): boolean =>
 
 const parseTryOnError = async (res: Response): Promise<Error> => {
   const errBody = await res.json().catch(() => ({})) as { error?: string, message?: string };
-  if (errBody.error === 'LIMIT_EXCEEDED') {
-    return new Error('LIMIT_EXCEEDED');
+  if (errBody.error === 'INSUFFICIENT_CREDITS') {
+    return new Error('INSUFFICIENT_CREDITS');
+  }
+  if (errBody.error === 'AUTH_REQUIRED') {
+    return new Error('AUTH_REQUIRED');
+  }
+  if (errBody.error === 'DUPLICATE_REQUEST') {
+    return new Error('DUPLICATE_REQUEST');
   }
 
   return new Error(errBody.message || errBody.error || `서버 오류 ${res.status}`);
 };
 
-const callNanoBanana = async (payload: { sessionId: string, personImage: string, garmentImage: string, bodyProfile?: any }): Promise<string> => {
+const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse> => {
+  const token = await user.getIdToken();
+  const endpoints = [SAME_ORIGIN_BOOTSTRAP_ENDPOINT, DIRECT_BOOTSTRAP_ENDPOINT];
+
+  let lastError: Error | null = null;
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        const parsedError = await parseTryOnError(res);
+        lastError = parsedError;
+        if ((res.status === 404 || res.status === 405) && endpoint !== endpoints[endpoints.length - 1]) {
+          continue;
+        }
+        throw parsedError;
+      }
+
+      return await res.json() as CreditBootstrapResponse;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Failed to bootstrap credits.');
+      if (endpoint === endpoints[endpoints.length - 1]) {
+        throw lastError;
+      }
+    }
+  }
+
+  throw lastError ?? new Error('Failed to bootstrap credits.');
+};
+
+const callNanoBanana = async (payload: { authToken: string, personImage: string, garmentImage: string, requestId: string, bodyProfile?: any }): Promise<{ image: string; creditsRemaining?: number; signupBonusGranted?: number; dailyRewardGranted?: number; subscriptionBonusGranted?: number }> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   const endpoints = [
@@ -1417,7 +1499,10 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
         console.info('[HAMDEVA] tryon request', { endpoint, method: 'POST' });
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${payload.authToken}`,
+          },
           body: JSON.stringify(payload),
           signal: controller.signal,
         });
@@ -1425,7 +1510,7 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
 
         if (!res.ok) {
           const parsedError = await parseTryOnError(res);
-          if (parsedError.message === 'LIMIT_EXCEEDED') {
+          if (parsedError.message === 'INSUFFICIENT_CREDITS' || parsedError.message === 'AUTH_REQUIRED' || parsedError.message === 'DUPLICATE_REQUEST') {
             throw parsedError;
           }
 
@@ -1443,11 +1528,25 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
           throw parsedError;
         }
 
-        const data = await res.json() as { success?: boolean, image?: string, mimeType?: string };
+        const data = await res.json() as {
+          success?: boolean;
+          image?: string;
+          mimeType?: string;
+          creditsRemaining?: number;
+          signupBonusGranted?: number;
+          dailyRewardGranted?: number;
+          subscriptionBonusGranted?: number;
+        };
         if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-        return normalizeGeneratedImage(data.image, data.mimeType);
+        return {
+          image: normalizeGeneratedImage(data.image, data.mimeType),
+          creditsRemaining: data.creditsRemaining,
+          signupBonusGranted: data.signupBonusGranted,
+          dailyRewardGranted: data.dailyRewardGranted,
+          subscriptionBonusGranted: data.subscriptionBonusGranted,
+        };
       } catch (error) {
-        if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
+        if (error instanceof Error && (error.message === 'INSUFFICIENT_CREDITS' || error.message === 'AUTH_REQUIRED' || error.message === 'DUPLICATE_REQUEST')) {
           throw error;
         }
 
@@ -1662,6 +1761,7 @@ const App: React.FC = () => {
   const [sharedResultLoading, setSharedResultLoading] = useState(false);
   const [sharedResultError, setSharedResultError] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromLocation(window.location.pathname, window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -1687,7 +1787,6 @@ const App: React.FC = () => {
   const contentLocale = getContentLocale(lang);
   const t = uiTranslations[lang];
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
-  const sessionId = currentUser?.uid || '';
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
   const emptyClothTips = CLOTH_TIPS[lang];
@@ -1697,8 +1796,7 @@ const App: React.FC = () => {
   const firebaseDisabledMessage = firebaseConfigError
     ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
-  const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
-  const remainingGenerationCount = remainingUserCount;
+  const currentCredits = userProfile?.credits ?? 0;
   const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL;
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     if (!isSupportedLanguageCode(nextLanguage)) {
@@ -1759,13 +1857,8 @@ const App: React.FC = () => {
       if (!user) {
         setUserProfile(null);
         setHistoryItems([]);
+        setCreditNotice(null);
         return;
-      }
-
-      try {
-        await ensureUserProfileDoc(user);
-      } catch (error) {
-        console.error('Failed to sync user profile after auth change:', error);
       }
     });
 
@@ -1796,20 +1889,14 @@ const App: React.FC = () => {
     }
 
     const userRef = doc(db, 'users', currentUser.uid);
-    const unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
+    const unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
       if (!snapshot.exists()) {
-        const profile = await ensureUserProfileDoc(currentUser);
-        setUserProfile(profile);
+        setUserProfile(null);
         return;
       }
 
       const profile = normalizeUserProfile(currentUser.email || '', snapshot.data() as Partial<UserProfile>);
-      if (profile.lastUsageDate !== getTodayKey()) {
-        const refreshed = await refreshUserQuota(currentUser);
-        setUserProfile(refreshed);
-      } else {
-        setUserProfile(profile);
-      }
+      setUserProfile(profile);
     });
 
     const historyQuery = query(
@@ -1829,6 +1916,44 @@ const App: React.FC = () => {
       unsubscribeHistory();
     };
   }, [currentUser]);
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    let cancelled = false;
+
+    callCreditBootstrap(currentUser)
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+
+        if (response.profile) {
+          setUserProfile((prev) => ({
+            ...normalizeUserProfile(currentUser.email || '', prev ?? {}),
+            ...response.profile,
+          }));
+        }
+
+        const notices = [
+          response.signupBonusGranted ? t.signupBonusGranted(response.signupBonusGranted) : '',
+          response.dailyRewardGranted ? t.todayDailyRewardGranted : '',
+          response.subscriptionBonusGranted ? t.subscriptionBonusGranted(response.subscriptionBonusGranted) : '',
+        ].filter(Boolean);
+
+        if (notices.length > 0) {
+          setCreditNotice(notices.join(' '));
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to bootstrap credits:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, t]);
   useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -1856,6 +1981,14 @@ const App: React.FC = () => {
     const timer = window.setTimeout(() => setShareStatus(null), 2400);
     return () => window.clearTimeout(timer);
   }, [shareStatus]);
+  useEffect(() => {
+    if (!creditNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setCreditNotice(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [creditNotice]);
   useEffect(() => () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
@@ -2172,16 +2305,28 @@ const App: React.FC = () => {
     setAuthError(null);
     setShowAuthModal(true);
   };
-  const syncUserProfileAfterAuth = async (user: User) => {
+  const syncUserCreditsAfterAuth = async (user: User) => {
     try {
-      const profile = await ensureUserProfileDoc(user);
-      setUserProfile(profile);
+      const response = await callCreditBootstrap(user);
+      if (response.profile) {
+        setUserProfile(normalizeUserProfile(user.email || '', response.profile));
+      }
+
+      const notices = [
+        response.signupBonusGranted ? t.signupBonusGranted(response.signupBonusGranted) : '',
+        response.dailyRewardGranted ? t.todayDailyRewardGranted : '',
+        response.subscriptionBonusGranted ? t.subscriptionBonusGranted(response.subscriptionBonusGranted) : '',
+      ].filter(Boolean);
+
+      if (notices.length > 0) {
+        setCreditNotice(notices.join(' '));
+      }
     } catch (error) {
       if (isFirestorePermissionError(error)) {
         setUserProfile(normalizeUserProfile(user.email || ''));
         return;
       }
-      console.error('Failed to sync user profile after login:', error);
+      console.error('Failed to sync user credits after login:', error);
     }
   };
   const handleAuthSubmit = async () => {
@@ -2207,7 +2352,7 @@ const App: React.FC = () => {
       }
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
-      void syncUserProfileAfterAuth(signedInUser);
+      void syncUserCreditsAfterAuth(signedInUser);
     } catch (error) {
       setAuthError(buildAuthErrorMessage(error, t.authFailed));
     } finally {
@@ -2225,7 +2370,7 @@ const App: React.FC = () => {
       const credential = await signInWithPopup(auth, googleProvider);
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
-      void syncUserProfileAfterAuth(credential.user);
+      void syncUserCreditsAfterAuth(credential.user);
     } catch (error) {
       setAuthError(buildAuthErrorMessage(error, t.authFailed));
     } finally {
@@ -2369,13 +2514,14 @@ const App: React.FC = () => {
       return;
     }
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-
-    const freshProfile = await refreshUserQuota(currentUser);
-    setUserProfile(freshProfile);
-    if (freshProfile.usedToday >= freshProfile.dailyQuota) { alert(t.freeExhausted); return; }
+    if (currentCredits < GENERATION_COST) {
+      alert(t.notEnoughCredits);
+      return;
+    }
 
     setIsGenerating(true);
     setShareStatus(null);
+    setCreditNotice(null);
     setLatestSharedResultId(null);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
@@ -2397,16 +2543,32 @@ const App: React.FC = () => {
         return;
       }
 
-      const result = await callNanoBanana({
-        sessionId,
+      const requestId = createRequestId();
+      const authToken = await currentUser.getIdToken();
+      const resultPayload = await callNanoBanana({
+        authToken,
+        requestId,
         personImage: preparedPersonImage,
         garmentImage: preparedClothImage,
         bodyProfile: { gender },
       });
+      const result = resultPayload.image;
 
       try {
-        const nextProfile = await incrementUserUsage(currentUser);
-        setUserProfile(nextProfile);
+        setUserProfile((prev) => prev ? {
+          ...prev,
+          credits: typeof resultPayload.creditsRemaining === 'number' ? resultPayload.creditsRemaining : prev.credits,
+        } : prev);
+
+        const notices = [
+          resultPayload.signupBonusGranted ? t.signupBonusGranted(resultPayload.signupBonusGranted) : '',
+          resultPayload.dailyRewardGranted ? t.todayDailyRewardGranted : '',
+          resultPayload.subscriptionBonusGranted ? t.subscriptionBonusGranted(resultPayload.subscriptionBonusGranted) : '',
+        ].filter(Boolean);
+        if (notices.length > 0) {
+          setCreditNotice(notices.join(' '));
+        }
+
         const [historyFaceImage, historyClothImage, historyResultImage] = await Promise.all([
           createHistoryPreview(preparedPersonImage, 360),
           createHistoryPreview(preparedClothImage, 360),
@@ -2431,8 +2593,8 @@ const App: React.FC = () => {
         ]);
         setLatestSharedResultId(publicResultRef.id);
       } catch (error) {
-        if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
-          alert(t.freeExhausted);
+        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
+          alert(t.notEnoughCredits);
           setIsGenerating(false);
           return;
         }
@@ -2470,6 +2632,12 @@ const App: React.FC = () => {
             ))}
           </div>
           <div className="nav-right">
+            {currentUser && (
+              <div className="credit-pill" aria-label={t.currentCredits(currentCredits)}>
+                <span>{t.credits}</span>
+                <strong>{currentCredits}</strong>
+              </div>
+            )}
             {currentUser ? (
               <div className="user-menu" ref={userMenuRef}>
                 <button className="lang-dropdown-trigger user-menu-trigger" onClick={() => setUserMenuOpen((prev) => !prev)} type="button">
@@ -2611,8 +2779,24 @@ const App: React.FC = () => {
           <section id="try" className="section try-section">
             <div className="section-inner">
               <div className="usage-bar">
-                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.loginForFree}
+                {currentUser ? t.currentCredits(currentCredits) : t.loginForFree}
               </div>
+              {creditNotice && <div className="credit-notice-banner">{creditNotice}</div>}
+              {!currentUser && (
+                <div className="credit-cta-panel">
+                  <p>{t.authSignupCreditsHint}</p>
+                  <p>{t.dailyLoginCredits}</p>
+                  <p>{t.subscriptionCreditBonus}</p>
+                  <div className="credit-cta-actions">
+                    <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('signup')} type="button">
+                      {t.signUpGetCredits}
+                    </button>
+                    <button className="outline-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                      {t.login}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="try-layout">
                 <div className="try-column">
@@ -2768,15 +2952,20 @@ const App: React.FC = () => {
               </div>
 
               <div className="action-section">
+                <p className="credit-cost-text">{t.generationCostDetailed(GENERATION_COST)}</p>
+                <p className="credit-balance-text">{t.currentCredits(currentCredits)}</p>
                 <button
                   className="generate-btn"
                   onClick={handleGenerate}
-                  disabled={isGenerating || (Boolean(currentUser) && (!activePersonImage || !activeClothImage))}
+                  disabled={isGenerating || !currentUser || !activePersonImage || !activeClothImage || currentCredits < GENERATION_COST}
                 >
                   {isGenerating ? (
                     <><span className="spinner"></span>{t.generating}</>
                   ) : t.generate}
                 </button>
+                {currentUser && currentCredits < GENERATION_COST && (
+                  <p className="loading-subtext">{t.notEnoughCredits}</p>
+                )}
                 {isGenerating && <p className="loading-subtext">{t.loadingDetail}</p>}
               </div>
 
@@ -2954,8 +3143,12 @@ const App: React.FC = () => {
                   <p>{historyItems.length}</p>
                 </article>
                 <article className="page-article">
-                  <h3>{t.siteQuotaLabel}</h3>
-                  <p>{remainingGenerationCount}</p>
+                  <h3>{t.siteCreditsLabel}</h3>
+                  <p>{currentCredits}</p>
+                </article>
+                <article className="page-article">
+                  <h3>{t.siteCreditCostLabel}</h3>
+                  <p>{GENERATION_COST}</p>
                 </article>
               </div>
             )}
@@ -3011,7 +3204,16 @@ const App: React.FC = () => {
                   {currentUser && userProfile ? (
                     <div className="mypage-summary">
                       <p><strong>{t.emailLabel}</strong> {currentUser.email}</p>
-                      <p><strong>{t.remainingDaily(remainingUserCount)}</strong></p>
+                      <p><strong>{t.currentCredits(currentCredits)}</strong></p>
+                      <p><strong>{t.subscriptionPlanLabel}</strong> {t.subscriptionPlanValue(userProfile.subscriptionPlan)}</p>
+                      <div className="credit-cta-actions">
+                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('site-management')} type="button">
+                          {t.creditCheck}
+                        </button>
+                        <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('contact')} type="button">
+                          {t.viewSubscription}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="mypage-empty">
