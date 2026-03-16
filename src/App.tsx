@@ -21,6 +21,12 @@ const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
 const MIN_GENERATION_ESTIMATE_MS = 12_000;
 const MAX_GENERATION_ESTIMATE_MS = 45_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
+const VIDEO_GENERATION_COST = 1000;
+const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
+const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
+const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
+const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
+type SubjectType = typeof SUBJECT_TYPES[number];
 const OPENAI_IMAGE_TOKEN_PRICING = {
   'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
   'gpt-image-1-mini': { inputPer1M: 2.5, outputPer1M: 8 },
@@ -76,6 +82,7 @@ interface CreditBootstrapResponse {
   dailyRewardGranted?: number;
   subscriptionBonusGranted?: number;
   generationCost?: number;
+  videoGenerationCost?: number;
 }
 
 interface AdminUserRecord {
@@ -103,9 +110,14 @@ interface GenerationRequestRecord {
   uid: string;
   email?: string;
   requestId: string;
+  type?: 'image_generation' | 'video_generation';
+  subjectType?: SubjectType;
+  sourceResultId?: string | null;
+  openaiVideoId?: string;
   model?: string;
   quality?: string;
   size?: string;
+  durationSeconds?: number;
   estimatedCost?: number | null;
   usage?: {
     input_tokens?: number;
@@ -116,6 +128,17 @@ interface GenerationRequestRecord {
   refunded?: boolean;
   errorMessage?: string;
   createdAt?: Timestamp | null;
+}
+
+interface VideoGenerationResponse {
+  success?: boolean;
+  requestId?: string;
+  openaiVideoId?: string;
+  status?: string;
+  creditsRemaining?: number;
+  estimatedCost?: number;
+  subjectType?: SubjectType;
+  refunded?: boolean;
 }
 
 interface GenerationRecord {
@@ -1480,6 +1503,123 @@ const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserP
   lastLoginAt: data?.lastLoginAt ?? null,
 });
 
+const normalizeSubjectType = (value: unknown): SubjectType => (
+  value === 'dog' || value === 'cat' ? value : 'human'
+);
+
+const getSubjectTypeLabel = (lang: LanguageCode, subjectType: SubjectType): string => {
+  const labels = {
+    ko: { human: '사람', dog: '강아지', cat: '고양이' },
+    ja: { human: '人間', dog: '犬', cat: '猫' },
+    zh: { human: '人物', dog: '狗', cat: '猫' },
+    en: { human: 'Human', dog: 'Dog', cat: 'Cat' },
+  } as const;
+  const labelSet = labels[lang as keyof typeof labels] ?? labels.en;
+  return labelSet[subjectType];
+};
+
+const getSubjectUiText = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      title: '피사체 유형',
+      auto: '자동 감지',
+      autoDetecting: '피사체를 자동 감지하는 중...',
+      autoDetected: '자동 감지 결과',
+      autoFailed: '자동 감지에 실패해 기본값(사람)을 유지합니다.',
+      videoPrompt: '이 사진으로 영상을 제작 하시겠습니까?',
+      videoButton: '🎬 영상 제작하기 (1000 credits)',
+      videoGenerating: '영상 생성 중...',
+      videoReady: '영상 생성이 완료되었습니다.',
+      videoFailed: '영상 생성에 실패했습니다.',
+      videoSection: '생성된 영상',
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      title: '被写体タイプ',
+      auto: '自動検出',
+      autoDetecting: '被写体を自動判定中...',
+      autoDetected: '自動検出結果',
+      autoFailed: '自動検出に失敗したため、既定値の Human を使用します。',
+      videoPrompt: 'この画像から動画を生成しますか？',
+      videoButton: '🎬 動画を生成する (1000 credits)',
+      videoGenerating: '動画を生成中...',
+      videoReady: '動画生成が完了しました。',
+      videoFailed: '動画生成に失敗しました。',
+      videoSection: '生成された動画',
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      title: '主体类型',
+      auto: '自动识别',
+      autoDetecting: '正在自动识别主体...',
+      autoDetected: '自动识别结果',
+      autoFailed: '自动识别失败，已保留默认值 Human。',
+      videoPrompt: '要基于这张图片生成视频吗？',
+      videoButton: '🎬 生成视频 (1000 credits)',
+      videoGenerating: '正在生成视频...',
+      videoReady: '视频生成完成。',
+      videoFailed: '视频生成失败。',
+      videoSection: '生成的视频',
+    };
+  }
+  return {
+    title: 'Subject type',
+    auto: 'Auto detect',
+    autoDetecting: 'Detecting subject type...',
+    autoDetected: 'Detected subject',
+    autoFailed: 'Subject detection failed. Keeping the default Human setting.',
+    videoPrompt: 'Would you like to create a video from this image?',
+    videoButton: '🎬 Generate Video (1000 credits)',
+    videoGenerating: 'Generating video...',
+    videoReady: 'Video generation completed.',
+    videoFailed: 'Video generation failed.',
+    videoSection: 'Generated video',
+  };
+};
+
+const getAdminVideoLabels = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      totalVideoCount: '총 영상 생성 수',
+      todayVideoCount: '오늘 영상 생성 수',
+      estimatedVideoCost: '영상 예상 비용',
+      requestType: '요청 유형',
+      subjectType: '피사체',
+      recentVideos: '최근 영상 생성',
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      totalVideoCount: '総動画生成数',
+      todayVideoCount: '本日の動画生成数',
+      estimatedVideoCost: '動画の推定コスト',
+      requestType: 'リクエスト種別',
+      subjectType: '被写体',
+      recentVideos: '最近の動画生成',
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      totalVideoCount: '总视频生成数',
+      todayVideoCount: '今日视频生成数',
+      estimatedVideoCost: '视频预估成本',
+      requestType: '请求类型',
+      subjectType: '主体',
+      recentVideos: '最近视频生成',
+    };
+  }
+  return {
+    totalVideoCount: 'Total video generations',
+    todayVideoCount: 'Today video generations',
+    estimatedVideoCost: 'Estimated video cost',
+    requestType: 'Request type',
+    subjectType: 'Subject',
+    recentVideos: 'Recent video generations',
+  };
+};
+
 const roundEstimatedCost = (value: number): number =>
   Math.round(value * 1_000_000) / 1_000_000;
 
@@ -1690,6 +1830,9 @@ const parseTryOnError = async (res: Response): Promise<Error> => {
   if (errBody.error === 'INSUFFICIENT_CREDITS') {
     return new Error('INSUFFICIENT_CREDITS');
   }
+  if (errBody.error === 'INSUFFICIENT_VIDEO_CREDITS') {
+    return new Error('INSUFFICIENT_VIDEO_CREDITS');
+  }
   if (errBody.error === 'AUTH_REQUIRED') {
     return new Error('AUTH_REQUIRED');
   }
@@ -1718,7 +1861,7 @@ const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse>
   return await res.json() as CreditBootstrapResponse;
 };
 
-const callNanoBanana = async (payload: { authToken: string, personImage: string, garmentImage: string, requestId: string, bodyProfile?: any }): Promise<{ image: string; creditsRemaining?: number; signupBonusGranted?: number; dailyRewardGranted?: number; subscriptionBonusGranted?: number }> => {
+const callNanoBanana = async (payload: { authToken: string, personImage: string, garmentImage: string, requestId: string, subjectType: SubjectType, bodyProfile?: any }): Promise<{ image: string; subjectType?: SubjectType; creditsRemaining?: number; signupBonusGranted?: number; dailyRewardGranted?: number; subscriptionBonusGranted?: number }> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
@@ -1742,6 +1885,7 @@ const callNanoBanana = async (payload: { authToken: string, personImage: string,
       success?: boolean;
       image?: string;
       mimeType?: string;
+      subjectType?: SubjectType;
       creditsRemaining?: number;
       signupBonusGranted?: number;
       dailyRewardGranted?: number;
@@ -1750,6 +1894,7 @@ const callNanoBanana = async (payload: { authToken: string, personImage: string,
     if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
     return {
       image: normalizeGeneratedImage(data.image, data.mimeType),
+      subjectType: normalizeSubjectType(data.subjectType),
       creditsRemaining: data.creditsRemaining,
       signupBonusGranted: data.signupBonusGranted,
       dailyRewardGranted: data.dailyRewardGranted,
@@ -1758,6 +1903,76 @@ const callNanoBanana = async (payload: { authToken: string, personImage: string,
   } finally {
     clearTimeout(timer);
   }
+};
+
+const callSubjectClassifier = async (subjectImage: string): Promise<SubjectType> => {
+  const res = await fetch(SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ subjectImage }),
+  });
+
+  if (!res.ok) {
+    throw await parseTryOnError(res);
+  }
+
+  const data = await res.json() as { subjectType?: SubjectType };
+  return normalizeSubjectType(data.subjectType);
+};
+
+const callVideoGeneration = async (payload: {
+  authToken: string;
+  image: string;
+  requestId: string;
+  subjectType: SubjectType;
+  sourceResultId?: string | null;
+}): Promise<VideoGenerationResponse> => {
+  const res = await fetch(SAME_ORIGIN_VIDEO_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw await parseTryOnError(res);
+  }
+
+  return await res.json() as VideoGenerationResponse;
+};
+
+const pollVideoGeneration = async (authToken: string, requestId: string): Promise<VideoGenerationResponse & { contentUrl?: string }> => {
+  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseTryOnError(res);
+  }
+
+  return await res.json() as VideoGenerationResponse & { contentUrl?: string };
+};
+
+const fetchVideoBlobUrl = async (authToken: string, requestId: string): Promise<string> => {
+  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT.replace('/video-status', '/video-content')}?requestId=${encodeURIComponent(requestId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseTryOnError(res);
+  }
+
+  return URL.createObjectURL(await res.blob());
 };
 
 type CountryShowcaseCard = {
@@ -1985,6 +2200,10 @@ const App: React.FC = () => {
   const [clothFile, setClothFile] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [gender, setGender] = useState<'female' | 'male' | 'dog' | 'cat'>('female');
+  const [subjectType, setSubjectType] = useState<SubjectType>('human');
+  const [detectedSubjectType, setDetectedSubjectType] = useState<SubjectType | null>(null);
+  const [subjectDetectionStatus, setSubjectDetectionStatus] = useState<'idle' | 'detecting' | 'ready' | 'error'>('idle');
+  const [subjectTypeManualOverride, setSubjectTypeManualOverride] = useState(false);
   
   const [showSampleModal, setShowSampleModal] = useState(false);
   const [showClothSampleModal, setShowClothSampleModal] = useState(false);
@@ -1999,6 +2218,11 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [generatedVideoRequestId, setGeneratedVideoRequestId] = useState<string | null>(null);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
+  const [showVideoPrompt, setShowVideoPrompt] = useState(false);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
   const [sharedResultRecord, setSharedResultRecord] = useState<PublicResultRecord | null>(null);
@@ -2029,6 +2253,9 @@ const App: React.FC = () => {
     todayEstimatedCost: 0,
     totalEstimatedCost: 0,
     recent7DaysEstimatedCost: 0,
+    totalVideoGenerations: 0,
+    todayVideoGenerations: 0,
+    estimatedVideoCost: 0,
   });
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
   const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
@@ -2067,6 +2294,8 @@ const App: React.FC = () => {
       ? 1
       : 0;
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
+  const subjectUi = getSubjectUiText(lang);
+  const adminVideoLabels = getAdminVideoLabels(lang);
   const generationStatusLabel = lang === 'ko'
     ? '예상 완료까지'
     : lang === 'ja'
@@ -2249,6 +2478,9 @@ const App: React.FC = () => {
         todayEstimatedCost: 0,
         totalEstimatedCost: 0,
         recent7DaysEstimatedCost: 0,
+        totalVideoGenerations: 0,
+        todayVideoGenerations: 0,
+        estimatedVideoCost: 0,
       });
       setAdminUsers([]);
       setAdminGenerationLogs([]);
@@ -2289,11 +2521,15 @@ const App: React.FC = () => {
         id: snapshot.id,
         ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
       }));
-      const todayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
+      const imageGenerationLogs = allGenerationLogs.filter((item) => (item.type || 'image_generation') === 'image_generation');
+      const videoGenerationLogs = allGenerationLogs.filter((item) => item.type === 'video_generation');
+      const todayGenerations = imageGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
+      const todayVideoGenerations = videoGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
       const recent7DayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= sevenDaysAgo);
       const totalEstimatedCost = allGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
       const todayEstimatedCost = todayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
       const recent7DaysEstimatedCost = recent7DayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
+      const estimatedVideoCost = videoGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
 
       setAdminSummary({
         users: usersCountSnapshot.data().count,
@@ -2304,6 +2540,9 @@ const App: React.FC = () => {
         todayEstimatedCost,
         totalEstimatedCost,
         recent7DaysEstimatedCost,
+        totalVideoGenerations: videoGenerationLogs.length,
+        todayVideoGenerations: todayVideoGenerations.length,
+        estimatedVideoCost,
       });
       setAdminUsers(usersSnapshot.docs.map((snapshot) => ({
         id: snapshot.id,
@@ -2379,7 +2618,8 @@ const App: React.FC = () => {
   useEffect(() => () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-  }, [personImage, clothImage]);
+    if (generatedVideoUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedVideoUrl);
+  }, [generatedVideoUrl, personImage, clothImage]);
   useEffect(() => {
     if (!sharedResultRouteId) {
       setSharedResultRecord(null);
@@ -2487,14 +2727,47 @@ const App: React.FC = () => {
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
   }, [contentLocale, currentPage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.sharedResultDescription, t.sharedResultTitle]);
 
+  const clearGeneratedVideo = () => {
+    if (generatedVideoUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(generatedVideoUrl);
+    }
+    setGeneratedVideoUrl(null);
+    setGeneratedVideoRequestId(null);
+    setVideoStatusMessage(null);
+    setShowVideoPrompt(false);
+    setIsGeneratingVideo(false);
+  };
+
+  const detectSubjectTypeFromImage = async (source: File | string) => {
+    setSubjectDetectionStatus('detecting');
+    try {
+      const prepared = source instanceof File
+        ? await blobToDataUrl(source).then((src) => resizeImage(src, 768))
+        : await ensureDataUrl(source).then((src) => resizeImage(src, 768));
+      const detected = await callSubjectClassifier(prepared);
+      setDetectedSubjectType(detected);
+      if (!subjectTypeManualOverride) {
+        setSubjectType(detected);
+      }
+      setSubjectDetectionStatus('ready');
+    } catch (error) {
+      console.error('Failed to classify subject type:', error);
+      setSubjectDetectionStatus('error');
+    }
+  };
+
   const loadPersonUpload = async (file: File) => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     const previewUrl = URL.createObjectURL(file);
     setSelectedSampleUrl(null);
     setPersonFile(file);
     setPersonImage(previewUrl);
+    setSubjectTypeManualOverride(false);
+    setDetectedSubjectType(null);
     setPersonUploadMessage(null);
     setPersonPreviewState('ready');
+    clearGeneratedVideo();
+    void detectSubjectTypeFromImage(file);
   };
 
   const loadClothUpload = async (file: File) => {
@@ -2505,6 +2778,7 @@ const App: React.FC = () => {
     setClothImage(previewUrl);
     setClothUploadMessage(null);
     setClothPreviewState('ready');
+    clearGeneratedVideo();
   };
 
   const handleOpenPersonSampleModal = () => setShowSampleModal(true);
@@ -2516,7 +2790,9 @@ const App: React.FC = () => {
     setShowClothSampleModal(true);
   };
   const getRandomClothSample = () => {
-    const byGender = gender === 'female'
+    const byGender = subjectType === 'dog' || subjectType === 'cat'
+      ? clothSampleOptions.filter((sample) => sample.category === 'animal' && sample.country === subjectType)
+      : gender === 'female'
       ? clothSampleOptions.filter((sample) => sample.category === 'female' || sample.category === 'future' || sample.category === 'classic')
       : gender === 'male'
         ? clothSampleOptions.filter((sample) => sample.category === 'male' || sample.category === 'future' || sample.category === 'classic')
@@ -2529,6 +2805,7 @@ const App: React.FC = () => {
     setLatestSharedResultId(null);
     setShareStatus(null);
     setResultPreviewState('idle');
+    clearGeneratedVideo();
   };
   const handleRandomOutfit = () => {
     if (clothSampleOptions.length === 0) {
@@ -2628,7 +2905,66 @@ const App: React.FC = () => {
 
     openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
   };
-  const renderResultActions = (imageSrc: string, link: string | null, disableDownload = false) => (
+  const handleSubjectTypeChange = (nextSubjectType: SubjectType) => {
+    setSubjectType(nextSubjectType);
+    setSubjectTypeManualOverride(true);
+  };
+  const handleVideoGenerate = async () => {
+    if (!currentUser || !finalImageSrc || isGeneratingVideo) {
+      return;
+    }
+    if (currentCredits < VIDEO_GENERATION_COST) {
+      alert(t.notEnoughCredits);
+      return;
+    }
+
+    clearGeneratedVideo();
+    setIsGeneratingVideo(true);
+    setVideoStatusMessage(subjectUi.videoGenerating);
+    try {
+      const authToken = await currentUser.getIdToken();
+      const requestId = createRequestId();
+      const result = await callVideoGeneration({
+        authToken,
+        image: finalImageSrc,
+        requestId,
+        subjectType,
+        sourceResultId: latestSharedResultId,
+      });
+      setGeneratedVideoRequestId(requestId);
+      setUserProfile((prev) => prev ? {
+        ...prev,
+        credits: typeof result.creditsRemaining === 'number' ? result.creditsRemaining : prev.credits,
+      } : prev);
+
+      let attempts = 0;
+      while (attempts < 40) {
+        attempts += 1;
+        await new Promise((resolve) => window.setTimeout(resolve, 5000));
+        const status = await pollVideoGeneration(authToken, requestId);
+        if (typeof status.creditsRemaining === 'number') {
+          setUserProfile((prev) => prev ? { ...prev, credits: status.creditsRemaining as number } : prev);
+        }
+        if (status.status === 'completed') {
+          const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
+          setGeneratedVideoUrl(videoUrl);
+          setVideoStatusMessage(subjectUi.videoReady);
+          return;
+        }
+        if (status.status === 'failed' || status.status === 'canceled') {
+          throw new Error(subjectUi.videoFailed);
+        }
+      }
+
+      throw new Error(subjectUi.videoFailed);
+    } catch (error) {
+      console.error('Failed to generate video:', error);
+      setVideoStatusMessage(error instanceof Error ? error.message : subjectUi.videoFailed);
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+  const renderResultActions = (imageSrc: string, link: string | null, disableDownload = false, showVideoControls = false) => (
     <>
       <div className="result-action-grid">
         <button className="download-btn result-action-btn" disabled={disableDownload} onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
@@ -2653,6 +2989,27 @@ const App: React.FC = () => {
           {t.shareOnFacebook}
         </button>
       </div>
+      {showVideoControls && (showVideoPrompt || isGeneratingVideo || generatedVideoUrl) && (
+        <div className="page-article result-video-panel">
+          <p>{subjectUi.videoPrompt}</p>
+          <button
+            className="generate-btn"
+            disabled={disableDownload || isGeneratingVideo || currentCredits < VIDEO_GENERATION_COST}
+            onClick={() => { void handleVideoGenerate(); }}
+            type="button"
+          >
+            {isGeneratingVideo ? subjectUi.videoGenerating : subjectUi.videoButton}
+          </button>
+          {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
+          {generatedVideoUrl && (
+            <div className="composite-result result-video-shell">
+              <video controls playsInline preload="metadata" className="is-visible">
+                <source src={generatedVideoUrl} type="video/mp4" />
+              </video>
+            </div>
+          )}
+        </div>
+      )}
       {shareStatus && <p className="result-status-text">{shareStatus}</p>}
     </>
   );
@@ -2916,6 +3273,7 @@ const App: React.FC = () => {
 
     generationLockRef.current = true;
     setIsGenerating(true);
+    clearGeneratedVideo();
     const startedAt = Date.now();
     setGenerationStartedAt(startedAt);
     setGenerationElapsedMs(0);
@@ -2923,6 +3281,7 @@ const App: React.FC = () => {
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
+    setShowVideoPrompt(false);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await Promise.all([
@@ -2940,9 +3299,23 @@ const App: React.FC = () => {
         clearGeneratedResult();
         setFinalImageSrc(cached);
         setResultPreviewState('ready');
+        setShowVideoPrompt(true);
         writeGenerationDuration(Date.now() - startedAt);
         setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
         return;
+      }
+
+      let resolvedSubjectType = subjectType;
+      if (subjectDetectionStatus !== 'ready' && !subjectTypeManualOverride) {
+        try {
+          resolvedSubjectType = await callSubjectClassifier(preparedPersonImage);
+          setDetectedSubjectType(resolvedSubjectType);
+          setSubjectType(resolvedSubjectType);
+          setSubjectDetectionStatus('ready');
+        } catch (error) {
+          console.error('Failed to auto-detect subject before generation:', error);
+          setSubjectDetectionStatus('error');
+        }
       }
 
       const requestId = createRequestId();
@@ -2952,6 +3325,7 @@ const App: React.FC = () => {
         requestId,
         personImage: preparedPersonImage,
         garmentImage: preparedClothImage,
+        subjectType: resolvedSubjectType,
         bodyProfile: { gender },
       });
       const result = await preloadImageSource(resultPayload.image);
@@ -3006,6 +3380,8 @@ const App: React.FC = () => {
 
       setCached(cacheKey, result);
       setFinalImageSrc(result);
+      setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
+      setShowVideoPrompt(true);
       writeGenerationDuration(Date.now() - startedAt);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
@@ -3180,7 +3556,7 @@ const App: React.FC = () => {
                     />
                     <div className="watermark">HAMDEVA AI</div>
                   </div>
-                  {renderResultActions(sharedResultRecord.resultImageUrl, sharedPageLink)}
+                  {renderResultActions(sharedResultRecord.resultImageUrl, sharedPageLink, false, false)}
                 </>
               )}
             </article>
@@ -3296,6 +3672,10 @@ const App: React.FC = () => {
                         setPersonImage(null);
                         setPersonFile(null);
                         setSelectedSampleUrl(null);
+                        setSubjectType('human');
+                        setDetectedSubjectType(null);
+                        setSubjectDetectionStatus('idle');
+                        setSubjectTypeManualOverride(false);
                         setPersonUploadMessage(null);
                         setPersonPreviewState('idle');
                       }}>&times;</button>
@@ -3379,6 +3759,41 @@ const App: React.FC = () => {
                 </div>
               </div>
 
+              <div className="subject-type-panel page-article">
+                <div className="subject-type-head">
+                  <strong>{subjectUi.title}</strong>
+                  <button className="outline-btn subject-detect-btn" onClick={() => {
+                    const source = personFile || activePersonImage;
+                    if (source) {
+                      setSubjectTypeManualOverride(false);
+                      void detectSubjectTypeFromImage(source);
+                    }
+                  }} type="button">
+                    {subjectUi.auto}
+                  </button>
+                </div>
+                <div className="subject-type-controls">
+                  <select
+                    className="subject-type-select"
+                    value={subjectType}
+                    onChange={(event) => handleSubjectTypeChange(normalizeSubjectType(event.target.value))}
+                  >
+                    {SUBJECT_TYPES.map((item) => (
+                      <option key={item} value={item}>{getSubjectTypeLabel(lang, item)}</option>
+                    ))}
+                  </select>
+                  <span className="subject-type-status">
+                    {subjectDetectionStatus === 'detecting'
+                      ? subjectUi.autoDetecting
+                      : subjectDetectionStatus === 'ready' && detectedSubjectType
+                        ? `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, detectedSubjectType)}`
+                        : subjectDetectionStatus === 'error'
+                          ? subjectUi.autoFailed
+                          : `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, subjectType)}`}
+                  </span>
+                </div>
+              </div>
+
               <div className="action-section">
                 <p className="credit-cost-text">{t.generationCostDetailed(GENERATION_COST)}</p>
                 <p className="credit-balance-text">{t.currentCredits(currentCredits)}</p>
@@ -3450,7 +3865,7 @@ const App: React.FC = () => {
                     )}
                     <div className="watermark">HAMDEVA AI</div>
                   </div>
-                  {renderResultActions(finalImageSrc, shareResultLink, resultPreviewState !== 'ready')}
+                  {renderResultActions(finalImageSrc, shareResultLink, resultPreviewState !== 'ready', true)}
                 </div>
               )}
             </div>
@@ -3522,6 +3937,18 @@ const App: React.FC = () => {
                       <h3>{t.adminRecent7DaysEstimatedCost}</h3>
                       <p>{formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p>
                     </article>
+                    <article className="page-article">
+                      <h3>{adminVideoLabels.totalVideoCount}</h3>
+                      <p>{adminSummary.totalVideoGenerations}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{adminVideoLabels.todayVideoCount}</h3>
+                      <p>{adminSummary.todayVideoGenerations}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{adminVideoLabels.estimatedVideoCost}</h3>
+                      <p>{formatEstimatedCostLabel(adminSummary.estimatedVideoCost)}</p>
+                    </article>
                   </div>
                   <article className="page-article">
                     <h3>{t.adminSystemSection}</h3>
@@ -3584,6 +4011,8 @@ const App: React.FC = () => {
                       <div className="admin-table-head">
                         <span>{t.emailLabel}</span>
                         <span>{t.adminCreatedAt}</span>
+                        <span>{adminVideoLabels.requestType}</span>
+                        <span>{adminVideoLabels.subjectType}</span>
                         <span>{t.adminStatus}</span>
                         <span>{t.adminModel}</span>
                         <span>{t.adminEstimatedCost}</span>
@@ -3593,8 +4022,35 @@ const App: React.FC = () => {
                         <div key={item.id} className="admin-table-row">
                           <span>{item.email || item.uid}</span>
                           <span>{formatTimestampLabel(item.createdAt)}</span>
+                          <span>{item.type || 'image_generation'}</span>
+                          <span>{item.subjectType || '-'}</span>
                           <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
                           <span>{item.model || '-'}</span>
+                          <span>{formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
+                          <span>{item.requestId}</span>
+                        </div>
+                      )) : (
+                        <p>{t.adminNoData}</p>
+                      )}
+                    </div>
+                  </article>
+                  <article className="page-article">
+                    <h3>{adminVideoLabels.recentVideos}</h3>
+                    <div className="admin-table">
+                      <div className="admin-table-head">
+                        <span>{t.emailLabel}</span>
+                        <span>{t.adminCreatedAt}</span>
+                        <span>{adminVideoLabels.subjectType}</span>
+                        <span>{t.adminStatus}</span>
+                        <span>{t.adminEstimatedCost}</span>
+                        <span>{t.adminResultId}</span>
+                      </div>
+                      {adminGenerationLogs.filter((item) => item.type === 'video_generation').length > 0 ? adminGenerationLogs.filter((item) => item.type === 'video_generation').map((item) => (
+                        <div key={item.id} className="admin-table-row">
+                          <span>{item.email || item.uid}</span>
+                          <span>{formatTimestampLabel(item.createdAt)}</span>
+                          <span>{item.subjectType || '-'}</span>
+                          <span>{item.status || (item.success ? 'completed' : 'unknown')}</span>
                           <span>{formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
                           <span>{item.requestId}</span>
                         </div>
@@ -3905,10 +4361,14 @@ const App: React.FC = () => {
             if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
             setSelectedSampleUrl(url);
             setGender(category);
+            setSubjectTypeManualOverride(false);
+            setDetectedSubjectType(null);
             setPersonImage(null);
             setPersonFile(null);
             setPersonUploadMessage(null);
             setPersonPreviewState('loading');
+            clearGeneratedVideo();
+            void detectSubjectTypeFromImage(url);
           }}
           onClose={() => setShowSampleModal(false)}
         />
@@ -3925,6 +4385,7 @@ const App: React.FC = () => {
             setClothFile(null);
             setClothUploadMessage(null);
             setClothPreviewState('loading');
+            clearGeneratedVideo();
           }}
           onClose={() => setShowClothSampleModal(false)}
         />

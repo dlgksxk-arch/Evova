@@ -50,16 +50,29 @@ const OPENAI_CONFIG_MESSAGE = 'OpenAI API key is missing. Set OPENAI_API_KEY or 
 const AUTH_REQUIRED_MESSAGE = '로그인이 필요합니다.';
 const NOT_ENOUGH_CREDITS_ERROR = 'INSUFFICIENT_CREDITS';
 const NOT_ENOUGH_CREDITS_MESSAGE = '크레딧이 부족합니다.';
+const NOT_ENOUGH_VIDEO_CREDITS_ERROR = 'INSUFFICIENT_VIDEO_CREDITS';
 const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
 const DUPLICATE_REQUEST_MESSAGE = '이미 처리 중인 생성 요청입니다.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30000;
 const GENERATION_COST = 100;
+const VIDEO_GENERATION_COST = 1000;
 const SIGNUP_BONUS_CREDITS = 300;
 const DAILY_BASE_CREDITS = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 const OPENAI_IMAGE_SIZE = '1536x1024';
 const OPENAI_IMAGE_QUALITY = 'medium';
+const SUBJECT_CLASSIFICATION_MODEL = process.env['OPENAI_CLASSIFICATION_MODEL'] ?? 'gpt-4.1-nano';
+const VIDEO_MODEL = process.env['OPENAI_VIDEO_MODEL'] ?? 'sora-2';
+const VIDEO_SECONDS = '4';
+const VIDEO_SIZE = '1280x720';
+const VIDEO_ESTIMATED_COST = 0.4;
+const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
+Return ONLY one word:
+
+human
+dog
+cat`;
 const SUBSCRIPTION_DAILY_BONUS = {
     free: 0,
     basic: 500,
@@ -94,6 +107,170 @@ const OPENAI_IMAGE_UNIT_PRICING = {
         high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
     },
 };
+const HUMAN_PROMPT = `Use the uploaded face photo as the identity anchor and the uploaded clothing image as the outfit reference.
+
+Create a realistic virtual fitting image of the exact same person from the uploaded face photo.
+Identity preservation is the highest priority.
+
+Strict identity rules:
+- keep the same person
+- preserve the exact identity and facial resemblance of the uploaded face
+- do not invent a new face
+- do not change ethnicity
+- do not change age
+- do not beautify, idealize, or stylize the face
+- do not make the person look like a different model
+- keep the same eyes, nose, mouth, jawline, chin shape, cheek structure, face shape, skin tone, forehead ratio, eye spacing, lip shape, and hairline
+- keep the same overall likeness and real-person appearance
+- if there is any conflict between fashion styling and facial identity, preserve facial identity first
+
+Garment transfer rules:
+- transfer only the outfit from the uploaded clothing image
+- preserve the garment color, silhouette, texture, visible ornament details, sleeve shape, skirt volume, top-to-bottom proportions, and overall design
+- do not replace the outfit with a different design
+- keep the clothing faithful to the reference image
+
+Output requirements:
+- generate one clean 1x4 fashion lookbook grid
+- the same person must appear in all 4 panels
+- keep the face consistent across all 4 panels
+- keep the body proportions consistent across all 4 panels
+- panel 1: front view
+- panel 2: 3/4 front view
+- panel 3: side or semi-back view
+- panel 4: back view
+
+Style requirements:
+- realistic studio photo
+- natural lighting
+- clean simple background
+- full-body fitting result
+- realistic fabric appearance
+- no illustration
+- no cartoon
+- no fantasy styling
+- no extra accessories unless clearly visible in the clothing reference
+
+Face consistency constraints:
+The uploaded face photo must remain the identity source.
+Do not reinterpret the face.
+Do not optimize the face for beauty.
+Do not change the person into a more glamorous or more generic fashion model.
+Keep the facial geometry close to the uploaded face.
+Same person in all 4 panels. No panel may show a different face.`;
+const DOG_PROMPT = `Use the uploaded dog photo as the identity anchor and the uploaded clothing image as the outfit reference.
+
+Create a realistic virtual fitting image of the exact same dog from the uploaded dog photo.
+Animal identity preservation is the highest priority.
+
+Strict identity rules:
+- keep the same dog
+- preserve the exact likeness of the uploaded dog
+- do not invent a different dog
+- do not change breed appearance
+- do not change fur color
+- do not change fur pattern
+- do not stylize or cartoonize the dog
+- keep the same muzzle shape, snout length, ear shape, ear position, eye shape, eye spacing, forehead shape, face width, body proportions, tail appearance if visible, and overall breed impression
+- keep the same real-animal appearance and overall likeness
+- if there is any conflict between outfit styling and animal identity, preserve animal identity first
+
+Garment transfer rules:
+- adapt the uploaded clothing image into a realistic dog fitting
+- preserve the clothing color, silhouette, texture, visible ornament details, and overall design language as much as possible
+- do not replace the outfit with a completely different design
+- fit the outfit naturally to a dog body shape
+- keep the outfit believable and species-appropriate
+
+Output requirements:
+- generate one clean multi-view fashion lookbook image
+- if the current pipeline supports 1x4, keep a 1x4 layout of the same dog
+- the same dog must appear consistently in all panels
+- keep the face and body consistent across all views
+- front, 3/4, side/semi-back, and back-style variation if supported by the current layout
+
+Style requirements:
+- realistic pet studio photo
+- natural lighting
+- clean simple background
+- realistic fur detail
+- no illustration
+- no cartoon
+- no fantasy creature styling
+- no human face traits
+- no extra accessories unless clearly justified by the clothing reference
+
+Animal consistency constraints:
+The uploaded dog photo must remain the identity source.
+Do not reinterpret the dog into a different breed or different face.
+Do not beautify the dog into a generic pet model.
+Keep the same fur pattern, muzzle shape, ears, eye shape, and overall body silhouette.
+The same dog must appear in every panel.`;
+const CAT_PROMPT = `Use the uploaded cat photo as the identity anchor and the uploaded clothing image as the outfit reference.
+
+Create a realistic virtual fitting image of the exact same cat from the uploaded cat photo.
+Animal identity preservation is the highest priority.
+
+Strict identity rules:
+- keep the same cat
+- preserve the exact likeness of the uploaded cat
+- do not invent a different cat
+- do not change fur color
+- do not change fur pattern
+- do not change face shape
+- do not stylize or cartoonize the cat
+- keep the same ears, eye shape, eye spacing, nose shape, muzzle area, whisker pad area, forehead shape, fur markings, body proportions, tail appearance if visible, and overall likeness
+- keep the same real-animal appearance
+- if there is any conflict between outfit styling and animal identity, preserve animal identity first
+
+Garment transfer rules:
+- adapt the uploaded clothing image into a realistic cat fitting
+- preserve the clothing color, silhouette, texture, visible ornament details, and overall design language as much as possible
+- do not replace the outfit with a completely different design
+- fit the outfit naturally to a cat body shape
+- keep the outfit believable and species-appropriate
+
+Output requirements:
+- generate one clean multi-view fashion lookbook image
+- if the current pipeline supports 1x4, keep a 1x4 layout of the same cat
+- the same cat must appear consistently in all panels
+- keep the face and body consistent across all views
+- front, 3/4, side/semi-back, and back-style variation if supported by the current layout
+
+Style requirements:
+- realistic pet studio photo
+- natural lighting
+- clean simple background
+- realistic fur detail
+- no illustration
+- no cartoon
+- no fantasy creature styling
+- no human face traits
+- no extra accessories unless clearly justified by the clothing reference
+
+Animal consistency constraints:
+The uploaded cat photo must remain the identity source.
+Do not reinterpret the cat into a different face or different markings.
+Do not beautify the cat into a generic pet model.
+Keep the same fur markings, ears, eye shape, whisker area, and overall body silhouette.
+The same cat must appear in every panel.`;
+const VIDEO_PROMPT_TEMPLATE = `Use the generated outfit image as the identity and outfit reference.
+
+Create a short cinematic fashion showcase video of the exact same subject wearing the exact same outfit.
+
+Identity preservation is critical.
+Keep the same subject, same face or same animal identity, same body proportions, and same outfit details across all frames.
+
+The subject should make subtle, natural fashion-presentation movements such as a gentle turn, slight step, or pose shift.
+
+Keep motion smooth and realistic.
+Do not change the outfit design.
+Do not change the subject identity.
+Do not invent a different face, animal, or body shape.
+
+Choose a realistic background that matches the mood and style of the outfit, with natural lighting and visually balanced composition.
+
+Create a short fashion showcase clip, approximately 3 to 5 seconds long.`;
 let lastLoggedOpenAIKeySource = null;
 const formatSeoulDateKey = (date) => {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -128,6 +305,12 @@ const normalizeAccountRole = (value, email) => {
         return 'admin';
     }
     return ADMIN_EMAILS.has(email.toLowerCase()) ? 'admin' : 'user';
+};
+const normalizeSubjectType = (value) => {
+    if (value === 'dog' || value === 'cat') {
+        return value;
+    }
+    return 'human';
 };
 const getDailyCreditReward = (plan) => {
     const subscriptionBonus = SUBSCRIPTION_DAILY_BONUS[plan];
@@ -193,65 +376,51 @@ const estimateOpenAIImageCost = (model, quality, size, usage) => {
     const fallback = sizePricing?.[size];
     return typeof fallback === 'number' ? roundEstimatedCost(fallback) : null;
 };
-const buildTryOnPrompt = (bodyProfile) => {
-    const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
-    const identityGuide = subjectType === 'pet'
-        ? [
-            'Use the first input image as the identity anchor for the exact same pet.',
-            'Preserve the same face, fur pattern, species traits, body shape, proportions, and overall identity.',
-            'Do not invent a new animal, do not stylize, and do not change the identity in any panel.',
-        ].join(' ')
-        : [
-            'Use the uploaded face photo as the identity anchor and the uploaded clothing image as the outfit reference.',
-            'Create a realistic virtual fitting image of the exact same person from the uploaded face photo.',
-            'Identity preservation is the highest priority.',
-            'Strict identity rules: keep the same person.',
-            'Preserve the exact identity and facial resemblance of the uploaded face.',
-            'Do not invent a new face.',
-            'Do not change ethnicity.',
-            'Do not change age.',
-            'Do not beautify, idealize, or stylize the face.',
-            'Do not make the person look like a different model.',
-            'Keep the same eyes, nose, mouth, jawline, chin shape, cheek structure, face shape, skin tone, forehead ratio, eye spacing, lip shape, and hairline.',
-            'Keep the same overall likeness and real-person appearance.',
-            'If there is any conflict between fashion styling and facial identity, preserve facial identity first.',
-        ].join(' ');
+const requestSubjectClassification = async (subjectImage) => {
+    const apiKey = getOpenAIApiKey();
+    if (!apiKey) {
+        throw new Error(OPENAI_CONFIG_MESSAGE);
+    }
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            model: SUBJECT_CLASSIFICATION_MODEL,
+            temperature: 0,
+            max_tokens: 5,
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: SUBJECT_CLASSIFICATION_PROMPT },
+                        { type: 'image_url', image_url: { url: subjectImage } },
+                    ],
+                },
+            ],
+        }),
+    });
+    const responseBody = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(responseBody.error?.message || `OpenAI classification error ${response.status}`);
+    }
+    return normalizeSubjectType(responseBody.choices?.[0]?.message?.content?.trim().toLowerCase());
+};
+const buildTryOnPrompt = (subjectType, bodyProfile) => {
+    const basePrompt = subjectType === 'dog'
+        ? DOG_PROMPT
+        : subjectType === 'cat'
+            ? CAT_PROMPT
+            : HUMAN_PROMPT;
     const bodyGuide = [
         bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
         bodyProfile?.weightKg ? `Reflect a natural body volume using ${bodyProfile.weightKg} kg weight as guidance.` : null,
     ].filter(Boolean).join(' ');
-    return [
-        identityGuide,
-        'Garment transfer rules: transfer only the outfit from the uploaded clothing image.',
-        'Preserve the garment color, silhouette, texture, visible ornament details, sleeve shape, skirt volume, top-to-bottom proportions, and overall design.',
-        'Do not replace the outfit with a different design.',
-        'Keep the clothing faithful to the reference image.',
-        'Output requirements: generate one clean 1x4 fashion lookbook grid.',
-        'The same person must appear in all 4 panels.',
-        'Keep the face consistent across all 4 panels.',
-        'Keep the body proportions consistent across all 4 panels.',
-        'Panel 1: front view.',
-        'Panel 2: 3/4 front view.',
-        'Panel 3: side or semi-back view.',
-        'Panel 4: back view.',
-        'Style requirements: realistic studio photo.',
-        'Natural lighting.',
-        'Clean simple background.',
-        'Full-body fitting result.',
-        'Realistic fabric appearance.',
-        'No illustration.',
-        'No cartoon.',
-        'No fantasy styling.',
-        'No extra accessories unless clearly visible in the clothing reference.',
-        'Face consistency constraints: The uploaded face photo must remain the identity source.',
-        'Do not reinterpret the face.',
-        'Do not optimize the face for beauty.',
-        'Do not change the person into a more glamorous or more generic fashion model.',
-        'Keep the facial geometry close to the uploaded face.',
-        'Same person in all 4 panels. No panel may show a different face.',
-        bodyGuide,
-    ].filter(Boolean).join(' ');
+    return [basePrompt, bodyGuide].filter(Boolean).join('\n\n');
 };
+const buildVideoPrompt = (subjectType) => `${VIDEO_PROMPT_TEMPLATE}\n\nSubject type: ${subjectType}.`;
 const parseDataUrl = (input) => {
     if (input.startsWith('data:')) {
         const [header, data = ''] = input.split(',', 2);
@@ -280,7 +449,7 @@ const toImageBlob = (input, fallbackName) => {
         filename: `${fallbackName}.${mimeTypeToExtension(mimeType)}`,
     };
 };
-const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) => {
+const requestOpenAIComposite = async (personImage, garmentImage, subjectType, bodyProfile) => {
     if (!personImage || !garmentImage) {
         throw new Error('Both face image and clothing image are required.');
     }
@@ -292,7 +461,7 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
     const personFile = toImageBlob(personImage, 'person');
     const formData = new FormData();
     formData.append('model', OPENAI_IMAGE_MODEL);
-    formData.append('prompt', buildTryOnPrompt(bodyProfile));
+    formData.append('prompt', buildTryOnPrompt(subjectType, bodyProfile));
     formData.append('image[]', personFile.blob, personFile.filename);
     formData.append('image[]', garmentFile.blob, garmentFile.filename);
     formData.append('size', OPENAI_IMAGE_SIZE);
@@ -341,6 +510,8 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
         mimeType: 'image/png',
         data: image,
         metadata: {
+            type: 'image_generation',
+            subjectType,
             model: responseBody.model || OPENAI_IMAGE_MODEL,
             quality: OPENAI_IMAGE_QUALITY,
             size: OPENAI_IMAGE_SIZE,
@@ -348,6 +519,69 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
             estimatedCost: estimateOpenAIImageCost(responseBody.model || OPENAI_IMAGE_MODEL, OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_SIZE, usage),
         },
     };
+};
+const createOpenAIVideo = async (image, subjectType) => {
+    const apiKey = getOpenAIApiKey();
+    if (!apiKey) {
+        throw new Error(OPENAI_CONFIG_MESSAGE);
+    }
+    const referenceFile = toImageBlob(image, 'video_reference');
+    const formData = new FormData();
+    formData.append('model', VIDEO_MODEL);
+    formData.append('prompt', buildVideoPrompt(subjectType));
+    formData.append('seconds', VIDEO_SECONDS);
+    formData.append('size', VIDEO_SIZE);
+    formData.append('input_reference', referenceFile.blob, referenceFile.filename);
+    const response = await fetch('https://api.openai.com/v1/videos', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: formData,
+    });
+    const responseBody = await response.json().catch(() => ({}));
+    if (!response.ok || !responseBody.id) {
+        throw new Error(responseBody.error?.message || `OpenAI video creation error ${response.status}`);
+    }
+    return {
+        id: responseBody.id,
+        status: responseBody.status || 'processing',
+        estimatedCost: VIDEO_ESTIMATED_COST,
+    };
+};
+const fetchOpenAIVideoStatus = async (videoId) => {
+    const apiKey = getOpenAIApiKey();
+    if (!apiKey) {
+        throw new Error(OPENAI_CONFIG_MESSAGE);
+    }
+    const response = await fetch(`https://api.openai.com/v1/videos/${encodeURIComponent(videoId)}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+    });
+    const responseBody = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(responseBody.error?.message || `OpenAI video status error ${response.status}`);
+    }
+    return responseBody;
+};
+const streamOpenAIVideoContent = async (videoId) => {
+    const apiKey = getOpenAIApiKey();
+    if (!apiKey) {
+        throw new Error(OPENAI_CONFIG_MESSAGE);
+    }
+    const response = await fetch(`https://api.openai.com/v1/videos/${encodeURIComponent(videoId)}/content`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+    });
+    if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        throw new Error(errorBody || `OpenAI video content error ${response.status}`);
+    }
+    return response;
 };
 const setCors = (req, res) => {
     const origin = req.headers.origin || '';
@@ -455,13 +689,13 @@ const isRecentTimestamp = (value, windowMs = DUPLICATE_GENERATION_WINDOW_MS) => 
     }
     return Date.now() - value.toDate().getTime() < windowMs;
 };
-const beginGenerationCharge = async (user, requestId) => {
+const beginChargedRequest = async (user, requestId, options) => {
     if (!requestId) {
         throw new Error(DUPLICATE_REQUEST_ERROR);
     }
     const userRef = db.collection('users').doc(user.uid);
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
-    const generationLockRef = db.collection('generationLocks').doc(user.uid);
+    const generationLockRef = db.collection(options.lockCollection).doc(user.uid);
     const todayKey = getTodayKeyInSeoul();
     const result = {
         profile: {
@@ -496,7 +730,7 @@ const beginGenerationCharge = async (user, requestId) => {
         }
         const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
         let nextCredits = currentProfile.credits;
-        const generationCost = GENERATION_COST;
+        const generationCost = options.cost;
         if (!userSnapshot.exists) {
             nextCredits += SIGNUP_BONUS_CREDITS;
             result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
@@ -515,7 +749,7 @@ const beginGenerationCharge = async (user, requestId) => {
             }
         }
         if (nextCredits < generationCost) {
-            throw new Error(NOT_ENOUGH_CREDITS_ERROR);
+            throw new Error(options.insufficientErrorCode);
         }
         nextCredits -= generationCost;
         if (generationCost > 0) {
@@ -540,15 +774,9 @@ const beginGenerationCharge = async (user, requestId) => {
             uid: user.uid,
             email: user.email || currentProfile.email,
             requestId,
+            type: options.requestType,
             cost: generationCost,
-            model: OPENAI_IMAGE_MODEL,
-            quality: OPENAI_IMAGE_QUALITY,
-            size: OPENAI_IMAGE_SIZE,
-            usage: {
-                input_tokens: 0,
-                output_tokens: 0,
-            },
-            estimatedCost: null,
+            ...options.metadata,
             status: 'charged',
             success: false,
             refunded: false,
@@ -560,6 +788,7 @@ const beginGenerationCharge = async (user, requestId) => {
             uid: user.uid,
             email: user.email || currentProfile.email,
             requestId,
+            type: options.requestType,
             status: 'charged',
             startedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -574,10 +803,62 @@ const beginGenerationCharge = async (user, requestId) => {
     });
     return result;
 };
+const beginGenerationCharge = async (user, requestId, subjectType) => beginChargedRequest(user, requestId, {
+    cost: GENERATION_COST,
+    requestType: 'image_generation',
+    lockCollection: 'generationLocks',
+    insufficientErrorCode: NOT_ENOUGH_CREDITS_ERROR,
+    metadata: {
+        subjectType,
+        model: OPENAI_IMAGE_MODEL,
+        quality: OPENAI_IMAGE_QUALITY,
+        size: OPENAI_IMAGE_SIZE,
+        usage: {
+            input_tokens: 0,
+            output_tokens: 0,
+        },
+        estimatedCost: null,
+    },
+});
+const beginVideoGenerationCharge = async (user, requestId, subjectType, sourceResultId) => beginChargedRequest(user, requestId, {
+    cost: VIDEO_GENERATION_COST,
+    requestType: 'video_generation',
+    lockCollection: 'videoGenerationLocks',
+    insufficientErrorCode: NOT_ENOUGH_VIDEO_CREDITS_ERROR,
+    metadata: {
+        subjectType,
+        sourceResultId: sourceResultId || null,
+        model: VIDEO_MODEL,
+        quality: 'standard',
+        size: VIDEO_SIZE,
+        durationSeconds: Number(VIDEO_SECONDS),
+        usage: {
+            input_tokens: 0,
+            output_tokens: 0,
+        },
+        estimatedCost: VIDEO_ESTIMATED_COST,
+    },
+});
+const markChargedRequestInProgress = async (user, requestId, lockCollection, metadata) => {
+    const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const generationLockRef = db.collection(lockCollection).doc(user.uid);
+    await requestRef.set({
+        ...metadata,
+        status: 'processing',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await generationLockRef.set({
+        requestId,
+        status: 'processing',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+};
 const markGenerationCompleted = async (user, requestId, metadata) => {
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
     const generationLockRef = db.collection('generationLocks').doc(user.uid);
     await requestRef.set({
+        type: metadata.type || 'image_generation',
+        subjectType: metadata.subjectType || 'human',
         model: metadata.model,
         quality: metadata.quality,
         size: metadata.size,
@@ -596,10 +877,28 @@ const markGenerationCompleted = async (user, requestId, metadata) => {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 };
-const refundGenerationCharge = async (user, requestId, errorMessage) => {
+const markVideoGenerationCompleted = async (user, requestId, metadata) => {
+    const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+    await requestRef.set({
+        ...metadata,
+        status: 'completed',
+        success: true,
+        refunded: false,
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await generationLockRef.set({
+        requestId,
+        status: 'completed',
+        releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+};
+const refundChargedRequest = async (user, requestId, errorMessage, lockCollection) => {
     const userRef = db.collection('users').doc(user.uid);
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
-    const generationLockRef = db.collection('generationLocks').doc(user.uid);
+    const generationLockRef = db.collection(lockCollection).doc(user.uid);
     const result = {
         refunded: false,
         balanceAfter: null,
@@ -613,7 +912,7 @@ const refundGenerationCharge = async (user, requestId, errorMessage) => {
             return;
         }
         const requestData = requestSnapshot.data();
-        if (requestData?.status !== 'charged') {
+        if (requestData?.status !== 'charged' && requestData?.status !== 'processing') {
             const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
             result.balanceAfter = currentProfile.credits;
             return;
@@ -649,6 +948,8 @@ const refundGenerationCharge = async (user, requestId, errorMessage) => {
     });
     return result;
 };
+const refundGenerationCharge = async (user, requestId, errorMessage) => refundChargedRequest(user, requestId, errorMessage, 'generationLocks');
+const refundVideoGenerationCharge = async (user, requestId, errorMessage) => refundChargedRequest(user, requestId, errorMessage, 'videoGenerationLocks');
 const handleApiError = (res, error, fallbackStatus = 500) => {
     if (error instanceof Error && error.message === 'AUTH_REQUIRED') {
         res.status(401).json({ error: 'AUTH_REQUIRED', message: AUTH_REQUIRED_MESSAGE });
@@ -656,6 +957,10 @@ const handleApiError = (res, error, fallbackStatus = 500) => {
     }
     if (error instanceof Error && error.message === NOT_ENOUGH_CREDITS_ERROR) {
         res.status(402).json({ error: NOT_ENOUGH_CREDITS_ERROR, message: NOT_ENOUGH_CREDITS_MESSAGE, cost: GENERATION_COST });
+        return;
+    }
+    if (error instanceof Error && error.message === NOT_ENOUGH_VIDEO_CREDITS_ERROR) {
+        res.status(402).json({ error: NOT_ENOUGH_VIDEO_CREDITS_ERROR, message: NOT_ENOUGH_CREDITS_MESSAGE, cost: VIDEO_GENERATION_COST });
         return;
     }
     if (error instanceof Error && error.message === DUPLICATE_REQUEST_ERROR) {
@@ -676,7 +981,7 @@ const handleTryOnRequest = async (req, res, label) => {
         res.status(500).json({ error: OPENAI_CONFIG_ERROR, message: OPENAI_CONFIG_MESSAGE });
         return;
     }
-    const { personImage, garmentImage, bodyProfile, requestId } = req.body;
+    const { personImage, garmentImage, bodyProfile, requestId, subjectType } = req.body;
     if (!personImage || !garmentImage || !requestId) {
         res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
         return;
@@ -690,21 +995,23 @@ const handleTryOnRequest = async (req, res, label) => {
         return;
     }
     let chargeResult;
+    const resolvedSubjectType = normalizeSubjectType(subjectType);
     try {
-        chargeResult = await beginGenerationCharge(user, requestId);
+        chargeResult = await beginGenerationCharge(user, requestId, resolvedSubjectType);
     }
     catch (error) {
         handleApiError(res, error, 500);
         return;
     }
     try {
-        const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
+        const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
         await markGenerationCompleted(user, requestId, generatedImage.metadata);
         const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
         res.json({
             success: true,
             image: resultDataUrl,
             mimeType: generatedImage.mimeType,
+            subjectType: resolvedSubjectType,
             creditsRemaining: chargeResult.creditsAfterCharge,
             signupBonusGranted: chargeResult.signupBonusGranted,
             dailyRewardGranted: chargeResult.dailyRewardGranted,
@@ -729,6 +1036,208 @@ const handleTryOnRequest = async (req, res, label) => {
         });
     }
 };
+const handleSubjectClassificationRequest = async (req, res) => {
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const { subjectImage } = req.body;
+    if (!subjectImage) {
+        res.status(400).json({ error: 'subjectImage is required.' });
+        return;
+    }
+    try {
+        const detectedSubjectType = await requestSubjectClassification(subjectImage);
+        res.json({ success: true, subjectType: detectedSubjectType });
+    }
+    catch (error) {
+        handleApiError(res, error, 500);
+    }
+};
+const handleVideoGenerationRequest = async (req, res) => {
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const { image, requestId, subjectType, sourceResultId } = req.body;
+    if (!image || !requestId) {
+        res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
+        return;
+    }
+    let user;
+    try {
+        user = await requireAuthenticatedUser(req);
+    }
+    catch (error) {
+        handleApiError(res, error, 401);
+        return;
+    }
+    const resolvedSubjectType = normalizeSubjectType(subjectType);
+    let chargeResult;
+    try {
+        chargeResult = await beginVideoGenerationCharge(user, requestId, resolvedSubjectType, sourceResultId);
+    }
+    catch (error) {
+        handleApiError(res, error, 500);
+        return;
+    }
+    try {
+        const videoJob = await createOpenAIVideo(image, resolvedSubjectType);
+        await markChargedRequestInProgress(user, requestId, 'videoGenerationLocks', {
+            subjectType: resolvedSubjectType,
+            openaiVideoId: videoJob.id,
+            estimatedCost: videoJob.estimatedCost,
+            model: VIDEO_MODEL,
+            size: VIDEO_SIZE,
+            durationSeconds: Number(VIDEO_SECONDS),
+            type: 'video_generation',
+        });
+        res.json({
+            success: true,
+            requestId,
+            openaiVideoId: videoJob.id,
+            status: videoJob.status,
+            creditsRemaining: chargeResult.creditsAfterCharge,
+            estimatedCost: videoJob.estimatedCost,
+            subjectType: resolvedSubjectType,
+        });
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'OpenAI video generation failed';
+        const refundResult = await refundVideoGenerationCharge(user, requestId, errorMessage).catch((refundError) => {
+            functions.logger.error('Failed to refund credits after video generation error', refundError);
+            return { refunded: false, balanceAfter: null };
+        });
+        res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({
+            error: errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage,
+            message: errorMessage,
+            refunded: refundResult.refunded,
+            creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
+        });
+    }
+};
+const handleVideoStatusRequest = async (req, res) => {
+    if (req.method !== 'GET') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const requestId = typeof req.query.requestId === 'string' ? req.query.requestId : '';
+    if (!requestId) {
+        res.status(400).json({ error: 'requestId is required.' });
+        return;
+    }
+    let user;
+    try {
+        user = await requireAuthenticatedUser(req);
+    }
+    catch (error) {
+        handleApiError(res, error, 401);
+        return;
+    }
+    const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const snapshot = await requestRef.get();
+    if (!snapshot.exists) {
+        res.status(404).json({ error: 'Video request not found.' });
+        return;
+    }
+    const requestData = snapshot.data() ?? {};
+    const openaiVideoId = typeof requestData.openaiVideoId === 'string' ? requestData.openaiVideoId : '';
+    const requestStatus = typeof requestData.status === 'string' ? requestData.status : 'processing';
+    if (!openaiVideoId) {
+        res.json({
+            success: requestStatus === 'completed',
+            status: requestStatus,
+            estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
+        });
+        return;
+    }
+    try {
+        const videoStatus = await fetchOpenAIVideoStatus(openaiVideoId);
+        const nextStatus = typeof videoStatus.status === 'string' ? videoStatus.status : requestStatus;
+        if (nextStatus === 'completed') {
+            await markVideoGenerationCompleted(user, requestId, {
+                openaiVideoId,
+                estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
+                type: 'video_generation',
+                subjectType: normalizeSubjectType(requestData.subjectType),
+            });
+            res.json({
+                success: true,
+                status: 'completed',
+                requestId,
+                estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
+                contentUrl: `/api/video-content?requestId=${encodeURIComponent(requestId)}`,
+            });
+            return;
+        }
+        if (nextStatus === 'failed' || nextStatus === 'canceled') {
+            const errorMessage = videoStatus.error?.message || `Video generation ${nextStatus}`;
+            const refundResult = await refundVideoGenerationCharge(user, requestId, errorMessage);
+            res.status(502).json({
+                success: false,
+                status: nextStatus,
+                error: errorMessage,
+                refunded: refundResult.refunded,
+                creditsRemaining: refundResult.balanceAfter,
+            });
+            return;
+        }
+        await markChargedRequestInProgress(user, requestId, 'videoGenerationLocks', {
+            openaiVideoId,
+            type: 'video_generation',
+            subjectType: normalizeSubjectType(requestData.subjectType),
+        });
+        res.json({
+            success: false,
+            status: nextStatus,
+            requestId,
+            estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
+        });
+    }
+    catch (error) {
+        handleApiError(res, error, 500);
+    }
+};
+const handleVideoContentRequest = async (req, res) => {
+    if (req.method !== 'GET') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const requestId = typeof req.query.requestId === 'string' ? req.query.requestId : '';
+    if (!requestId) {
+        res.status(400).json({ error: 'requestId is required.' });
+        return;
+    }
+    let user;
+    try {
+        user = await requireAuthenticatedUser(req);
+    }
+    catch (error) {
+        handleApiError(res, error, 401);
+        return;
+    }
+    const snapshot = await db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId)).get();
+    if (!snapshot.exists) {
+        res.status(404).json({ error: 'Video request not found.' });
+        return;
+    }
+    const requestData = snapshot.data() ?? {};
+    const openaiVideoId = typeof requestData.openaiVideoId === 'string' ? requestData.openaiVideoId : '';
+    if (!openaiVideoId) {
+        res.status(409).json({ error: 'Video not ready yet.' });
+        return;
+    }
+    try {
+        const contentResponse = await streamOpenAIVideoContent(openaiVideoId);
+        res.set('Content-Type', contentResponse.headers.get('content-type') || 'video/mp4');
+        res.set('Cache-Control', 'private, max-age=60');
+        const buffer = Buffer.from(await contentResponse.arrayBuffer());
+        res.status(200).send(buffer);
+    }
+    catch (error) {
+        handleApiError(res, error, 500);
+    }
+};
 exports.api = functions
     .region('asia-northeast3')
     .runWith({ timeoutSeconds: 120, memory: '512MB' })
@@ -748,7 +1257,7 @@ exports.api = functions
         try {
             const user = await requireAuthenticatedUser(req);
             const result = await bootstrapUserCredits(user);
-            res.json({ success: true, ...result, generationCost: GENERATION_COST });
+            res.json({ success: true, ...result, generationCost: GENERATION_COST, videoGenerationCost: VIDEO_GENERATION_COST });
         }
         catch (error) {
             handleApiError(res, error, 500);
@@ -766,11 +1275,28 @@ exports.api = functions
                 subscriptionPlan: profile.subscriptionPlan,
                 role: profile.role,
                 generationCost: GENERATION_COST,
+                videoGenerationCost: VIDEO_GENERATION_COST,
             });
         }
         catch (error) {
             handleApiError(res, error, 500);
         }
+        return;
+    }
+    if (req.method === 'POST' && path === '/classify-subject') {
+        await handleSubjectClassificationRequest(req, res);
+        return;
+    }
+    if (req.method === 'POST' && path === '/video') {
+        await handleVideoGenerationRequest(req, res);
+        return;
+    }
+    if (req.method === 'GET' && path === '/video-status') {
+        await handleVideoStatusRequest(req, res);
+        return;
+    }
+    if (req.method === 'GET' && path === '/video-content') {
+        await handleVideoContentRequest(req, res);
         return;
     }
     if (path === '/tryon' || path === '/generate') {
