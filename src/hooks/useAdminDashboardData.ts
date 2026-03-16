@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Firestore } from 'firebase/firestore';
-import { collection, getCountFromServer, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { collection, getCountFromServer, getDocs, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { estimateGenerationCost } from '../lib/costs';
 import type { AdminUserRecord, CreditLogRecord, GenerationRequestRecord } from '../types/hamdeva';
 
@@ -56,6 +56,7 @@ export const useAdminDashboardData = ({
     }
 
     let cancelled = false;
+    let reloadTimer: ReturnType<typeof setTimeout> | null = null;
     setAdminLoading(true);
 
     const loadAdminData = async () => {
@@ -122,6 +123,23 @@ export const useAdminDashboardData = ({
       setAdminLoading(false);
     };
 
+    const scheduleReload = () => {
+      if (cancelled) {
+        return;
+      }
+      if (reloadTimer) {
+        clearTimeout(reloadTimer);
+      }
+      reloadTimer = setTimeout(() => {
+        void loadAdminData().catch((error) => {
+          if (!cancelled) {
+            console.error('Failed to load admin data:', error);
+            setAdminLoading(false);
+          }
+        });
+      }, 150);
+    };
+
     loadAdminData().catch((error) => {
       if (!cancelled) {
         console.error('Failed to load admin data:', error);
@@ -129,8 +147,20 @@ export const useAdminDashboardData = ({
       }
     });
 
+    const unsubscribers = [
+      onSnapshot(collection(db, 'users'), scheduleReload, (error) => console.error('Failed to watch admin users:', error)),
+      onSnapshot(collection(db, 'bbsPosts'), scheduleReload, (error) => console.error('Failed to watch admin posts:', error)),
+      onSnapshot(collection(db, 'publicResults'), scheduleReload, (error) => console.error('Failed to watch admin shared results:', error)),
+      onSnapshot(collection(db, 'generationRequests'), scheduleReload, (error) => console.error('Failed to watch admin generations:', error)),
+      onSnapshot(query(collection(db, 'credit_transactions'), orderBy('createdAt', 'desc'), limit(1)), scheduleReload, (error) => console.error('Failed to watch admin credit logs:', error)),
+    ];
+
     return () => {
       cancelled = true;
+      if (reloadTimer) {
+        clearTimeout(reloadTimer);
+      }
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [db, enabled]);
 
