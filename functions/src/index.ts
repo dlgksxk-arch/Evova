@@ -6,6 +6,8 @@ const db = admin.firestore();
 
 const FREE_LIMIT = 3;
 const CORS_ORIGIN = [
+  'https://hamdeva.com',
+  'https://www.hamdeva.com',
   'https://hamdeva.web.app',
   'https://hamdeva.firebaseapp.com',
   'https://hamdeva.dlgksxk.workers.dev',
