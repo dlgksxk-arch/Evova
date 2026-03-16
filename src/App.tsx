@@ -1196,6 +1196,12 @@ const buildAuthErrorMessage = (error: unknown, fallbackMessage: string): string 
   if (errorCode.includes('auth/popup-closed-by-user')) {
     return '로그인 창이 닫혔습니다.';
   }
+  if (errorCode.includes('auth/unauthorized-domain')) {
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    return hostname
+      ? `현재 도메인(${hostname})이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.`
+      : '현재 도메인이 Firebase Auth 허용 도메인에 등록되지 않았습니다. 관리자에게 도메인 등록 여부를 확인해 주세요.';
+  }
   if (errorCode.includes('auth/invalid-api-key') || errorCode.includes('auth/api-key-not-valid')) {
     return 'Firebase 설정이 아직 완료되지 않았습니다. 관리자에게 문의해 주세요.';
   }
