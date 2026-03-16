@@ -1951,6 +1951,94 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
   });
 };
 
+const serializeTimestamp = (value: unknown): number | null => {
+  if (value instanceof admin.firestore.Timestamp) {
+    return value.toMillis();
+  }
+
+  return null;
+};
+
+const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
+  const userSnapshot = await db.collection('users').doc(user.uid).get();
+  const profile = normalizeUserAccount(user.email, userSnapshot.data());
+  if (profile.role !== 'admin') {
+    throw new Error('FORBIDDEN');
+  }
+
+  const [
+    usersSnapshot,
+    postsSnapshot,
+    sharedResultsSnapshot,
+    recentUsersSnapshot,
+    generationSnapshot,
+    creditSnapshot,
+  ] = await Promise.all([
+    db.collection('users').get(),
+    db.collection('bbsPosts').get(),
+    db.collection('publicResults').get(),
+    db.collection('users').orderBy('createdAt', 'desc').limit(20).get(),
+    db.collection('generationRequests').orderBy('createdAt', 'desc').get(),
+    db.collection('credit_transactions').orderBy('createdAt', 'desc').limit(20).get(),
+  ]);
+
+  const now = Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+  const generationLogs: Array<Record<string, unknown>> = generationSnapshot.docs.map((snapshot) => {
+    const data = snapshot.data();
+    return {
+      id: snapshot.id,
+      ...data,
+      createdAt: serializeTimestamp(data.createdAt),
+      completedAt: serializeTimestamp(data.completedAt),
+      updatedAt: serializeTimestamp(data.updatedAt),
+    };
+  });
+  const imageGenerationLogs = generationLogs.filter((item) => (item.type || 'image_generation') === 'image_generation');
+  const videoGenerationLogs = generationLogs.filter((item) => item.type === 'video_generation');
+  const getCreatedAtMillis = (item: Record<string, unknown>): number =>
+    typeof item.createdAt === 'number' && Number.isFinite(item.createdAt) ? item.createdAt : 0;
+  const todayGenerations = imageGenerationLogs.filter((item) => getCreatedAtMillis(item) >= todayStart.getTime());
+  const todayVideoGenerations = videoGenerationLogs.filter((item) => getCreatedAtMillis(item) >= todayStart.getTime());
+  const recent7DayGenerations = generationLogs.filter((item) => getCreatedAtMillis(item) >= sevenDaysAgo);
+  const getEstimatedCost = (item: any): number => typeof item.estimatedCost === 'number' && Number.isFinite(item.estimatedCost) ? item.estimatedCost : 0;
+
+  return {
+    summary: {
+      users: usersSnapshot.size,
+      posts: postsSnapshot.size,
+      generations: generationLogs.length,
+      sharedResults: sharedResultsSnapshot.size,
+      todayGenerations: todayGenerations.length,
+      todayEstimatedCost: todayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
+      totalEstimatedCost: generationLogs.reduce((sum, item) => sum + getEstimatedCost(item), 0),
+      recent7DaysEstimatedCost: recent7DayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
+      totalVideoGenerations: videoGenerationLogs.length,
+      todayVideoGenerations: todayVideoGenerations.length,
+      estimatedVideoCost: videoGenerationLogs.reduce((sum, item) => sum + getEstimatedCost(item), 0),
+    },
+    users: recentUsersSnapshot.docs.map((snapshot) => {
+      const data = snapshot.data();
+      return {
+        id: snapshot.id,
+        ...data,
+        createdAt: serializeTimestamp(data.createdAt),
+      };
+    }),
+    generationLogs: generationLogs.slice(0, 20),
+    creditLogs: creditSnapshot.docs.map((snapshot) => {
+      const data = snapshot.data();
+      return {
+        id: snapshot.id,
+        ...data,
+        createdAt: serializeTimestamp(data.createdAt),
+      };
+    }),
+  };
+};
+
 const handleTryOnRequest = async (req: functions.https.Request, res: functions.Response, label: string) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
@@ -2318,6 +2406,17 @@ export const api = functions
           generationCost: GENERATION_COST,
           videoGenerationCost: VIDEO_GENERATION_COST,
         });
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/admin/dashboard') {
+      try {
+        const user = await requireAuthenticatedUser(req);
+        const payload = await buildAdminDashboardPayload(user);
+        res.json(payload);
       } catch (error) {
         handleApiError(res, error, 500);
       }
