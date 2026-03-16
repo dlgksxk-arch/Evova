@@ -7,12 +7,27 @@ import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
 import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
+import { modelSamples } from './data/samples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
+type KakaoSdk = {
+  isInitialized?: () => boolean;
+  init?: (key: string) => void;
+  Share?: {
+    sendDefault: (payload: Record<string, unknown>) => void;
+  };
+};
+
+declare global {
+  interface Window {
+    Kakao?: KakaoSdk;
+  }
+}
+
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
@@ -26,6 +41,8 @@ const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
 const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
 const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
+const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
+const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 type SubjectType = typeof SUBJECT_TYPES[number];
 const OPENAI_IMAGE_TOKEN_PRICING = {
   'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
@@ -169,6 +186,15 @@ interface BbsPostRecord {
   updatedAt?: Timestamp | null;
 }
 
+type SamplePreviewItem = {
+  id: string;
+  subjectType: SubjectType;
+  title: string;
+  imageUrl: string;
+  tag: string;
+  isSample: true;
+};
+
 // ─── 번역 ─────────────────────────────────────────────────────
 const translations = {
   ko: {
@@ -207,6 +233,24 @@ const translations = {
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
     share: '공유하기',
+    samplePreview: '샘플 프리뷰',
+    sampleBadge: 'SAMPLE',
+    expectedResultStyle: '이런 느낌으로 생성됩니다',
+    generateForReal: '실제로 생성하기',
+    realGenerationCta: '실제로 생성하기',
+    shareSectionTitle: '공유하기',
+    shareHelperText: '친구들과 결과를 공유해보세요',
+    shareKakao: '카카오 공유',
+    shareLine: 'LINE 공유',
+    shareXShort: 'X 공유',
+    shareFacebookShort: '페이스북 공유',
+    downloadImage: '이미지 다운로드',
+    saveForInstagram: '인스타용 저장',
+    instagramHelperText: '이미지를 저장한 뒤 인스타그램에 업로드해보세요',
+    linkCopied: '링크가 복사되었습니다',
+    linkCopyFailed: '링크 복사에 실패했습니다',
+    imageNotReady: '이미지가 준비되지 않았습니다',
+    noResultToShare: '공유할 결과가 없습니다',
     copyLink: '링크 복사',
     copied: '링크가 복사되었습니다.',
     copyFailed: '링크 복사에 실패했습니다.',
@@ -382,6 +426,24 @@ const translations = {
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
     resultTitle: 'Fitting Result', download: 'Save Image',
     share: 'Share',
+    samplePreview: 'Sample Preview',
+    sampleBadge: 'SAMPLE',
+    expectedResultStyle: 'This is the style of result you can expect',
+    generateForReal: 'Generate for Real',
+    realGenerationCta: 'Generate for Real',
+    shareSectionTitle: 'Share',
+    shareHelperText: 'Share your result with friends',
+    shareKakao: 'Share on Kakao',
+    shareLine: 'Share on LINE',
+    shareXShort: 'Share on X',
+    shareFacebookShort: 'Share on Facebook',
+    downloadImage: 'Download Image',
+    saveForInstagram: 'Save for Instagram',
+    instagramHelperText: 'Save the image and upload it to Instagram',
+    linkCopied: 'Link copied',
+    linkCopyFailed: 'Failed to copy link',
+    imageNotReady: 'Image is not ready',
+    noResultToShare: 'No result to share',
     copyLink: 'Copy link',
     copied: 'Link copied.',
     copyFailed: 'Failed to copy the link.',
@@ -582,6 +644,24 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultTitle: '试穿结果',
     download: '保存图片',
     share: '分享',
+    samplePreview: '示例预览',
+    sampleBadge: 'SAMPLE',
+    expectedResultStyle: '将生成类似这种风格的结果',
+    generateForReal: '真实生成',
+    realGenerationCta: '真实生成',
+    shareSectionTitle: '分享',
+    shareHelperText: '和朋友分享你的结果',
+    shareKakao: '分享到 Kakao',
+    shareLine: '分享到 LINE',
+    shareXShort: '分享到 X',
+    shareFacebookShort: '分享到 Facebook',
+    downloadImage: '下载图片',
+    saveForInstagram: '保存到 Instagram',
+    instagramHelperText: '保存图片后上传到 Instagram',
+    linkCopied: '链接已复制',
+    linkCopyFailed: '链接复制失败',
+    imageNotReady: '图片尚未准备好',
+    noResultToShare: '没有可分享的结果',
     copyLink: '复制链接',
     copied: '链接已复制。',
     copyFailed: '复制链接失败。',
@@ -677,6 +757,24 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultTitle: '試着結果',
     download: '画像を保存',
     share: '共有',
+    samplePreview: 'サンプルプレビュー',
+    sampleBadge: 'SAMPLE',
+    expectedResultStyle: 'このような雰囲気で生成されます',
+    generateForReal: '実際に生成する',
+    realGenerationCta: '実際に生成する',
+    shareSectionTitle: '共有',
+    shareHelperText: '結果を友達と共有してみましょう',
+    shareKakao: 'カカオで共有',
+    shareLine: 'LINEで共有',
+    shareXShort: 'Xで共有',
+    shareFacebookShort: 'Facebookで共有',
+    downloadImage: '画像をダウンロード',
+    saveForInstagram: 'Instagram用に保存',
+    instagramHelperText: '画像を保存してInstagramにアップロードしてみましょう',
+    linkCopied: 'リンクをコピーしました',
+    linkCopyFailed: 'リンクのコピーに失敗しました',
+    imageNotReady: '画像の準備ができていません',
+    noResultToShare: '共有する結果がありません',
     copyLink: 'リンクをコピー',
     copied: 'リンクをコピーしました。',
     copyFailed: 'リンクのコピーに失敗しました。',
@@ -1579,6 +1677,79 @@ const getSubjectUiText = (lang: LanguageCode) => {
   };
 };
 
+const SAMPLE_PREVIEW_ITEMS: SamplePreviewItem[] = [
+  ...modelSamples
+    .filter((item) => item.gender === 'female' || item.gender === 'male')
+    .slice(0, 4)
+    .map((item, index) => ({
+      id: `human-${item.id}`,
+      subjectType: 'human' as const,
+      title: item.label ?? `Human Sample ${index + 1}`,
+      imageUrl: item.image,
+      tag: index % 2 === 0 ? 'lookbook' : 'studio',
+      isSample: true as const,
+    })),
+  ...modelSamples
+    .filter((item) => item.gender === 'dog')
+    .slice(0, 4)
+    .map((item, index) => ({
+      id: `dog-${item.id}`,
+      subjectType: 'dog' as const,
+      title: item.label ?? `Dog Sample ${index + 1}`,
+      imageUrl: item.image,
+      tag: 'pet-studio',
+      isSample: true as const,
+    })),
+  ...modelSamples
+    .filter((item) => item.gender === 'cat')
+    .slice(0, 4)
+    .map((item, index) => ({
+      id: `cat-${item.id}`,
+      subjectType: 'cat' as const,
+      title: item.label ?? `Cat Sample ${index + 1}`,
+      imageUrl: item.image,
+      tag: 'pet-lookbook',
+      isSample: true as const,
+    })),
+];
+
+const getSamplePreviewItems = (subjectType: SubjectType): SamplePreviewItem[] =>
+  SAMPLE_PREVIEW_ITEMS.filter((item) => item.subjectType === subjectType).slice(0, 4);
+
+const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
+  if (!KAKAO_JS_KEY) {
+    return null;
+  }
+
+  if (!window.Kakao) {
+    await new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${KAKAO_SDK_URL}"]`);
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('KAKAO_SDK_LOAD_FAILED')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = KAKAO_SDK_URL;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('KAKAO_SDK_LOAD_FAILED'));
+      document.head.appendChild(script);
+    });
+  }
+
+  if (!window.Kakao) {
+    return null;
+  }
+
+  if (typeof window.Kakao.isInitialized === 'function' && !window.Kakao.isInitialized() && typeof window.Kakao.init === 'function') {
+    window.Kakao.init(KAKAO_JS_KEY);
+  }
+
+  return window.Kakao;
+};
+
 const getAdminVideoLabels = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
@@ -2296,6 +2467,7 @@ const App: React.FC = () => {
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const adminVideoLabels = getAdminVideoLabels(lang);
+  const subjectPreviewItems = getSamplePreviewItems(subjectType);
   const generationStatusLabel = lang === 'ko'
     ? '예상 완료까지'
     : lang === 'ja'
@@ -2854,21 +3026,21 @@ const App: React.FC = () => {
   };
   const handleCopyLink = async (link: string | null) => {
     if (!link) {
-      setShareStatus(t.shareLinkUnavailable);
+      setShareStatus(t.noResultToShare);
       return;
     }
 
     try {
       await navigator.clipboard.writeText(link);
-      setShareStatus(t.copied);
+      setShareStatus(t.linkCopied);
     } catch (error) {
       console.error('Failed to copy share link:', error);
-      setShareStatus(t.copyFailed);
+      setShareStatus(t.linkCopyFailed);
     }
   };
   const handleShareLink = async (link: string | null) => {
     if (!link) {
-      setShareStatus(t.shareLinkUnavailable);
+      setShareStatus(t.noResultToShare);
       return;
     }
 
@@ -2889,9 +3061,56 @@ const App: React.FC = () => {
 
     openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(link)}`);
   };
+  const handleShareOnKakao = async (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.noResultToShare);
+      return;
+    }
+
+    try {
+      const kakao = await loadKakaoSdk();
+      if (!kakao?.Share?.sendDefault) {
+        await handleShareLink(link);
+        return;
+      }
+
+      kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: 'HAMDEVA - AI Virtual Fitting Playground',
+          description: 'Try AI virtual fitting online with HAMDEVA.',
+          imageUrl: 'https://hamdeva.com/og-image.png',
+          link: {
+            mobileWebUrl: link,
+            webUrl: link,
+          },
+        },
+        buttons: [
+          {
+            title: 'Open Result',
+            link: {
+              mobileWebUrl: link,
+              webUrl: link,
+            },
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('Failed to share on Kakao:', error);
+      await handleShareLink(link);
+    }
+  };
+  const handleShareOnLine = (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.noResultToShare);
+      return;
+    }
+
+    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}`);
+  };
   const handleShareOnX = (link: string | null) => {
     if (!link) {
-      setShareStatus(t.shareLinkUnavailable);
+      setShareStatus(t.noResultToShare);
       return;
     }
 
@@ -2899,11 +3118,25 @@ const App: React.FC = () => {
   };
   const handleShareOnFacebook = (link: string | null) => {
     if (!link) {
-      setShareStatus(t.shareLinkUnavailable);
+      setShareStatus(t.noResultToShare);
       return;
     }
 
     openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
+  };
+  const handleInstagramSave = async (src: string | null) => {
+    if (!src) {
+      setShareStatus(t.imageNotReady);
+      return;
+    }
+
+    try {
+      await downloadImageFile(src);
+      setShareStatus(t.instagramHelperText);
+    } catch (error) {
+      console.error('Failed to prepare Instagram save:', error);
+      setShareStatus(t.imageNotReady);
+    }
   };
   const handleSubjectTypeChange = (nextSubjectType: SubjectType) => {
     setSubjectType(nextSubjectType);
@@ -2966,27 +3199,54 @@ const App: React.FC = () => {
   };
   const renderResultActions = (imageSrc: string, link: string | null, disableDownload = false, showVideoControls = false) => (
     <>
-      <div className="result-action-grid">
-        <button className="download-btn result-action-btn" disabled={disableDownload} onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
-          {t.download}
-        </button>
-        <button className="outline-btn result-action-btn" onClick={() => { void handleShareLink(link); }} type="button">
-          {t.share}
-        </button>
-        <button className="outline-btn result-action-btn" onClick={() => { void handleCopyLink(link); }} type="button">
-          {t.copyLink}
-        </button>
+      <div className="page-article share-section">
+        <div className="share-section-copy">
+          <h3>{t.shareSectionTitle}</h3>
+          <p>{t.shareHelperText}</p>
+        </div>
+        <div className="result-action-grid share-grid-primary">
+          <button aria-label={t.shareKakao} className="outline-btn result-action-btn share-platform-btn" onClick={() => { void handleShareOnKakao(link); }} type="button">
+            <span aria-hidden="true" className="share-platform-icon">💬</span>
+            <span>{t.shareKakao}</span>
+          </button>
+          <button aria-label={t.shareLine} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnLine(link)} type="button">
+            <span aria-hidden="true" className="share-platform-icon">🟢</span>
+            <span>{t.shareLine}</span>
+          </button>
+          <button aria-label={t.shareXShort} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnX(link)} type="button">
+            <span aria-hidden="true" className="share-platform-icon">✕</span>
+            <span>{t.shareXShort}</span>
+          </button>
+          <button aria-label={t.shareFacebookShort} className="outline-btn result-action-btn share-platform-btn" onClick={() => handleShareOnFacebook(link)} type="button">
+            <span aria-hidden="true" className="share-platform-icon">f</span>
+            <span>{t.shareFacebookShort}</span>
+          </button>
+        </div>
+        <div className="result-action-grid share-grid-secondary">
+          <button aria-label={t.share} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => { void handleShareLink(link); }} type="button">
+            <span aria-hidden="true" className="share-platform-icon">↗</span>
+            <span>{t.share}</span>
+          </button>
+          <button aria-label={t.copyLink} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => { void handleCopyLink(link); }} type="button">
+            <span aria-hidden="true" className="share-platform-icon">🔗</span>
+            <span>{t.copyLink}</span>
+          </button>
+          <button aria-label={t.downloadImage} className="download-btn result-action-btn share-platform-btn utility" disabled={disableDownload} onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
+            <span aria-hidden="true" className="share-platform-icon">⬇</span>
+            <span>{t.downloadImage}</span>
+          </button>
+          <button aria-label={t.saveForInstagram} className="outline-btn result-action-btn share-platform-btn utility" disabled={disableDownload} onClick={() => { void handleInstagramSave(imageSrc); }} type="button">
+            <span aria-hidden="true" className="share-platform-icon">📷</span>
+            <span>{t.saveForInstagram}</span>
+          </button>
+        </div>
+      </div>
+      <div className="result-action-grid result-utility-grid">
         <button className="outline-btn result-action-btn" onClick={handleTryAnotherOutfit} type="button">
           {t.tryAnotherOutfit}
         </button>
         <button className="outline-btn result-action-btn" onClick={handleRandomOutfit} type="button">
           {t.randomOutfit}
-        </button>
-        <button className="outline-btn result-action-btn" onClick={() => handleShareOnX(link)} type="button">
-          {t.shareOnX}
-        </button>
-        <button className="outline-btn result-action-btn" onClick={() => handleShareOnFacebook(link)} type="button">
-          {t.shareOnFacebook}
         </button>
       </div>
       {showVideoControls && (showVideoPrompt || isGeneratingVideo || generatedVideoUrl) && (
@@ -3794,7 +4054,30 @@ const App: React.FC = () => {
                 </div>
               </div>
 
+              <div className="page-article subject-sample-preview">
+                <div className="subject-sample-copy">
+                  <span className="empty-preview-badge">{t.samplePreview}</span>
+                  <h3>{t.expectedResultStyle}</h3>
+                  <p>{getSubjectTypeLabel(lang, subjectType)} · {t.sampleBadge}</p>
+                </div>
+                <div className="subject-sample-grid">
+                  {subjectPreviewItems.map((item) => (
+                    <article key={item.id} className="subject-sample-card">
+                      <div className="subject-sample-media">
+                        <img src={item.imageUrl} alt={item.title} loading="lazy" />
+                        <span className="sample-badge">{t.sampleBadge}</span>
+                      </div>
+                      <div className="subject-sample-meta">
+                        <strong>{item.title}</strong>
+                        <span>{getSubjectTypeLabel(lang, item.subjectType)} · {item.tag}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
               <div className="action-section">
+                <p className="real-generation-label">{t.realGenerationCta}</p>
                 <p className="credit-cost-text">{t.generationCostDetailed(GENERATION_COST)}</p>
                 <p className="credit-balance-text">{t.currentCredits(currentCredits)}</p>
                 <button
