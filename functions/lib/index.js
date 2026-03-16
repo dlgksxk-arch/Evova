@@ -52,6 +52,7 @@ const NOT_ENOUGH_CREDITS_ERROR = 'INSUFFICIENT_CREDITS';
 const NOT_ENOUGH_CREDITS_MESSAGE = '크레딧이 부족합니다.';
 const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
 const DUPLICATE_REQUEST_MESSAGE = '이미 처리 중인 생성 요청입니다.';
+const DUPLICATE_GENERATION_WINDOW_MS = 30000;
 const GENERATION_COST = 100;
 const SIGNUP_BONUS_CREDITS = 300;
 const DAILY_BASE_CREDITS = 300;
@@ -336,12 +337,19 @@ const bootstrapUserCredits = async (user) => {
     return result;
 };
 const buildGenerationRequestDocId = (uid, requestId) => `${uid}_${requestId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+const isRecentTimestamp = (value, windowMs = DUPLICATE_GENERATION_WINDOW_MS) => {
+    if (!(value instanceof admin.firestore.Timestamp)) {
+        return false;
+    }
+    return Date.now() - value.toDate().getTime() < windowMs;
+};
 const beginGenerationCharge = async (user, requestId) => {
     if (!requestId) {
         throw new Error(DUPLICATE_REQUEST_ERROR);
     }
     const userRef = db.collection('users').doc(user.uid);
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const generationLockRef = db.collection('generationLocks').doc(user.uid);
     const todayKey = getTodayKeyInSeoul();
     const result = {
         profile: {
@@ -356,12 +364,20 @@ const beginGenerationCharge = async (user, requestId) => {
         creditsAfterCharge: 0,
     };
     await db.runTransaction(async (transaction) => {
-        const [userSnapshot, requestSnapshot] = await Promise.all([
+        const [userSnapshot, requestSnapshot, generationLockSnapshot] = await Promise.all([
             transaction.get(userRef),
             transaction.get(requestRef),
+            transaction.get(generationLockRef),
         ]);
         if (requestSnapshot.exists) {
             throw new Error(DUPLICATE_REQUEST_ERROR);
+        }
+        if (generationLockSnapshot.exists) {
+            const lockData = generationLockSnapshot.data();
+            const lastAttemptAt = lockData?.updatedAt ?? lockData?.startedAt;
+            if (isRecentTimestamp(lastAttemptAt)) {
+                throw new Error(DUPLICATE_REQUEST_ERROR);
+            }
         }
         const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
         let nextCredits = currentProfile.credits;
@@ -403,10 +419,21 @@ const beginGenerationCharge = async (user, requestId) => {
         transaction.set(userRef, updatePayload, { merge: true });
         transaction.set(requestRef, {
             uid: user.uid,
+            email: user.email || currentProfile.email,
             requestId,
             cost: GENERATION_COST,
             status: 'charged',
+            success: false,
+            refunded: false,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        transaction.set(generationLockRef, {
+            uid: user.uid,
+            email: user.email || currentProfile.email,
+            requestId,
+            status: 'charged',
+            startedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         result.profile = {
@@ -420,14 +447,25 @@ const beginGenerationCharge = async (user, requestId) => {
 };
 const markGenerationCompleted = async (user, requestId) => {
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const generationLockRef = db.collection('generationLocks').doc(user.uid);
     await requestRef.set({
         status: 'completed',
+        success: true,
+        refunded: false,
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await generationLockRef.set({
+        requestId,
+        status: 'completed',
+        releasedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
 };
-const refundGenerationCharge = async (user, requestId) => {
+const refundGenerationCharge = async (user, requestId, errorMessage) => {
     const userRef = db.collection('users').doc(user.uid);
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+    const generationLockRef = db.collection('generationLocks').doc(user.uid);
     const result = {
         refunded: false,
         balanceAfter: null,
@@ -454,7 +492,16 @@ const refundGenerationCharge = async (user, requestId) => {
         }, { merge: true });
         transaction.set(requestRef, {
             status: 'refunded',
+            success: false,
+            refunded: true,
+            errorMessage,
             refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        transaction.set(generationLockRef, {
+            requestId,
+            status: 'refunded',
+            releasedAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
         writeCreditLog(transaction, user.uid, 'generate_refund', GENERATION_COST, nextCredits, `refund request ${requestId}`);
@@ -528,11 +575,11 @@ const handleTryOnRequest = async (req, res, label) => {
     }
     catch (error) {
         functions.logger.error(`OpenAI ${label} request failed`, error);
-        const refundResult = await refundGenerationCharge(user, requestId).catch((refundError) => {
+        const errorMessage = error instanceof Error ? error.message : 'OpenAI image generation failed';
+        const refundResult = await refundGenerationCharge(user, requestId, errorMessage).catch((refundError) => {
             functions.logger.error('Failed to refund credits after generation error', refundError);
             return { refunded: false, balanceAfter: null };
         });
-        const errorMessage = error instanceof Error ? error.message : 'OpenAI image generation failed';
         const refundedMessage = refundResult.refunded ? ' 100 credits refunded due to generation failure.' : '';
         const errorCode = errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage;
         res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({

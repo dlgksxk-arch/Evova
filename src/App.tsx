@@ -149,6 +149,7 @@ const translations = {
     subscriptionCreditBonus: '구독 시 매일 추가 크레딧 지급',
     notEnoughCredits: '크레딧이 부족합니다.',
     refundedAfterFailure: '이미지 생성에 실패하여 100 크레딧이 환불되었습니다.',
+    duplicateRequestBlocked: '이미 생성 요청이 처리 중입니다. 잠시 후 다시 시도해 주세요.',
     todayDailyRewardGranted: '오늘의 300 크레딧이 지급되었습니다.',
     todayDailyRewardAlreadyClaimed: '오늘은 이미 일일 크레딧을 받았습니다.',
     subscriptionBonusGranted: (n: number) => `구독 보너스 ${n} 크레딧이 추가 지급되었습니다.`,
@@ -291,6 +292,7 @@ const translations = {
     subscriptionCreditBonus: 'Subscribers can get extra daily credits',
     notEnoughCredits: 'Not enough credits.',
     refundedAfterFailure: '100 credits refunded due to generation failure.',
+    duplicateRequestBlocked: 'A generation request is already being processed. Please try again shortly.',
     todayDailyRewardGranted: 'Today’s 300 credits have been added.',
     todayDailyRewardAlreadyClaimed: 'Today’s daily credits were already claimed.',
     subscriptionBonusGranted: (n: number) => `${n} subscription bonus credits were added.`,
@@ -440,6 +442,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     subscriptionCreditBonus: '订阅后可获得额外每日积分',
     notEnoughCredits: '积分不足。',
     refundedAfterFailure: '由于生成失败，100 积分已退回。',
+    duplicateRequestBlocked: '生成请求正在处理中，请稍后再试。',
     todayDailyRewardGranted: '今天的 300 积分已发放。',
     todayDailyRewardAlreadyClaimed: '今天的每日积分已领取。',
     subscriptionBonusGranted: (n: number) => `已额外发放 ${n} 订阅奖励积分。`,
@@ -502,6 +505,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     subscriptionCreditBonus: '購読すると毎日追加クレジット',
     notEnoughCredits: 'クレジットが不足しています。',
     refundedAfterFailure: '生成に失敗したため 100 クレジットが返金されました。',
+    duplicateRequestBlocked: '生成リクエストはすでに処理中です。少し待ってから再試行してください。',
     todayDailyRewardGranted: '本日の 300 クレジットが付与されました。',
     todayDailyRewardAlreadyClaimed: '本日のデイリークレジットはすでに受け取り済みです。',
     subscriptionBonusGranted: (n: number) => `購読ボーナス ${n} クレジットが追加されました。`,
@@ -1214,11 +1218,7 @@ const GENERATION_COST = 100;
 const SIGNUP_BONUS_CREDITS = 300;
 const DAILY_LOGIN_CREDITS = 300;
 const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
-const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
 const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
-const DIRECT_BOOTSTRAP_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/bootstrap';
-const DIRECT_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/tryon';
-const DIRECT_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/generateTryOn';
 const RESULT_ROUTE_PREFIX = '/result/';
 const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.png';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
@@ -1395,9 +1395,18 @@ const ensureDataUrl = async (src: string): Promise<string> => {
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
 
+const preloadImageSource = (src: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(src);
+    img.onerror = () => reject(new Error('RESULT_IMAGE_INVALID'));
+    img.decoding = 'async';
+    img.src = src;
+  });
+
 const getGenerateErrorMessage = (
   error: unknown,
-  t: { alertError: string; generationConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string },
+  t: { alertError: string; generationConfigError: string; notEnoughCredits: string; refundedAfterFailure: string; authRequired: string; duplicateRequestBlocked: string },
 ): string => {
   const raw = error instanceof Error ? error.message : '';
   if (
@@ -1415,6 +1424,10 @@ const getGenerateErrorMessage = (
 
   if (raw === 'AUTH_REQUIRED') {
     return t.authRequired;
+  }
+
+  if (raw === 'DUPLICATE_REQUEST') {
+    return t.duplicateRequestBlocked;
   }
 
   if (raw.includes('100 credits refunded')) {
@@ -1447,121 +1460,62 @@ const parseTryOnError = async (res: Response): Promise<Error> => {
 
 const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse> => {
   const token = await user.getIdToken();
-  const endpoints = [SAME_ORIGIN_BOOTSTRAP_ENDPOINT, DIRECT_BOOTSTRAP_ENDPOINT];
+  const res = await fetch(SAME_ORIGIN_BOOTSTRAP_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({}),
+  });
 
-  let lastError: Error | null = null;
-  for (const endpoint of endpoints) {
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (!res.ok) {
-        const parsedError = await parseTryOnError(res);
-        lastError = parsedError;
-        if ((res.status === 404 || res.status === 405) && endpoint !== endpoints[endpoints.length - 1]) {
-          continue;
-        }
-        throw parsedError;
-      }
-
-      return await res.json() as CreditBootstrapResponse;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Failed to bootstrap credits.');
-      if (endpoint === endpoints[endpoints.length - 1]) {
-        throw lastError;
-      }
-    }
+  if (!res.ok) {
+    throw await parseTryOnError(res);
   }
 
-  throw lastError ?? new Error('Failed to bootstrap credits.');
+  return await res.json() as CreditBootstrapResponse;
 };
 
 const callNanoBanana = async (payload: { authToken: string, personImage: string, garmentImage: string, requestId: string, bodyProfile?: any }): Promise<{ image: string; creditsRemaining?: number; signupBonusGranted?: number; dailyRewardGranted?: number; subscriptionBonusGranted?: number }> => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
-  const endpoints = [
-    SAME_ORIGIN_TRYON_ENDPOINT,
-    SAME_ORIGIN_LEGACY_TRYON_ENDPOINT,
-    DIRECT_TRYON_ENDPOINT,
-    DIRECT_LEGACY_TRYON_ENDPOINT,
-  ];
-
-  let lastError: Error | null = null;
   try {
-    for (const endpoint of endpoints) {
-      try {
-        console.info('[HAMDEVA] tryon request', { endpoint, method: 'POST' });
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${payload.authToken}`,
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-        console.info('[HAMDEVA] tryon response', { endpoint: res.url || endpoint, method: 'POST', status: res.status });
+    console.info('[HAMDEVA] tryon request', { endpoint: SAME_ORIGIN_TRYON_ENDPOINT, method: 'POST', requestId: payload.requestId });
+    const res = await fetch(SAME_ORIGIN_TRYON_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${payload.authToken}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    console.info('[HAMDEVA] tryon response', { endpoint: res.url || SAME_ORIGIN_TRYON_ENDPOINT, method: 'POST', status: res.status, requestId: payload.requestId });
 
-        if (!res.ok) {
-          const parsedError = await parseTryOnError(res);
-          if (parsedError.message === 'INSUFFICIENT_CREDITS' || parsedError.message === 'AUTH_REQUIRED' || parsedError.message === 'DUPLICATE_REQUEST') {
-            throw parsedError;
-          }
-
-          lastError = parsedError;
-          const shouldRetry = res.status === 404 || res.status === 405;
-          if (shouldRetry && endpoint !== endpoints[endpoints.length - 1]) {
-            console.warn('[HAMDEVA] tryon route unavailable, retrying alternate same-origin endpoint', {
-              endpoint,
-              status: res.status,
-              message: parsedError.message,
-            });
-            continue;
-          }
-
-          throw parsedError;
-        }
-
-        const data = await res.json() as {
-          success?: boolean;
-          image?: string;
-          mimeType?: string;
-          creditsRemaining?: number;
-          signupBonusGranted?: number;
-          dailyRewardGranted?: number;
-          subscriptionBonusGranted?: number;
-        };
-        if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
-        return {
-          image: normalizeGeneratedImage(data.image, data.mimeType),
-          creditsRemaining: data.creditsRemaining,
-          signupBonusGranted: data.signupBonusGranted,
-          dailyRewardGranted: data.dailyRewardGranted,
-          subscriptionBonusGranted: data.subscriptionBonusGranted,
-        };
-      } catch (error) {
-        if (error instanceof Error && (error.message === 'INSUFFICIENT_CREDITS' || error.message === 'AUTH_REQUIRED' || error.message === 'DUPLICATE_REQUEST')) {
-          throw error;
-        }
-
-        lastError = error instanceof Error ? error : new Error('이미지 생성 요청에 실패했습니다.');
-        console.error('[HAMDEVA] tryon endpoint error', { endpoint, error: lastError });
-        if (endpoint === endpoints[endpoints.length - 1]) {
-          throw lastError;
-        }
-      }
+    if (!res.ok) {
+      throw await parseTryOnError(res);
     }
+
+    const data = await res.json() as {
+      success?: boolean;
+      image?: string;
+      mimeType?: string;
+      creditsRemaining?: number;
+      signupBonusGranted?: number;
+      dailyRewardGranted?: number;
+      subscriptionBonusGranted?: number;
+    };
+    if (!data.image) throw new Error('응답에서 이미지를 찾을 수 없습니다.');
+    return {
+      image: normalizeGeneratedImage(data.image, data.mimeType),
+      creditsRemaining: data.creditsRemaining,
+      signupBonusGranted: data.signupBonusGranted,
+      dailyRewardGranted: data.dailyRewardGranted,
+      subscriptionBonusGranted: data.subscriptionBonusGranted,
+    };
   } finally {
     clearTimeout(timer);
   }
-
-  throw lastError ?? new Error('이미지 생성 요청에 실패했습니다.');
 };
 
 type CountryShowcaseCard = {
@@ -1754,7 +1708,7 @@ const App: React.FC = () => {
   const [personUploadMessage, setPersonUploadMessage] = useState<string | null>(null);
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
-  const [resultImage, setResultImage]   = useState<string | null>(null);
+  const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
   const [sharedResultRecord, setSharedResultRecord] = useState<PublicResultRecord | null>(null);
@@ -1782,6 +1736,7 @@ const App: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const generationLockRef = useRef(false);
   
   const lang = normalizeLanguageCode(i18next.language);
   const contentLocale = getContentLocale(lang);
@@ -1971,8 +1926,8 @@ const App: React.FC = () => {
     setClothPreviewState(!activeClothImage ? 'idle' : clothFile ? 'ready' : 'loading');
   }, [activeClothImage, clothFile]);
   useEffect(() => {
-    setResultPreviewState(resultImage ? 'loading' : 'idle');
-  }, [resultImage]);
+    setResultPreviewState(finalImageSrc ? 'loading' : 'idle');
+  }, [finalImageSrc]);
   useEffect(() => {
     if (!shareStatus) {
       return;
@@ -2133,7 +2088,7 @@ const App: React.FC = () => {
     return pool[Math.floor(Math.random() * pool.length)] ?? null;
   };
   const clearGeneratedResult = () => {
-    setResultImage(null);
+    setFinalImageSrc(null);
     setLatestSharedResultId(null);
     setShareStatus(null);
     setResultPreviewState('idle');
@@ -2236,10 +2191,10 @@ const App: React.FC = () => {
 
     openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
   };
-  const renderResultActions = (imageSrc: string, link: string | null) => (
+  const renderResultActions = (imageSrc: string, link: string | null, disableDownload = false) => (
     <>
       <div className="result-action-grid">
-        <button className="download-btn result-action-btn" onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
+        <button className="download-btn result-action-btn" disabled={disableDownload} onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
           {t.download}
         </button>
         <button className="outline-btn result-action-btn" onClick={() => { void handleShareLink(link); }} type="button">
@@ -2509,6 +2464,9 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (generationLockRef.current) {
+      return;
+    }
     if (!currentUser) {
       openAuthModal('login');
       return;
@@ -2519,6 +2477,7 @@ const App: React.FC = () => {
       return;
     }
 
+    generationLockRef.current = true;
     setIsGenerating(true);
     setShareStatus(null);
     setCreditNotice(null);
@@ -2538,7 +2497,8 @@ const App: React.FC = () => {
       const cached = getCached(cacheKey);
       if (cached) {
         clearGeneratedResult();
-        setResultImage(cached);
+        setFinalImageSrc(cached);
+        setResultPreviewState('ready');
         setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
         return;
       }
@@ -2552,7 +2512,7 @@ const App: React.FC = () => {
         garmentImage: preparedClothImage,
         bodyProfile: { gender },
       });
-      const result = resultPayload.image;
+      const result = await preloadImageSource(resultPayload.image);
 
       try {
         setUserProfile((prev) => prev ? {
@@ -2602,11 +2562,13 @@ const App: React.FC = () => {
       }
 
       setCached(cacheKey, result);
-      setResultImage(result);
+      setFinalImageSrc(result);
+      setResultPreviewState('ready');
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
       alert(getGenerateErrorMessage(err, t));
     } finally {
+      generationLockRef.current = false;
       setIsGenerating(false);
     }
   };
@@ -2969,7 +2931,7 @@ const App: React.FC = () => {
                 {isGenerating && <p className="loading-subtext">{t.loadingDetail}</p>}
               </div>
 
-              {resultImage && (
+              {finalImageSrc && (
                 <div id="result-area" className="results-section">
                   <h2 className="section-heading">{t.resultTitle}</h2>
                   <div className="composite-result">
@@ -2983,7 +2945,7 @@ const App: React.FC = () => {
                       <div className="img-error-msg">{t.resultDisplayError}</div>
                     ) : (
                       <img 
-                        src={resultImage}
+                        src={finalImageSrc}
                         alt="Result"
                         className={resultPreviewState === 'ready' ? 'is-visible' : ''}
                         onLoad={() => setResultPreviewState('ready')}
@@ -2992,7 +2954,7 @@ const App: React.FC = () => {
                     )}
                     <div className="watermark">HAMDEVA AI</div>
                   </div>
-                  {renderResultActions(resultImage, shareResultLink)}
+                  {renderResultActions(finalImageSrc, shareResultLink, resultPreviewState !== 'ready')}
                 </div>
               )}
             </div>
