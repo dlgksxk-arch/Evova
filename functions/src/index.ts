@@ -5,7 +5,11 @@ admin.initializeApp();
 const db = admin.firestore();
 
 const FREE_LIMIT = 3;
-const CORS_ORIGIN = ['https://hamdeva.web.app', 'https://hamdeva.firebaseapp.com'];
+const CORS_ORIGIN = [
+  'https://hamdeva.web.app',
+  'https://hamdeva.firebaseapp.com',
+  'https://hamdeva.dlgksxk.workers.dev',
+];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
 const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
 

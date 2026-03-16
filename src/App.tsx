@@ -1346,12 +1346,9 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
           }
 
           lastError = parsedError;
-          const shouldRetry =
-            res.status === 404
-            || res.status === 405
-            || isGenerationConfigError(parsedError.message);
+          const shouldRetry = res.status === 404 || res.status === 405;
           if (shouldRetry && endpoint !== endpoints[endpoints.length - 1]) {
-            console.warn('[HAMDEVA] tryon request failed, retrying alternate endpoint', {
+            console.warn('[HAMDEVA] tryon route unavailable, retrying alternate same-origin endpoint', {
               endpoint,
               status: res.status,
               message: parsedError.message,

@@ -10,9 +10,11 @@
   - `firebase deploy --only functions`
 - Local verification:
   - `cd functions && npm install`
+  - `cp .env.example .env` and fill in `OPENAI_API_KEY`
   - `npm run build`
   - `firebase emulators:start --only functions`
-  - In another terminal run the app and verify `POST /api/tryon` or `POST /generateTryOn`
+  - In another terminal run the app from the repo root with `npm run dev`
+  - Verify `POST /api/tryon` first, and confirm `/generateTryOn` also resolves in the same project
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
