@@ -1,0 +1,100 @@
+import type { FAQItem } from '../../data/faq';
+
+export type BreadcrumbItem = {
+  name: string;
+  url: string;
+};
+
+export type OrganizationSchemaConfig = {
+  name: string;
+  url: string;
+  description: string;
+  logo?: string;
+  contactEmail?: string;
+  contactType?: string;
+  sameAs?: string[];
+};
+
+export type WebSiteSchemaConfig = {
+  name: string;
+  url: string;
+  description?: string;
+  searchUrlTemplate?: string;
+};
+
+export const createFAQPageSchema = (items: FAQItem[]) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+});
+
+export const createBreadcrumbSchema = (items: BreadcrumbItem[]) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  })),
+});
+
+export const createOrganizationSchema = (config: OrganizationSchemaConfig) => {
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: config.name,
+    url: config.url,
+    description: config.description,
+  };
+
+  if (config.logo) {
+    schema.logo = config.logo;
+  }
+
+  if (config.contactEmail) {
+    schema.contactPoint = [
+      {
+        '@type': 'ContactPoint',
+        contactType: config.contactType ?? 'customer support',
+        email: config.contactEmail,
+      },
+    ];
+  }
+
+  if (config.sameAs && config.sameAs.length > 0) {
+    schema.sameAs = config.sameAs;
+  }
+
+  return schema;
+};
+
+export const createWebSiteSchema = (config: WebSiteSchemaConfig) => {
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: config.name,
+    url: config.url,
+  };
+
+  if (config.description) {
+    schema.description = config.description;
+  }
+
+  if (config.searchUrlTemplate) {
+    schema.potentialAction = {
+      '@type': 'SearchAction',
+      target: config.searchUrlTemplate,
+      'query-input': 'required name=search_term_string',
+    };
+  }
+
+  return schema;
+};

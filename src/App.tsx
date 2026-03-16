@@ -5,6 +5,8 @@ import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
+import FAQSection from './components/seo/FAQSection';
+import StructuredData from './components/seo/StructuredData';
 import AdminDashboard from './features/admin/AdminDashboard';
 import MyPageSection from './features/account/MyPageSection';
 import BoardPage from './features/board/BoardPage';
@@ -15,6 +17,13 @@ import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 import { useCreditBootstrap } from './hooks/useCreditBootstrap';
 import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
+import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
+import {
+  createBreadcrumbSchema,
+  createFAQPageSchema,
+  createOrganizationSchema,
+  createWebSiteSchema,
+} from './lib/seo/schema';
 import {
   callCreateCheckoutSession,
   callCreditBootstrap,
@@ -68,10 +77,12 @@ const CREDIT_PRODUCTS = [
 ] as const;
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
+const SITE_URL = 'https://hamdeva.com';
 const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
+const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'board', 'terms', 'privacy', 'contact'];
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -2075,6 +2086,187 @@ const getEstimatedGenerationDuration = (): number => {
 
 const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms / 1000))}s`;
 
+const getFaqTitle = (page: SitePage): string => {
+  switch (page) {
+    case 'home':
+      return 'HAMDEVA FAQ';
+    case 'about':
+      return 'About HAMDEVA FAQ';
+    case 'how-it-works':
+      return 'How to Use HAMDEVA FAQ';
+    case 'traditional-clothing':
+      return 'Sample Outfits FAQ';
+    default:
+      return 'FAQ';
+  }
+};
+
+const getFaqItemsForPage = (page: SitePage): FAQItem[] => {
+  switch (page) {
+    case 'home':
+      return homeFaqs;
+    case 'about':
+      return aboutFaqs;
+    case 'how-it-works':
+      return howToUseFaqs;
+    case 'traditional-clothing':
+      return sampleOutfitsFaqs;
+    default:
+      return [];
+  }
+};
+
+const renderSeoContent = (page: SitePage | 'contact-route'): React.ReactNode => {
+  switch (page) {
+    case 'home':
+      return (
+        <section className="seo-content">
+          <h2>AI Virtual Fitting with HAMDEVA</h2>
+          <p>
+            HAMDEVA는 인공지능 기반 가상 피팅 기술을 활용하여 사용자가 다양한 의상을 온라인에서 체험할 수 있도록 설계된 디지털 패션 플랫폼입니다.
+            얼굴 사진을 업로드하거나 샘플 이미지를 선택한 뒤 의상 이미지를 결합하면, AI가 여러 각도에서 자연스럽게 스타일을 보여주는 결과 이미지를 생성합니다.
+            단순한 이미지 생성 도구가 아니라 패션 탐색, 문화 의상 체험, 전통 스타일 비교, 디지털 스타일링 실험까지 연결하는 서비스라는 점이 특징입니다.
+            온라인 쇼핑이나 콘텐츠 제작 환경에서는 실제로 옷을 입어보기 어렵기 때문에, 가상 피팅은 사용자가 결정을 내리기 전 시각적인 확신을 얻는 데 큰 도움을 줍니다.
+          </p>
+          <p>
+            사용자는 자신의 얼굴 사진을 업로드하거나 샘플 이미지를 선택한 후 다양한 의상 스타일을 적용하여 결과 이미지를 생성할 수 있습니다.
+            이 과정은 복잡한 편집 툴을 배우지 않아도 되도록 설계되어 있으며, 빠르게 여러 스타일을 비교해 볼 수 있게 해줍니다.
+            특히 전통 의상, 국가별 대표 의상, 현대 패션, 콘셉트 의상처럼 일반 쇼핑몰에서는 한 번에 비교하기 어려운 범주의 스타일도 한 플랫폼 안에서 탐색할 수 있습니다.
+            이는 단순한 재미를 넘어, 사용자가 자신에게 어울리는 분위기와 실루엣을 이해하는 데 유용한 경험을 제공합니다.
+          </p>
+          <h3>Why Virtual Fitting?</h3>
+          <p>
+            가상 피팅 기술은 온라인 패션 환경에서 중요한 도구가 되고 있습니다. 사용자는 실제로 의상을 입어보지 않고도 스타일을 확인할 수 있으며
+            다양한 패션과 문화 의상을 탐색할 수 있습니다. 또한 브랜드, 콘텐츠 제작자, 교육 플랫폼 입장에서는 더 많은 설명형 콘텐츠를 제공할 수 있어 SEO 측면에서도 강점이 있습니다.
+            사용자는 검색을 통해 특정 의상 스타일이나 문화 의상에 대한 정보를 찾다가 HAMDEVA에 도달할 수 있고, 이후 바로 체험까지 이어갈 수 있습니다.
+            즉 검색 친화적인 정보 콘텐츠와 인터랙티브 기능이 결합되어 있다는 점이 이 서비스의 핵심 가치입니다.
+          </p>
+          <h3>Explore Different Styles</h3>
+          <p>
+            HAMDEVA에서는 전통 의상과 다양한 패션 스타일을 AI 이미지 합성 기술을 통해 체험할 수 있습니다.
+            사용자는 국가별 전통 의상, 클래식 스타일, 현대적 패션 무드, 개성 있는 콘셉트 룩을 한 자리에서 비교하면서 자신에게 어울리는 이미지를 찾을 수 있습니다.
+            이처럼 풍부한 텍스트 설명과 실제 체험 기능을 함께 제공하면 검색 엔진은 페이지를 단순 도구 페이지가 아니라 주제 중심 콘텐츠 페이지로 인식할 가능성이 높아집니다.
+            HAMDEVA의 홈 페이지는 바로 그 첫 진입점으로서, AI Virtual Fitting이 어떤 기술이고 왜 유용한지 명확히 설명하는 역할을 수행합니다.
+          </p>
+        </section>
+      );
+    case 'about':
+      return (
+        <section className="seo-content">
+          <h1>About HAMDEVA</h1>
+          <p>
+            HAMDEVA는 인공지능 기술을 활용한 가상 피팅 플랫폼입니다. 사용자는 온라인에서 다양한 의상 스타일을 체험하고 새로운 패션 아이디어를 발견할 수 있습니다.
+            이 서비스는 단순히 이미지를 합성하는 도구를 넘어서, 패션과 문화, 디지털 경험을 연결하는 정보형 플랫폼을 지향합니다.
+            전통 의상이나 특색 있는 스타일은 실제로 접해보기 전까지 감이 잘 오지 않는 경우가 많습니다. HAMDEVA는 이러한 간극을 줄이기 위해 설명형 콘텐츠와 체험형 기능을 함께 제공합니다.
+            사용자는 읽고 이해한 뒤 직접 시도해 보면서, 단순한 방문자가 아니라 능동적으로 패션을 탐색하는 사용자로 전환됩니다.
+          </p>
+          <h2>Our Mission</h2>
+          <p>
+            HAMDEVA의 목표는 패션과 기술을 결합하여 누구나 쉽게 다양한 스타일을 탐색할 수 있는 새로운 디지털 패션 경험을 제공하는 것입니다.
+            누구나 고가의 촬영 장비나 전문 스타일링 지식 없이도 가상 피팅을 이용해 스타일을 확인할 수 있도록 접근성을 높이는 것이 핵심입니다.
+            동시에 각 의상과 스타일이 가지는 문화적 맥락, 시각적 차이, 활용 가능성을 설명함으로써 더 깊이 있는 탐색 경험을 제공합니다.
+            이는 검색 엔진 관점에서도 사이트의 전문성과 주제 일관성을 강화하는 요소가 되며, AdSense 심사에서 중요하게 보는 콘텐츠 품질과 체류 가치를 높이는 방향과도 맞닿아 있습니다.
+          </p>
+          <h2>AI Technology</h2>
+          <p>
+            AI 이미지 합성 기술을 이용하여 얼굴 이미지와 의상 이미지를 자연스럽게 결합합니다. 사용자가 업로드한 얼굴 사진과 선택한 의상 이미지를 바탕으로,
+            인공지능은 인물의 인상과 의상의 특징을 유지하면서 새로운 결과 이미지를 생성합니다. 이러한 기술은 전자상거래, 디지털 패션, 콘텐츠 제작, 교육형 시각 자료 등 다양한 분야에서 활용될 수 있습니다.
+            HAMDEVA는 기술을 기술 자체로만 설명하지 않고, 실제 사용자가 왜 이 기능을 필요로 하는지에 초점을 맞춥니다. 그래서 About 페이지는 브랜드 소개뿐 아니라,
+            서비스가 해결하려는 문제와 AI Virtual Fitting이 사용자에게 제공하는 구체적인 가치까지 함께 전달합니다.
+          </p>
+        </section>
+      );
+    case 'how-it-works':
+      return (
+        <section className="seo-content">
+          <h1>How to Use HAMDEVA</h1>
+          <h2>Upload Your Image</h2>
+          <p>
+            얼굴 이미지를 업로드하거나 샘플 이미지를 선택할 수 있습니다. 사용자가 직접 촬영한 사진을 사용할 수도 있고, 빠르게 기능을 체험하고 싶은 경우에는 샘플 이미지를 선택해 즉시 결과를 확인할 수도 있습니다.
+            이 과정은 가능한 한 단순하게 설계되어 있어 처음 방문한 사용자도 몇 번의 클릭만으로 체험을 시작할 수 있습니다. 좋은 결과를 얻기 위해서는 정면에 가까운 사진과 얼굴이 선명한 이미지를 사용하는 것이 좋습니다.
+          </p>
+          <h2>Select an Outfit</h2>
+          <p>
+            원하는 의상 스타일을 선택하면 AI가 자동으로 이미지를 분석합니다. 의상 이미지는 가상 피팅 결과의 분위기와 완성도를 좌우하는 중요한 요소이기 때문에,
+            실루엣과 디테일이 분명한 이미지를 고를수록 더 나은 결과를 기대할 수 있습니다. HAMDEVA는 전통 의상, 샘플 의상, 다양한 스타일 카테고리를 제공하여 사용자가 폭넓은 룩을 탐색하도록 돕습니다.
+            이 단계는 단순한 선택 기능이 아니라, 사용자가 어떤 스타일 언어를 선호하는지 발견하는 과정이기도 합니다.
+          </p>
+          <h2>Generate Result</h2>
+          <p>
+            AI가 얼굴과 의상을 합성하여 결과 이미지를 생성합니다. 생성된 이미지는 사용자의 인상과 선택한 의상의 특징을 바탕으로 새로운 시각적 조합을 보여주며,
+            스타일링 비교나 콘셉트 탐색에 활용할 수 있습니다. 이 결과는 실제 옷의 소재감과 착용감을 완벽히 대체하는 것은 아니지만, 온라인 환경에서 미리 시각적 판단을 내리는 데 매우 유용합니다.
+            특히 여러 의상을 연속으로 테스트할 수 있기 때문에 의상 선택 과정의 효율성이 높아집니다.
+          </p>
+          <h2>Tips for Better Results</h2>
+          <ul>
+            <li>밝은 환경에서 촬영된 이미지 사용</li>
+            <li>정면 얼굴 사진 사용</li>
+            <li>해상도 높은 이미지 사용</li>
+          </ul>
+          <p>
+            위의 팁은 단순한 권장 사항이 아니라 실제 결과 품질과 직접 연결됩니다. 조명이 어둡거나 얼굴이 가려져 있으면 인식 정확도가 떨어질 수 있고,
+            의상 이미지가 복잡하면 AI가 형태를 해석하는 과정에서 불필요한 왜곡이 생길 수 있습니다. 따라서 How to Use 페이지는 단순 사용 설명을 넘어,
+            더 좋은 결과를 얻기 위한 실전 가이드를 제공하는 역할을 합니다. 검색 유입 관점에서도 이런 설명형 콘텐츠는 사용자가 페이지에 오래 머물게 하고,
+            서비스 신뢰도를 높이는 데 도움이 됩니다.
+          </p>
+        </section>
+      );
+    case 'traditional-clothing':
+      return (
+        <section className="seo-content">
+          <h1>Sample Outfits</h1>
+          <p>
+            HAMDEVA에서는 다양한 의상 스타일을 가상 피팅으로 체험할 수 있습니다. 샘플 의상 페이지는 사용자가 어떤 스타일을 선택할 수 있는지 한눈에 이해하도록 돕는 동시에,
+            각 의상이 전달하는 분위기와 문화적 맥락을 탐색하는 공간이기도 합니다. 단순히 이미지 모음으로 끝나는 것이 아니라, 어떤 옷이 전통적이고 어떤 옷이 현대적인지,
+            어떤 콘셉트가 자신의 취향과 어울리는지 비교할 수 있는 정보형 페이지로 작동합니다.
+          </p>
+          <h2>Traditional Styles</h2>
+          <p>
+            전통 의상은 각 나라의 문화와 역사를 반영합니다. 실루엣, 색상, 장식 요소, 착용 방식은 지역과 시대에 따라 다르며, 이러한 차이는 단순한 외형 이상의 의미를 가집니다.
+            사용자는 가상 피팅을 통해 전통 의상의 특징을 시각적으로 확인할 수 있고, 텍스트 설명을 통해 그 차이를 보다 명확하게 이해할 수 있습니다.
+            이는 SEO 관점에서도 중요한데, 스타일 카테고리와 설명 텍스트가 함께 있을 때 페이지는 더 풍부한 주제 정보를 제공하게 됩니다.
+          </p>
+          <h2>Modern Fashion</h2>
+          <p>
+            현대 패션 스타일 역시 가상 피팅을 통해 쉽게 비교할 수 있습니다. 같은 인물 이미지에 다양한 무드의 의상을 적용해 보면,
+            전통적인 스타일과 현대적인 스타일이 어떤 방식으로 다르게 보이는지 직관적으로 이해할 수 있습니다. 이 과정은 온라인 쇼핑, 스타일링 기획, 콘텐츠 제작, 개인 취향 탐색 등 여러 상황에서 유용합니다.
+            특히 이미지만 나열된 페이지보다 텍스트가 함께 제공되는 페이지가 검색 엔진과 사용자 모두에게 더 높은 정보를 전달할 수 있습니다.
+          </p>
+          <h2>Digital Fashion Experience</h2>
+          <p>
+            HAMDEVA는 AI 기술을 활용하여 새로운 패션 탐색 경험을 제공합니다. 사용자는 한 번의 방문으로 여러 나라의 전통 의상, 고전적인 룩, 현대적인 패션 콘셉트를 비교하고,
+            실제로 자신의 얼굴이나 샘플 이미지에 적용해 볼 수 있습니다. 이처럼 샘플 의상 페이지는 단순 갤러리가 아니라,
+            디지털 패션 체험의 입구이자 스타일 이해를 돕는 콘텐츠 허브입니다. 풍부한 설명과 체험 기능이 함께 있을 때, 사이트는 광고 승인이나 검색 노출 측면에서 더 신뢰할 수 있는 정보형 구조를 갖추게 됩니다.
+          </p>
+        </section>
+      );
+    case 'contact-route':
+      return (
+        <section className="seo-content">
+          <h1>Contact</h1>
+          <p>
+            HAMDEVA 서비스에 대한 문의나 제안 사항이 있다면 문의 페이지를 통해 전달할 수 있습니다. 이 페이지는 단순히 이메일 주소를 노출하는 역할만 하는 것이 아니라,
+            사용자가 서비스 사용 중 느낀 점, 개선이 필요한 부분, 광고나 협업 관련 문의, 콘텐츠 제안, 기술적 문제 제보 등을 체계적으로 전달할 수 있도록 돕습니다.
+            실제 서비스 운영에서는 사용자 피드백이 매우 중요한데, 특히 AI 기반 플랫폼은 사용자의 경험을 통해 품질 개선 포인트를 지속적으로 발견하게 되기 때문입니다.
+          </p>
+          <h2>Feedback</h2>
+          <p>
+            사용자 경험 개선을 위해 다양한 의견을 수집하고 있습니다. 예를 들어 샘플 이미지 선택 과정, 결과 이미지 품질, 다국어 텍스트, 전통 의상 정보, 모바일 사용성, 광고 노출 방식 등
+            여러 주제에 대한 피드백은 사이트 운영 방향을 정하는 데 중요한 자료가 됩니다. 또한 문의 페이지가 잘 정리되어 있으면 방문자는 사이트가 실제로 관리되고 있다는 신뢰를 느끼게 됩니다.
+            이는 AdSense 심사에서도 긍정적인 요소가 될 수 있습니다. 연락 가능한 운영 주체와 명확한 안내는 정보성 사이트의 기본 요건 중 하나이기 때문입니다.
+          </p>
+          <p>
+            HAMDEVA는 패션과 기술을 결합한 서비스로서, 단순 기능 제공을 넘어 사용자와의 상호작용을 중요하게 생각합니다.
+            따라서 Contact 페이지는 고객지원 창구이자 서비스 개선 루프의 시작점입니다. 방문자는 질문을 남길 수 있고, 운영자는 이를 바탕으로 페이지 품질, 콘텐츠 명확성, 기능 안정성을 지속적으로 개선할 수 있습니다.
+            검색 엔진과 광고 심사 관점에서도 이런 구조는 사이트가 단발성 랜딩 페이지가 아니라 실제로 운영되는 서비스라는 신호를 제공합니다.
+          </p>
+        </section>
+      );
+    default:
+      return null;
+  }
+};
+
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -2214,6 +2406,8 @@ const App: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
   const [generationEstimateMs, setGenerationEstimateMs] = useState(DEFAULT_GENERATION_ESTIMATE_MS);
@@ -2272,6 +2466,52 @@ const App: React.FC = () => {
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const adminVideoLabels = getAdminVideoLabels(lang);
+  const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  const isContactRoute = normalizedPathname === '/contact';
+  const currentFaqItems = getFaqItemsForPage(currentPage);
+  const breadcrumbItems = currentPage === 'home'
+    ? [{ name: 'Home', url: `${SITE_URL}/` }]
+    : currentPage === 'about'
+      ? [
+          { name: 'Home', url: `${SITE_URL}/` },
+          { name: 'About', url: `${SITE_URL}/about` },
+        ]
+      : currentPage === 'how-it-works'
+        ? [
+            { name: 'Home', url: `${SITE_URL}/` },
+            { name: 'How to Use', url: `${SITE_URL}/how-to-use` },
+          ]
+        : currentPage === 'traditional-clothing'
+          ? [
+              { name: 'Home', url: `${SITE_URL}/` },
+              { name: 'Sample Outfits', url: `${SITE_URL}/sample-outfits` },
+            ]
+          : [];
+  const homeStructuredData = currentPage === 'home' && !sharedResultRouteId
+    ? [
+        createFAQPageSchema(homeFaqs),
+        createBreadcrumbSchema(breadcrumbItems),
+        createOrganizationSchema({
+          name: 'HAMDEVA',
+          url: SITE_URL,
+          logo: `${SITE_URL}/og-image.png`,
+          description: 'HAMDEVA is an AI virtual fitting platform for exploring digital fashion, sample outfits, and traditional clothing styles.',
+          contactEmail: SUPPORT_EMAIL,
+          contactType: 'customer support',
+        }),
+        createWebSiteSchema({
+          name: 'HAMDEVA',
+          url: SITE_URL,
+          description: 'HAMDEVA provides AI virtual fitting, sample outfit exploration, and educational content about digital fashion and traditional clothing.',
+        }),
+      ]
+    : [];
+  const pageStructuredData = currentPage !== 'home' && !sharedResultRouteId && currentFaqItems.length > 0 && breadcrumbItems.length > 0
+    ? [
+        createFAQPageSchema(currentFaqItems),
+        createBreadcrumbSchema(breadcrumbItems),
+      ]
+    : [];
   const {
     adminSummary,
     adminUsers,
@@ -2454,6 +2694,53 @@ const App: React.FC = () => {
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [currentPage, lang]);
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return;
+    }
+
+    mobileMenuCloseRef.current?.focus();
+  }, [mobileMenuOpen]);
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      document.body.style.removeProperty('overflow');
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  useEffect(() => {
+    if (!mobileMenuOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
   useEffect(() => {
     if (!activePersonImage) {
       setPersonPreviewState('idle');
@@ -3367,13 +3654,24 @@ const App: React.FC = () => {
 
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
+      <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
       <nav className="landing-nav">
         <div className="nav-content">
+          <button
+            className="mobile-menu-toggle"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            type="button"
+          >
+            ☰
+          </button>
           <div className="nav-brand">
             <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
             <span className="app-version">{appVersion}</span>
           </div>
-          <div className="nav-links">
+          <div className="nav-links desktop-nav">
             {NAV_PAGES.map((page) => (
               <button
                 key={page}
@@ -3394,7 +3692,7 @@ const App: React.FC = () => {
               </button>
             )}
           </div>
-          <div className="nav-right">
+          <div className="nav-right desktop-header-actions">
             {currentUser && (
               <div className="credit-pill" aria-label={t.currentCredits(currentCredits)}>
                 <div className="credit-pill-copy">
@@ -3452,8 +3750,168 @@ const App: React.FC = () => {
               {darkMode ? '☀️' : '🌙'}
             </button>
           </div>
+          <button
+            className="mobile-account-button"
+            aria-label={currentUser ? t.myPage : t.login}
+            disabled={!currentUser && !isFirebaseConfigured}
+            onClick={() => {
+              if (currentUser) {
+                navigateToPage('mypage');
+                return;
+              }
+
+              openAuthModal('login');
+            }}
+            title={!currentUser ? firebaseDisabledMessage || undefined : undefined}
+            type="button"
+          >
+            {currentUser ? '👤' : '↗'}
+          </button>
         </div>
       </nav>
+      {mobileMenuOpen && (
+        <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div
+            id="mobile-menu"
+            className="mobile-nav-panel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mobile-nav-header">
+              <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">
+                HAM<span>DEVA</span>
+              </button>
+              <button
+                ref={mobileMenuCloseRef}
+                className="mobile-nav-close"
+                aria-label="Close mobile menu"
+                onClick={() => setMobileMenuOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+            <div className="mobile-nav-section mobile-nav-links">
+              {MOBILE_NAV_PAGES.map((page) => (
+                <button
+                  key={`mobile-${page}`}
+                  className={`mobile-menu-link ${
+                    normalizedPathname === PAGE_PATHS[page] || currentPage === page ? 'active' : ''
+                  }`}
+                  onClick={() => {
+                    navigateToPage(page);
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {contentLocale.nav[page]}
+                </button>
+              ))}
+            </div>
+            <div className="mobile-menu-divider" />
+            <div className="mobile-nav-section mobile-nav-credits">
+              <div className="mobile-credit-row">
+                <span>{t.dailyCreditLabel}</span>
+                <strong>{currentDailyCredit}</strong>
+              </div>
+              <div className="mobile-credit-row">
+                <span>{t.paidCreditLabel}</span>
+                <strong>{currentPaidCredit}</strong>
+              </div>
+              {currentUser ? (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  onClick={() => {
+                    navigateToPage('mypage');
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {t.chargeCredits}
+                </button>
+              ) : (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  disabled={!isFirebaseConfigured}
+                  onClick={() => {
+                    openAuthModal('login');
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {t.chargeCredits}
+                </button>
+              )}
+            </div>
+            <div className="mobile-menu-divider" />
+            <div className="mobile-nav-section mobile-nav-actions">
+              <div className="mobile-menu-label">Language</div>
+              <div className="mobile-language-list">
+                {VISIBLE_LANGUAGE_OPTIONS.map((option) => (
+                  <button
+                    key={`mobile-lang-${option.value}`}
+                    className={`mobile-language-button ${lang === option.value ? 'active' : ''}`}
+                    onClick={() => {
+                      handleLanguageChange(option.value as LanguageCode);
+                      setMobileMenuOpen(false);
+                    }}
+                    type="button"
+                >
+                  <span>{option.nativeLabel}</span>
+                  <span>{option.shortLabel}</span>
+                </button>
+              ))}
+              </div>
+              <button
+                className="mobile-menu-link mobile-menu-action"
+                onClick={() => {
+                  setDarkMode(!darkMode);
+                  setMobileMenuOpen(false);
+                }}
+                type="button"
+              >
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
+              {currentUser && (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  onClick={() => {
+                    navigateToPage('mypage');
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {t.myPage}
+                </button>
+              )}
+              {!currentUser && (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  disabled={!isFirebaseConfigured}
+                  onClick={() => {
+                    openAuthModal('login');
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {t.login}
+                </button>
+              )}
+              {currentUser && (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    void handleLogout();
+                  }}
+                  type="button"
+                >
+                  {t.logout}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {firebaseDisabledMessage && (
         <div className="config-banner" role="alert">
@@ -3676,6 +4134,8 @@ const App: React.FC = () => {
             getSubjectTypeLabel={getSubjectTypeLabel}
             formatSecondsLabel={formatSecondsLabel}
           />
+          {renderSeoContent('home')}
+          <FAQSection title={getFaqTitle('home')} items={homeFaqs} />
         </>
       ) : (
         <main className="section page-shell">
@@ -3817,48 +4277,51 @@ const App: React.FC = () => {
             )}
 
             {(currentPage === 'contact' || currentPage === 'terms') && (
-              <div className="contact-layout">
-                <article className="page-article">
-                  <h2>{contentLocale.contact.supportTitle}</h2>
-                  <p>{contentLocale.contact.supportBody} <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
-                  <p>{contentLocale.contact.supportFootnote}</p>
-                </article>
-                <form className="contact-form" onSubmit={handleContactSubmit}>
-                  <h2>{contentLocale.contact.formTitle}</h2>
-                  <div className="contact-recipient-box">
-                    <span>{contentLocale.contact.recipientLabel}</span>
-                    <strong>{SUPPORT_EMAIL}</strong>
-                  </div>
-                  <label>
-                    {contentLocale.contact.name}
-                    <input
-                      value={contactForm.name}
-                      onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
-                      type="text"
-                      required
-                    />
-                  </label>
-                  <label>
-                    {contentLocale.contact.email}
-                    <input
-                      value={contactForm.email}
-                      onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
-                      type="email"
-                      required
-                    />
-                  </label>
-                  <label>
-                    {contentLocale.contact.message}
-                    <textarea
-                      value={contactForm.message}
-                      onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
-                      rows={6}
-                      required
-                    />
-                  </label>
-                  <button className="generate-btn contact-submit" type="submit">{contentLocale.contact.send}</button>
-                </form>
-              </div>
+              <>
+                <div className="contact-layout">
+                  <article className="page-article">
+                    <h2>{contentLocale.contact.supportTitle}</h2>
+                    <p>{contentLocale.contact.supportBody} <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+                    <p>{contentLocale.contact.supportFootnote}</p>
+                  </article>
+                  <form className="contact-form" onSubmit={handleContactSubmit}>
+                    <h2>{contentLocale.contact.formTitle}</h2>
+                    <div className="contact-recipient-box">
+                      <span>{contentLocale.contact.recipientLabel}</span>
+                      <strong>{SUPPORT_EMAIL}</strong>
+                    </div>
+                    <label>
+                      {contentLocale.contact.name}
+                      <input
+                        value={contactForm.name}
+                        onChange={(event) => setContactForm((prev) => ({ ...prev, name: event.target.value }))}
+                        type="text"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {contentLocale.contact.email}
+                      <input
+                        value={contactForm.email}
+                        onChange={(event) => setContactForm((prev) => ({ ...prev, email: event.target.value }))}
+                        type="email"
+                        required
+                      />
+                    </label>
+                    <label>
+                      {contentLocale.contact.message}
+                      <textarea
+                        value={contactForm.message}
+                        onChange={(event) => setContactForm((prev) => ({ ...prev, message: event.target.value }))}
+                        rows={6}
+                        required
+                      />
+                    </label>
+                    <button className="generate-btn contact-submit" type="submit">{contentLocale.contact.send}</button>
+                  </form>
+                </div>
+                {isContactRoute && renderSeoContent('contact-route')}
+              </>
             )}
             {currentPage === 'mypage' && (
               <MyPageSection
@@ -3879,6 +4342,12 @@ const App: React.FC = () => {
                 onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
                 formatTimestampLabel={formatTimestampLabel}
               />
+            )}
+            {currentPage === 'about' && renderSeoContent('about')}
+            {currentPage === 'how-it-works' && renderSeoContent('how-it-works')}
+            {currentPage === 'traditional-clothing' && renderSeoContent('traditional-clothing')}
+            {currentFaqItems.length > 0 && currentPage !== 'home' && (
+              <FAQSection title={getFaqTitle(currentPage)} items={currentFaqItems} />
             )}
           </div>
         </main>
