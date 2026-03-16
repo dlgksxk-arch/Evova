@@ -38,6 +38,14 @@ interface GenerationRecord {
   createdAt?: Timestamp | null;
 }
 
+interface PublicResultRecord {
+  id: string;
+  uid?: string | null;
+  resultImageUrl: string;
+  language?: LanguageCode;
+  createdAt?: Timestamp | null;
+}
+
 interface BbsPostRecord {
   id: string;
   nickname: string;
@@ -86,6 +94,19 @@ const translations = {
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
     resultTitle: '피팅 결과', download: '이미지 저장하기',
+    share: '공유하기',
+    copyLink: '링크 복사',
+    copied: '링크가 복사되었습니다.',
+    copyFailed: '링크 복사에 실패했습니다.',
+    tryAnotherOutfit: '다른 의상 입혀보기',
+    randomOutfit: '랜덤 의상',
+    resultNotFound: '공유된 결과를 찾을 수 없습니다.',
+    shareOnX: 'X에 공유',
+    shareOnFacebook: 'Facebook에 공유',
+    shareLinkUnavailable: '공유 링크를 준비하는 중입니다.',
+    sharedResultTitle: '공유된 피팅 결과',
+    sharedResultDescription: 'HAMDEVA에서 생성된 결과 이미지를 확인하고 저장하거나 다시 체험해 보세요.',
+    loadingSharedResult: '공유 결과를 불러오는 중입니다...',
     freeLeft: (n: number) => `오늘 무료 사용 가능 횟수: ${n}회`,
     freeExhausted: '오늘 무료 사용 횟수(3회)를 모두 사용했습니다.',
     payTitle: '무료 횟수 소진',
@@ -195,6 +216,19 @@ const translations = {
     loadingDetail: 'HAMDEVA AI is analyzing and compositing the images...',
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
     resultTitle: 'Fitting Result', download: 'Save Image',
+    share: 'Share',
+    copyLink: 'Copy link',
+    copied: 'Link copied.',
+    copyFailed: 'Failed to copy the link.',
+    tryAnotherOutfit: 'Try another outfit',
+    randomOutfit: 'Random outfit',
+    resultNotFound: 'The shared result could not be found.',
+    shareOnX: 'Share on X',
+    shareOnFacebook: 'Share on Facebook',
+    shareLinkUnavailable: 'The share link is still being prepared.',
+    sharedResultTitle: 'Shared fitting result',
+    sharedResultDescription: 'View the generated HAMDEVA result, download it, or try another outfit.',
+    loadingSharedResult: 'Loading shared result...',
     freeLeft: (n: number) => `Free uses remaining today: ${n}`,
     freeExhausted: "You've used all 3 free tries for today.",
     payTitle: 'Daily Limit Reached',
@@ -329,6 +363,19 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     alertError: '图像生成失败，请重试。',
     resultTitle: '试穿结果',
     download: '保存图片',
+    share: '分享',
+    copyLink: '复制链接',
+    copied: '链接已复制。',
+    copyFailed: '复制链接失败。',
+    tryAnotherOutfit: '再试一套穿搭',
+    randomOutfit: '随机服装',
+    resultNotFound: '找不到分享结果。',
+    shareOnX: '分享到 X',
+    shareOnFacebook: '分享到 Facebook',
+    shareLinkUnavailable: '分享链接正在准备中。',
+    sharedResultTitle: '分享试穿结果',
+    sharedResultDescription: '查看 HAMDEVA 生成结果，下载图片，或再次尝试其他服装。',
+    loadingSharedResult: '正在加载分享结果...',
     freeLeft: (n: number) => `今日剩余免费次数：${n}`,
     freeExhausted: '你今天的 3 次免费试穿已全部用完。',
     renderingResult: '正在渲染结果图...',
@@ -360,6 +407,19 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     alertError: '画像の生成に失敗しました。もう一度お試しください。',
     resultTitle: '試着結果',
     download: '画像を保存',
+    share: '共有',
+    copyLink: 'リンクをコピー',
+    copied: 'リンクをコピーしました。',
+    copyFailed: 'リンクのコピーに失敗しました。',
+    tryAnotherOutfit: '別の衣装を試す',
+    randomOutfit: 'ランダム衣装',
+    resultNotFound: '共有結果が見つかりません。',
+    shareOnX: 'Xで共有',
+    shareOnFacebook: 'Facebookで共有',
+    shareLinkUnavailable: '共有リンクを準備しています。',
+    sharedResultTitle: '共有された試着結果',
+    sharedResultDescription: 'HAMDEVA の生成結果を表示し、保存したり別の衣装を試したりできます。',
+    loadingSharedResult: '共有結果を読み込み中...',
     freeLeft: (n: number) => `本日の無料利用残り回数: ${n}`,
     freeExhausted: '本日の無料 3 回分をすべて使いました。',
     renderingResult: '結果画像を描画中...',
@@ -1065,6 +1125,8 @@ const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
 const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
 const DIRECT_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/tryon';
 const DIRECT_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/generateTryOn';
+const RESULT_ROUTE_PREFIX = '/result/';
+const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.png';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -1088,6 +1150,18 @@ const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   it: 'latin',
 };
 const getTodayKey = (): string => new Date().toISOString().slice(0, 10);
+const getSharedResultIdFromPath = (pathname: string): string | null => {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  if (!normalizedPath.startsWith(RESULT_ROUTE_PREFIX)) {
+    return null;
+  }
+
+  const rawId = normalizedPath.slice(RESULT_ROUTE_PREFIX.length);
+  return rawId ? decodeURIComponent(rawId) : null;
+};
+
+const buildSharedResultUrl = (resultId: string): string =>
+  `https://hamdeva.com/result/${encodeURIComponent(resultId)}`;
 
 const getFirebaseDisabledMessage = (): string => (
   'Firebase 설정이 누락되어 로그인 기능을 사용할 수 없습니다. 관리자에게 문의하거나 .env 값을 확인해 주세요.'
@@ -1435,6 +1509,27 @@ const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
 const createHistoryPreview = (dataUrl: string, maxPx = 480): Promise<string> =>
   resizeImage(dataUrl, maxPx);
 
+const downloadImageFile = async (src: string, filename = 'hamdeva-ai-fitting.png'): Promise<void> => {
+  const response = await fetch(src);
+  if (!response.ok) {
+    throw new Error('DOWNLOAD_FAILED');
+  }
+
+  const objectUrl = URL.createObjectURL(await response.blob());
+  try {
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    link.click();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  }
+};
+
+const openShareWindow = (url: string) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
+
 const simpleHash = (a: string, b: string): string => {
   const s = a.slice(-300) + b.slice(-300);
   let h = 0;
@@ -1561,6 +1656,12 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
+  const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
+  const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
+  const [sharedResultRecord, setSharedResultRecord] = useState<PublicResultRecord | null>(null);
+  const [sharedResultLoading, setSharedResultLoading] = useState(false);
+  const [sharedResultError, setSharedResultError] = useState<string | null>(null);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromLocation(window.location.pathname, window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -1590,6 +1691,9 @@ const App: React.FC = () => {
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = FACE_TIPS[lang];
   const emptyClothTips = CLOTH_TIPS[lang];
+  const shareResultLink = latestSharedResultId ? buildSharedResultUrl(latestSharedResultId) : null;
+  const sharedPageLink = sharedResultRouteId ? buildSharedResultUrl(sharedResultRouteId) : null;
+  const sharedPageImage = sharedResultRecord?.resultImageUrl ?? null;
   const firebaseDisabledMessage = firebaseConfigError
     ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
@@ -1628,12 +1732,16 @@ const App: React.FC = () => {
     };
   }, []);
   useEffect(() => {
-    const syncPage = () => setCurrentPage(getPageFromLocation(window.location.pathname, window.location.hash));
-    window.addEventListener('hashchange', syncPage);
-    window.addEventListener('popstate', syncPage);
+    const syncRoute = () => {
+      setCurrentPage(getPageFromLocation(window.location.pathname, window.location.hash));
+      setSharedResultRouteId(getSharedResultIdFromPath(window.location.pathname));
+    };
+
+    window.addEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
     return () => {
-      window.removeEventListener('hashchange', syncPage);
-      window.removeEventListener('popstate', syncPage);
+      window.removeEventListener('hashchange', syncRoute);
+      window.removeEventListener('popstate', syncRoute);
     };
   }, []);
   useEffect(() => {
@@ -1740,18 +1848,87 @@ const App: React.FC = () => {
   useEffect(() => {
     setResultPreviewState(resultImage ? 'loading' : 'idle');
   }, [resultImage]);
+  useEffect(() => {
+    if (!shareStatus) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setShareStatus(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [shareStatus]);
   useEffect(() => () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
   }, [personImage, clothImage]);
   useEffect(() => {
-    const pageMeta = currentPage === 'home'
-      ? {
-          title: contentLocale.meta.homeTitle,
-          description: contentLocale.meta.homeDescription,
+    if (!sharedResultRouteId) {
+      setSharedResultRecord(null);
+      setSharedResultError(null);
+      setSharedResultLoading(false);
+      return;
+    }
+
+    if (!db) {
+      setSharedResultRecord(null);
+      setSharedResultError(t.resultNotFound);
+      setSharedResultLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setSharedResultLoading(true);
+    setSharedResultError(null);
+
+    getDoc(doc(db, 'publicResults', sharedResultRouteId))
+      .then((snapshot) => {
+        if (cancelled) {
+          return;
         }
-      : contentLocale.pages[currentPage];
-    const canonicalUrl = `https://hamdeva.com${PAGE_PATHS[currentPage]}`;
+
+        if (!snapshot.exists()) {
+          setSharedResultRecord(null);
+          setSharedResultError(t.resultNotFound);
+          return;
+        }
+
+        setSharedResultRecord({
+          id: snapshot.id,
+          ...(snapshot.data() as Omit<PublicResultRecord, 'id'>),
+        });
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to load shared result:', error);
+          setSharedResultRecord(null);
+          setSharedResultError(t.resultNotFound);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSharedResultLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [db, sharedResultRouteId, t.resultNotFound]);
+  useEffect(() => {
+    const pageMeta = sharedResultRouteId
+      ? {
+          title: `${t.sharedResultTitle} | HAMDEVA`,
+          description: t.sharedResultDescription,
+        }
+      : currentPage === 'home'
+        ? {
+            title: contentLocale.meta.homeTitle,
+            description: contentLocale.meta.homeDescription,
+          }
+        : contentLocale.pages[currentPage];
+    const canonicalUrl = sharedResultRouteId
+      ? buildSharedResultUrl(sharedResultRouteId)
+      : `https://hamdeva.com${PAGE_PATHS[currentPage]}`;
+    const ogImage = sharedResultRecord?.resultImageUrl || DEFAULT_OG_IMAGE;
 
     document.title = pageMeta.title;
 
@@ -1780,10 +1957,10 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: pageMeta.description });
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
     upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
-    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: 'https://hamdeva.com/og-image.png' });
+    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
-  }, [contentLocale, currentPage]);
+  }, [contentLocale, currentPage, sharedResultRecord, sharedResultRouteId, t.sharedResultDescription, t.sharedResultTitle]);
 
   const loadPersonUpload = async (file: File) => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -1813,10 +1990,152 @@ const App: React.FC = () => {
     }
     setShowClothSampleModal(true);
   };
+  const getRandomClothSample = () => {
+    const byGender = gender === 'female'
+      ? clothSampleOptions.filter((sample) => sample.category === 'female' || sample.category === 'future' || sample.category === 'classic')
+      : gender === 'male'
+        ? clothSampleOptions.filter((sample) => sample.category === 'male' || sample.category === 'future' || sample.category === 'classic')
+        : clothSampleOptions.filter((sample) => sample.category === 'animal' && sample.country === gender);
+    const pool = byGender.length > 0 ? byGender : clothSampleOptions;
+    return pool[Math.floor(Math.random() * pool.length)] ?? null;
+  };
+  const clearGeneratedResult = () => {
+    setResultImage(null);
+    setLatestSharedResultId(null);
+    setShareStatus(null);
+    setResultPreviewState('idle');
+  };
+  const handleRandomOutfit = () => {
+    if (clothSampleOptions.length === 0) {
+      alert(t.clothingSamplesPending);
+      return;
+    }
+
+    const randomSample = getRandomClothSample();
+    if (!randomSample) {
+      alert(t.clothingSamplesPending);
+      return;
+    }
+
+    if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+    setClothImage(null);
+    setClothFile(null);
+    setSelectedClothSampleUrl(randomSample.image);
+    setClothUploadMessage(null);
+    setClothPreviewState('loading');
+    clearGeneratedResult();
+    if (currentPage !== 'home' || sharedResultRouteId) {
+      navigateToPage('home');
+    }
+    scrollToTrySection();
+  };
+  const handleTryAnotherOutfit = () => {
+    if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+    setClothImage(null);
+    setClothFile(null);
+    setSelectedClothSampleUrl(null);
+    setClothUploadMessage(null);
+    setClothPreviewState('idle');
+    clearGeneratedResult();
+    if (currentPage !== 'home' || sharedResultRouteId) {
+      navigateToPage('home');
+    }
+    scrollToTrySection();
+  };
+  const handleDownloadResult = async (src: string) => {
+    try {
+      await downloadImageFile(src);
+    } catch (error) {
+      console.error('Failed to download result image:', error);
+      setShareStatus(t.alertError);
+    }
+  };
+  const handleCopyLink = async (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.shareLinkUnavailable);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setShareStatus(t.copied);
+    } catch (error) {
+      console.error('Failed to copy share link:', error);
+      setShareStatus(t.copyFailed);
+    }
+  };
+  const handleShareLink = async (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.shareLinkUnavailable);
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'HAMDEVA - AI Virtual Fitting Playground',
+          text: 'I tried AI virtual fitting on HAMDEVA',
+          url: link,
+        });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(link)}`);
+  };
+  const handleShareOnX = (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.shareLinkUnavailable);
+      return;
+    }
+
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(link)}`);
+  };
+  const handleShareOnFacebook = (link: string | null) => {
+    if (!link) {
+      setShareStatus(t.shareLinkUnavailable);
+      return;
+    }
+
+    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
+  };
+  const renderResultActions = (imageSrc: string, link: string | null) => (
+    <>
+      <div className="result-action-grid">
+        <button className="download-btn result-action-btn" onClick={() => { void handleDownloadResult(imageSrc); }} type="button">
+          {t.download}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={() => { void handleShareLink(link); }} type="button">
+          {t.share}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={() => { void handleCopyLink(link); }} type="button">
+          {t.copyLink}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={handleTryAnotherOutfit} type="button">
+          {t.tryAnotherOutfit}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={handleRandomOutfit} type="button">
+          {t.randomOutfit}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={() => handleShareOnX(link)} type="button">
+          {t.shareOnX}
+        </button>
+        <button className="outline-btn result-action-btn" onClick={() => handleShareOnFacebook(link)} type="button">
+          {t.shareOnFacebook}
+        </button>
+      </div>
+      {shareStatus && <p className="result-status-text">{shareStatus}</p>}
+    </>
+  );
   const navigateToPage = (page: SitePage) => {
     const nextUrl = `${PAGE_PATHS[page]}${window.location.search}`;
     window.history.pushState(null, '', nextUrl);
     setCurrentPage(page);
+    setSharedResultRouteId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const openContentModal = (tab: ModalTab) => {
@@ -2056,6 +2375,8 @@ const App: React.FC = () => {
     if (freshProfile.usedToday >= freshProfile.dailyQuota) { alert(t.freeExhausted); return; }
 
     setIsGenerating(true);
+    setShareStatus(null);
+    setLatestSharedResultId(null);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await Promise.all([
@@ -2070,6 +2391,7 @@ const App: React.FC = () => {
       const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
       const cached = getCached(cacheKey);
       if (cached) {
+        clearGeneratedResult();
         setResultImage(cached);
         setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
         return;
@@ -2090,14 +2412,24 @@ const App: React.FC = () => {
           createHistoryPreview(preparedClothImage, 360),
           createHistoryPreview(result, 720),
         ]);
+        const publicResultRef = doc(collection(requireDb(), 'publicResults'));
 
-        await addDoc(collection(requireDb(), 'generations'), {
-          uid: currentUser.uid,
-          faceImageUrl: historyFaceImage,
-          clothImageUrl: historyClothImage,
-          resultImageUrl: historyResultImage,
-          createdAt: serverTimestamp(),
-        });
+        await Promise.all([
+          addDoc(collection(requireDb(), 'generations'), {
+            uid: currentUser.uid,
+            faceImageUrl: historyFaceImage,
+            clothImageUrl: historyClothImage,
+            resultImageUrl: historyResultImage,
+            createdAt: serverTimestamp(),
+          }),
+          setDoc(publicResultRef, {
+            uid: currentUser.uid,
+            resultImageUrl: historyResultImage,
+            language: lang,
+            createdAt: serverTimestamp(),
+          }),
+        ]);
+        setLatestSharedResultId(publicResultRef.id);
       } catch (error) {
         if (error instanceof Error && error.message === 'LIMIT_EXCEEDED') {
           alert(t.freeExhausted);
@@ -2196,7 +2528,13 @@ const App: React.FC = () => {
           <source src="/mainpage/hamdeva_bg_video_v2.mp4" type="video/mp4" />
         </video>
         <div className="hero-content">
-          {currentPage === 'home' ? (
+          {sharedResultRouteId ? (
+            <>
+              <div className="hero-eyebrow">{t.share}</div>
+              <h1 className="hero-title page-title">{t.sharedResultTitle}</h1>
+              <p className="hero-sub">{t.sharedResultDescription}</p>
+            </>
+          ) : currentPage === 'home' ? (
             <>
               <div className="hero-eyebrow">{t.heroEyebrow}</div>
               <h1 className="hero-title">
@@ -2219,7 +2557,40 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      {currentPage === 'home' ? (
+      {sharedResultRouteId ? (
+        <main className="section page-shell">
+          <div className="section-inner page-layout">
+            <article className="page-article shared-result-shell">
+              {sharedResultLoading ? (
+                <p>{t.loadingSharedResult}</p>
+              ) : sharedResultError || !sharedResultRecord ? (
+                <>
+                  <h2>{t.sharedResultTitle}</h2>
+                  <p>{sharedResultError || t.resultNotFound}</p>
+                  <div className="result-action-grid single-row">
+                    <button className="outline-btn result-action-btn" onClick={handleTryAnotherOutfit} type="button">
+                      {t.tryAnotherOutfit}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="section-heading">{t.resultTitle}</h2>
+                  <div className="composite-result">
+                    <img
+                      src={sharedResultRecord.resultImageUrl}
+                      alt="Shared HAMDEVA fitting result"
+                      className="is-visible"
+                    />
+                    <div className="watermark">HAMDEVA AI</div>
+                  </div>
+                  {renderResultActions(sharedResultRecord.resultImageUrl, sharedPageLink)}
+                </>
+              )}
+            </article>
+          </div>
+        </main>
+      ) : currentPage === 'home' ? (
         <>
           <section className="section editorial-section">
             <div className="section-inner">
@@ -2432,9 +2803,7 @@ const App: React.FC = () => {
                     )}
                     <div className="watermark">HAMDEVA AI</div>
                   </div>
-                  <button className="download-btn" onClick={() => {
-                    const a = document.createElement('a'); a.href = resultImage; a.download = 'hamdeva-fitting.png'; a.click();
-                  }}>{t.download}</button>
+                  {renderResultActions(resultImage, shareResultLink)}
                 </div>
               )}
             </div>

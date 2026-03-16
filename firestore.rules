@@ -37,6 +37,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // 공개 공유 결과 — 생성 결과 이미지만 공개, 원본 업로드 이미지는 금지
+    match /publicResults/{resultId} {
+      allow read: if true;
+      allow create: if
+        isSignedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'resultImageUrl', 'language', 'createdAt'])
+        && request.resource.data.resultImageUrl is string
+        && request.resource.data.resultImageUrl.size() > 0
+        && request.resource.data.resultImageUrl.size() <= 1500000
+        && (
+          !('language' in request.resource.data)
+          || request.resource.data.language is string
+        );
+      allow update, delete: if false;
+    }
+
     // 제안함 — 로그인 사용자만 본인 uid로 작성 가능, 읽기는 차단
     match /suggestions/{suggestionId} {
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
