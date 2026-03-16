@@ -39,6 +39,7 @@ const VIDEO_SIZE = '1280x720';
 const VIDEO_ESTIMATED_COST = 0.4;
 const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
+const HISTORY_RETENTION_DAYS = 15;
 const POLAR_PROVIDER = 'polar';
 const PAYMENT_CURRENCY = 'usd';
 const POLAR_API_BASE_URL = 'https://api.polar.sh/v1';
@@ -881,6 +882,20 @@ const buildPaymentDocId = (provider: PaymentProvider, providerPaymentId: string)
 const createGenerationDocRef = (uid: string, requestId: string) =>
   db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
 
+const buildHistoryRetentionTimestamps = (
+  now = admin.firestore.Timestamp.now(),
+): {
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+  expiresAt: FirebaseFirestore.Timestamp;
+} => ({
+  createdAt: now,
+  updatedAt: now,
+  expiresAt: admin.firestore.Timestamp.fromMillis(
+    now.toMillis() + HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  ),
+});
+
 const buildUserAccountPayload = (
   account: UserAccount,
   email: string,
@@ -1317,6 +1332,7 @@ const markGenerationCompleted = async (
   const generationLockRef = db.collection('generationLocks').doc(user.uid);
   const generationRef = createGenerationDocRef(user.uid, requestId);
   const userRef = db.collection('users').doc(user.uid);
+  const historyTimestamps = buildHistoryRetentionTimestamps();
 
   await db.runTransaction(async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
@@ -1331,6 +1347,7 @@ const markGenerationCompleted = async (
       uid: user.uid,
       email: user.email || account.email,
       requestId,
+      resultType: 'image_generation',
       subjectType: metadata.subjectType || 'human',
       usedCreditType: options.usedCreditType,
       usedCreditAmount: options.usedCreditAmount,
@@ -1342,8 +1359,11 @@ const markGenerationCompleted = async (
       size: metadata.size,
       estimatedCost: metadata.estimatedCost,
       usage: metadata.usage,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      preservedAt: null,
+      preservedUntil: null,
+      expiresAt: historyTimestamps.expiresAt,
+      createdAt: historyTimestamps.createdAt,
+      updatedAt: historyTimestamps.updatedAt,
     }, { merge: true });
     transaction.set(requestRef, {
       type: metadata.type || 'image_generation',
@@ -1378,6 +1398,8 @@ const markVideoGenerationCompleted = async (
 ): Promise<void> => {
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
   const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+  const generationRef = createGenerationDocRef(user.uid, requestId);
+  const historyTimestamps = buildHistoryRetentionTimestamps();
   await requestRef.set({
     ...metadata,
     status: 'completed',
@@ -1385,6 +1407,24 @@ const markVideoGenerationCompleted = async (
     refunded: false,
     completedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  await generationRef.set({
+    uid: user.uid,
+    email: user.email,
+    requestId,
+    videoRequestId: requestId,
+    resultType: 'video_generation',
+    subjectType: normalizeSubjectType(metadata.subjectType),
+    status: 'completed',
+    usedCreditType: null,
+    usedCreditAmount: VIDEO_GENERATION_COST,
+    watermarkApplied: false,
+    imageUrl: null,
+    preservedAt: null,
+    preservedUntil: null,
+    expiresAt: historyTimestamps.expiresAt,
+    createdAt: historyTimestamps.createdAt,
+    updatedAt: historyTimestamps.updatedAt,
   }, { merge: true });
   await generationLockRef.set({
     requestId,

@@ -9,6 +9,8 @@ interface MyPageSectionProps {
   currentPaidCredit: number;
   currentCredits: number;
   historyItems: GenerationRecord[];
+  preservedHistoryCount: number;
+  historyPreserveLimit: number;
   isFirebaseConfigured: boolean;
   firebaseDisabledMessage: string | null;
   isStartingCheckout: CheckoutProductId | null;
@@ -27,6 +29,8 @@ interface MyPageSectionProps {
   onNavigateTerms: () => void;
   onStartCheckout: (productId: CheckoutProductId) => void;
   formatTimestampLabel: (value?: any) => string;
+  onOpenHistoryItem: (item: GenerationRecord) => void;
+  onToggleHistoryPreserve: (item: GenerationRecord) => void;
 }
 
 const MyPageSection: React.FC<MyPageSectionProps> = ({
@@ -36,6 +40,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentPaidCredit,
   currentCredits,
   historyItems,
+  preservedHistoryCount,
+  historyPreserveLimit,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -46,6 +52,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onNavigateTerms,
   onStartCheckout,
   formatTimestampLabel,
+  onOpenHistoryItem,
+  onToggleHistoryPreserve,
 }) => (
   <div className="mypage-layout">
     <article className="page-article">
@@ -79,6 +87,54 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
     </article>
     {currentUser && (
       <article className="page-article">
+        <h3>결과물 히스토리</h3>
+        <p className="history-guide-copy">
+          생성된 이미지와 영상은 기본 15일 동안 보관됩니다. 최대 {historyPreserveLimit}개까지 선택해 30일 보관할 수 있습니다.
+        </p>
+        <p className="history-guide-copy muted">현재 보관 중: {preservedHistoryCount} / {historyPreserveLimit}</p>
+        {historyItems.length > 0 ? (
+          <div className="history-grid">
+            {historyItems.map((item) => {
+              const isVideo = item.resultType === 'video_generation';
+              const isPreserved = !!item.preservedUntil;
+              return (
+                <article key={item.id} className={`history-card ${isVideo ? 'history-card-video' : ''}`}>
+                  <button className="history-result-box" onClick={() => onOpenHistoryItem(item)} type="button">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={isVideo ? 'Generated video history' : 'Generated result history'} />
+                    ) : (
+                      <div className="history-video-placeholder">
+                        <strong>VIDEO</strong>
+                        <span>생성된 영상을 열어볼 수 있습니다.</span>
+                      </div>
+                    )}
+                  </button>
+                  <div className="history-meta">
+                    <span>{isVideo ? '영상' : '이미지'}</span>
+                    {!isVideo && <span>{item.usedCreditType === 'paid' ? copy.paidCreditLabel : copy.dailyCreditLabel}</span>}
+                    {!isVideo && <span>{item.watermarkApplied ? copy.watermarkEnabled : copy.watermarkRemoved}</span>}
+                    <span>{formatTimestampLabel(item.createdAt)}</span>
+                    {isPreserved && <span>30일 보관</span>}
+                  </div>
+                  <div className="history-actions">
+                    <button className="outline-btn history-action-btn" onClick={() => onOpenHistoryItem(item)} type="button">
+                      {isVideo ? '영상 보기' : '이미지 보기'}
+                    </button>
+                    <button className={`outline-btn history-action-btn ${isPreserved ? 'active' : ''}`} onClick={() => onToggleHistoryPreserve(item)} type="button">
+                      {isPreserved ? '보관 해제' : '30일 보관'}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p>{copy.noHistory}</p>
+        )}
+      </article>
+    )}
+    {currentUser && (
+      <article className="page-article">
         <h3>{copy.chargeCredits}</h3>
         <p>{copy.chargeDescription}</p>
         <div className="credit-product-grid">
@@ -108,26 +164,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           ))}
         </div>
       </article>
-    )}
-    {currentUser && (
-      <div className="history-grid">
-        {historyItems.length > 0 ? historyItems.map((item) => (
-          <article key={item.id} className="history-card">
-            <div className="history-result-box">
-              <img src={item.imageUrl} alt="Generated result history" />
-            </div>
-            <div className="history-meta">
-              <span>{item.usedCreditType === 'paid' ? copy.paidCreditLabel : copy.dailyCreditLabel}</span>
-              <span>{item.watermarkApplied ? copy.watermarkEnabled : copy.watermarkRemoved}</span>
-              <span>{formatTimestampLabel(item.createdAt)}</span>
-            </div>
-          </article>
-        )) : (
-          <article className="page-article">
-            <p>{copy.noHistory}</p>
-          </article>
-        )}
-      </div>
     )}
   </div>
 );

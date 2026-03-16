@@ -119,7 +119,13 @@ export interface VideoGenerationResponse {
 export interface GenerationRecord {
   id: string;
   uid: string;
-  imageUrl: string;
+  imageUrl?: string | null;
+  requestId?: string;
+  resultType?: 'image_generation' | 'video_generation';
+  videoRequestId?: string | null;
+  preservedUntil?: Timestamp | null;
+  preservedAt?: Timestamp | null;
+  expiresAt?: Timestamp | null;
   status?: string;
   usedCreditType?: CreditKind;
   usedCreditAmount?: number;

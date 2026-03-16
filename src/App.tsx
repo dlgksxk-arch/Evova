@@ -40,7 +40,7 @@ import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage }
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type KakaoSdk = {
   isInitialized?: () => boolean;
@@ -68,6 +68,9 @@ const GENERATION_PREP_TIMEOUT_MS = 60_000;
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 75_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
+const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const PRESERVED_HISTORY_LIMIT = 5;
 const VIDEO_GENERATION_COST = 1500;
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
 const CREDIT_PRODUCTS = [
@@ -79,6 +82,7 @@ const CREDIT_PRODUCTS = [
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
+const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
@@ -110,7 +114,13 @@ interface UserProfile {
 interface GenerationRecord {
   id: string;
   uid: string;
-  imageUrl: string;
+  imageUrl?: string | null;
+  requestId?: string;
+  resultType?: 'image_generation' | 'video_generation';
+  videoRequestId?: string | null;
+  preservedUntil?: Timestamp | null;
+  preservedAt?: Timestamp | null;
+  expiresAt?: Timestamp | null;
   status?: string;
   usedCreditType?: CreditKind;
   usedCreditAmount?: number;
@@ -1555,6 +1565,15 @@ const getSharedResultIdFromPath = (pathname: string): string | null => {
 
 const buildSharedResultUrl = (resultId: string): string =>
   `https://hamdeva.com/result/${encodeURIComponent(resultId)}`;
+const getRuntimeSiteUrl = (): string => {
+  if (typeof window === 'undefined') {
+    return SITE_URL;
+  }
+
+  return window.location.origin.replace(/\/+$/, '');
+};
+const isPreviewRuntimeHost = (hostname: string): boolean =>
+  PREVIEW_HOST_MARKERS.some((marker) => hostname.includes(marker)) && hostname !== 'hamdeva.com' && hostname !== 'www.hamdeva.com';
 const getFirebaseDisabledMessage = (message: string): string => message;
 
 const requireDb = () => {
@@ -1994,6 +2013,33 @@ const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
 
 const createHistoryPreview = (dataUrl: string, maxPx = 480): Promise<string> =>
   resizeImage(dataUrl, maxPx);
+
+const getTimestampMillis = (value?: Timestamp | null): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return value.toDate().getTime();
+  } catch {
+    return null;
+  }
+};
+
+const getHistoryExpiryMillis = (item: GenerationRecord): number | null => {
+  const preservedUntil = getTimestampMillis(item.preservedUntil);
+  if (preservedUntil) {
+    return preservedUntil;
+  }
+
+  const expiresAt = getTimestampMillis(item.expiresAt);
+  if (expiresAt) {
+    return expiresAt;
+  }
+
+  const createdAt = getTimestampMillis(item.createdAt);
+  return createdAt ? createdAt + HISTORY_RETENTION_MS : null;
+};
 
 const prepareGenerationInput = async (source: File | string, maxPx = 1280): Promise<string> => {
   const dataUrl = source instanceof File
@@ -2451,6 +2497,8 @@ const App: React.FC = () => {
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [showResultPreviewModal, setShowResultPreviewModal] = useState(false);
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
+  const [resultPreviewModalType, setResultPreviewModalType] = useState<'image' | 'video'>('image');
+  const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
@@ -2500,6 +2548,10 @@ const App: React.FC = () => {
   const isAdminUser = userProfile?.role === 'admin';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
   const canAffordVideo = currentDailyCredit >= VIDEO_GENERATION_COST || currentPaidCredit >= VIDEO_GENERATION_COST;
+  const preservedHistoryCount = historyItems.filter((item) => {
+    const preservedUntil = getTimestampMillis(item.preservedUntil);
+    return typeof preservedUntil === 'number' && preservedUntil > Date.now();
+  }).length;
   const loginComingSoonLabel = `${t.login} (Coming Soon)`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (Coming Soon)`;
   const paymentSessionId = new URLSearchParams(routeSearch).get('session_id');
@@ -2723,10 +2775,28 @@ const App: React.FC = () => {
       orderBy('createdAt', 'desc'),
     );
     const unsubscribeHistory = onSnapshot(historyQuery, (snapshot) => {
-      setHistoryItems(snapshot.docs.map((historyDoc) => ({
+      const nextItems = snapshot.docs.map((historyDoc) => ({
         id: historyDoc.id,
         ...(historyDoc.data() as Omit<GenerationRecord, 'id'>),
-      })));
+      }));
+      const now = Date.now();
+      const expiredItems = nextItems.filter((item) => {
+        const expiresAt = getHistoryExpiryMillis(item);
+        return typeof expiresAt === 'number' && expiresAt <= now;
+      });
+
+      if (expiredItems.length > 0) {
+        void Promise.all(expiredItems.map((item) =>
+          deleteDoc(doc(db, 'generations', item.id)).catch((error) => {
+            console.error('Failed to delete expired history item:', error);
+          }),
+        ));
+      }
+
+      setHistoryItems(nextItems.filter((item) => {
+        const expiresAt = getHistoryExpiryMillis(item);
+        return !(typeof expiresAt === 'number' && expiresAt <= now);
+      }));
     });
 
     return () => {
@@ -2752,8 +2822,13 @@ const App: React.FC = () => {
     setShowMyPageModal(false);
     setShowAdminModal(false);
     setShowLogoutConfirmModal(false);
+    if (resultPreviewModalSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(resultPreviewModalSrc);
+    }
     setShowResultPreviewModal(false);
     setResultPreviewModalSrc(null);
+    setResultPreviewModalLoading(false);
+    setResultPreviewModalType('image');
   }, [currentPage]);
   useEffect(() => {
     if (currentUser) {
@@ -2763,6 +2838,7 @@ const App: React.FC = () => {
     setShowCreditPlanModal(false);
     setShowMyPageModal(false);
     setShowAdminModal(false);
+    closeResultPreviewModal();
   }, [currentUser]);
   useEffect(() => {
     if (!mobileMenuOpen) {
@@ -2897,6 +2973,9 @@ const App: React.FC = () => {
     if (generatedVideoUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedVideoUrl);
   }, []);
   useEffect(() => {
+    const runtimeSiteUrl = getRuntimeSiteUrl();
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isPreviewHost = isPreviewRuntimeHost(hostname);
     const pageMeta = sharedResultRouteId
       ? {
           title: `${t.sharedResultTitle} | HAMDEVA`,
@@ -2924,9 +3003,9 @@ const App: React.FC = () => {
           }
         : contentLocale.pages[currentPage];
     const canonicalUrl = sharedResultRouteId
-      ? buildSharedResultUrl(sharedResultRouteId)
-      : `https://hamdeva.com${PAGE_PATHS[currentPage]}`;
-    const ogImage = sharedResultRecord?.resultImageUrl || DEFAULT_OG_IMAGE;
+      ? `${runtimeSiteUrl}${RESULT_ROUTE_PREFIX}${encodeURIComponent(sharedResultRouteId)}`
+      : `${runtimeSiteUrl}${PAGE_PATHS[currentPage]}`;
+    const ogImage = sharedResultRecord?.resultImageUrl || `${runtimeSiteUrl}/og-image.png`;
 
     document.title = pageMeta.title;
 
@@ -2958,6 +3037,12 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
+    if (isPreviewHost) {
+      upsertMeta('meta[name="robots"]', { name: 'robots', content: 'noindex, nofollow, noarchive, nosnippet' });
+    } else {
+      const robotsMeta = document.head.querySelector('meta[name="robots"]');
+      robotsMeta?.remove();
+    }
   }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const clearGeneratedVideo = () => {
@@ -3409,9 +3494,88 @@ const App: React.FC = () => {
     setShowMyPageModal(false);
     setShowAdminModal(true);
   };
+  const closeResultPreviewModal = () => {
+    if (resultPreviewModalSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(resultPreviewModalSrc);
+    }
+    setShowResultPreviewModal(false);
+    setResultPreviewModalSrc(null);
+    setResultPreviewModalLoading(false);
+    setResultPreviewModalType('image');
+  };
   const openResultPreviewModal = (src: string) => {
+    if (resultPreviewModalSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(resultPreviewModalSrc);
+    }
+    setResultPreviewModalType('image');
+    setResultPreviewModalLoading(false);
     setResultPreviewModalSrc(src);
     setShowResultPreviewModal(true);
+  };
+  const handleOpenHistoryItem = async (item: GenerationRecord) => {
+    if (!currentUser) {
+      return;
+    }
+
+    if (item.resultType === 'video_generation') {
+      const requestId = item.videoRequestId || item.requestId;
+      if (!requestId) {
+        return;
+      }
+
+      try {
+        setResultPreviewModalType('video');
+        setResultPreviewModalLoading(true);
+        setShowResultPreviewModal(true);
+        const authToken = await currentUser.getIdToken();
+        const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
+        if (resultPreviewModalSrc?.startsWith('blob:')) {
+          URL.revokeObjectURL(resultPreviewModalSrc);
+        }
+        setResultPreviewModalSrc(videoUrl);
+      } catch (error) {
+        console.error('Failed to open history video preview:', error);
+        setShowResultPreviewModal(false);
+        setResultPreviewModalSrc(null);
+        alert('영상 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      } finally {
+        setResultPreviewModalLoading(false);
+      }
+      return;
+    }
+
+    if (item.imageUrl) {
+      openResultPreviewModal(item.imageUrl);
+    }
+  };
+  const handleToggleHistoryPreserve = async (item: GenerationRecord) => {
+    if (!db || !currentUser) {
+      return;
+    }
+
+    const generationRef = doc(db, 'generations', item.id);
+    const preservedUntil = getTimestampMillis(item.preservedUntil);
+    const isCurrentlyPreserved = typeof preservedUntil === 'number' && preservedUntil > Date.now();
+
+    if (!isCurrentlyPreserved && preservedHistoryCount >= PRESERVED_HISTORY_LIMIT) {
+      alert(`보관은 최대 ${PRESERVED_HISTORY_LIMIT}개까지 가능합니다.`);
+      return;
+    }
+
+    try {
+      await updateDoc(generationRef, isCurrentlyPreserved ? {
+        preservedAt: null,
+        preservedUntil: null,
+        updatedAt: serverTimestamp(),
+      } : {
+        preservedAt: serverTimestamp(),
+        preservedUntil: Timestamp.fromMillis(Date.now() + PRESERVED_HISTORY_RETENTION_MS),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Failed to update history retention:', error);
+      alert('보관 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
   };
   const openLogoutConfirmModal = () => {
     setUserMenuOpen(false);
@@ -4488,6 +4652,8 @@ const App: React.FC = () => {
                 currentPaidCredit={currentPaidCredit}
                 currentCredits={currentCredits}
                 historyItems={historyItems}
+                preservedHistoryCount={preservedHistoryCount}
+                historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
                 isFirebaseConfigured={isFirebaseConfigured}
                 firebaseDisabledMessage={firebaseDisabledMessage}
                 isStartingCheckout={isStartingCheckout}
@@ -4498,6 +4664,8 @@ const App: React.FC = () => {
                 onNavigateTerms={() => navigateToPage('terms')}
                 onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
                 formatTimestampLabel={formatTimestampLabel}
+                onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
+                onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
               />
             )}
             {currentPage === 'about' && renderSeoContent('about')}
@@ -4570,6 +4738,8 @@ const App: React.FC = () => {
             currentPaidCredit={currentPaidCredit}
             currentCredits={currentCredits}
             historyItems={historyItems}
+            preservedHistoryCount={preservedHistoryCount}
+            historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
             isFirebaseConfigured={isFirebaseConfigured}
             firebaseDisabledMessage={firebaseDisabledMessage}
             isStartingCheckout={isStartingCheckout}
@@ -4583,6 +4753,8 @@ const App: React.FC = () => {
             }}
             onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
             formatTimestampLabel={formatTimestampLabel}
+            onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
+            onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
           />
         </ShellModal>
       )}
@@ -4641,17 +4813,24 @@ const App: React.FC = () => {
         </ShellModal>
       )}
 
-      {showResultPreviewModal && resultPreviewModalSrc && (
+      {showResultPreviewModal && (
         <ShellModal
-          title={t.resultTitle}
+          title={resultPreviewModalType === 'video' ? '생성된 영상' : t.resultTitle}
           className="result-preview-shell"
-          onClose={() => {
-            setShowResultPreviewModal(false);
-            setResultPreviewModalSrc(null);
-          }}
+          onClose={closeResultPreviewModal}
         >
           <div className="result-preview-modal-body">
-            <img className="result-preview-modal-image" src={resultPreviewModalSrc} alt="Expanded result" />
+            {resultPreviewModalLoading ? (
+              <p>결과를 불러오는 중입니다...</p>
+            ) : resultPreviewModalSrc ? (
+              resultPreviewModalType === 'video' ? (
+                <video className="result-preview-modal-video" controls src={resultPreviewModalSrc} />
+              ) : (
+                <img className="result-preview-modal-image" src={resultPreviewModalSrc} alt="Expanded result" />
+              )
+            ) : (
+              <p>결과를 불러오지 못했습니다.</p>
+            )}
           </div>
         </ShellModal>
       )}
