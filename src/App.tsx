@@ -1492,9 +1492,35 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
   </div>
 );
 
-const getPageFromHash = (hash: string): SitePage => {
-  const normalized = hash.replace(/^#/, '');
-  return SITE_PAGES.includes(normalized as SitePage) ? normalized as SitePage : 'home';
+const PAGE_PATHS: Record<SitePage, string> = {
+  home: '/',
+  about: '/about',
+  'how-it-works': '/how-to-use',
+  'traditional-clothing': '/sample-outfits',
+  countries: '/countries',
+  'fashion-technology': '/fashion-technology',
+  privacy: '/privacy',
+  terms: '/terms',
+  contact: '/contact',
+  board: '/board',
+  'site-management': '/site-management',
+  mypage: '/mypage',
+};
+
+const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
+  acc[path] = page as SitePage;
+  return acc;
+}, {});
+
+const getPageFromLocation = (pathname: string, hash: string): SitePage => {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  const pageFromPath = PATH_TO_PAGE[normalizedPath];
+  if (pageFromPath) {
+    return pageFromPath;
+  }
+
+  const normalizedHash = hash.replace(/^#/, '');
+  return SITE_PAGES.includes(normalizedHash as SitePage) ? normalizedHash as SitePage : 'home';
 };
 
 const SUPPORTED_LANGUAGE_CODES = LANGUAGE_CODES;
@@ -1536,7 +1562,7 @@ const App: React.FC = () => {
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
-  const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
+  const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromLocation(window.location.pathname, window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [bbsForm, setBbsForm] = useState({ nickname: '', content: '', tempPassword: '' });
   const [bbsStatus, setBbsStatus] = useState<string | null>(null);
@@ -1602,7 +1628,7 @@ const App: React.FC = () => {
     };
   }, []);
   useEffect(() => {
-    const syncPage = () => setCurrentPage(getPageFromHash(window.location.hash));
+    const syncPage = () => setCurrentPage(getPageFromLocation(window.location.pathname, window.location.hash));
     window.addEventListener('hashchange', syncPage);
     window.addEventListener('popstate', syncPage);
     return () => {
@@ -1725,6 +1751,7 @@ const App: React.FC = () => {
           description: contentLocale.meta.homeDescription,
         }
       : contentLocale.pages[currentPage];
+    const canonicalUrl = `https://hamdeva.com${PAGE_PATHS[currentPage]}`;
 
     document.title = pageMeta.title;
 
@@ -1736,6 +1763,26 @@ const App: React.FC = () => {
     }
 
     descriptionTag.setAttribute('content', pageMeta.description);
+
+    const upsertMeta = (selector: string, attributes: Record<string, string>) => {
+      let tag = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!tag) {
+        tag = document.createElement(attributes.rel ? 'link' : 'meta') as HTMLMetaElement | HTMLLinkElement;
+        document.head.appendChild(tag);
+      }
+
+      Object.entries(attributes).forEach(([key, value]) => {
+        tag?.setAttribute(key, value);
+      });
+    };
+
+    upsertMeta('meta[property="og:title"]', { property: 'og:title', content: pageMeta.title });
+    upsertMeta('meta[property="og:description"]', { property: 'og:description', content: pageMeta.description });
+    upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
+    upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
+    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: 'https://hamdeva.com/og-image.png' });
+    upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
+    upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
   }, [contentLocale, currentPage]);
 
   const loadPersonUpload = async (file: File) => {
@@ -1767,9 +1814,7 @@ const App: React.FC = () => {
     setShowClothSampleModal(true);
   };
   const navigateToPage = (page: SitePage) => {
-    const nextUrl = page === 'home'
-      ? `${window.location.pathname}${window.location.search}`
-      : `${window.location.pathname}${window.location.search}#${page}`;
+    const nextUrl = `${PAGE_PATHS[page]}${window.location.search}`;
     window.history.pushState(null, '', nextUrl);
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
