@@ -43,10 +43,12 @@ const getGitShortSha = () => {
 }
 
 const getBuildNumber = () => {
+  const previousBuildNumber = parseExistingBuildNumber()
+
   try {
     const commitCount = Number.parseInt(execSync('git rev-list --count HEAD').toString().trim(), 10)
     if (!Number.isNaN(commitCount) && commitCount > 0) {
-      return commitCount
+      return previousBuildNumber > 0 ? Math.max(commitCount, previousBuildNumber + 1) : commitCount
     }
   } catch {
   }
@@ -58,10 +60,9 @@ const getBuildNumber = () => {
   )
 
   if (ciBuildNumber) {
-    return ciBuildNumber
+    return previousBuildNumber > 0 ? Math.max(ciBuildNumber, previousBuildNumber + 1) : ciBuildNumber
   }
 
-  const previousBuildNumber = parseExistingBuildNumber()
   return previousBuildNumber > 0 ? previousBuildNumber + 1 : 1
 }
 
