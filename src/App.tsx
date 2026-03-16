@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import './App.css';
 import AuthModal from './components/AuthModal';
 import ClothSampleModal from './components/ClothSampleModal';
 import ContentModal from './components/ContentModal';
 import SampleModal from './components/SampleModal';
-import { LANGUAGE_CODES, LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
-import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
+import { NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
+import i18n from './i18n';
+import type { AppTranslation } from './i18n-resources';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
@@ -1483,9 +1486,9 @@ const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) =
   );
 };
 
-const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ title, tips, type }) => (
+const EmptyPreviewState: React.FC<{ badge: string; title: string; tips: string[]; type: 'face' | 'cloth' }> = ({ badge, title, tips, type }) => (
   <div className={`empty-preview empty-preview-${type}`}>
-    <div className="empty-preview-badge">{type === 'face' ? 'FACE GUIDE' : 'STYLE GUIDE'}</div>
+    <div className="empty-preview-badge">{badge}</div>
     <strong className="empty-preview-title">{title}</strong>
     <div className="empty-preview-tips">
       {tips.map((tip) => (
@@ -1502,23 +1505,25 @@ const getPageFromHash = (hash: string): SitePage => {
   return SITE_PAGES.includes(normalized as SitePage) ? normalized as SitePage : 'home';
 };
 
-const DEFAULT_LANGUAGE: LanguageCode = 'ko';
+const SUPPORTED_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
+type SupportedLanguageCode = typeof SUPPORTED_LANGUAGE_CODES[number];
 
-const isLanguageCode = (value: string | null): value is LanguageCode =>
-  value !== null && LANGUAGE_CODES.includes(value as LanguageCode);
+const DEFAULT_LANGUAGE: SupportedLanguageCode = 'en';
 
-const getInitialLanguage = (): LanguageCode => {
-  const savedLanguage = localStorage.getItem('HAMDEVA-lang');
-  if (isLanguageCode(savedLanguage)) {
-    return savedLanguage;
-  }
+const isSupportedLanguageCode = (value: string | null): value is SupportedLanguageCode =>
+  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as SupportedLanguageCode);
 
-  const browserLanguage = navigator.language.toLowerCase().split('-')[0];
-  return isLanguageCode(browserLanguage) ? browserLanguage : DEFAULT_LANGUAGE;
+const normalizeLanguageCode = (value: string | null | undefined): SupportedLanguageCode => {
+  const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
+  return isSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
 };
+
+const getTranslationBundle = (lang: SupportedLanguageCode): AppTranslation =>
+  (i18n.getResourceBundle(lang, 'translation') ?? i18n.getResourceBundle(DEFAULT_LANGUAGE, 'translation')) as AppTranslation;
 
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
+  const { t: translate, i18n: i18next } = useTranslation();
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
@@ -1543,7 +1548,6 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [resultImage, setResultImage]   = useState<string | null>(null);
-  const [lang, setLang] = useState<LanguageCode>(() => getInitialLanguage());
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -1568,21 +1572,25 @@ const App: React.FC = () => {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
-  const t = uiTranslations[lang];
-  const contentLocale = getContentLocale(lang);
+  const lang = normalizeLanguageCode(i18next.resolvedLanguage || i18next.language);
+  const contentLocale = getTranslationBundle(lang);
+  const t = contentLocale.ui;
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const sessionId = currentUser?.uid || '';
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
-  const emptyFaceTips = FACE_TIPS[lang];
-  const emptyClothTips = CLOTH_TIPS[lang];
+  const emptyFaceTips = contentLocale.emptyPreview.faceTips;
+  const emptyClothTips = contentLocale.emptyPreview.clothTips;
   const firebaseDisabledMessage = firebaseConfigError
-    ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
+    ? `${translate('ui.firebaseDisabledMessage')}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
   const remainingUserCount = userProfile ? Math.max(0, userProfile.dailyQuota - userProfile.usedToday) : FREE_LIMIT;
   const remainingGenerationCount = remainingUserCount;
   const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL;
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
-    setLang(nextLanguage);
+    if (!isSupportedLanguageCode(nextLanguage)) {
+      return;
+    }
+    void i18next.changeLanguage(nextLanguage);
   };
 
   useEffect(() => {
@@ -1808,7 +1816,7 @@ const App: React.FC = () => {
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
       setAuthMode(mode);
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(translate('ui.firebaseDisabledMessage'));
       setShowAuthModal(true);
       return;
     }
@@ -1830,7 +1838,7 @@ const App: React.FC = () => {
   };
   const handleAuthSubmit = async () => {
     if (!auth) {
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(translate('ui.firebaseDisabledMessage'));
       return;
     }
     if (!authForm.email || !authForm.password) {
@@ -1860,7 +1868,7 @@ const App: React.FC = () => {
   };
   const handleGoogleLogin = async () => {
     if (!auth || !googleProvider) {
-      setAuthError(getFirebaseDisabledMessage());
+      setAuthError(translate('ui.firebaseDisabledMessage'));
       return;
     }
     setAuthSubmitting(true);
@@ -1897,7 +1905,7 @@ const App: React.FC = () => {
     event.preventDefault();
 
     if (!db) {
-      setSuggestionStatus(getFirebaseDisabledMessage());
+      setSuggestionStatus(translate('ui.firebaseDisabledMessage'));
       return;
     }
 
@@ -1941,7 +1949,7 @@ const App: React.FC = () => {
     event.preventDefault();
 
     if (!db) {
-      setBbsStatus(getFirebaseDisabledMessage());
+      setBbsStatus(translate('ui.firebaseDisabledMessage'));
       return;
     }
 
@@ -2009,7 +2017,7 @@ const App: React.FC = () => {
 
   const handleBbsDelete = async (post: BbsPostRecord) => {
     if (!db) {
-      setBbsStatus(getFirebaseDisabledMessage());
+      setBbsStatus(translate('ui.firebaseDisabledMessage'));
       return;
     }
 
@@ -2181,7 +2189,7 @@ const App: React.FC = () => {
       {firebaseDisabledMessage && (
         <div className="config-banner" role="alert">
           <div className="section-inner">
-            <strong>Firebase 설정 누락</strong>
+            <strong>{t.firebaseConfigMissing}</strong>
             <p>{firebaseDisabledMessage}</p>
           </div>
         </div>
@@ -2201,7 +2209,11 @@ const App: React.FC = () => {
           {currentPage === 'home' ? (
             <>
               <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
-              <h1 className="hero-title">{contentLocale.hero.title}</h1>
+              <h1 className="hero-title">
+                {translate('hero_click')}
+                <br />
+                {translate('hero_space')}
+              </h1>
               <p className="hero-subtitle">{contentLocale.hero.subtitle}</p>
               <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
                 {t.heroCta}
@@ -2238,13 +2250,13 @@ const App: React.FC = () => {
           <section id="try" className="section try-section">
             <div className="section-inner">
               <div className="usage-bar">
-                {currentUser ? t.remainingDaily(remainingGenerationCount) : t.loginForFree}
+                {currentUser ? translate('ui.remainingDaily', { count: remainingGenerationCount }) : t.loginForFree}
               </div>
 
               <div className="try-layout">
                 <div className="try-column">
                   <div className="card-header">
-                    <span className="section-label">Step 1</span>
+                    <span className="section-label">{t.step1Label}</span>
                     <h3 className="card-title">{t.step1Title}</h3>
                   </div>
                   
@@ -2299,12 +2311,13 @@ const App: React.FC = () => {
                       </>
                     ) : (
                       <EmptyPreviewState
+                        badge={contentLocale.emptyPreview.faceGuide}
                         title={t.facePlaceholderTitle}
                         tips={emptyFaceTips}
                         type="face"
                       />
                     )}
-                    {!personImage && activePersonImage && <div className="sample-badge">SAMPLE</div>}
+                    {!personImage && activePersonImage && <div className="sample-badge">{t.sampleBadge}</div>}
                     {(personImage || selectedSampleUrl) && (
                       <button className="clear-img-btn" onClick={() => {
                         if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -2320,7 +2333,7 @@ const App: React.FC = () => {
 
                 <div className="try-column">
                   <div className="card-header">
-                    <span className="section-label">Step 2</span>
+                    <span className="section-label">{t.step2Label}</span>
                     <h3 className="card-title">{t.step2Title}</h3>
                   </div>
                   <div className="try-actions">
@@ -2371,7 +2384,7 @@ const App: React.FC = () => {
                             }}
                           />
                         )}
-                        {!clothImage && activeClothImage && <div className="sample-badge">SAMPLE</div>}
+                        {!clothImage && activeClothImage && <div className="sample-badge">{t.sampleBadge}</div>}
                         {(clothImage || selectedClothSampleUrl) && (
                           <button className="clear-img-btn" onClick={() => {
                             if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
@@ -2385,6 +2398,7 @@ const App: React.FC = () => {
                       </>
                     ) : (
                       <EmptyPreviewState
+                        badge={contentLocale.emptyPreview.styleGuide}
                         title={t.clothingPlaceholderTitle}
                         tips={emptyClothTips}
                         type="cloth"
@@ -2675,7 +2689,7 @@ const App: React.FC = () => {
                   {currentUser && userProfile ? (
                     <div className="mypage-summary">
                       <p><strong>{t.emailLabel}</strong> {currentUser.email}</p>
-                      <p><strong>{t.remainingDaily(remainingUserCount)}</strong></p>
+                      <p><strong>{translate('ui.remainingDaily', { count: remainingUserCount })}</strong></p>
                     </div>
                   ) : (
                     <div className="mypage-empty">

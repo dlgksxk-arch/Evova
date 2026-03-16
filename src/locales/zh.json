@@ -17,8 +17,12 @@
     "homeTitle": "HAMDEVA | AI 虚拟试穿平台",
     "homeDescription": "用一张脸部照片和一张服装图片，几秒内预览 HAMDEVA AI 试穿结果。"
   },
+  "hero_click": "点击点击，",
+  "hero_space": "虚拟试衣空间",
   "hero": {
     "eyebrow": "AI 虚拟试衣平台",
+    "titleLine1": "点击点击，",
+    "titleLine2": "虚拟试衣空间",
     "title": "点击点击，虚拟试衣空间",
     "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA 内容"

@@ -17,8 +17,12 @@
     "homeTitle": "HAMDEVA | AI バーチャルフィッティングプラットフォーム",
     "homeDescription": "顔写真 1 枚と衣装画像 1 枚で、HAMDEVA AI のバーチャル試着をすばやく確認できます。"
   },
+  "hero_click": "クリッククリック、",
+  "hero_space": "仮想フィッティング空間",
   "hero": {
     "eyebrow": "AI バーチャルフィッティングプラットフォーム",
+    "titleLine1": "クリッククリック、",
+    "titleLine2": "バーチャルフィッティング空間",
     "title": "クリッククリック、バーチャルフィッティング空間",
     "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA コンテンツ"

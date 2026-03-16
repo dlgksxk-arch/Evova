@@ -17,8 +17,12 @@
     "homeTitle": "HAMDEVA | AI 가상 피팅 플랫폼",
     "homeDescription": "얼굴 사진과 의상 이미지로 빠르게 가상 피팅 결과를 만드는 HAMDEVA AI 플랫폼."
   },
+  "hero_click": "클릭클릭,",
+  "hero_space": "가상의 피팅공간",
   "hero": {
     "eyebrow": "AI 가상 피팅 플랫폼",
+    "titleLine1": "클릭클릭,",
+    "titleLine2": "가상의 피팅공간",
     "title": "클릭클릭, 가상의 피팅공간",
     "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA 콘텐츠"

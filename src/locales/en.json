@@ -17,8 +17,12 @@
     "homeTitle": "HAMDEVA | AI Virtual Fitting Platform",
     "homeDescription": "Preview outfits in seconds with HAMDEVA AI using one face photo and one clothing image."
   },
+  "hero_click": "Click Click,",
+  "hero_space": "Virtual Fitting Space",
   "hero": {
     "eyebrow": "AI Virtual Fitting Platform",
+    "titleLine1": "Click Click,",
+    "titleLine2": "Virtual Fitting Space",
     "title": "Click Click, Virtual Fitting Space",
     "subtitle": "HAMDEVA",
     "pageEyebrow": "HAMDEVA CONTENT"
