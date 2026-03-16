@@ -3725,9 +3725,6 @@ const App: React.FC = () => {
                         {t.adminNav}
                       </button>
                     )}
-                    <button className="lang-option" onClick={() => { navigateToPage('site-management'); setUserMenuOpen(false); }} type="button">
-                      {contentLocale.nav['site-management']}
-                    </button>
                     <button className="lang-option" onClick={() => { void handleLogout(); setUserMenuOpen(false); }} type="button">
                       {t.logout}
                     </button>
@@ -4209,7 +4206,25 @@ const App: React.FC = () => {
               />
             )}
 
-            {currentPage === 'site-management' && (
+            {currentPage === 'site-management' && !currentUser && (
+              <article className="page-article">
+                <h2>{t.siteManagementTitle}</h2>
+                <p>{t.authRequired}</p>
+                <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                  {t.login}
+                </button>
+              </article>
+            )}
+            {currentPage === 'site-management' && currentUser && !isAdminUser && (
+              <article className="page-article">
+                <h2>{t.siteManagementTitle}</h2>
+                <p>{t.adminAccessDenied}</p>
+                <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('home')} type="button">
+                  {t.heroCta}
+                </button>
+              </article>
+            )}
+            {currentPage === 'site-management' && isAdminUser && (
               <div className="management-grid">
                 <article className="page-article">
                   <h2>{t.siteManagementTitle}</h2>

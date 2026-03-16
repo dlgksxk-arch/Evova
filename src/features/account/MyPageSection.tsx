@@ -57,7 +57,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           </div>
           <p><strong>{copy.subscriptionPlanLabel}</strong> {copy.subscriptionPlanValue(userProfile.subscriptionPlan)}</p>
           <div className="credit-cta-actions">
-            <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">{copy.creditCheck}</button>
+            {userProfile.role === 'admin' && (
+              <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">{copy.creditCheck}</button>
+            )}
             <button className="outline-btn auth-inline-btn" onClick={onNavigateTerms} type="button">{copy.viewSubscription}</button>
           </div>
         </div>
