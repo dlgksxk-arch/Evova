@@ -29,8 +29,10 @@ const SUBSCRIPTION_DAILY_BONUS = {
   basic: 500,
   pro: 1500,
 } as const;
+const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 
 type SubscriptionPlan = keyof typeof SUBSCRIPTION_DAILY_BONUS;
+type AccountRole = 'user' | 'admin';
 type CreditLogType =
   | 'signup_bonus'
   | 'daily_reward'
@@ -57,6 +59,7 @@ type UserAccount = {
   credits: number;
   isSubscribed: boolean;
   subscriptionPlan: SubscriptionPlan;
+  role: AccountRole;
   createdAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
   lastDailyRewardAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
   lastLoginAt?: FirebaseFirestore.Timestamp | FirebaseFirestore.FieldValue | null;
@@ -66,6 +69,7 @@ type BootstrapResult = {
     credits: number;
     isSubscribed: boolean;
     subscriptionPlan: SubscriptionPlan;
+    role: AccountRole;
   };
   signupBonusGranted: number;
   dailyRewardGranted: number;
@@ -127,6 +131,14 @@ const normalizeSubscriptionPlan = (value: unknown): SubscriptionPlan => {
   return 'free';
 };
 
+const normalizeAccountRole = (value: unknown, email: string): AccountRole => {
+  if (value === 'admin') {
+    return 'admin';
+  }
+
+  return ADMIN_EMAILS.has(email.toLowerCase()) ? 'admin' : 'user';
+};
+
 const getDailyCreditReward = (plan: SubscriptionPlan): { base: number; subscriptionBonus: number; total: number } => {
   const subscriptionBonus = SUBSCRIPTION_DAILY_BONUS[plan];
   return {
@@ -145,6 +157,7 @@ const normalizeUserAccount = (email: string, data?: FirebaseFirestore.DocumentDa
     credits: typeof data?.credits === 'number' && Number.isFinite(data.credits) ? data.credits : 0,
     isSubscribed,
     subscriptionPlan: isSubscribed ? subscriptionPlan : 'free',
+    role: normalizeAccountRole(data?.role, email),
     createdAt: data?.createdAt ?? null,
     lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
     lastLoginAt: data?.lastLoginAt ?? null,
@@ -357,6 +370,7 @@ const createCreditLogRef = () => db.collection('creditLogs').doc();
 const writeCreditLog = (
   transaction: FirebaseFirestore.Transaction,
   uid: string,
+  email: string,
   type: CreditLogType,
   amount: number,
   balanceAfter: number,
@@ -364,6 +378,7 @@ const writeCreditLog = (
 ) => {
   transaction.set(createCreditLogRef(), {
     uid,
+    email,
     type,
     amount,
     balanceAfter,
@@ -380,6 +395,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
       credits: 0,
       isSubscribed: false,
       subscriptionPlan: 'free',
+      role: 'user',
     },
     signupBonusGranted: 0,
     dailyRewardGranted: 0,
@@ -394,7 +410,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
     if (!snapshot.exists) {
       nextCredits += SIGNUP_BONUS_CREDITS;
       result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
-      writeCreditLog(transaction, user.uid, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
     }
 
     const lastDailyRewardKey = timestampToSeoulDateKey(currentProfile.lastDailyRewardAt);
@@ -402,7 +418,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
       const reward = getDailyCreditReward(currentProfile.subscriptionPlan);
       nextCredits += reward.base;
       result.dailyRewardGranted = reward.base;
-      writeCreditLog(transaction, user.uid, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
 
       if (reward.subscriptionBonus > 0) {
         nextCredits += reward.subscriptionBonus;
@@ -410,6 +426,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
         writeCreditLog(
           transaction,
           user.uid,
+          user.email || currentProfile.email,
           'subscription_bonus',
           reward.subscriptionBonus,
           nextCredits,
@@ -423,6 +440,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
       credits: nextCredits,
       isSubscribed: currentProfile.isSubscribed,
       subscriptionPlan: currentProfile.subscriptionPlan,
+      role: currentProfile.role,
       lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -439,6 +457,7 @@ const bootstrapUserCredits = async (user: AuthenticatedUser): Promise<BootstrapR
       credits: nextCredits,
       isSubscribed: currentProfile.isSubscribed,
       subscriptionPlan: currentProfile.subscriptionPlan,
+      role: currentProfile.role,
     };
   });
 
@@ -473,6 +492,7 @@ const beginGenerationCharge = async (
       credits: 0,
       isSubscribed: false,
       subscriptionPlan: 'free',
+      role: 'user',
     },
     signupBonusGranted: 0,
     dailyRewardGranted: 0,
@@ -506,7 +526,7 @@ const beginGenerationCharge = async (
     if (!userSnapshot.exists) {
       nextCredits += SIGNUP_BONUS_CREDITS;
       result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
-      writeCreditLog(transaction, user.uid, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'signup_bonus', SIGNUP_BONUS_CREDITS, nextCredits, 'signup bonus');
     }
 
     const lastDailyRewardKey = timestampToSeoulDateKey(currentProfile.lastDailyRewardAt);
@@ -514,7 +534,7 @@ const beginGenerationCharge = async (
       const reward = getDailyCreditReward(currentProfile.subscriptionPlan);
       nextCredits += reward.base;
       result.dailyRewardGranted = reward.base;
-      writeCreditLog(transaction, user.uid, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
+      writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'daily_reward', reward.base, nextCredits, `daily reward ${todayKey}`);
 
       if (reward.subscriptionBonus > 0) {
         nextCredits += reward.subscriptionBonus;
@@ -522,6 +542,7 @@ const beginGenerationCharge = async (
         writeCreditLog(
           transaction,
           user.uid,
+          user.email || currentProfile.email,
           'subscription_bonus',
           reward.subscriptionBonus,
           nextCredits,
@@ -535,13 +556,14 @@ const beginGenerationCharge = async (
     }
 
     nextCredits -= GENERATION_COST;
-    writeCreditLog(transaction, user.uid, 'generate_use', -GENERATION_COST, nextCredits, `generate request ${requestId}`);
+    writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_use', -GENERATION_COST, nextCredits, `generate request ${requestId}`);
 
     const updatePayload: Record<string, unknown> = {
       email: user.email || currentProfile.email,
       credits: nextCredits,
       isSubscribed: currentProfile.isSubscribed,
       subscriptionPlan: currentProfile.subscriptionPlan,
+      role: currentProfile.role,
       lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -577,6 +599,7 @@ const beginGenerationCharge = async (
       credits: nextCredits,
       isSubscribed: currentProfile.isSubscribed,
       subscriptionPlan: currentProfile.subscriptionPlan,
+      role: currentProfile.role,
     };
     result.creditsAfterCharge = nextCredits;
   });
@@ -649,7 +672,7 @@ const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string
       releasedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    writeCreditLog(transaction, user.uid, 'generate_refund', GENERATION_COST, nextCredits, `refund request ${requestId}`);
+    writeCreditLog(transaction, user.uid, user.email || currentProfile.email, 'generate_refund', GENERATION_COST, nextCredits, `refund request ${requestId}`);
 
     result.refunded = true;
     result.balanceAfter = nextCredits;
@@ -788,6 +811,7 @@ export const api = functions
           credits: profile.credits,
           isSubscribed: profile.isSubscribed,
           subscriptionPlan: profile.subscriptionPlan,
+          role: profile.role,
           generationCost: GENERATION_COST,
         });
       } catch (error) {

@@ -11,20 +11,21 @@ import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage }
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { addDoc, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where, type Timestamp } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
-const MASTER_EMAIL = 'dlgksxk@gmail.com';
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
+type UserRole = 'user' | 'admin';
 
 interface UserProfile {
   email: string;
   credits: number;
   isSubscribed: boolean;
   subscriptionPlan: SubscriptionPlan;
+  role: UserRole;
   createdAt?: Timestamp | null;
   lastDailyRewardAt?: Timestamp | null;
   lastLoginAt?: Timestamp | null;
@@ -36,11 +37,44 @@ interface CreditBootstrapResponse {
     credits: number;
     isSubscribed: boolean;
     subscriptionPlan: SubscriptionPlan;
+    role: UserRole;
   };
   signupBonusGranted?: number;
   dailyRewardGranted?: number;
   subscriptionBonusGranted?: number;
   generationCost?: number;
+}
+
+interface AdminUserRecord {
+  id: string;
+  email: string;
+  credits: number;
+  subscriptionPlan: SubscriptionPlan;
+  role: UserRole;
+  createdAt?: Timestamp | null;
+}
+
+interface CreditLogRecord {
+  id: string;
+  uid: string;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  note?: string;
+  email?: string;
+  createdAt?: Timestamp | null;
+}
+
+interface GenerationRequestRecord {
+  id: string;
+  uid: string;
+  email?: string;
+  requestId: string;
+  status?: string;
+  success?: boolean;
+  refunded?: boolean;
+  errorMessage?: string;
+  createdAt?: Timestamp | null;
 }
 
 interface GenerationRecord {
@@ -161,6 +195,32 @@ const translations = {
     siteCreditsLabel: '현재 크레딧',
     siteCreditCostLabel: '생성 비용',
     authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
+    adminNav: '관리',
+    adminTitle: '관리자 페이지',
+    adminSubtitle: '운영 지표와 최근 활동을 한 화면에서 확인할 수 있습니다.',
+    adminAccessDenied: '관리자 권한이 필요합니다.',
+    adminDashboard: '대시보드 요약',
+    adminUsersSection: '최근 사용자',
+    adminBoardSection: '최근 게시글',
+    adminGenerationSection: '최근 생성 활동',
+    adminCreditsSection: '최근 크레딧 로그',
+    adminSystemSection: '시스템 상태',
+    adminTotalUsers: '총 사용자 수',
+    adminTotalPosts: '총 게시글 수',
+    adminTotalGenerations: '총 생성 기록 수',
+    adminTotalSharedResults: '총 공유 결과 수',
+    adminRecentUsers: '최근 가입 사용자',
+    adminRecentPosts: '최근 게시글',
+    adminRecentGenerations: '최근 생성 요청',
+    adminRecentCredits: '최근 크레딧 로그',
+    adminRole: '권한',
+    adminJoinedAt: '가입일',
+    adminCreatedAt: '생성일',
+    adminCreditsColumn: '크레딧',
+    adminStatus: '상태',
+    adminResultId: '요청 ID',
+    adminNoData: '표시할 데이터가 없습니다.',
+    adminDeletePost: '게시글 삭제',
     authInvalid: '이메일과 비밀번호를 모두 입력해 주세요.',
     authFailed: '로그인 처리 중 문제가 발생했습니다. 다시 시도해 주세요.',
     suggestionTitleLabel: '제안 제목',
@@ -304,6 +364,32 @@ const translations = {
     siteCreditsLabel: 'Current credits',
     siteCreditCostLabel: 'Generation cost',
     authSignupCreditsHint: 'Sign up and get 300 credits',
+    adminNav: 'Admin',
+    adminTitle: 'Admin Dashboard',
+    adminSubtitle: 'Review the service overview and recent activity in one place.',
+    adminAccessDenied: 'Admin access is required.',
+    adminDashboard: 'Dashboard Summary',
+    adminUsersSection: 'Recent Users',
+    adminBoardSection: 'Recent Board Posts',
+    adminGenerationSection: 'Recent Generation Activity',
+    adminCreditsSection: 'Recent Credit Logs',
+    adminSystemSection: 'System Status',
+    adminTotalUsers: 'Total users',
+    adminTotalPosts: 'Total posts',
+    adminTotalGenerations: 'Total generations',
+    adminTotalSharedResults: 'Total shared results',
+    adminRecentUsers: 'Recently joined users',
+    adminRecentPosts: 'Recent posts',
+    adminRecentGenerations: 'Recent generation requests',
+    adminRecentCredits: 'Recent credit logs',
+    adminRole: 'Role',
+    adminJoinedAt: 'Joined',
+    adminCreatedAt: 'Created',
+    adminCreditsColumn: 'Credits',
+    adminStatus: 'Status',
+    adminResultId: 'Request ID',
+    adminNoData: 'No data to display.',
+    adminDeletePost: 'Delete post',
     authInvalid: 'Please enter both email and password.',
     authFailed: 'Authentication failed. Please try again.',
     suggestionTitleLabel: 'Suggestion title',
@@ -451,6 +537,32 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     creditCheck: '查看积分',
     subscriptionPlanLabel: '订阅方案',
     subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    adminNav: '管理',
+    adminTitle: '管理员页面',
+    adminSubtitle: '在一个页面中查看核心运营指标与最近活动。',
+    adminAccessDenied: '需要管理员权限。',
+    adminDashboard: '仪表盘摘要',
+    adminUsersSection: '最近用户',
+    adminBoardSection: '最近帖子',
+    adminGenerationSection: '最近生成活动',
+    adminCreditsSection: '最近积分日志',
+    adminSystemSection: '系统状态',
+    adminTotalUsers: '总用户数',
+    adminTotalPosts: '总帖子数',
+    adminTotalGenerations: '总生成记录数',
+    adminTotalSharedResults: '总分享结果数',
+    adminRecentUsers: '最近注册用户',
+    adminRecentPosts: '最近帖子',
+    adminRecentGenerations: '最近生成请求',
+    adminRecentCredits: '最近积分日志',
+    adminRole: '权限',
+    adminJoinedAt: '注册时间',
+    adminCreatedAt: '创建时间',
+    adminCreditsColumn: '积分',
+    adminStatus: '状态',
+    adminResultId: '请求 ID',
+    adminNoData: '暂无可显示的数据。',
+    adminDeletePost: '删除帖子',
     freeLeft: (n: number) => `今日剩余免费次数：${n}`,
     freeExhausted: '你今天的 3 次免费试穿已全部用完。',
     renderingResult: '正在渲染结果图...',
@@ -514,6 +626,32 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     creditCheck: 'クレジット確認',
     subscriptionPlanLabel: '購読プラン',
     subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    adminNav: '管理',
+    adminTitle: '管理者ページ',
+    adminSubtitle: '運営指標と最近の活動を一画面で確認できます。',
+    adminAccessDenied: '管理者権限が必要です。',
+    adminDashboard: 'ダッシュボード概要',
+    adminUsersSection: '最近のユーザー',
+    adminBoardSection: '最近の掲示板投稿',
+    adminGenerationSection: '最近の生成アクティビティ',
+    adminCreditsSection: '最近のクレジットログ',
+    adminSystemSection: 'システム状態',
+    adminTotalUsers: '総ユーザー数',
+    adminTotalPosts: '総投稿数',
+    adminTotalGenerations: '総生成数',
+    adminTotalSharedResults: '総共有結果数',
+    adminRecentUsers: '最近登録したユーザー',
+    adminRecentPosts: '最近の投稿',
+    adminRecentGenerations: '最近の生成リクエスト',
+    adminRecentCredits: '最近のクレジットログ',
+    adminRole: '権限',
+    adminJoinedAt: '登録日',
+    adminCreatedAt: '作成日時',
+    adminCreditsColumn: 'クレジット',
+    adminStatus: '状態',
+    adminResultId: 'リクエスト ID',
+    adminNoData: '表示できるデータがありません。',
+    adminDeletePost: '投稿を削除',
     freeLeft: (n: number) => `本日の無料利用残り回数: ${n}`,
     freeExhausted: '本日の無料 3 回分をすべて使いました。',
     renderingResult: '結果画像を描画中...',
@@ -1271,6 +1409,7 @@ const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserP
   credits: typeof data?.credits === 'number' ? data.credits : 0,
   isSubscribed: data?.isSubscribed === true,
   subscriptionPlan: data?.subscriptionPlan === 'basic' || data?.subscriptionPlan === 'pro' ? data.subscriptionPlan : 'free',
+  role: data?.role === 'admin' ? 'admin' : 'user',
   createdAt: data?.createdAt ?? null,
   lastDailyRewardAt: data?.lastDailyRewardAt ?? null,
   lastLoginAt: data?.lastLoginAt ?? null,
@@ -1642,6 +1781,7 @@ const EmptyPreviewState: React.FC<{ title: string; tips: string[]; type: 'face' 
 
 const PAGE_PATHS: Record<SitePage, string> = {
   home: '/',
+  admin: '/admin',
   about: '/about',
   'how-it-works': '/how-to-use',
   'traditional-clothing': '/sample-outfits',
@@ -1730,6 +1870,16 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [historyItems, setHistoryItems] = useState<GenerationRecord[]>([]);
+  const [adminSummary, setAdminSummary] = useState({
+    users: 0,
+    posts: 0,
+    generations: 0,
+    sharedResults: 0,
+  });
+  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
+  const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
+  const [adminCreditLogs, setAdminCreditLogs] = useState<CreditLogRecord[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
@@ -1752,7 +1902,7 @@ const App: React.FC = () => {
     ? `${getFirebaseDisabledMessage()}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
   const currentCredits = userProfile?.credits ?? 0;
-  const isMasterUser = currentUser?.email?.toLowerCase() === MASTER_EMAIL;
+  const isAdminUser = userProfile?.role === 'admin';
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     if (!isSupportedLanguageCode(nextLanguage)) {
       return;
@@ -1910,6 +2060,79 @@ const App: React.FC = () => {
     };
   }, [currentUser, t]);
   useEffect(() => {
+    if (!isAdminUser || !db) {
+      setAdminSummary({
+        users: 0,
+        posts: 0,
+        generations: 0,
+        sharedResults: 0,
+      });
+      setAdminUsers([]);
+      setAdminGenerationLogs([]);
+      setAdminCreditLogs([]);
+      setAdminLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setAdminLoading(true);
+
+    const loadAdminData = async () => {
+      const [
+        usersCountSnapshot,
+        postsCountSnapshot,
+        generationsCountSnapshot,
+        sharedResultsCountSnapshot,
+        usersSnapshot,
+        generationSnapshot,
+        creditSnapshot,
+      ] = await Promise.all([
+        getCountFromServer(collection(db, 'users')),
+        getCountFromServer(collection(db, 'bbsPosts')),
+        getCountFromServer(collection(db, 'generations')),
+        getCountFromServer(collection(db, 'publicResults')),
+        getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'generationRequests'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'creditLogs'), orderBy('createdAt', 'desc'), limit(20))),
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      setAdminSummary({
+        users: usersCountSnapshot.data().count,
+        posts: postsCountSnapshot.data().count,
+        generations: generationsCountSnapshot.data().count,
+        sharedResults: sharedResultsCountSnapshot.data().count,
+      });
+      setAdminUsers(usersSnapshot.docs.map((snapshot) => ({
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<AdminUserRecord, 'id'>),
+      })));
+      setAdminGenerationLogs(generationSnapshot.docs.map((snapshot) => ({
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
+      })));
+      setAdminCreditLogs(creditSnapshot.docs.map((snapshot) => ({
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<CreditLogRecord, 'id'>),
+      })));
+      setAdminLoading(false);
+    };
+
+    loadAdminData().catch((error) => {
+      if (!cancelled) {
+        console.error('Failed to load admin data:', error);
+        setAdminLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [db, isAdminUser]);
+  useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -2007,6 +2230,11 @@ const App: React.FC = () => {
           title: `${t.sharedResultTitle} | HAMDEVA`,
           description: t.sharedResultDescription,
         }
+      : currentPage === 'admin'
+        ? {
+            title: `${t.adminTitle} | HAMDEVA`,
+            description: t.adminSubtitle,
+          }
       : currentPage === 'home'
         ? {
             title: contentLocale.meta.homeTitle,
@@ -2048,7 +2276,7 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
-  }, [contentLocale, currentPage, sharedResultRecord, sharedResultRouteId, t.sharedResultDescription, t.sharedResultTitle]);
+  }, [contentLocale, currentPage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.sharedResultDescription, t.sharedResultTitle]);
 
   const loadPersonUpload = async (file: File) => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
@@ -2366,7 +2594,7 @@ const App: React.FC = () => {
       setBbsStatus(t.boardInvalid);
       return;
     }
-    if ((!editingBbsPostId || !isMasterUser) && !bbsForm.tempPassword.trim()) {
+    if ((!editingBbsPostId || !isAdminUser) && !bbsForm.tempPassword.trim()) {
       setBbsStatus(t.boardPasswordRequired);
       return;
     }
@@ -2380,7 +2608,7 @@ const App: React.FC = () => {
           setBbsStatus(t.boardFailed);
           return;
         }
-        if (!isMasterUser && currentPost.tempPassword !== bbsForm.tempPassword.trim()) {
+        if (!isAdminUser && currentPost.tempPassword !== bbsForm.tempPassword.trim()) {
           setBbsStatus(t.boardPasswordMismatch);
           return;
         }
@@ -2388,7 +2616,7 @@ const App: React.FC = () => {
         await updateDoc(doc(db, 'bbsPosts', editingBbsPostId), {
           nickname: bbsForm.nickname.trim(),
           content: bbsForm.content.trim(),
-          tempPassword: isMasterUser ? (currentPost.tempPassword || bbsForm.tempPassword.trim()) : bbsForm.tempPassword.trim(),
+          tempPassword: isAdminUser ? (currentPost.tempPassword || bbsForm.tempPassword.trim()) : bbsForm.tempPassword.trim(),
           updatedAt: serverTimestamp(),
         });
         resetBbsEditor();
@@ -2430,19 +2658,19 @@ const App: React.FC = () => {
       return;
     }
 
-    const typedPassword = isMasterUser ? post.tempPassword || '' : window.prompt(t.boardTempPasswordLabel) || '';
-    if (!isMasterUser && !typedPassword.trim()) {
+    const typedPassword = isAdminUser ? post.tempPassword || '' : window.prompt(t.boardTempPasswordLabel) || '';
+    if (!isAdminUser && !typedPassword.trim()) {
       setBbsStatus(t.boardPasswordRequired);
       return;
     }
-    if (!isMasterUser && typedPassword.trim() !== post.tempPassword) {
+    if (!isAdminUser && typedPassword.trim() !== post.tempPassword) {
       setBbsStatus(t.boardPasswordMismatch);
       return;
     }
 
     setBbsSubmitting(true);
     try {
-      if (isMasterUser) {
+      if (isAdminUser) {
         await deleteDoc(doc(db, 'bbsPosts', post.id));
       } else {
         await updateDoc(doc(db, 'bbsPosts', post.id), {
@@ -2592,6 +2820,15 @@ const App: React.FC = () => {
                 {contentLocale.nav[page]}
               </button>
             ))}
+            {isAdminUser && (
+              <button
+                className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}
+                onClick={() => navigateToPage('admin')}
+                type="button"
+              >
+                {t.adminNav}
+              </button>
+            )}
           </div>
           <div className="nav-right">
             {currentUser && (
@@ -2610,6 +2847,11 @@ const App: React.FC = () => {
                     <button className="lang-option" onClick={() => { navigateToPage('mypage'); setUserMenuOpen(false); }} type="button">
                       {t.myPage}
                     </button>
+                    {isAdminUser && (
+                      <button className="lang-option" onClick={() => { navigateToPage('admin'); setUserMenuOpen(false); }} type="button">
+                        {t.adminNav}
+                      </button>
+                    )}
                     <button className="lang-option" onClick={() => { navigateToPage('site-management'); setUserMenuOpen(false); }} type="button">
                       {contentLocale.nav['site-management']}
                     </button>
@@ -2663,6 +2905,12 @@ const App: React.FC = () => {
               <div className="hero-eyebrow">{t.share}</div>
               <h1 className="hero-title page-title">{t.sharedResultTitle}</h1>
               <p className="hero-sub">{t.sharedResultDescription}</p>
+            </>
+          ) : currentPage === 'admin' ? (
+            <>
+              <div className="hero-eyebrow">{t.adminNav}</div>
+              <h1 className="hero-title page-title">{t.adminTitle}</h1>
+              <p className="hero-sub">{t.adminSubtitle}</p>
             </>
           ) : currentPage === 'home' ? (
             <>
@@ -2964,7 +3212,154 @@ const App: React.FC = () => {
       ) : (
         <main className="section page-shell">
           <div className="section-inner page-layout">
-            {contentLocale.pages[currentPage].sections?.map((section) => (
+            {currentPage === 'admin' && (
+              !currentUser ? (
+                <article className="page-article">
+                  <h2>{t.adminTitle}</h2>
+                  <p>{t.authRequired}</p>
+                  <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                    {t.login}
+                  </button>
+                </article>
+              ) : !userProfile ? (
+                <article className="page-article">
+                  <h2>{t.adminTitle}</h2>
+                  <p>{t.loadingSharedResult}</p>
+                </article>
+              ) : !isAdminUser ? (
+                <article className="page-article">
+                  <h2>{t.adminTitle}</h2>
+                  <p>{t.adminAccessDenied}</p>
+                  <button className="outline-btn auth-inline-btn" onClick={() => navigateToPage('home')} type="button">
+                    {t.heroCta}
+                  </button>
+                </article>
+              ) : (
+                <div className="admin-layout">
+                  <article className="page-article">
+                    <h2>{t.adminTitle}</h2>
+                    <p>{currentUser.email}</p>
+                    <p>{t.adminSubtitle}</p>
+                  </article>
+                  <div className="management-grid admin-summary-grid">
+                    <article className="page-article">
+                      <h3>{t.adminTotalUsers}</h3>
+                      <p>{adminSummary.users}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminTotalPosts}</h3>
+                      <p>{adminSummary.posts}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminTotalGenerations}</h3>
+                      <p>{adminSummary.generations}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminTotalSharedResults}</h3>
+                      <p>{adminSummary.sharedResults}</p>
+                    </article>
+                  </div>
+                  <article className="page-article">
+                    <h3>{t.adminSystemSection}</h3>
+                    <p>{t.siteVersionLabel}: {appVersion}</p>
+                    <p>{t.siteFirebaseLabel}: {isFirebaseConfigured ? t.siteFirebaseReady : t.siteFirebaseBlocked}</p>
+                    <p>{t.siteCreditCostLabel}: {GENERATION_COST}</p>
+                    {adminLoading && <p>{t.loadingSharedResult}</p>}
+                  </article>
+                  <article className="page-article">
+                    <h3>{t.adminUsersSection}</h3>
+                    <div className="admin-table">
+                      <div className="admin-table-head">
+                        <span>{t.emailLabel}</span>
+                        <span>{t.adminJoinedAt}</span>
+                        <span>{t.adminCreditsColumn}</span>
+                        <span>{t.subscriptionPlanLabel}</span>
+                        <span>{t.adminRole}</span>
+                      </div>
+                      {adminUsers.length > 0 ? adminUsers.map((item) => (
+                        <div key={item.id} className="admin-table-row">
+                          <span>{item.email || '-'}</span>
+                          <span>{formatTimestampLabel(item.createdAt)}</span>
+                          <span>{item.credits ?? 0}</span>
+                          <span>{t.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
+                          <span>{item.role || 'user'}</span>
+                        </div>
+                      )) : (
+                        <p>{t.adminNoData}</p>
+                      )}
+                    </div>
+                  </article>
+                  <article className="page-article">
+                    <h3>{t.adminBoardSection}</h3>
+                    <div className="admin-table">
+                      <div className="admin-table-head admin-board-head">
+                        <span>{t.boardNicknameLabel}</span>
+                        <span>{t.boardContentLabel}</span>
+                        <span>{t.adminCreatedAt}</span>
+                        <span>{t.boardDelete}</span>
+                      </div>
+                      {bbsPosts.length > 0 ? bbsPosts.slice(0, 20).map((post) => (
+                        <div key={post.id} className="admin-table-row admin-board-row">
+                          <span>{post.nickname || t.boardMetaAnonymous}</span>
+                          <span>{post.content}</span>
+                          <span>{formatTimestampLabel(post.createdAt)}</span>
+                          <button className="bbs-icon-btn danger" disabled={bbsSubmitting} onClick={() => { void handleBbsDelete(post); }} title={t.adminDeletePost} type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
+                            </svg>
+                          </button>
+                        </div>
+                      )) : (
+                        <p>{t.adminNoData}</p>
+                      )}
+                    </div>
+                  </article>
+                  <article className="page-article">
+                    <h3>{t.adminGenerationSection}</h3>
+                    <div className="admin-table">
+                      <div className="admin-table-head">
+                        <span>{t.emailLabel}</span>
+                        <span>{t.adminCreatedAt}</span>
+                        <span>{t.adminStatus}</span>
+                        <span>{t.adminResultId}</span>
+                      </div>
+                      {adminGenerationLogs.length > 0 ? adminGenerationLogs.map((item) => (
+                        <div key={item.id} className="admin-table-row">
+                          <span>{item.email || item.uid}</span>
+                          <span>{formatTimestampLabel(item.createdAt)}</span>
+                          <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
+                          <span>{item.requestId}</span>
+                        </div>
+                      )) : (
+                        <p>{t.adminNoData}</p>
+                      )}
+                    </div>
+                  </article>
+                  <article className="page-article">
+                    <h3>{t.adminCreditsSection}</h3>
+                    <div className="admin-table">
+                      <div className="admin-table-head">
+                        <span>{t.emailLabel}</span>
+                        <span>{t.adminStatus}</span>
+                        <span>{t.adminCreditsColumn}</span>
+                        <span>{t.adminCreatedAt}</span>
+                      </div>
+                      {adminCreditLogs.length > 0 ? adminCreditLogs.map((item) => (
+                        <div key={item.id} className="admin-table-row">
+                          <span>{item.email || item.uid}</span>
+                          <span>{item.type}</span>
+                          <span>{item.amount}</span>
+                          <span>{formatTimestampLabel(item.createdAt)}</span>
+                        </div>
+                      )) : (
+                        <p>{t.adminNoData}</p>
+                      )}
+                    </div>
+                  </article>
+                </div>
+              )
+            )}
+            {currentPage !== 'admin' && contentLocale.pages[currentPage].sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (

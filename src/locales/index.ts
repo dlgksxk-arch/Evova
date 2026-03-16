@@ -16,6 +16,7 @@ type DeepPartial<T> = {
 };
 export type SitePage =
   | 'home'
+  | 'admin'
   | 'traditional-clothing'
   | 'countries'
   | 'how-it-works'
@@ -30,6 +31,7 @@ export type SitePage =
 
 export const SITE_PAGES: SitePage[] = [
   'home',
+  'admin',
   'traditional-clothing',
   'countries',
   'how-it-works',

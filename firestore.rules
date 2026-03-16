@@ -10,8 +10,9 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isMaster() {
-      return isSignedIn() && request.auth.token.email == 'dlgksxk@gmail.com';
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // 사용량 통계 — 서버(Functions)만 쓰기 가능, 클라이언트 읽기 불가
@@ -26,26 +27,27 @@ service cloud.firestore {
 
     // 사용자 프로필 — 본인만 읽기/쓰기 가능
     match /users/{userId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       allow create, update, delete: if false;
     }
 
     // 생성 이력 — 본인 데이터만 생성/조회 가능
     match /generations/{generationId} {
-      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
       allow update, delete: if false;
     }
 
     // 크레딧 로그 — 서버만 쓰기, 본인만 읽기 가능
     match /creditLogs/{logId} {
-      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow read: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
       allow create, update, delete: if false;
     }
 
-    // 생성 요청 잠금 — 서버만 접근
+    // 생성 요청 잠금 — 서버 쓰기, 관리자 읽기 가능
     match /generationRequests/{requestId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // 공개 공유 결과 — 생성 결과 이미지만 공개, 원본 업로드 이미지는 금지
@@ -87,7 +89,7 @@ service cloud.firestore {
         && request.resource.data.deleted is bool;
       allow update: if
         (
-          isMaster()
+          isAdmin()
           || (
             resource.data.tempPassword is string
             && request.resource.data.tempPassword is string
@@ -101,7 +103,7 @@ service cloud.firestore {
         && request.resource.data.content.size() > 0
         && request.resource.data.content.size() <= 2000
         && request.resource.data.deleted is bool;
-      allow delete: if isMaster();
+      allow delete: if isAdmin();
     }
 
     // 나머지 모든 문서 차단
