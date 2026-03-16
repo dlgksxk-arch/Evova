@@ -170,6 +170,8 @@ Requirements:
 - adapt the outfit naturally to a dog body
 - use a fashion pose and cinematic background that match the outfit concept
 - keep balanced body proportions
+- place the camera slightly farther back so the head appears about 20% smaller within the full-body frame
+- keep the head proportion noticeably smaller relative to the overall body in the composition
 - use professional lighting
 - single subject only
 - full body shot
@@ -185,6 +187,8 @@ Requirements:
 - adapt the outfit naturally to a cat body
 - use a fashion pose and cinematic background that match the outfit concept
 - keep balanced body proportions
+- place the camera slightly farther back so the head appears about 20% smaller within the full-body frame
+- keep the head proportion noticeably smaller relative to the overall body in the composition
 - use professional lighting
 - single subject only
 - full body shot
