@@ -13,7 +13,13 @@ const CORS_ORIGIN = [
   'https://hamdeva.dlgksxk.workers.dev',
 ];
 const OPENAI_CONFIG_ERROR = 'IMAGE_GENERATION_NOT_CONFIGURED';
-const OPENAI_CONFIG_MESSAGE = '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
+const OPENAI_CONFIG_MESSAGE = 'OpenAI API key is missing. Set OPENAI_API_KEY or firebase functions:config:set openai.key="YOUR_OPENAI_API_KEY".';
+
+type OpenAIKeySource = 'env' | 'config' | 'missing';
+type OpenAIKeyState = {
+  key: string;
+  source: OpenAIKeySource;
+};
 
 type BodyProfile = {
   gender?: 'female' | 'male' | 'dog' | 'cat';
@@ -36,9 +42,35 @@ const getUsageCount = (data?: FirebaseFirestore.DocumentData): number => {
   return typeof successCount === 'number' && Number.isFinite(successCount) ? successCount : 0;
 };
 
+let lastLoggedOpenAIKeySource: OpenAIKeySource | null = null;
+
+const getOpenAIApiKeyState = (): OpenAIKeyState => {
+  const envKey = process.env['OPENAI_API_KEY'];
+  if (typeof envKey === 'string' && envKey.trim()) {
+    return { key: envKey.trim(), source: 'env' };
+  }
+
+  const configKey = functions.config()?.openai?.key;
+  if (typeof configKey === 'string' && configKey.trim()) {
+    return { key: configKey.trim(), source: 'config' };
+  }
+
+  return { key: '', source: 'missing' };
+};
+
+const logOpenAIApiKeySource = (source: OpenAIKeySource): void => {
+  if (source === lastLoggedOpenAIKeySource) {
+    return;
+  }
+
+  lastLoggedOpenAIKeySource = source;
+  functions.logger.info('openai api key source resolved', { source });
+};
+
 const getOpenAIApiKey = (): string => {
-  const apiKey = process.env['OPENAI_API_KEY'];
-  return typeof apiKey === 'string' ? apiKey.trim() : '';
+  const state = getOpenAIApiKeyState();
+  logOpenAIApiKeySource(state.source);
+  return state.key;
 };
 
 const buildTryOnPrompt = (bodyProfile?: BodyProfile): string => {
