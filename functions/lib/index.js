@@ -76,6 +76,7 @@ const VIDEO_SIZE = '1280x720';
 const VIDEO_ESTIMATED_COST = 0.4;
 const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
+const HISTORY_RETENTION_DAYS = 15;
 const POLAR_PROVIDER = 'polar';
 const PAYMENT_CURRENCY = 'usd';
 const POLAR_API_BASE_URL = 'https://api.polar.sh/v1';
@@ -191,6 +192,9 @@ Keep the full silhouette comfortably inside the image boundaries.
 Do not crop the top of the head, any part of the hair, arms, hands, legs, or feet.
 Leave comfortable space around the subject so the full body fits naturally in frame.
 Avoid close-up or tight crop composition.
+Each hand must have exactly five fingers.
+Each foot must have exactly five toes.
+Do not generate extra fingers, missing fingers, extra toes, or missing toes.
 No face distortion.
 No identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
@@ -203,6 +207,8 @@ Requirements:
 - adapt the outfit naturally to a dog body
 - use a fashion pose and cinematic background that match the outfit concept
 - keep balanced body proportions
+- place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
+- keep the head proportion about 10% smaller than before relative to the overall body in the composition
 - use professional lighting
 - single subject only
 - full body shot
@@ -218,6 +224,8 @@ Requirements:
 - adapt the outfit naturally to a cat body
 - use a fashion pose and cinematic background that match the outfit concept
 - keep balanced body proportions
+- place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
+- keep the head proportion about 10% smaller than before relative to the overall body in the composition
 - use professional lighting
 - single subject only
 - full body shot
@@ -643,6 +651,11 @@ const requireAuthenticatedUser = async (req) => {
 const createCreditTransactionRef = () => db.collection('credit_transactions').doc();
 const buildPaymentDocId = (provider, providerPaymentId) => `${provider}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 const createGenerationDocRef = (uid, requestId) => db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
+const buildHistoryRetentionTimestamps = (now = admin.firestore.Timestamp.now()) => ({
+    createdAt: now,
+    updatedAt: now,
+    expiresAt: admin.firestore.Timestamp.fromMillis(now.toMillis() + HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000),
+});
 const buildUserAccountPayload = (account, email, options = {}) => {
     const payload = {
         email: email || account.email,
@@ -968,6 +981,7 @@ const markGenerationCompleted = async (user, requestId, metadata, options) => {
     const generationLockRef = db.collection('generationLocks').doc(user.uid);
     const generationRef = createGenerationDocRef(user.uid, requestId);
     const userRef = db.collection('users').doc(user.uid);
+    const historyTimestamps = buildHistoryRetentionTimestamps();
     await db.runTransaction(async (transaction) => {
         const userSnapshot = await transaction.get(userRef);
         const account = normalizeUserAccount(user.email, userSnapshot.data());
@@ -980,6 +994,7 @@ const markGenerationCompleted = async (user, requestId, metadata, options) => {
             uid: user.uid,
             email: user.email || account.email,
             requestId,
+            resultType: 'image_generation',
             subjectType: metadata.subjectType || 'human',
             usedCreditType: options.usedCreditType,
             usedCreditAmount: options.usedCreditAmount,
@@ -991,8 +1006,11 @@ const markGenerationCompleted = async (user, requestId, metadata, options) => {
             size: metadata.size,
             estimatedCost: metadata.estimatedCost,
             usage: metadata.usage,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            preservedAt: null,
+            preservedUntil: null,
+            expiresAt: historyTimestamps.expiresAt,
+            createdAt: historyTimestamps.createdAt,
+            updatedAt: historyTimestamps.updatedAt,
         }, { merge: true });
         transaction.set(requestRef, {
             type: metadata.type || 'image_generation',
@@ -1022,6 +1040,8 @@ const markGenerationCompleted = async (user, requestId, metadata, options) => {
 const markVideoGenerationCompleted = async (user, requestId, metadata) => {
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
     const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+    const generationRef = createGenerationDocRef(user.uid, requestId);
+    const historyTimestamps = buildHistoryRetentionTimestamps();
     await requestRef.set({
         ...metadata,
         status: 'completed',
@@ -1029,6 +1049,24 @@ const markVideoGenerationCompleted = async (user, requestId, metadata) => {
         refunded: false,
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    await generationRef.set({
+        uid: user.uid,
+        email: user.email,
+        requestId,
+        videoRequestId: requestId,
+        resultType: 'video_generation',
+        subjectType: normalizeSubjectType(metadata.subjectType),
+        status: 'completed',
+        usedCreditType: null,
+        usedCreditAmount: VIDEO_GENERATION_COST,
+        watermarkApplied: false,
+        imageUrl: null,
+        preservedAt: null,
+        preservedUntil: null,
+        expiresAt: historyTimestamps.expiresAt,
+        createdAt: historyTimestamps.createdAt,
+        updatedAt: historyTimestamps.updatedAt,
     }, { merge: true });
     await generationLockRef.set({
         requestId,

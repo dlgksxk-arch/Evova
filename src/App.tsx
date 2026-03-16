@@ -2068,6 +2068,15 @@ const downloadImageFile = async (src: string, filename = 'hamdeva-ai-fitting.png
   }
 };
 
+const downloadBlobUrl = (src: string, filename: string): void => {
+  const link = document.createElement('a');
+  link.href = src;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
 const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
@@ -2499,6 +2508,7 @@ const App: React.FC = () => {
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
   const [resultPreviewModalType, setResultPreviewModalType] = useState<'image' | 'video'>('image');
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
+  const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
@@ -2829,6 +2839,7 @@ const App: React.FC = () => {
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
     setResultPreviewModalType('image');
+    setResultPreviewZoom(1);
   }, [currentPage]);
   useEffect(() => {
     if (currentUser) {
@@ -3502,6 +3513,7 @@ const App: React.FC = () => {
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
     setResultPreviewModalType('image');
+    setResultPreviewZoom(1);
   };
   const openResultPreviewModal = (src: string) => {
     if (resultPreviewModalSrc?.startsWith('blob:')) {
@@ -3509,6 +3521,7 @@ const App: React.FC = () => {
     }
     setResultPreviewModalType('image');
     setResultPreviewModalLoading(false);
+    setResultPreviewZoom(1);
     setResultPreviewModalSrc(src);
     setShowResultPreviewModal(true);
   };
@@ -3526,6 +3539,7 @@ const App: React.FC = () => {
       try {
         setResultPreviewModalType('video');
         setResultPreviewModalLoading(true);
+        setResultPreviewZoom(1);
         setShowResultPreviewModal(true);
         const authToken = await currentUser.getIdToken();
         const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
@@ -3575,6 +3589,54 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Failed to update history retention:', error);
       alert('보관 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
+  const handleDownloadHistoryItem = async (item: GenerationRecord) => {
+    if (!currentUser) {
+      return;
+    }
+
+    try {
+      if (item.resultType === 'video_generation') {
+        const requestId = item.videoRequestId || item.requestId;
+        if (!requestId) {
+          return;
+        }
+        const authToken = await currentUser.getIdToken();
+        const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
+        try {
+          downloadBlobUrl(videoUrl, `hamdeva-video-${requestId}.mp4`);
+        } finally {
+          if (videoUrl.startsWith('blob:')) {
+            window.setTimeout(() => URL.revokeObjectURL(videoUrl), 1000);
+          }
+        }
+        return;
+      }
+
+      if (item.imageUrl) {
+        await downloadImageFile(item.imageUrl, `hamdeva-result-${item.id}.png`);
+      }
+    } catch (error) {
+      console.error('Failed to download history item:', error);
+      alert('결과물을 다운로드하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  };
+  const handleDeleteHistoryItem = async (item: GenerationRecord) => {
+    if (!db) {
+      return;
+    }
+
+    const confirmed = window.confirm('이 결과물을 히스토리에서 삭제하시겠습니까?');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'generations', item.id));
+    } catch (error) {
+      console.error('Failed to delete history item:', error);
+      alert('히스토리 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     }
   };
   const openLogoutConfirmModal = () => {
@@ -4666,6 +4728,8 @@ const App: React.FC = () => {
                 formatTimestampLabel={formatTimestampLabel}
                 onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
                 onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
+                onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
+                onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
               />
             )}
             {currentPage === 'about' && renderSeoContent('about')}
@@ -4755,6 +4819,8 @@ const App: React.FC = () => {
             formatTimestampLabel={formatTimestampLabel}
             onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
             onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
+            onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
+            onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
           />
         </ShellModal>
       )}
@@ -4819,6 +4885,27 @@ const App: React.FC = () => {
           className="result-preview-shell"
           onClose={closeResultPreviewModal}
         >
+          {!resultPreviewModalLoading && resultPreviewModalType === 'image' && resultPreviewModalSrc && (
+            <div className="result-preview-toolbar">
+              <button
+                className="outline-btn result-preview-zoom-btn"
+                disabled={resultPreviewZoom <= 0.6}
+                onClick={() => setResultPreviewZoom((prev) => Math.max(0.6, Number((prev - 0.2).toFixed(2))))}
+                type="button"
+              >
+                축소
+              </button>
+              <span className="result-preview-zoom-label">{Math.round(resultPreviewZoom * 100)}%</span>
+              <button
+                className="outline-btn result-preview-zoom-btn"
+                disabled={resultPreviewZoom >= 3}
+                onClick={() => setResultPreviewZoom((prev) => Math.min(3, Number((prev + 0.2).toFixed(2))))}
+                type="button"
+              >
+                확대
+              </button>
+            </div>
+          )}
           <div className="result-preview-modal-body">
             {resultPreviewModalLoading ? (
               <p>결과를 불러오는 중입니다...</p>
@@ -4826,7 +4913,16 @@ const App: React.FC = () => {
               resultPreviewModalType === 'video' ? (
                 <video className="result-preview-modal-video" controls src={resultPreviewModalSrc} />
               ) : (
-                <img className="result-preview-modal-image" src={resultPreviewModalSrc} alt="Expanded result" />
+                <div className="result-preview-scroll">
+                  <div className="result-preview-image-stage">
+                    <img
+                      className="result-preview-modal-image"
+                      src={resultPreviewModalSrc}
+                      alt="Expanded result"
+                      style={{ width: `${resultPreviewZoom * 100}%` }}
+                    />
+                  </div>
+                </div>
               )
             ) : (
               <p>결과를 불러오지 못했습니다.</p>

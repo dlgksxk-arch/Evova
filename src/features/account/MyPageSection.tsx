@@ -31,6 +31,8 @@ interface MyPageSectionProps {
   formatTimestampLabel: (value?: any) => string;
   onOpenHistoryItem: (item: GenerationRecord) => void;
   onToggleHistoryPreserve: (item: GenerationRecord) => void;
+  onDownloadHistoryItem: (item: GenerationRecord) => void;
+  onDeleteHistoryItem: (item: GenerationRecord) => void;
 }
 
 const MyPageSection: React.FC<MyPageSectionProps> = ({
@@ -54,6 +56,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   formatTimestampLabel,
   onOpenHistoryItem,
   onToggleHistoryPreserve,
+  onDownloadHistoryItem,
+  onDeleteHistoryItem,
 }) => (
   <div className="mypage-layout">
     <article className="page-article">
@@ -120,8 +124,14 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                     <button className="outline-btn history-action-btn" onClick={() => onOpenHistoryItem(item)} type="button">
                       {isVideo ? '영상 보기' : '이미지 보기'}
                     </button>
+                    <button className="outline-btn history-action-btn" onClick={() => onDownloadHistoryItem(item)} type="button">
+                      다운로드
+                    </button>
                     <button className={`outline-btn history-action-btn ${isPreserved ? 'active' : ''}`} onClick={() => onToggleHistoryPreserve(item)} type="button">
                       {isPreserved ? '보관 해제' : '30일 보관'}
+                    </button>
+                    <button className="outline-btn history-action-btn danger" onClick={() => onDeleteHistoryItem(item)} type="button">
+                      삭제
                     </button>
                   </div>
                 </article>

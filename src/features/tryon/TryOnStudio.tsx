@@ -420,29 +420,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         )}
       </div>
 
-      <div className="action-section video-action-section page-article">
-        <p className="real-generation-label">{subjectUi.videoPrompt}</p>
-        <p className="credit-cost-text">{videoHelperText}</p>
-        <button
-          className="generate-btn"
-          disabled={!finalImageSrc || isGeneratingVideo || !canAffordVideo}
-          onClick={onGenerateVideo}
-          type="button"
-        >
-          {isGeneratingVideo ? <><span className="spinner"></span>{subjectUi.videoGenerating}</> : subjectUi.videoButton}
-        </button>
-        {!finalImageSrc && <p className="loading-subtext">{videoHelperText}</p>}
-        {finalImageSrc && !canAffordVideo && <p className="loading-subtext">{copy.notEnoughCredits}</p>}
-        {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
-        {generatedVideoUrl && (
-          <div className="composite-result result-video-shell">
-            <video controls playsInline preload="metadata" className="is-visible">
-              <source src={generatedVideoUrl} type="video/mp4" />
-            </video>
-          </div>
-        )}
-      </div>
-
       {finalImageSrc && (
         <div id="result-area" className="results-section">
           <h2 className="section-heading">{copy.resultTitle}</h2>
@@ -507,6 +484,29 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <p className="result-disclaimer-text">{copy.resultPrivacyNotice}</p>
         </div>
       )}
+
+      <div className="action-section video-action-section page-article">
+        <p className="real-generation-label">{subjectUi.videoPrompt}</p>
+        <p className="credit-cost-text">{videoHelperText}</p>
+        <button
+          className="generate-btn"
+          disabled={!finalImageSrc || isGeneratingVideo || !canAffordVideo}
+          onClick={onGenerateVideo}
+          type="button"
+        >
+          {isGeneratingVideo ? <><span className="spinner"></span>{subjectUi.videoGenerating}</> : subjectUi.videoButton}
+        </button>
+        {!finalImageSrc && <p className="loading-subtext">{videoHelperText}</p>}
+        {finalImageSrc && !canAffordVideo && <p className="loading-subtext">{copy.notEnoughCredits}</p>}
+        {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
+        {generatedVideoUrl && (
+          <div className="composite-result result-video-shell">
+            <video controls playsInline preload="metadata" className="is-visible">
+              <source src={generatedVideoUrl} type="video/mp4" />
+            </video>
+          </div>
+        )}
+      </div>
     </div>
   </section>
 );

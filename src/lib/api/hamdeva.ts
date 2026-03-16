@@ -9,13 +9,17 @@ import type {
   VideoGenerationResponse,
 } from '../../types/hamdeva';
 
-const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
-const SAME_ORIGIN_BOOTSTRAP_ENDPOINT = '/api/bootstrap';
-const SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT = '/api/classify-subject';
-const SAME_ORIGIN_VIDEO_ENDPOINT = '/api/video';
-const SAME_ORIGIN_VIDEO_STATUS_ENDPOINT = '/api/video-status';
-const SAME_ORIGIN_POLAR_CHECKOUT_ENDPOINT = '/api/polar/checkout';
-const SAME_ORIGIN_POLAR_SESSION_ENDPOINT = '/api/polar/session';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
+const apiUrl = (path: string): string => `${API_BASE_URL}${path}`;
+
+const TRYON_ENDPOINT = apiUrl('/api/tryon');
+const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
+const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
+const VIDEO_ENDPOINT = apiUrl('/api/video');
+const VIDEO_STATUS_ENDPOINT = apiUrl('/api/video-status');
+const VIDEO_CONTENT_ENDPOINT = apiUrl('/api/video-content');
+const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
+const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -40,7 +44,7 @@ const parseApiError = async (res: Response): Promise<Error> => {
 
 export const callCreditBootstrap = async (user: User): Promise<CreditBootstrapResponse> => {
   const token = await user.getIdToken();
-  const res = await fetch(SAME_ORIGIN_BOOTSTRAP_ENDPOINT, {
+  const res = await fetch(BOOTSTRAP_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -69,12 +73,12 @@ export const callTryOn = async (payload: {
 
   try {
     console.info('[HAMDEVA] tryon request', {
-      endpoint: SAME_ORIGIN_TRYON_ENDPOINT,
+      endpoint: TRYON_ENDPOINT,
       method: 'POST',
       requestId: payload.requestId,
     });
 
-    const res = await fetch(SAME_ORIGIN_TRYON_ENDPOINT, {
+    const res = await fetch(TRYON_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -85,7 +89,7 @@ export const callTryOn = async (payload: {
     });
 
     console.info('[HAMDEVA] tryon response', {
-      endpoint: res.url || SAME_ORIGIN_TRYON_ENDPOINT,
+      endpoint: res.url || TRYON_ENDPOINT,
       method: 'POST',
       status: res.status,
       requestId: payload.requestId,
@@ -129,7 +133,7 @@ export const callCreateCheckoutSession = async (payload: {
   authToken: string;
   productId: CheckoutProductId;
 }): Promise<CheckoutSessionResponse> => {
-  const res = await fetch(SAME_ORIGIN_POLAR_CHECKOUT_ENDPOINT, {
+  const res = await fetch(POLAR_CHECKOUT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -150,7 +154,7 @@ export const callCheckoutSessionStatus = async (payload: {
   sessionId?: string | null;
 }): Promise<CheckoutSessionStatusResponse> => {
   const query = payload.sessionId ? `?sessionId=${encodeURIComponent(payload.sessionId)}` : '';
-  const res = await fetch(`${SAME_ORIGIN_POLAR_SESSION_ENDPOINT}${query}`, {
+  const res = await fetch(`${POLAR_SESSION_ENDPOINT}${query}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${payload.authToken}`,
@@ -165,7 +169,7 @@ export const callCheckoutSessionStatus = async (payload: {
 };
 
 export const callSubjectClassifier = async (subjectImage: string): Promise<SubjectType> => {
-  const res = await fetch(SAME_ORIGIN_CLASSIFY_SUBJECT_ENDPOINT, {
+  const res = await fetch(CLASSIFY_SUBJECT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -188,7 +192,7 @@ export const callVideoGeneration = async (payload: {
   subjectType: SubjectType;
   sourceResultId?: string | null;
 }): Promise<VideoGenerationResponse> => {
-  const res = await fetch(SAME_ORIGIN_VIDEO_ENDPOINT, {
+  const res = await fetch(VIDEO_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -208,7 +212,7 @@ export const pollVideoGeneration = async (
   authToken: string,
   requestId: string,
 ): Promise<VideoGenerationResponse & { contentUrl?: string }> => {
-  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
+  const res = await fetch(`${VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${authToken}`,
@@ -223,7 +227,7 @@ export const pollVideoGeneration = async (
 };
 
 export const fetchVideoBlobUrl = async (authToken: string, requestId: string): Promise<string> => {
-  const res = await fetch(`${SAME_ORIGIN_VIDEO_STATUS_ENDPOINT.replace('/video-status', '/video-content')}?requestId=${encodeURIComponent(requestId)}`, {
+  const res = await fetch(`${VIDEO_CONTENT_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${authToken}`,

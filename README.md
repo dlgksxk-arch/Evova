@@ -36,6 +36,7 @@ See:
   - `VITE_FIREBASE_MESSAGING_SENDER_ID=...`
   - `VITE_FIREBASE_APP_ID=...`
   - `VITE_FUNCTIONS_BASE_URL=http://127.0.0.1:5001/<project-id>/asia-northeast3` for local dev, or your deployed Functions base URL
+  - `VITE_API_BASE_URL=` to override frontend API calls in preview/staging deployments. Leave empty in production when `/api` is same-origin.
 - Deploy Functions with:
   - `firebase deploy --only functions`
 - Local verification:
@@ -54,6 +55,14 @@ See:
     - `garmentImage`
     - a user account with available credits
   - confirm `/generateTryOn` only as a legacy compatibility route
+
+## Preview environment
+
+- Frontend preview should use the same GitHub -> Cloudflare deploy flow as production, but on a non-production branch / preview hostname.
+- For Cloudflare preview hosts, set `VITE_API_BASE_URL` to the deployed backend origin that serves `/api/*`.
+  - Example: `VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev`
+- Firebase Functions CORS now allows preview origins on `*.pages.dev` and `*.workers.dev`.
+- The frontend sets `robots=noindex,nofollow` automatically on preview hosts so preview deployments do not compete with production indexing.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
