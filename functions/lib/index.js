@@ -423,7 +423,9 @@ const beginGenerationCharge = async (user, requestId) => {
         if (generationLockSnapshot.exists) {
             const lockData = generationLockSnapshot.data();
             const lastAttemptAt = lockData?.updatedAt ?? lockData?.startedAt;
-            if (isRecentTimestamp(lastAttemptAt)) {
+            const lockStatus = typeof lockData?.status === 'string' ? lockData.status : 'charged';
+            const shouldBlockDuplicate = lockStatus === 'charged' || lockStatus === 'processing';
+            if (shouldBlockDuplicate && isRecentTimestamp(lastAttemptAt)) {
                 throw new Error(DUPLICATE_REQUEST_ERROR);
             }
         }
