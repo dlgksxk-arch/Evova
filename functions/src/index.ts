@@ -137,6 +137,10 @@ const requestOpenAIComposite = async (
   garmentImage: string,
   bodyProfile?: BodyProfile,
 ): Promise<{ mimeType: string; data: string }> => {
+  if (!personImage || !garmentImage) {
+    throw new Error('Both face image and clothing image are required.');
+  }
+
   const apiKey = getOpenAIApiKey();
   if (!apiKey) {
     throw new Error(OPENAI_CONFIG_MESSAGE);
@@ -148,8 +152,8 @@ const requestOpenAIComposite = async (
 
   formData.append('model', OPENAI_IMAGE_MODEL);
   formData.append('prompt', buildTryOnPrompt(bodyProfile));
-  formData.append('image', garmentFile.blob, garmentFile.filename);
-  formData.append('image', personFile.blob, personFile.filename);
+  formData.append('image[]', personFile.blob, personFile.filename);
+  formData.append('image[]', garmentFile.blob, garmentFile.filename);
   formData.append('size', '1536x1024');
   formData.append('quality', 'medium');
   formData.append('output_format', 'png');
