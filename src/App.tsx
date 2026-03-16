@@ -222,7 +222,7 @@ const translations = {
     renderingResult: '결과 이미지 렌더링 중...',
     resultDisplayError: '결과 이미지를 표시할 수 없습니다.',
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
-    generate: 'AI 피팅 시작하기', generating: 'AI 분석 중... (최대 30초)',
+    generate: 'AI 피팅 시작하기', generating: 'AI 분석 중...',
     loadingDetail: 'HAMDEVA AI가 이미지를 분석하고 합성하고 있습니다...',
     generationEstimateNotice: '인터넷 상태와 업로드 이미지 크기에 따라 실제 완료 시간은 달라질 수 있습니다.',
     alertBoth: '인물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
@@ -415,7 +415,7 @@ const translations = {
     renderingResult: 'Rendering result...',
     resultDisplayError: 'Unable to display the result.',
     clothingSamplesPending: 'Clothing samples are being prepared.',
-    generate: 'Generate AI Fitting', generating: 'AI Processing... (up to 30s)',
+    generate: 'Generate AI Fitting', generating: 'AI Processing...',
     loadingDetail: 'HAMDEVA AI is analyzing and compositing the images...',
     generationEstimateNotice: 'Actual completion time may vary depending on network conditions and image size.',
     alertBoth: 'Please upload both a person photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
@@ -1935,6 +1935,10 @@ const getGenerateErrorMessage = (
     return t.duplicateRequestBlocked;
   }
 
+  if (raw === 'GENERATION_TIMEOUT') {
+    return `${t.alertError}\n\n응답이 지연되어 요청이 자동으로 종료되었습니다. 잠시 후 다시 시도해 주세요.`;
+  }
+
   if (raw.includes('100 credits refunded')) {
     return `${t.alertError}\n\n${t.refundedAfterFailure}`;
   }
@@ -2023,6 +2027,11 @@ const callNanoBanana = async (payload: { authToken: string, personImage: string,
       dailyRewardGranted: data.dailyRewardGranted,
       subscriptionBonusGranted: data.subscriptionBonusGranted,
     };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('GENERATION_TIMEOUT');
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -3543,6 +3552,14 @@ const App: React.FC = () => {
       });
       const result = await preloadImageSource(resultPayload.image);
       setResultPreviewState('loading');
+      setFinalImageSrc(result);
+      setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
+      setShowVideoPrompt(true);
+      writeGenerationDuration(Date.now() - startedAt);
+      setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setIsGenerating(false);
+      setGenerationStartedAt(null);
+      setGenerationElapsedMs(0);
 
       try {
         setUserProfile((prev) => prev ? {
@@ -3583,20 +3600,10 @@ const App: React.FC = () => {
         ]);
         setLatestSharedResultId(publicResultRef.id);
       } catch (error) {
-        if (error instanceof Error && error.message === 'INSUFFICIENT_CREDITS') {
-          alert(t.notEnoughCredits);
-          setIsGenerating(false);
-          return;
-        }
-        throw error;
+        console.error('Failed to persist generation history:', error);
       }
 
       setCached(cacheKey, result);
-      setFinalImageSrc(result);
-      setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
-      setShowVideoPrompt(true);
-      writeGenerationDuration(Date.now() - startedAt);
-      setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
       setResultPreviewState('error');
       alert(getGenerateErrorMessage(err, t));
