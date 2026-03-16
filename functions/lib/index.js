@@ -181,6 +181,8 @@ Show the entire head, full hair, full body, both hands, both feet, and the compl
 Show the complete hairstyle and all hair volume clearly inside the frame.
 Use a slightly wider, zoomed-out camera framing so the subject is fully visible.
 Use a wider full-body long shot instead of a close fashion crop.
+Place the camera slightly farther back so the face appears about 10% smaller within the full-body frame.
+Keep the head proportion a little smaller relative to the overall body in the composition.
 Frame the shot with clear space above the head and below the feet.
 Leave noticeable margin above the hair and below the shoes.
 Use a tall portrait composition with generous headroom above the hairstyle.
