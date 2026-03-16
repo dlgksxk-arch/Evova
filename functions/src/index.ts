@@ -155,6 +155,9 @@ Keep the full silhouette comfortably inside the image boundaries.
 Do not crop the top of the head, any part of the hair, arms, hands, legs, or feet.
 Leave comfortable space around the subject so the full body fits naturally in frame.
 Avoid close-up or tight crop composition.
+Each hand must have exactly five fingers.
+Each foot must have exactly five toes.
+Do not generate extra fingers, missing fingers, extra toes, or missing toes.
 No face distortion.
 No identity change.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
