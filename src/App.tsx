@@ -1531,9 +1531,6 @@ const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromHash(window.location.hash));
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
-  const [suggestionForm, setSuggestionForm] = useState({ title: '', content: '' });
-  const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
-  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
   const [bbsForm, setBbsForm] = useState({ nickname: '', content: '', tempPassword: '' });
   const [bbsStatus, setBbsStatus] = useState<string | null>(null);
   const [bbsSubmitting, setBbsSubmitting] = useState(false);
@@ -1881,45 +1878,6 @@ const App: React.FC = () => {
     );
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
-  const handleSuggestionSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!db) {
-      setSuggestionStatus(getFirebaseDisabledMessage());
-      return;
-    }
-
-    if (!currentUser) {
-      setSuggestionStatus(t.suggestionLoginRequired);
-      openAuthModal('login');
-      return;
-    }
-
-    if (!suggestionForm.title || !suggestionForm.content) {
-      setSuggestionStatus(t.authInvalid);
-      return;
-    }
-
-    setSuggestionSubmitting(true);
-    setSuggestionStatus(t.suggestionSubmitting);
-    try {
-      await addDoc(collection(db, 'suggestions'), {
-        uid: currentUser.uid,
-        email: currentUser.email || '',
-        title: suggestionForm.title,
-        content: suggestionForm.content,
-        createdAt: serverTimestamp(),
-      });
-      setSuggestionForm({ title: '', content: '' });
-      setSuggestionStatus(t.suggestionSaved);
-    } catch (error) {
-      console.error('Failed to submit suggestion:', error);
-      setSuggestionStatus(isFirestorePermissionError(error) ? t.suggestionFailed : buildAuthErrorMessage(error, t.suggestionFailed));
-    } finally {
-      setSuggestionSubmitting(false);
-    }
-  };
-
   const resetBbsEditor = () => {
     setEditingBbsPostId(null);
     setBbsForm({ nickname: '', content: '', tempPassword: '' });
@@ -2430,41 +2388,6 @@ const App: React.FC = () => {
             </div>
           </section>
 
-          <section className="section editorial-section">
-            <div className="section-inner">
-              <article className="content-card content-card-wide suggestion-board-card">
-                <div className="suggestion-board-copy">
-                  <h2>{contentLocale.home.suggestionBoardTitle}</h2>
-                  <p>{contentLocale.home.suggestionBoardDescription}</p>
-                </div>
-                <form className="suggestion-form" onSubmit={handleSuggestionSubmit}>
-                  <input
-                    placeholder={t.suggestionPlaceholderTitle}
-                    type="text"
-                    value={suggestionForm.title}
-                    onChange={(event) => setSuggestionForm((prev) => ({ ...prev, title: event.target.value }))}
-                  />
-                  <textarea
-                    placeholder={t.suggestionPlaceholderContent}
-                    rows={4}
-                    value={suggestionForm.content}
-                    onChange={(event) => setSuggestionForm((prev) => ({ ...prev, content: event.target.value }))}
-                  />
-                  <div className="suggestion-form-footer">
-                    <div className="suggestion-chip-list">
-                      {contentLocale.home.suggestionBoardItems.map((item) => (
-                        <span key={item} className="suggestion-chip">{item}</span>
-                      ))}
-                    </div>
-                    <button className="generate-btn suggestion-submit-btn" disabled={suggestionSubmitting} type="submit">
-                      {suggestionSubmitting ? t.suggestionSubmitting : t.suggestionSubmit}
-                    </button>
-                  </div>
-                  {suggestionStatus && <p className="suggestion-status">{suggestionStatus}</p>}
-                </form>
-              </article>
-            </div>
-          </section>
         </>
       ) : (
         <main className="section page-shell">
