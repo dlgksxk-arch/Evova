@@ -1820,7 +1820,7 @@ const getPageFromLocation = (pathname: string, hash: string): SitePage => {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/';
   const pageFromPath = PATH_TO_PAGE[normalizedPath];
   if (pageFromPath) {
-    return pageFromPath;
+    return pageFromPath === 'privacy' || pageFromPath === 'contact' ? 'terms' : pageFromPath;
   }
 
   const normalizedHash = hash.replace(/^#/, '');
