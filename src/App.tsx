@@ -21,6 +21,34 @@ const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
 const MIN_GENERATION_ESTIMATE_MS = 12_000;
 const MAX_GENERATION_ESTIMATE_MS = 45_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
+const OPENAI_IMAGE_TOKEN_PRICING = {
+  'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
+  'gpt-image-1-mini': { inputPer1M: 2.5, outputPer1M: 8 },
+  'gpt-image-1.5': { inputPer1M: 8, outputPer1M: 32 },
+  'chatgpt-image-latest': { inputPer1M: 8, outputPer1M: 32 },
+} as const;
+const OPENAI_IMAGE_UNIT_PRICING = {
+  'gpt-image-1': {
+    low: { '1024x1024': 0.011, '1024x1536': 0.016, '1536x1024': 0.016 },
+    medium: { '1024x1024': 0.042, '1024x1536': 0.063, '1536x1024': 0.063 },
+    high: { '1024x1024': 0.167, '1024x1536': 0.25, '1536x1024': 0.25 },
+  },
+  'gpt-image-1-mini': {
+    low: { '1024x1024': 0.005, '1024x1536': 0.006, '1536x1024': 0.006 },
+    medium: { '1024x1024': 0.011, '1024x1536': 0.015, '1536x1024': 0.015 },
+    high: { '1024x1024': 0.036, '1024x1536': 0.052, '1536x1024': 0.052 },
+  },
+  'gpt-image-1.5': {
+    low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
+    medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
+    high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
+  },
+  'chatgpt-image-latest': {
+    low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
+    medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
+    high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
+  },
+} as const;
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
@@ -75,6 +103,14 @@ interface GenerationRequestRecord {
   uid: string;
   email?: string;
   requestId: string;
+  model?: string;
+  quality?: string;
+  size?: string;
+  estimatedCost?: number | null;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   status?: string;
   success?: boolean;
   refunded?: boolean;
@@ -214,6 +250,10 @@ const translations = {
     adminTotalPosts: '총 게시글 수',
     adminTotalGenerations: '총 생성 기록 수',
     adminTotalSharedResults: '총 공유 결과 수',
+    adminTodayGenerations: '오늘 생성 수',
+    adminTodayEstimatedCost: '오늘 예상 비용',
+    adminTotalEstimatedCost: '총 예상 비용',
+    adminRecent7DaysEstimatedCost: '최근 7일 예상 비용',
     adminRecentUsers: '최근 가입 사용자',
     adminRecentPosts: '최근 게시글',
     adminRecentGenerations: '최근 생성 요청',
@@ -224,6 +264,8 @@ const translations = {
     adminCreditsColumn: '크레딧',
     adminStatus: '상태',
     adminResultId: '요청 ID',
+    adminEstimatedCost: '예상 비용',
+    adminModel: '모델',
     adminNoData: '표시할 데이터가 없습니다.',
     adminDeletePost: '게시글 삭제',
     authInvalid: '이메일과 비밀번호를 모두 입력해 주세요.',
@@ -383,6 +425,10 @@ const translations = {
     adminTotalPosts: 'Total posts',
     adminTotalGenerations: 'Total generations',
     adminTotalSharedResults: 'Total shared results',
+    adminTodayGenerations: 'Today generations',
+    adminTodayEstimatedCost: 'Today estimated cost',
+    adminTotalEstimatedCost: 'Total estimated cost',
+    adminRecent7DaysEstimatedCost: 'Recent 7 days estimated cost',
     adminRecentUsers: 'Recently joined users',
     adminRecentPosts: 'Recent posts',
     adminRecentGenerations: 'Recent generation requests',
@@ -393,6 +439,8 @@ const translations = {
     adminCreditsColumn: 'Credits',
     adminStatus: 'Status',
     adminResultId: 'Request ID',
+    adminEstimatedCost: 'Estimated cost',
+    adminModel: 'Model',
     adminNoData: 'No data to display.',
     adminDeletePost: 'Delete post',
     authInvalid: 'Please enter both email and password.',
@@ -556,6 +604,10 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminTotalPosts: '总帖子数',
     adminTotalGenerations: '总生成记录数',
     adminTotalSharedResults: '总分享结果数',
+    adminTodayGenerations: '今日生成数',
+    adminTodayEstimatedCost: '今日预估成本',
+    adminTotalEstimatedCost: '总预估成本',
+    adminRecent7DaysEstimatedCost: '最近 7 天预估成本',
     adminRecentUsers: '最近注册用户',
     adminRecentPosts: '最近帖子',
     adminRecentGenerations: '最近生成请求',
@@ -566,6 +618,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminCreditsColumn: '积分',
     adminStatus: '状态',
     adminResultId: '请求 ID',
+    adminEstimatedCost: '预估成本',
+    adminModel: '模型',
     adminNoData: '暂无可显示的数据。',
     adminDeletePost: '删除帖子',
     freeLeft: (n: number) => `今日剩余免费次数：${n}`,
@@ -645,6 +699,10 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminTotalPosts: '総投稿数',
     adminTotalGenerations: '総生成数',
     adminTotalSharedResults: '総共有結果数',
+    adminTodayGenerations: '本日の生成数',
+    adminTodayEstimatedCost: '本日の推定コスト',
+    adminTotalEstimatedCost: '総推定コスト',
+    adminRecent7DaysEstimatedCost: '直近7日間の推定コスト',
     adminRecentUsers: '最近登録したユーザー',
     adminRecentPosts: '最近の投稿',
     adminRecentGenerations: '最近の生成リクエスト',
@@ -655,6 +713,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminCreditsColumn: 'クレジット',
     adminStatus: '状態',
     adminResultId: 'リクエスト ID',
+    adminEstimatedCost: '推定コスト',
+    adminModel: 'モデル',
     adminNoData: '表示できるデータがありません。',
     adminDeletePost: '投稿を削除',
     freeLeft: (n: number) => `本日の無料利用残り回数: ${n}`,
@@ -1420,6 +1480,34 @@ const normalizeUserProfile = (email: string, data?: Partial<UserProfile>): UserP
   lastLoginAt: data?.lastLoginAt ?? null,
 });
 
+const roundEstimatedCost = (value: number): number =>
+  Math.round(value * 1_000_000) / 1_000_000;
+
+const estimateGenerationCost = (record: Partial<GenerationRequestRecord>): number | null => {
+  if (typeof record.estimatedCost === 'number' && Number.isFinite(record.estimatedCost)) {
+    return roundEstimatedCost(record.estimatedCost);
+  }
+
+  const model = typeof record.model === 'string' ? record.model : '';
+  const quality = typeof record.quality === 'string' ? record.quality : '';
+  const size = typeof record.size === 'string' ? record.size : '';
+  const inputTokens = typeof record.usage?.input_tokens === 'number' ? Math.max(0, record.usage.input_tokens) : 0;
+  const outputTokens = typeof record.usage?.output_tokens === 'number' ? Math.max(0, record.usage.output_tokens) : 0;
+  const tokenPricing = OPENAI_IMAGE_TOKEN_PRICING[model as keyof typeof OPENAI_IMAGE_TOKEN_PRICING];
+
+  if (tokenPricing && (inputTokens > 0 || outputTokens > 0)) {
+    return roundEstimatedCost(
+      (inputTokens / 1_000_000) * tokenPricing.inputPer1M
+      + (outputTokens / 1_000_000) * tokenPricing.outputPer1M,
+    );
+  }
+
+  const qualityPricing = OPENAI_IMAGE_UNIT_PRICING[model as keyof typeof OPENAI_IMAGE_UNIT_PRICING];
+  const sizePricing = qualityPricing?.[quality as keyof typeof qualityPricing];
+  const fallback = sizePricing?.[size as keyof typeof sizePricing];
+  return typeof fallback === 'number' ? roundEstimatedCost(fallback) : null;
+};
+
 const createRequestId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -1484,6 +1572,16 @@ const formatTimestampLabel = (value?: Timestamp | null): string => {
     return '';
   }
 };
+
+const formatEstimatedCostLabel = (value: number | null | undefined): string =>
+  typeof value === 'number' && Number.isFinite(value)
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }).format(value)
+    : '-';
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -1927,6 +2025,10 @@ const App: React.FC = () => {
     posts: 0,
     generations: 0,
     sharedResults: 0,
+    todayGenerations: 0,
+    todayEstimatedCost: 0,
+    totalEstimatedCost: 0,
+    recent7DaysEstimatedCost: 0,
   });
   const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
   const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
@@ -2143,6 +2245,10 @@ const App: React.FC = () => {
         posts: 0,
         generations: 0,
         sharedResults: 0,
+        todayGenerations: 0,
+        todayEstimatedCost: 0,
+        totalEstimatedCost: 0,
+        recent7DaysEstimatedCost: 0,
       });
       setAdminUsers([]);
       setAdminGenerationLogs([]);
@@ -2158,7 +2264,6 @@ const App: React.FC = () => {
       const [
         usersCountSnapshot,
         postsCountSnapshot,
-        generationsCountSnapshot,
         sharedResultsCountSnapshot,
         usersSnapshot,
         generationSnapshot,
@@ -2166,10 +2271,9 @@ const App: React.FC = () => {
       ] = await Promise.all([
         getCountFromServer(collection(db, 'users')),
         getCountFromServer(collection(db, 'bbsPosts')),
-        getCountFromServer(collection(db, 'generations')),
         getCountFromServer(collection(db, 'publicResults')),
         getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(20))),
-        getDocs(query(collection(db, 'generationRequests'), orderBy('createdAt', 'desc'), limit(20))),
+        getDocs(query(collection(db, 'generationRequests'), orderBy('createdAt', 'desc'))),
         getDocs(query(collection(db, 'creditLogs'), orderBy('createdAt', 'desc'), limit(20))),
       ]);
 
@@ -2177,20 +2281,35 @@ const App: React.FC = () => {
         return;
       }
 
+      const now = Date.now();
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+      const allGenerationLogs = generationSnapshot.docs.map((snapshot) => ({
+        id: snapshot.id,
+        ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
+      }));
+      const todayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= todayStart.getTime());
+      const recent7DayGenerations = allGenerationLogs.filter((item) => item.createdAt?.toDate().getTime() >= sevenDaysAgo);
+      const totalEstimatedCost = allGenerationLogs.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
+      const todayEstimatedCost = todayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
+      const recent7DaysEstimatedCost = recent7DayGenerations.reduce((sum, item) => sum + (estimateGenerationCost(item) ?? 0), 0);
+
       setAdminSummary({
         users: usersCountSnapshot.data().count,
         posts: postsCountSnapshot.data().count,
-        generations: generationsCountSnapshot.data().count,
+        generations: allGenerationLogs.length,
         sharedResults: sharedResultsCountSnapshot.data().count,
+        todayGenerations: todayGenerations.length,
+        todayEstimatedCost,
+        totalEstimatedCost,
+        recent7DaysEstimatedCost,
       });
       setAdminUsers(usersSnapshot.docs.map((snapshot) => ({
         id: snapshot.id,
         ...(snapshot.data() as Omit<AdminUserRecord, 'id'>),
       })));
-      setAdminGenerationLogs(generationSnapshot.docs.map((snapshot) => ({
-        id: snapshot.id,
-        ...(snapshot.data() as Omit<GenerationRequestRecord, 'id'>),
-      })));
+      setAdminGenerationLogs(allGenerationLogs.slice(0, 20));
       setAdminCreditLogs(creditSnapshot.docs.map((snapshot) => ({
         id: snapshot.id,
         ...(snapshot.data() as Omit<CreditLogRecord, 'id'>),
@@ -3387,6 +3506,22 @@ const App: React.FC = () => {
                       <h3>{t.adminTotalSharedResults}</h3>
                       <p>{adminSummary.sharedResults}</p>
                     </article>
+                    <article className="page-article">
+                      <h3>{t.adminTodayGenerations}</h3>
+                      <p>{adminSummary.todayGenerations}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminTodayEstimatedCost}</h3>
+                      <p>{formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminTotalEstimatedCost}</h3>
+                      <p>{formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p>
+                    </article>
+                    <article className="page-article">
+                      <h3>{t.adminRecent7DaysEstimatedCost}</h3>
+                      <p>{formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p>
+                    </article>
                   </div>
                   <article className="page-article">
                     <h3>{t.adminSystemSection}</h3>
@@ -3450,6 +3585,8 @@ const App: React.FC = () => {
                         <span>{t.emailLabel}</span>
                         <span>{t.adminCreatedAt}</span>
                         <span>{t.adminStatus}</span>
+                        <span>{t.adminModel}</span>
+                        <span>{t.adminEstimatedCost}</span>
                         <span>{t.adminResultId}</span>
                       </div>
                       {adminGenerationLogs.length > 0 ? adminGenerationLogs.map((item) => (
@@ -3457,6 +3594,8 @@ const App: React.FC = () => {
                           <span>{item.email || item.uid}</span>
                           <span>{formatTimestampLabel(item.createdAt)}</span>
                           <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
+                          <span>{item.model || '-'}</span>
+                          <span>{formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
                           <span>{item.requestId}</span>
                         </div>
                       )) : (

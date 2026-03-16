@@ -58,12 +58,42 @@ const SIGNUP_BONUS_CREDITS = 300;
 const DAILY_BASE_CREDITS = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
+const OPENAI_IMAGE_SIZE = '1536x1024';
+const OPENAI_IMAGE_QUALITY = 'medium';
 const SUBSCRIPTION_DAILY_BONUS = {
     free: 0,
     basic: 500,
     pro: 1500,
 };
 const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
+const OPENAI_IMAGE_TOKEN_PRICING = {
+    'gpt-image-1': { inputPer1M: 10, outputPer1M: 40 },
+    'gpt-image-1-mini': { inputPer1M: 2.5, outputPer1M: 8 },
+    'gpt-image-1.5': { inputPer1M: 8, outputPer1M: 32 },
+    'chatgpt-image-latest': { inputPer1M: 8, outputPer1M: 32 },
+};
+const OPENAI_IMAGE_UNIT_PRICING = {
+    'gpt-image-1': {
+        low: { '1024x1024': 0.011, '1024x1536': 0.016, '1536x1024': 0.016 },
+        medium: { '1024x1024': 0.042, '1024x1536': 0.063, '1536x1024': 0.063 },
+        high: { '1024x1024': 0.167, '1024x1536': 0.25, '1536x1024': 0.25 },
+    },
+    'gpt-image-1-mini': {
+        low: { '1024x1024': 0.005, '1024x1536': 0.006, '1536x1024': 0.006 },
+        medium: { '1024x1024': 0.011, '1024x1536': 0.015, '1536x1024': 0.015 },
+        high: { '1024x1024': 0.036, '1024x1536': 0.052, '1536x1024': 0.052 },
+    },
+    'gpt-image-1.5': {
+        low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
+        medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
+        high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
+    },
+    'chatgpt-image-latest': {
+        low: { '1024x1024': 0.009, '1024x1536': 0.013, '1536x1024': 0.013 },
+        medium: { '1024x1024': 0.034, '1024x1536': 0.05, '1536x1024': 0.05 },
+        high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
+    },
+};
 let lastLoggedOpenAIKeySource = null;
 const formatSeoulDateKey = (date) => {
     const parts = new Intl.DateTimeFormat('en-US', {
@@ -143,6 +173,25 @@ const getOpenAIApiKey = () => {
     const state = getOpenAIApiKeyState();
     logOpenAIApiKeySource(state.source);
     return state.key;
+};
+const roundEstimatedCost = (value) => Math.round(value * 1000000) / 1000000;
+const estimateOpenAIImageCost = (model, quality, size, usage) => {
+    const normalizedModel = model.trim();
+    const inputTokens = typeof usage?.input_tokens === 'number' && Number.isFinite(usage.input_tokens)
+        ? Math.max(0, usage.input_tokens)
+        : 0;
+    const outputTokens = typeof usage?.output_tokens === 'number' && Number.isFinite(usage.output_tokens)
+        ? Math.max(0, usage.output_tokens)
+        : 0;
+    const tokenPricing = OPENAI_IMAGE_TOKEN_PRICING[normalizedModel];
+    if (tokenPricing && (inputTokens > 0 || outputTokens > 0)) {
+        return roundEstimatedCost((inputTokens / 1000000) * tokenPricing.inputPer1M
+            + (outputTokens / 1000000) * tokenPricing.outputPer1M);
+    }
+    const qualityPricing = OPENAI_IMAGE_UNIT_PRICING[normalizedModel];
+    const sizePricing = qualityPricing?.[quality];
+    const fallback = sizePricing?.[size];
+    return typeof fallback === 'number' ? roundEstimatedCost(fallback) : null;
 };
 const buildTryOnPrompt = (bodyProfile) => {
     const subjectType = bodyProfile?.gender === 'dog' || bodyProfile?.gender === 'cat' ? 'pet' : 'person';
@@ -246,8 +295,8 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
     formData.append('prompt', buildTryOnPrompt(bodyProfile));
     formData.append('image[]', personFile.blob, personFile.filename);
     formData.append('image[]', garmentFile.blob, garmentFile.filename);
-    formData.append('size', '1536x1024');
-    formData.append('quality', 'medium');
+    formData.append('size', OPENAI_IMAGE_SIZE);
+    formData.append('quality', OPENAI_IMAGE_QUALITY);
     formData.append('output_format', 'png');
     formData.append('background', 'opaque');
     formData.append('n', '1');
@@ -257,7 +306,8 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
     functions.logger.info('openai image edit request', {
         model: OPENAI_IMAGE_MODEL,
         endpoint: '/v1/images/edits',
-        size: '1536x1024',
+        size: OPENAI_IMAGE_SIZE,
+        quality: OPENAI_IMAGE_QUALITY,
         hasGarmentImage: Boolean(garmentImage),
         hasPersonImage: Boolean(personImage),
     });
@@ -268,12 +318,13 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
         },
         body: formData,
     });
+    const responseBody = await openAIRes.json().catch(() => ({}));
     functions.logger.info('openai image edit response', {
         model: OPENAI_IMAGE_MODEL,
         endpoint: '/v1/images/edits',
         status: openAIRes.status,
+        usage: responseBody.usage ?? null,
     });
-    const responseBody = await openAIRes.json().catch(() => ({}));
     if (!openAIRes.ok) {
         functions.logger.error('OpenAI image edit error', responseBody);
         throw new Error(responseBody.error?.message || `OpenAI API error ${openAIRes.status}`);
@@ -282,7 +333,21 @@ const requestOpenAIComposite = async (personImage, garmentImage, bodyProfile) =>
     if (!image || image.length < 1000) {
         throw new Error('OpenAI response did not include a usable image.');
     }
-    return { mimeType: 'image/png', data: image };
+    const usage = {
+        input_tokens: typeof responseBody.usage?.input_tokens === 'number' ? responseBody.usage.input_tokens : 0,
+        output_tokens: typeof responseBody.usage?.output_tokens === 'number' ? responseBody.usage.output_tokens : 0,
+    };
+    return {
+        mimeType: 'image/png',
+        data: image,
+        metadata: {
+            model: responseBody.model || OPENAI_IMAGE_MODEL,
+            quality: OPENAI_IMAGE_QUALITY,
+            size: OPENAI_IMAGE_SIZE,
+            usage,
+            estimatedCost: estimateOpenAIImageCost(responseBody.model || OPENAI_IMAGE_MODEL, OPENAI_IMAGE_QUALITY, OPENAI_IMAGE_SIZE, usage),
+        },
+    };
 };
 const setCors = (req, res) => {
     const origin = req.headers.origin || '';
@@ -476,6 +541,14 @@ const beginGenerationCharge = async (user, requestId) => {
             email: user.email || currentProfile.email,
             requestId,
             cost: generationCost,
+            model: OPENAI_IMAGE_MODEL,
+            quality: OPENAI_IMAGE_QUALITY,
+            size: OPENAI_IMAGE_SIZE,
+            usage: {
+                input_tokens: 0,
+                output_tokens: 0,
+            },
+            estimatedCost: null,
             status: 'charged',
             success: false,
             refunded: false,
@@ -501,10 +574,15 @@ const beginGenerationCharge = async (user, requestId) => {
     });
     return result;
 };
-const markGenerationCompleted = async (user, requestId) => {
+const markGenerationCompleted = async (user, requestId, metadata) => {
     const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
     const generationLockRef = db.collection('generationLocks').doc(user.uid);
     await requestRef.set({
+        model: metadata.model,
+        quality: metadata.quality,
+        size: metadata.size,
+        usage: metadata.usage,
+        estimatedCost: metadata.estimatedCost,
         status: 'completed',
         success: true,
         refunded: false,
@@ -621,7 +699,7 @@ const handleTryOnRequest = async (req, res, label) => {
     }
     try {
         const generatedImage = await requestOpenAIComposite(personImage, garmentImage, bodyProfile);
-        await markGenerationCompleted(user, requestId);
+        await markGenerationCompleted(user, requestId, generatedImage.metadata);
         const resultDataUrl = `data:${generatedImage.mimeType};base64,${generatedImage.data}`;
         res.json({
             success: true,
