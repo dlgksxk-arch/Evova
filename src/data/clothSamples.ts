@@ -1,4 +1,4 @@
-export type ClothSampleCategory = 'female' | 'male' | 'animal' | 'future' | 'classic' | 'fashin';
+export type ClothSampleCategory = 'female' | 'male' | 'animal' | 'future' | 'classic';
 
 export interface ClothSampleOption {
   id: string;
@@ -119,34 +119,10 @@ const classicSamples = createSamples('classic', [
   { id: 'classic-uk80s-1', label: '80년대 스타일 수트 2', file: '2026-03-13-14-11-17-uk80s.png', country: 'uk80s', countryLabelKo: '80년대 스타일 수트', countryLabelEn: '80s Style Suit' },
 ]);
 
-const fashinSamples = createSamples('fashin', [
-  { id: 'fashin-korea-idol', label: '패션 룩 1', file: '2026-03-13-15-53-03-korea-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-usa-idol', label: '패션 룩 2', file: '2026-03-13-15-53-23-usa-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-japan-idol', label: '패션 룩 3', file: '2026-03-13-15-53-47-japan-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-china-idol', label: '패션 룩 4', file: '2026-03-13-15-54-13-china-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-taiwan-idol', label: '패션 룩 5', file: '2026-03-13-15-54-36-taiwan-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-spain-idol', label: '패션 룩 6', file: '2026-03-13-15-55-10-spain-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-france-idol', label: '패션 룩 7', file: '2026-03-13-15-55-33-france-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-germany-idol', label: '패션 룩 8', file: '2026-03-13-15-55-58-germany-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-italy-idol', label: '패션 룩 9', file: '2026-03-13-15-56-32-italy-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-portugal-idol', label: '패션 룩 10', file: '2026-03-13-15-56-51-portugal-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-russia-idol', label: '패션 룩 11', file: '2026-03-13-15-57-13-russia-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-turkey-idol', label: '패션 룩 12', file: '2026-03-13-15-57-49-turkey-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-arab-idol', label: '패션 룩 13', file: '2026-03-13-15-58-13-arab-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-thailand-idol', label: '패션 룩 14', file: '2026-03-13-15-58-32-thailand-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-vietnam-idol', label: '패션 룩 15', file: '2026-03-13-15-58-53-vietnam-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-indonesia-idol', label: '패션 룩 16', file: '2026-03-13-15-59-15-indonesia-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-india-idol', label: '패션 룩 17', file: '2026-03-13-15-59-41-india-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-netherlands-idol', label: '패션 룩 18', file: '2026-03-13-16-00-04-netherlands-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-poland-idol', label: '패션 룩 19', file: '2026-03-13-16-00-54-poland-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-  { id: 'fashin-sweden-idol', label: '패션 룩 20', file: '2026-03-13-16-01-15-sweden-idol.png', country: 'fashion', countryLabelKo: '패션', countryLabelEn: 'Fashion' },
-]);
-
 export const clothSampleOptions: ClothSampleOption[] = [
   ...femaleSamples,
   ...maleSamples,
   ...animalSamples,
   ...futureSamples,
   ...classicSamples,
-  ...fashinSamples,
 ];

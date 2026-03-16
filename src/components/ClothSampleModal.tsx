@@ -10,14 +10,15 @@ interface ClothSampleModalProps {
   onSelect: (url: string) => void;
 }
 
-const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'fashin', 'future', 'classic'];
+const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'future', 'classic'];
 
 const findCategoryByUrl = (url: string | null): ClothSampleCategory => {
   if (!url) {
     return 'female';
   }
 
-  return clothSampleOptions.find((sample) => sample.image === url)?.category ?? 'female';
+  const matchedCategory = clothSampleOptions.find((sample) => sample.image === url)?.category;
+  return CLOTH_SAMPLE_CATEGORIES.includes(matchedCategory as ClothSampleCategory) ? (matchedCategory as ClothSampleCategory) : 'female';
 };
 
 const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _lang, onClose, onSelect }) => {
