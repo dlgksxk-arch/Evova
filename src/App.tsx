@@ -1063,6 +1063,8 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 const FREE_LIMIT = 3;
 const SAME_ORIGIN_TRYON_ENDPOINT = '/api/tryon';
 const SAME_ORIGIN_LEGACY_TRYON_ENDPOINT = '/generateTryOn';
+const DIRECT_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/api/tryon';
+const DIRECT_LEGACY_TRYON_ENDPOINT = 'https://asia-northeast3-hamdeva.cloudfunctions.net/generateTryOn';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -1330,6 +1332,8 @@ const callNanoBanana = async (payload: { sessionId: string, personImage: string,
   const endpoints = [
     SAME_ORIGIN_TRYON_ENDPOINT,
     SAME_ORIGIN_LEGACY_TRYON_ENDPOINT,
+    DIRECT_TRYON_ENDPOINT,
+    DIRECT_LEGACY_TRYON_ENDPOINT,
   ];
 
   let lastError: Error | null = null;
