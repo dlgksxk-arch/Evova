@@ -17,6 +17,10 @@ type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
 const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
+const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
+const MIN_GENERATION_ESTIMATE_MS = 12_000;
+const MAX_GENERATION_ESTIMATE_MS = 45_000;
+const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
@@ -1751,6 +1755,38 @@ const setCached = (k: string, v: string) => {
   }
 };
 
+const readGenerationDurations = (): number[] => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(GENERATION_DURATION_CACHE_KEY) ?? '[]');
+    return Array.isArray(raw)
+      ? raw.filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeGenerationDuration = (durationMs: number) => {
+  try {
+    const next = [...readGenerationDurations(), durationMs].slice(-6);
+    localStorage.setItem(GENERATION_DURATION_CACHE_KEY, JSON.stringify(next));
+  } catch (error) {
+    console.warn('Failed to persist generation duration estimate:', error);
+  }
+};
+
+const getEstimatedGenerationDuration = (): number => {
+  const durations = readGenerationDurations();
+  if (durations.length === 0) {
+    return DEFAULT_GENERATION_ESTIMATE_MS;
+  }
+
+  const average = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+  return Math.min(MAX_GENERATION_ESTIMATE_MS, Math.max(MIN_GENERATION_ESTIMATE_MS, Math.round(average)));
+};
+
+const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms / 1000))}s`;
+
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -1902,6 +1938,9 @@ const App: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
+  const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
+  const [generationEstimateMs, setGenerationEstimateMs] = useState(DEFAULT_GENERATION_ESTIMATE_MS);
   const generationLockRef = useRef(false);
   
   const lang = normalizeLanguageCode(i18next.language);
@@ -1919,6 +1958,20 @@ const App: React.FC = () => {
     : null;
   const currentCredits = userProfile?.credits ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
+  const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
+  const generationProgressRatio = isGenerating
+    ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
+    : resultPreviewState === 'ready'
+      ? 1
+      : 0;
+  const generationProgressPercent = Math.round(generationProgressRatio * 100);
+  const generationStatusLabel = lang === 'ko'
+    ? '예상 완료까지'
+    : lang === 'ja'
+      ? '完了予想まで'
+      : lang === 'zh'
+        ? '预计剩余时间'
+        : 'Estimated time';
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     if (!isSupportedLanguageCode(nextLanguage)) {
       return;
@@ -2173,8 +2226,21 @@ const App: React.FC = () => {
     setClothPreviewState(!activeClothImage ? 'idle' : clothFile ? 'ready' : 'loading');
   }, [activeClothImage, clothFile]);
   useEffect(() => {
-    setResultPreviewState(finalImageSrc ? 'loading' : 'idle');
+    if (!finalImageSrc) {
+      setResultPreviewState('idle');
+    }
   }, [finalImageSrc]);
+  useEffect(() => {
+    if (!isGenerating || generationStartedAt === null) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setGenerationElapsedMs(Date.now() - generationStartedAt);
+    }, 200);
+
+    return () => window.clearInterval(timer);
+  }, [generationStartedAt, isGenerating]);
   useEffect(() => {
     if (!shareStatus) {
       return;
@@ -2724,13 +2790,17 @@ const App: React.FC = () => {
       return;
     }
     if (!activePersonImage || !activeClothImage) { alert(t.alertBoth); return; }
-    if (!isAdminUser && currentCredits < GENERATION_COST) {
+    if (currentCredits < GENERATION_COST) {
       alert(t.notEnoughCredits);
       return;
     }
 
     generationLockRef.current = true;
     setIsGenerating(true);
+    const startedAt = Date.now();
+    setGenerationStartedAt(startedAt);
+    setGenerationElapsedMs(0);
+    setGenerationEstimateMs(getEstimatedGenerationDuration());
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
@@ -2751,6 +2821,7 @@ const App: React.FC = () => {
         clearGeneratedResult();
         setFinalImageSrc(cached);
         setResultPreviewState('ready');
+        writeGenerationDuration(Date.now() - startedAt);
         setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
         return;
       }
@@ -2765,6 +2836,7 @@ const App: React.FC = () => {
         bodyProfile: { gender },
       });
       const result = await preloadImageSource(resultPayload.image);
+      setResultPreviewState('loading');
 
       try {
         setUserProfile((prev) => prev ? {
@@ -2815,13 +2887,16 @@ const App: React.FC = () => {
 
       setCached(cacheKey, result);
       setFinalImageSrc(result);
-      setResultPreviewState('ready');
+      writeGenerationDuration(Date.now() - startedAt);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
+      setResultPreviewState('error');
       alert(getGenerateErrorMessage(err, t));
     } finally {
       generationLockRef.current = false;
       setIsGenerating(false);
+      setGenerationStartedAt(null);
+      setGenerationElapsedMs(0);
     }
   };
 
@@ -3200,7 +3275,37 @@ const App: React.FC = () => {
                 {currentUser && currentCredits < GENERATION_COST && (
                   <p className="loading-subtext">{t.notEnoughCredits}</p>
                 )}
-                {isGenerating && <p className="loading-subtext">{t.loadingDetail}</p>}
+                {isGenerating && (
+                  <>
+                    <p className="loading-subtext">{t.loadingDetail}</p>
+                    <div className="generation-gauge" aria-live="polite">
+                      <div className="generation-gauge-head">
+                        <strong>{generationStatusLabel}</strong>
+                        <span>{formatSecondsLabel(generationRemainingMs)}</span>
+                      </div>
+                      <div
+                        className="generation-gauge-track"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={generationProgressPercent}
+                      >
+                        <div className="generation-gauge-fill" style={{ width: `${generationProgressPercent}%` }} />
+                        <div className="generation-gauge-ticks">
+                          <span />
+                          <span />
+                          <span />
+                          <span />
+                        </div>
+                      </div>
+                      <div className="generation-gauge-meta">
+                        <span>0s</span>
+                        <span>{formatSecondsLabel(generationElapsedMs)}</span>
+                        <span>{formatSecondsLabel(generationEstimateMs)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {finalImageSrc && (

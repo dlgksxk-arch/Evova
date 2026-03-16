@@ -429,7 +429,7 @@ const beginGenerationCharge = async (user, requestId) => {
         }
         const currentProfile = normalizeUserAccount(user.email, userSnapshot.data());
         let nextCredits = currentProfile.credits;
-        const generationCost = currentProfile.role === 'admin' ? 0 : GENERATION_COST;
+        const generationCost = GENERATION_COST;
         if (!userSnapshot.exists) {
             nextCredits += SIGNUP_BONUS_CREDITS;
             result.signupBonusGranted = SIGNUP_BONUS_CREDITS;
