@@ -2219,38 +2219,22 @@ const getFaqItemsForPage = (page: SitePage): FAQItem[] => {
   }
 };
 
-const renderSeoContent = (page: SitePage | 'contact-route'): React.ReactNode => {
+const renderSeoContent = (page: SitePage | 'contact-route', contentLocale?: ReturnType<typeof getContentLocale>): React.ReactNode => {
   switch (page) {
     case 'home':
+      if (!contentLocale) {
+        return null;
+      }
       return (
         <section className="seo-content">
-          <h2>AI Virtual Fitting with HAMDEVA</h2>
-          <p>
-            HAMDEVA는 인공지능 기반 가상 피팅 기술을 활용하여 사용자가 다양한 의상을 온라인에서 체험할 수 있도록 설계된 디지털 패션 플랫폼입니다.
-            얼굴 사진을 업로드하거나 샘플 이미지를 선택한 뒤 의상 이미지를 결합하면, AI가 여러 각도에서 자연스럽게 스타일을 보여주는 결과 이미지를 생성합니다.
-            단순한 이미지 생성 도구가 아니라 패션 탐색, 문화 의상 체험, 전통 스타일 비교, 디지털 스타일링 실험까지 연결하는 서비스라는 점이 특징입니다.
-            온라인 쇼핑이나 콘텐츠 제작 환경에서는 실제로 옷을 입어보기 어렵기 때문에, 가상 피팅은 사용자가 결정을 내리기 전 시각적인 확신을 얻는 데 큰 도움을 줍니다.
-          </p>
-          <p>
-            사용자는 자신의 얼굴 사진을 업로드하거나 샘플 이미지를 선택한 후 다양한 의상 스타일을 적용하여 결과 이미지를 생성할 수 있습니다.
-            이 과정은 복잡한 편집 툴을 배우지 않아도 되도록 설계되어 있으며, 빠르게 여러 스타일을 비교해 볼 수 있게 해줍니다.
-            특히 전통 의상, 국가별 대표 의상, 현대 패션, 콘셉트 의상처럼 일반 쇼핑몰에서는 한 번에 비교하기 어려운 범주의 스타일도 한 플랫폼 안에서 탐색할 수 있습니다.
-            이는 단순한 재미를 넘어, 사용자가 자신에게 어울리는 분위기와 실루엣을 이해하는 데 유용한 경험을 제공합니다.
-          </p>
-          <h3>Why Virtual Fitting?</h3>
-          <p>
-            가상 피팅 기술은 온라인 패션 환경에서 중요한 도구가 되고 있습니다. 사용자는 실제로 의상을 입어보지 않고도 스타일을 확인할 수 있으며
-            다양한 패션과 문화 의상을 탐색할 수 있습니다. 또한 브랜드, 콘텐츠 제작자, 교육 플랫폼 입장에서는 더 많은 설명형 콘텐츠를 제공할 수 있어 SEO 측면에서도 강점이 있습니다.
-            사용자는 검색을 통해 특정 의상 스타일이나 문화 의상에 대한 정보를 찾다가 HAMDEVA에 도달할 수 있고, 이후 바로 체험까지 이어갈 수 있습니다.
-            즉 검색 친화적인 정보 콘텐츠와 인터랙티브 기능이 결합되어 있다는 점이 이 서비스의 핵심 가치입니다.
-          </p>
-          <h3>Explore Different Styles</h3>
-          <p>
-            HAMDEVA에서는 전통 의상과 다양한 패션 스타일을 AI 이미지 합성 기술을 통해 체험할 수 있습니다.
-            사용자는 국가별 전통 의상, 클래식 스타일, 현대적 패션 무드, 개성 있는 콘셉트 룩을 한 자리에서 비교하면서 자신에게 어울리는 이미지를 찾을 수 있습니다.
-            이처럼 풍부한 텍스트 설명과 실제 체험 기능을 함께 제공하면 검색 엔진은 페이지를 단순 도구 페이지가 아니라 주제 중심 콘텐츠 페이지로 인식할 가능성이 높아집니다.
-            HAMDEVA의 홈 페이지는 바로 그 첫 진입점으로서, AI Virtual Fitting이 어떤 기술이고 왜 유용한지 명확히 설명하는 역할을 수행합니다.
-          </p>
+          <h2>{contentLocale.homeSeo.title}</h2>
+          {contentLocale.homeSeo.introParagraphs.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+          <h3>{contentLocale.homeSeo.whyTitle}</h3>
+          <p>{contentLocale.homeSeo.whyBody}</p>
+          <h3>{contentLocale.homeSeo.exploreTitle}</h3>
+          <p>{contentLocale.homeSeo.exploreBody}</p>
         </section>
       );
     case 'about':
@@ -4557,7 +4541,7 @@ const App: React.FC = () => {
             getSubjectTypeLabel={getSubjectTypeLabel}
             formatSecondsLabel={formatSecondsLabel}
           />
-          {renderSeoContent('home')}
+          {renderSeoContent('home', contentLocale)}
           <FAQSection title={getFaqTitle('home')} items={homeFaqs} />
           <section className="section editorial-section">
             <div className="section-inner">

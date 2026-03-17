@@ -57,6 +57,17 @@
       "More menswear references"
     ]
   },
+  "homeSeo": {
+    "title": "AI Virtual Fitting with HAMDEVA",
+    "introParagraphs": [
+      "HAMDEVA is a digital fashion platform built around AI virtual fitting technology so users can explore many kinds of outfits online. After uploading a face photo or choosing a sample image, users can combine it with a clothing image and generate a result that shows the style naturally from multiple angles. The service is not limited to simple image generation. It connects fashion discovery, cultural outfit exploration, traditional style comparison, and digital styling experiments in one experience. In online shopping and content creation environments, people often cannot try clothing on in person, so virtual fitting gives them stronger visual confidence before making a decision.",
+      "Users can upload their own face photo or choose a sample image, apply different outfit styles, and quickly compare the generated results. The flow is designed so people do not need to learn complicated editing tools before they can experiment. It also makes it easier to explore categories that are hard to compare in one place in a typical shopping environment, such as traditional clothing, representative outfits from different countries, modern fashion, and concept looks. That makes the experience useful not only for entertainment, but also for understanding which mood, silhouette, and styling direction fits the user best."
+    ],
+    "whyTitle": "Why Virtual Fitting?",
+    "whyBody": "Virtual fitting technology is becoming an important tool in online fashion environments. Users can evaluate styles without physically wearing the clothes and can explore a broader range of fashion and cultural outfits. It also helps brands, content creators, and educational platforms publish more explanatory content, which strengthens SEO. A user may search for a specific clothing style or cultural garment, arrive at HAMDEVA through that content, and then continue directly into an interactive fitting experience. That combination of search-friendly information and hands-on functionality is one of the core values of the service.",
+    "exploreTitle": "Explore Different Styles",
+    "exploreBody": "HAMDEVA lets users experience traditional clothing and a wide range of fashion styles through AI image composition. Users can compare country-specific traditional outfits, classic styles, modern fashion moods, and distinctive concept looks in one place while searching for an image that suits them. When rich text explanations and a real try-on experience are offered together, search engines are more likely to recognize the page as a topic-centered content page rather than just a tool page. The HAMDEVA homepage acts as that first entry point by clearly explaining what AI virtual fitting is and why it is useful."
+  },
   "modal": {
     "title": "Global Traditional Clothing Guide",
     "tabs": {
