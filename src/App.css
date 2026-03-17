@@ -1266,6 +1266,9 @@ a { color: inherit; text-decoration: none; }
 
 .account-modal.mypage-modal-shell {
   max-width: min(1120px, calc(100vw - 24px)) !important;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .account-modal.admin-modal-shell {
@@ -1282,6 +1285,13 @@ a { color: inherit; text-decoration: none; }
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
+}
+
+.mypage-modal-shell .account-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(90vh - 110px);
+  overflow-y: auto;
 }
 
 .credit-plan-grid {

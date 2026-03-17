@@ -224,6 +224,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       .filter((item) => filter === 'all' || item.type === filter)
   ), [filter, items]);
 
+  const hasVisibleItems = filteredItems.length > 0;
+
   const archivedCount = useMemo(() => (
     items.filter((item) => item.isArchived).length
   ), [items]);
@@ -360,8 +362,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       </div>
       {loading ? <p>생성 이력을 불러오는 중입니다.</p> : null}
       {error ? <p>{error}</p> : null}
-      {!loading && !error && filteredItems.length === 0 ? <p>생성 이력이 없습니다.</p> : null}
-      {!loading && !error && filteredItems.length > 0 ? (
+      {!loading && !error && !hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
+      {!loading && !error && hasVisibleItems ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {filteredItems.map((item) => (
             <button

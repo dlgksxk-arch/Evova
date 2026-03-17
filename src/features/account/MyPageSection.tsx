@@ -48,8 +48,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   products,
   copy,
   onLogin,
-  onNavigateSiteManagement,
-  onNavigateTerms,
+  onNavigateSiteManagement: _onNavigateSiteManagement,
+  onNavigateTerms: _onNavigateTerms,
   onStartCheckout,
   formatTimestampLabel: _formatTimestampLabel,
   historyItems: _historyItems,
@@ -73,12 +73,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               <div className="credit-balance-card"><span>{copy.totalCreditLabel}</span><strong>{currentCredits}</strong></div>
             </div>
             <p><strong>{copy.subscriptionPlanLabel}</strong> {copy.subscriptionPlanValue(userProfile.subscriptionPlan)}</p>
-            <div className="credit-cta-actions">
-              {userProfile.role === 'admin' && (
-                <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">{copy.creditCheck}</button>
-              )}
-              <button className="outline-btn auth-inline-btn" onClick={onNavigateTerms} type="button">{copy.viewSubscription}</button>
-            </div>
           </div>
         ) : (
           <div className="mypage-empty">
