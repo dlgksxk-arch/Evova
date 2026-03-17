@@ -20,6 +20,7 @@ interface AdminDashboardProps {
   adminGenerationLogs: GenerationRequestRecord[];
   adminCreditLogs: CreditLogRecord[];
   adminLoading: boolean;
+  adminError: string | null;
   appVersion: string;
   isFirebaseConfigured: boolean;
   bbsPosts: BbsPostRecord[];
@@ -41,6 +42,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   adminGenerationLogs,
   adminCreditLogs,
   adminLoading,
+  adminError,
   appVersion,
   isFirebaseConfigured,
   bbsPosts,
@@ -93,26 +95,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <h2>{copy.adminTitle}</h2>
         <p>{currentUser.email}</p>
         <p>{copy.adminSubtitle}</p>
+        {adminError ? <p className="admin-error-banner">관리자 데이터를 불러오지 못했습니다. {adminError}</p> : null}
+        {adminLoading ? <p className="admin-loading-banner">{copy.loadingSharedResult}</p> : null}
       </article>
       <div className="management-grid admin-summary-grid">
-        <article className="page-article"><h3>{copy.adminTotalUsers}</h3><p>{adminSummary.users}</p></article>
-        <article className="page-article"><h3>{copy.adminTotalPosts}</h3><p>{adminSummary.posts}</p></article>
-        <article className="page-article"><h3>{copy.adminTotalGenerations}</h3><p>{adminSummary.generations}</p></article>
-        <article className="page-article"><h3>{copy.adminTotalSharedResults}</h3><p>{adminSummary.sharedResults}</p></article>
-        <article className="page-article"><h3>{copy.adminTodayGenerations}</h3><p>{adminSummary.todayGenerations}</p></article>
-        <article className="page-article"><h3>{copy.adminTodayEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p></article>
-        <article className="page-article"><h3>{copy.adminTotalEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p></article>
-        <article className="page-article"><h3>{copy.adminRecent7DaysEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p></article>
-        <article className="page-article"><h3>{adminVideoLabels.totalVideoCount}</h3><p>{adminSummary.totalVideoGenerations}</p></article>
-        <article className="page-article"><h3>{adminVideoLabels.todayVideoCount}</h3><p>{adminSummary.todayVideoGenerations}</p></article>
-        <article className="page-article"><h3>{adminVideoLabels.estimatedVideoCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.estimatedVideoCost)}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTotalUsers}</h3><p>{adminSummary.users}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTotalPosts}</h3><p>{adminSummary.posts}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTotalGenerations}</h3><p>{adminSummary.generations}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTotalSharedResults}</h3><p>{adminSummary.sharedResults}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTodayGenerations}</h3><p>{adminSummary.todayGenerations}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTodayEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminTotalEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p></article>
+        <article className="page-article admin-stat-card"><h3>{copy.adminRecent7DaysEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p></article>
+        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.totalVideoCount}</h3><p>{adminSummary.totalVideoGenerations}</p></article>
+        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.todayVideoCount}</h3><p>{adminSummary.todayVideoGenerations}</p></article>
+        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.estimatedVideoCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.estimatedVideoCost)}</p></article>
       </div>
       <article className="page-article">
         <h3>{copy.adminSystemSection}</h3>
         <p>{copy.siteVersionLabel}: {appVersion}</p>
         <p>{copy.siteFirebaseLabel}: {isFirebaseConfigured ? copy.siteFirebaseReady : copy.siteFirebaseBlocked}</p>
         <p>{copy.siteCreditCostLabel}: {copy.generationCost}</p>
-        {adminLoading && <p>{copy.loadingSharedResult}</p>}
       </article>
       <article className="page-article">
         <h3>{copy.adminUsersSection}</h3>

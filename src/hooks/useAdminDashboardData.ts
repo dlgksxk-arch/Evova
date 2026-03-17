@@ -56,6 +56,7 @@ export const useAdminDashboardData = ({
   const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
   const [adminCreditLogs, setAdminCreditLogs] = useState<CreditLogRecord[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!enabled) {
@@ -64,6 +65,7 @@ export const useAdminDashboardData = ({
       setAdminGenerationLogs([]);
       setAdminCreditLogs([]);
       setAdminLoading(false);
+      setAdminError(null);
       return;
     }
 
@@ -79,12 +81,14 @@ export const useAdminDashboardData = ({
           setAdminGenerationLogs([]);
           setAdminCreditLogs([]);
           setAdminLoading(false);
+          setAdminError(null);
         }
         return;
       }
 
       if (!cancelled) {
         setAdminLoading(true);
+        setAdminError(null);
       }
 
       const token = await currentUser.getIdToken();
@@ -130,12 +134,14 @@ export const useAdminDashboardData = ({
         createdAt: toTimestampLike(item.createdAt),
       })));
       setAdminLoading(false);
+      setAdminError(null);
     };
 
     void loadAdminData().catch((error) => {
       if (!cancelled) {
         console.error('Failed to load admin data:', error);
         setAdminLoading(false);
+        setAdminError(error instanceof Error ? error.message : 'ADMIN_DASHBOARD_FETCH_FAILED');
       }
     });
 
@@ -144,6 +150,7 @@ export const useAdminDashboardData = ({
         if (!cancelled) {
           console.error('Failed to refresh admin data:', error);
           setAdminLoading(false);
+          setAdminError(error instanceof Error ? error.message : 'ADMIN_DASHBOARD_REFRESH_FAILED');
         }
       });
     }, 10_000);
@@ -162,5 +169,6 @@ export const useAdminDashboardData = ({
     adminGenerationLogs,
     adminCreditLogs,
     adminLoading,
+    adminError,
   };
 };

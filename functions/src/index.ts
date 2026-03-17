@@ -2815,6 +2815,17 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     return;
   }
 
+  functions.logger.info('[VIDEO_REQUEST]', {
+    requestId,
+    subjectType: normalizeSubjectType(subjectType),
+    sourceResultId: sourceResultId || null,
+    imageLength: typeof image === 'string' ? image.length : 0,
+    headers: {
+      contentType: req.get('content-type') || '',
+      userAgent: req.get('user-agent') || '',
+    },
+  });
+
   let user: AuthenticatedUser;
   try {
     user = await requireAuthenticatedUser(req);
@@ -2860,6 +2871,23 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     const failureResult = await markVideoGenerationFailed(user, requestId, 'failed', errorMessage).catch((failureError) => {
       functions.logger.error('Failed to finalize video generation failure state', failureError);
       return { dailyCredit: startResult.dailyCreditAvailable, paidCredit: startResult.paidCreditAvailable, creditsRemaining: startResult.creditsAvailable } satisfies VideoCompletionResult;
+    });
+    functions.logger.error('[VIDEO_ERROR]', {
+      phase: 'video-start',
+      requestId,
+      uid: user.uid,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : null,
+      body: {
+        requestId,
+        subjectType: resolvedSubjectType,
+        sourceResultId: sourceResultId || null,
+        imageLength: typeof image === 'string' ? image.length : 0,
+      },
+      headers: {
+        contentType: req.get('content-type') || '',
+        userAgent: req.get('user-agent') || '',
+      },
     });
     res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({
       error: errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage,
@@ -2999,6 +3027,18 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
     const errorMessage = error instanceof Error ? error.message : 'Video generation failed';
     try {
       const failureResult = await markVideoGenerationFailed(user, requestId, 'failed', errorMessage);
+      functions.logger.error('[VIDEO_ERROR]', {
+        phase: 'video-status',
+        requestId,
+        uid: user.uid,
+        openaiVideoId,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : null,
+        headers: {
+          contentType: req.get('content-type') || '',
+          userAgent: req.get('user-agent') || '',
+        },
+      });
       res.status(502).json({
         success: false,
         status: 'failed',
