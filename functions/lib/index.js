@@ -43,7 +43,8 @@ const sharp_1 = __importDefault(require("sharp"));
 const standardwebhooks_1 = require("standardwebhooks");
 admin.initializeApp();
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const configuredStorageBucket = process.env['APP_STORAGE_BUCKET']?.trim() || '';
+const bucket = configuredStorageBucket ? admin.storage().bucket(configuredStorageBucket) : admin.storage().bucket();
 const CORS_ORIGIN = [
     'https://hamdeva.com',
     'https://www.hamdeva.com',
