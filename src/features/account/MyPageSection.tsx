@@ -1,6 +1,7 @@
 import React from 'react';
 import type { User } from 'firebase/auth';
 import type { CheckoutProductId, GenerationRecord, UserProfile } from '../../types/hamdeva';
+import CreationHistoryPanel from '../mypage/CreationHistoryPanel';
 
 interface MyPageSectionProps {
   currentUser: User | null;
@@ -41,9 +42,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentDailyCredit,
   currentPaidCredit,
   currentCredits,
-  historyItems,
-  preservedHistoryCount,
-  historyPreserveLimit,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -53,15 +51,15 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onNavigateSiteManagement,
   onNavigateTerms,
   onStartCheckout,
-  formatTimestampLabel,
-  onOpenHistoryItem,
-  onToggleHistoryPreserve,
-  onDownloadHistoryItem,
-  onDeleteHistoryItem,
+  formatTimestampLabel: _formatTimestampLabel,
+  historyItems: _historyItems,
+  preservedHistoryCount: _preservedHistoryCount,
+  historyPreserveLimit: _historyPreserveLimit,
+  onOpenHistoryItem: _onOpenHistoryItem,
+  onToggleHistoryPreserve: _onToggleHistoryPreserve,
+  onDownloadHistoryItem: _onDownloadHistoryItem,
+  onDeleteHistoryItem: _onDeleteHistoryItem,
 }) => {
-  const imageHistoryCount = historyItems.filter((item) => item.resultType !== 'video_generation').length;
-  const videoHistoryCount = historyItems.filter((item) => item.resultType === 'video_generation').length;
-
   return (
     <div className="mypage-layout">
       <article className="page-article">
@@ -94,59 +92,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         )}
       </article>
       {currentUser && (
-        <article className="page-article">
-          <h3>결과물 히스토리</h3>
-          <p className="history-guide-copy">
-            생성된 이미지와 영상은 기본 15일 동안 보관됩니다. 최대 {historyPreserveLimit}개까지 선택해 30일 보관할 수 있습니다.
-          </p>
-          <p className="history-guide-copy muted">현재 보관 중: {preservedHistoryCount} / {historyPreserveLimit}</p>
-          <p className="history-guide-copy muted">이미지 {imageHistoryCount}개 · 영상 {videoHistoryCount}개 · 총 {historyItems.length}개</p>
-          {historyItems.length > 0 ? (
-            <div className="history-grid">
-              {historyItems.map((item) => {
-                const isVideo = item.resultType === 'video_generation';
-                const isPreserved = !!item.preservedUntil;
-                return (
-                  <article key={item.id} className={`history-card ${isVideo ? 'history-card-video' : ''}`}>
-                    <button className="history-result-box" onClick={() => onOpenHistoryItem(item)} type="button">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={isVideo ? 'Generated video history' : 'Generated result history'} />
-                      ) : (
-                        <div className="history-video-placeholder">
-                          <strong>VIDEO</strong>
-                          <span>생성된 영상을 열어볼 수 있습니다.</span>
-                        </div>
-                      )}
-                    </button>
-                    <div className="history-meta">
-                      <span>{isVideo ? '영상' : '이미지'}</span>
-                      {!isVideo && <span>{item.usedCreditType === 'paid' ? copy.paidCreditLabel : copy.dailyCreditLabel}</span>}
-                      {!isVideo && <span>{item.watermarkApplied ? copy.watermarkEnabled : copy.watermarkRemoved}</span>}
-                      <span>{formatTimestampLabel(item.createdAt)}</span>
-                      {isPreserved && <span>30일 보관</span>}
-                    </div>
-                    <div className="history-actions">
-                      <button className="outline-btn history-action-btn" onClick={() => onOpenHistoryItem(item)} type="button">
-                        {isVideo ? '영상 보기' : '이미지 보기'}
-                      </button>
-                      <button className="outline-btn history-action-btn" onClick={() => onDownloadHistoryItem(item)} type="button">
-                        다운로드
-                      </button>
-                      <button className={`outline-btn history-action-btn ${isPreserved ? 'active' : ''}`} onClick={() => onToggleHistoryPreserve(item)} type="button">
-                        {isPreserved ? '보관 해제' : '30일 보관'}
-                      </button>
-                      <button className="outline-btn history-action-btn danger" onClick={() => onDeleteHistoryItem(item)} type="button">
-                        삭제
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <p>{copy.noHistory}</p>
-          )}
-        </article>
+        <CreationHistoryPanel currentUser={currentUser} />
       )}
       {currentUser && (
         <article className="page-article">

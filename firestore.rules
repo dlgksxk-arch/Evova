@@ -32,6 +32,10 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /users/{userId}/creations/{creationId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
     // 생성 이력 — 서버만 쓰기, 본인 데이터만 조회 가능
     match /generations/{generationId} {
       allow read: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();

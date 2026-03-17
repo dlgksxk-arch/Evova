@@ -6,6 +6,7 @@ import type {
   CreditBootstrapResponse,
   SubjectType,
   TryOnResponse,
+  UserCreationRecord,
   VideoGenerationResponse,
 } from '../../types/hamdeva';
 
@@ -20,6 +21,7 @@ const VIDEO_STATUS_ENDPOINT = apiUrl('/api/video-status');
 const VIDEO_CONTENT_ENDPOINT = apiUrl('/api/video-content');
 const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
 const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
+const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -132,6 +134,7 @@ export const callTryOn = async (payload: {
 export const callCreateCheckoutSession = async (payload: {
   authToken: string;
   productId: CheckoutProductId;
+  uid?: string;
 }): Promise<CheckoutSessionResponse> => {
   const res = await fetch(POLAR_CHECKOUT_ENDPOINT, {
     method: 'POST',
@@ -139,7 +142,7 @@ export const callCreateCheckoutSession = async (payload: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${payload.authToken}`,
     },
-    body: JSON.stringify({ productId: payload.productId }),
+    body: JSON.stringify({ productId: payload.productId, uid: payload.uid }),
   });
 
   if (!res.ok) {
@@ -239,4 +242,50 @@ export const fetchVideoBlobUrl = async (authToken: string, requestId: string): P
   }
 
   return URL.createObjectURL(await res.blob());
+};
+
+export const getCreations = async (authToken: string): Promise<UserCreationRecord[]> => {
+  const res = await fetch(CREATIONS_ENDPOINT, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as { creations?: UserCreationRecord[] };
+  return Array.isArray(data.creations) ? data.creations : [];
+};
+
+export const archiveCreation = async (authToken: string, creationId: string): Promise<void> => {
+  const res = await fetch(`${CREATIONS_ENDPOINT}/archive`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ creationId }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+};
+
+export const deleteCreation = async (authToken: string, creationId: string): Promise<void> => {
+  const res = await fetch(`${CREATIONS_ENDPOINT}/delete`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify({ creationId }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
 };

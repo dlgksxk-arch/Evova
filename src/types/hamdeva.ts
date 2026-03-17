@@ -133,15 +133,25 @@ export interface GenerationRecord {
   createdAt?: Timestamp | null;
 }
 
+export interface UserCreationRecord {
+  id: string;
+  type: 'image' | 'video';
+  fileUrl: string;
+  createdAt?: number | null;
+  expireAt?: number | null;
+  isArchived: boolean;
+  isDeleted: boolean;
+}
+
 export interface CheckoutSessionResponse {
   success?: boolean;
   sessionId?: string;
-  url?: string | null;
+  checkoutUrl?: string | null;
 }
 
 export interface CheckoutSessionStatusResponse {
   success?: boolean;
-  status?: 'pending' | 'processing' | 'paid' | 'failed' | 'canceled';
+  status?: 'success' | 'pending' | 'failed';
   paymentId?: string | null;
   paidCredit?: number;
   dailyCredit?: number | null;

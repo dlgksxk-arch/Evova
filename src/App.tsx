@@ -2564,7 +2564,10 @@ const App: React.FC = () => {
   }).length;
   const loginComingSoonLabel = `${t.login} (Coming Soon)`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (Coming Soon)`;
-  const paymentSessionId = new URLSearchParams(routeSearch).get('session_id');
+  const paymentSessionId = (() => {
+    const params = new URLSearchParams(routeSearch);
+    return params.get('checkout_id') || params.get('session_id');
+  })();
   const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
   const generationProgressRatio = isGenerating
     ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
@@ -3454,11 +3457,11 @@ const App: React.FC = () => {
     setIsStartingCheckout(productId);
     try {
       const authToken = await currentUser.getIdToken();
-      const session = await callCreateCheckoutSession({ authToken, productId });
-      if (!session.url) {
+      const session = await callCreateCheckoutSession({ authToken, productId, uid: currentUser.uid });
+      if (!session.checkoutUrl) {
         throw new Error('CHECKOUT_URL_MISSING');
       }
-      window.location.href = session.url;
+      window.location.href = session.checkoutUrl;
     } catch (error) {
       console.error('Failed to start checkout session:', error);
       alert(getGenerateErrorMessage(error, t, generationErrorCopy));
@@ -4639,7 +4642,13 @@ const App: React.FC = () => {
                 dailyCredit={currentDailyCredit}
                 paidCredit={currentPaidCredit}
                 copy={t}
-                success={true}
+                status={
+                  paymentStatusMessage === t.paymentSuccessReady
+                    ? 'success'
+                    : paymentStatusMessage === t.paymentFailedMessage || paymentStatusMessage === t.paymentVerifyFailed
+                      ? 'failed'
+                      : 'pending'
+                }
                 onPrimary={() => navigateToPage('mypage')}
                 onSecondary={() => navigateToPage('home')}
               />
@@ -4653,7 +4662,7 @@ const App: React.FC = () => {
                 dailyCredit={currentDailyCredit}
                 paidCredit={currentPaidCredit}
                 copy={t}
-                success={false}
+                status="failed"
                 onPrimary={() => navigateToPage('mypage')}
                 onSecondary={() => navigateToPage('home')}
               />

@@ -5,6 +5,7 @@ import { Webhook } from 'standardwebhooks';
 
 admin.initializeApp();
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 const CORS_ORIGIN = [
   'https://hamdeva.com',
@@ -40,9 +41,11 @@ const VIDEO_ESTIMATED_COST = 0.4;
 const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
+const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
+const MAX_ARCHIVED_CREATIONS = 5;
 const POLAR_PROVIDER = 'polar';
 const PAYMENT_CURRENCY = 'usd';
-const POLAR_API_BASE_URL = 'https://api.polar.sh/v1';
+const DEFAULT_POLAR_PRODUCT_ID = 'f6417ea7-1715-47e0-8799-4671c3b04fb5';
 const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
 Return ONLY one word:
 
@@ -216,6 +219,7 @@ type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type AccountRole = 'user' | 'admin';
 type SubjectType = 'human' | 'dog' | 'cat';
 type GenerationRequestType = 'image_generation' | 'video_generation';
+type CreationType = 'image' | 'video';
 type CreditType = 'daily' | 'paid';
 type CreditTransactionType =
   | 'daily_reset'
@@ -305,7 +309,7 @@ type RefundResult = {
   balanceAfter: number | null;
 };
 type PaymentSessionStatusResult = {
-  status: PaymentStatus | 'processing';
+  status: 'success' | 'pending' | 'failed';
   paymentId: string | null;
   paidCredit: number;
   dailyCredit: number | null;
@@ -325,11 +329,13 @@ type GenerationUsageMetadata = {
   estimatedCost: number | null;
 };
 type CheckoutSessionRequest = {
+  uid?: string;
   productId?: PaymentProductId;
 };
 type PolarCheckoutRecord = {
   id?: string;
   url?: string | null;
+  checkoutUrl?: string | null;
   status?: string;
   metadata?: Record<string, unknown>;
   productPriceId?: string | null;
@@ -380,6 +386,16 @@ interface OpenAIVideoStatusResponse {
     message?: string;
   };
 }
+
+type CreationRecordResponse = {
+  id: string;
+  type: CreationType;
+  fileUrl: string;
+  createdAt: number | null;
+  expireAt: number | null;
+  isArchived: boolean;
+  isDeleted: boolean;
+};
 
 let lastLoggedOpenAIKeySource: OpenAIKeySource | null = null;
 
@@ -498,13 +514,18 @@ const getOpenAIApiKey = (): string => {
 };
 
 const getPolarApiKey = (): string => {
-  const envKey = process.env['POLAR_API_KEY'];
+  const envKey = process.env['POLAR_ACCESS_TOKEN'] ?? process.env['POLAR_API_KEY'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.polar?.api_key;
+  const configKey = functions.config()?.polar?.access_token ?? functions.config()?.polar?.api_key;
   return typeof configKey === 'string' ? configKey.trim() : '';
+};
+
+const getPolarApiBaseUrl = (): string => {
+  const server = (process.env['POLAR_SERVER'] ?? functions.config()?.polar?.server ?? 'production').toString().trim().toLowerCase();
+  return server === 'sandbox' ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1';
 };
 
 const getPolarWebhookSecret = (): string => {
@@ -525,7 +546,11 @@ const getPolarProductExternalId = (productId: PaymentProductId): string => {
 
   const configuredProducts = functions.config()?.polar?.products as Record<string, unknown> | undefined;
   const configuredProductId = configuredProducts?.[productId];
-  return typeof configuredProductId === 'string' ? configuredProductId.trim() : '';
+  if (typeof configuredProductId === 'string' && configuredProductId.trim()) {
+    return configuredProductId.trim();
+  }
+
+  return DEFAULT_POLAR_PRODUCT_ID;
 };
 
 const requirePolarConfig = (): { apiKey: string } => {
@@ -889,6 +914,12 @@ const buildPaymentDocId = (provider: PaymentProvider, providerPaymentId: string)
 const createGenerationDocRef = (uid: string, requestId: string) =>
   db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
 
+const createUserCreationDocRef = (uid: string, creationId: string) =>
+  db.collection('users').doc(uid).collection('creations').doc(creationId);
+
+const buildCreationStoragePath = (uid: string, creationId: string, extension: string) =>
+  `creations/${uid}/${creationId}.${extension.replace(/^\./, '')}`;
+
 const buildHistoryRetentionTimestamps = (
   now = admin.firestore.Timestamp.now(),
 ): {
@@ -902,6 +933,12 @@ const buildHistoryRetentionTimestamps = (
     now.toMillis() + HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000,
   ),
 });
+
+const buildCreationExpireAt = (
+  now = admin.firestore.Timestamp.now(),
+  days = HISTORY_RETENTION_DAYS,
+): FirebaseFirestore.Timestamp =>
+  admin.firestore.Timestamp.fromMillis(now.toMillis() + days * 24 * 60 * 60 * 1000);
 
 const buildUserAccountPayload = (
   account: UserAccount,
@@ -1401,7 +1438,7 @@ const markGenerationCompleted = async (
 const markVideoGenerationCompleted = async (
   user: AuthenticatedUser,
   requestId: string,
-  metadata: Record<string, unknown>,
+  metadata: Record<string, unknown> & { fileUrl?: string | null },
 ): Promise<void> => {
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
   const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
@@ -1422,6 +1459,7 @@ const markVideoGenerationCompleted = async (
     videoRequestId: requestId,
     resultType: 'video_generation',
     subjectType: normalizeSubjectType(metadata.subjectType),
+    fileUrl: metadata.fileUrl ?? null,
     status: 'completed',
     usedCreditType: null,
     usedCreditAmount: VIDEO_GENERATION_COST,
@@ -1582,7 +1620,7 @@ const buildGeneratedImageAssets = async (
   mimeType: string,
   imageData: string,
   watermarkApplied: boolean,
-): Promise<{ responseDataUrl: string; responseMimeType: string; storedImageUrl: string }> => {
+): Promise<{ responseDataUrl: string; responseMimeType: string; storedImageUrl: string; responseBuffer: Buffer }> => {
   const sourceBuffer = Buffer.from(imageData, 'base64');
   const responseBuffer = watermarkApplied ? await applyWatermarkToImageBuffer(sourceBuffer) : sourceBuffer;
   const responseMimeType = watermarkApplied ? 'image/png' : mimeType;
@@ -1591,7 +1629,80 @@ const buildGeneratedImageAssets = async (
     responseDataUrl: `data:${responseMimeType};base64,${responseBuffer.toString('base64')}`,
     responseMimeType,
     storedImageUrl: await createStoredImageDataUrl(responseBuffer),
+    responseBuffer,
   };
+};
+
+const storageExtensionForMimeType = (mimeType: string): string => {
+  switch (mimeType) {
+    case 'video/mp4':
+      return 'mp4';
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/webp':
+      return 'webp';
+    default:
+      return 'png';
+  }
+};
+
+const uploadCreationAsset = async (params: {
+  uid: string;
+  creationId: string;
+  contentType: string;
+  buffer: Buffer;
+}): Promise<string> => {
+  const storagePath = buildCreationStoragePath(
+    params.uid,
+    params.creationId,
+    storageExtensionForMimeType(params.contentType),
+  );
+
+  await bucket.file(storagePath).save(params.buffer, {
+    resumable: false,
+    metadata: {
+      contentType: params.contentType,
+      cacheControl: 'private, max-age=31536000',
+    },
+  });
+
+  return storagePath;
+};
+
+const getSignedCreationUrl = async (storagePath: string): Promise<string> => {
+  const [url] = await bucket.file(storagePath).getSignedUrl({
+    action: 'read',
+    expires: '2500-01-01',
+  });
+  return url;
+};
+
+const deleteCreationAsset = async (storagePath: string): Promise<void> => {
+  try {
+    await bucket.file(storagePath).delete();
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? (error as { code?: number }).code : undefined;
+    if (code !== 404) {
+      throw error;
+    }
+  }
+};
+
+const upsertCreationRecord = async (params: {
+  uid: string;
+  creationId: string;
+  type: CreationType;
+  fileUrl: string;
+}): Promise<void> => {
+  const now = admin.firestore.Timestamp.now();
+  await createUserCreationDocRef(params.uid, params.creationId).set({
+    type: params.type,
+    fileUrl: params.fileUrl,
+    createdAt: now,
+    expireAt: buildCreationExpireAt(now),
+    isArchived: false,
+    isDeleted: false,
+  }, { merge: true });
 };
 
 const getAppBaseUrl = (req: functions.https.Request): string => {
@@ -1677,6 +1788,10 @@ const fulfillCreditPurchase = async (params: {
   const paymentRef = db.collection('payments').doc(buildPaymentDocId(params.provider, params.providerPaymentId));
   const userRef = db.collection('users').doc(params.uid);
   const product = getPaymentProduct(params.productId);
+  const paidAtDate = params.paidAt ? new Date(params.paidAt) : null;
+  const paidAtTimestamp = paidAtDate && !Number.isNaN(paidAtDate.getTime())
+    ? admin.firestore.Timestamp.fromDate(paidAtDate)
+    : null;
 
   await db.runTransaction(async (transaction) => {
     const [paymentSnapshot, userSnapshot] = await Promise.all([
@@ -1716,6 +1831,7 @@ const fulfillCreditPurchase = async (params: {
     );
     transaction.set(paymentRef, {
       uid: params.uid,
+      email: email || account.email,
       provider: params.provider,
       providerPaymentId: params.providerPaymentId,
       productId: product.id,
@@ -1724,6 +1840,8 @@ const fulfillCreditPurchase = async (params: {
       currency: typeof params.currency === 'string' && params.currency ? params.currency : product.currency,
       paidCredit: product.paidCredit,
       status: 'paid',
+      paidAt: paidAtTimestamp,
+      rawPayload: params.rawPayload ?? null,
       createdAt: paymentSnapshot.exists ? existingPayment?.createdAt ?? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -1738,6 +1856,39 @@ const fulfillCreditPurchase = async (params: {
       memo: `${product.id} checkout credit charge`,
     });
   });
+};
+
+const normalizePaymentStatusForClient = (status: string | undefined): PaymentSessionStatusResult['status'] => {
+  if (status === 'paid' || status === 'succeeded' || status === 'confirmed' || status === 'completed') {
+    return 'success';
+  }
+
+  if (status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'expired') {
+    return 'failed';
+  }
+
+  return 'pending';
+};
+
+const fetchPolarCheckoutStatus = async (checkoutId: string): Promise<string | null> => {
+  const apiKey = getPolarApiKey();
+  if (!apiKey || !checkoutId) {
+    return null;
+  }
+
+  const response = await fetch(`${getPolarApiBaseUrl()}/checkouts/${encodeURIComponent(checkoutId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = await response.json().catch(() => ({})) as PolarCheckoutRecord;
+  return typeof payload.status === 'string' ? payload.status.toLowerCase() : null;
 };
 
 const getCheckoutSessionStatus = async (
@@ -1764,8 +1915,9 @@ const getCheckoutSessionStatus = async (
     : null;
 
   if (!paymentSnapshot?.exists) {
+    const remoteStatus = sessionId ? await fetchPolarCheckoutStatus(sessionId) : null;
     return {
-      status: 'pending',
+      status: normalizePaymentStatusForClient(remoteStatus || 'pending'),
       paymentId: null,
       paidCredit: 0,
       dailyCredit: account.dailyCredit,
@@ -1779,8 +1931,14 @@ const getCheckoutSessionStatus = async (
     throw new Error('FORBIDDEN');
   }
 
+  const storedStatus = typeof paymentData.status === 'string' ? paymentData.status : undefined;
+  const remoteStatus = storedStatus === 'paid' || !sessionId
+    ? null
+    : await fetchPolarCheckoutStatus(sessionId);
+  const normalizedStatus = normalizePaymentStatusForClient((remoteStatus || storedStatus || 'pending').toLowerCase());
+
   return {
-    status: (paymentData.status as PaymentStatus | undefined) ?? 'pending',
+    status: normalizedStatus,
     paymentId: paymentSnapshot.id,
     paidCredit: typeof paymentData.paidCredit === 'number' ? paymentData.paidCredit : 0,
     dailyCredit: account.dailyCredit,
@@ -1796,9 +1954,13 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
   }
 
   const user = await requireAuthenticatedUser(req);
-  const { productId } = req.body as CheckoutSessionRequest;
+  const { productId, uid } = req.body as CheckoutSessionRequest;
   if (!isPaymentProductId(productId)) {
     res.status(400).json({ error: 'INVALID_PRODUCT', message: '유효하지 않은 상품입니다.' });
+    return;
+  }
+  if (typeof uid === 'string' && uid && uid !== user.uid) {
+    res.status(403).json({ error: 'FORBIDDEN', message: '접근 권한이 없습니다.' });
     return;
   }
 
@@ -1809,7 +1971,7 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
   const baseUrl = getAppBaseUrl(req);
-  const response = await fetch(`${POLAR_API_BASE_URL}/checkouts`, {
+  const response = await fetch(`${getPolarApiBaseUrl()}/checkouts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1817,18 +1979,19 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
     },
     body: JSON.stringify({
       products: [polarProductId],
-      successUrl: `${baseUrl}/payment-success`,
+      success_url: `${baseUrl}/payment-success?checkout_id={CHECKOUT_ID}`,
+      return_url: `${baseUrl}/payment-failed`,
       metadata: {
         uid: user.uid,
         productId: product.id,
         paidCredit: String(product.paidCredit),
       },
-      externalCustomerId: user.uid,
-      customerEmail: user.email || undefined,
+      external_customer_id: user.uid,
+      customer_email: user.email || undefined,
     }),
   });
   const session = await response.json().catch(() => ({})) as PolarCheckoutRecord;
-  if (!response.ok || !session.id || !session.url) {
+  if (!response.ok || !session.id || !(session.checkoutUrl || session.url)) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
@@ -1842,7 +2005,7 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
   res.json({
     success: true,
     sessionId: session.id,
-    url: session.url,
+    checkoutUrl: session.checkoutUrl || session.url,
   });
 };
 
@@ -1853,7 +2016,11 @@ const handleCheckoutSessionStatusRequest = async (req: functions.https.Request, 
   }
 
   const user = await requireAuthenticatedUser(req);
-  const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId : undefined;
+  const sessionId = typeof req.query.sessionId === 'string'
+    ? req.query.sessionId
+    : typeof req.query.checkout_id === 'string'
+      ? req.query.checkout_id
+      : undefined;
   const status = await getCheckoutSessionStatus(user, sessionId);
   res.json({
     success: true,
@@ -1899,7 +2066,7 @@ const handlePolarWebhookRequest = async (req: functions.https.Request, res: func
   }
 
   try {
-    const wh = new Webhook(webhookSecret);
+    const wh = new Webhook(Buffer.from(webhookSecret).toString('base64'));
     wh.verify(rawPayload, headers);
   } catch (error) {
     functions.logger.error('Polar webhook signature verification failed', error);
@@ -1994,6 +2161,16 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
     return;
   }
 
+  if (error instanceof Error && error.message === 'ARCHIVE_LIMIT_REACHED') {
+    res.status(400).json({ error: 'ARCHIVE_LIMIT_REACHED', message: `보관은 최대 ${MAX_ARCHIVED_CREATIONS}개까지 가능합니다.` });
+    return;
+  }
+
+  if (error instanceof Error && error.message === 'CREATION_NOT_FOUND') {
+    res.status(404).json({ error: 'CREATION_NOT_FOUND', message: '생성 이력을 찾을 수 없습니다.' });
+    return;
+  }
+
   res.status(fallbackStatus).json({
     error: error instanceof Error ? error.message : 'INTERNAL_ERROR',
     message: error instanceof Error ? error.message : 'Unexpected server error',
@@ -2006,6 +2183,121 @@ const serializeTimestamp = (value: unknown): number | null => {
   }
 
   return null;
+};
+
+const serializeCreationRecord = async (
+  snapshot: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
+): Promise<CreationRecordResponse | null> => {
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  const data = snapshot.data() ?? {};
+  const fileUrl = typeof data.fileUrl === 'string' ? data.fileUrl : '';
+  if (!fileUrl) {
+    return null;
+  }
+
+  return {
+    id: snapshot.id,
+    type: data.type === 'video' ? 'video' : 'image',
+    fileUrl: await getSignedCreationUrl(fileUrl),
+    createdAt: serializeTimestamp(data.createdAt),
+    expireAt: serializeTimestamp(data.expireAt),
+    isArchived: data.isArchived === true,
+    isDeleted: data.isDeleted === true,
+  };
+};
+
+const handleGetCreationsRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'GET') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const snapshot = await db.collection('users').doc(user.uid).collection('creations').orderBy('createdAt', 'desc').get();
+  const visibleDocs = snapshot.docs.filter((doc) => doc.data().isDeleted !== true);
+  const items = await Promise.all(visibleDocs.map((doc) => serializeCreationRecord(doc)));
+  res.json({
+    success: true,
+    creations: items.filter((item): item is CreationRecordResponse => Boolean(item)),
+  });
+};
+
+const handleArchiveCreationRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const creationId = typeof req.body?.creationId === 'string' ? req.body.creationId.trim() : '';
+  if (!creationId) {
+    res.status(400).json({ error: 'creationId is required.' });
+    return;
+  }
+
+  const creationRef = createUserCreationDocRef(user.uid, creationId);
+
+  await db.runTransaction(async (transaction) => {
+    const creationSnapshot = await transaction.get(creationRef);
+    if (!creationSnapshot.exists) {
+      throw new Error('CREATION_NOT_FOUND');
+    }
+
+    const creationData = creationSnapshot.data() ?? {};
+    if (creationData.isDeleted === true) {
+      throw new Error('CREATION_NOT_FOUND');
+    }
+
+    if (creationData.isArchived === true) {
+      return;
+    }
+
+    const archivedSnapshot = await transaction.get(
+      db.collection('users').doc(user.uid).collection('creations').where('isArchived', '==', true),
+    );
+    const activeArchivedCount = archivedSnapshot.docs.filter((doc) => doc.id !== creationId && doc.data().isDeleted !== true).length;
+
+    if (activeArchivedCount >= MAX_ARCHIVED_CREATIONS) {
+      throw new Error('ARCHIVE_LIMIT_REACHED');
+    }
+
+    const now = admin.firestore.Timestamp.now();
+    transaction.set(creationRef, {
+      isArchived: true,
+      expireAt: buildCreationExpireAt(now, ARCHIVED_HISTORY_RETENTION_DAYS),
+    }, { merge: true });
+  });
+
+  res.json({ success: true });
+};
+
+const handleDeleteCreationRequest = async (req: functions.https.Request, res: functions.Response) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed' });
+    return;
+  }
+
+  const user = await requireAuthenticatedUser(req);
+  const creationId = typeof req.body?.creationId === 'string' ? req.body.creationId.trim() : '';
+  if (!creationId) {
+    res.status(400).json({ error: 'creationId is required.' });
+    return;
+  }
+
+  const creationRef = createUserCreationDocRef(user.uid, creationId);
+  const snapshot = await creationRef.get();
+  if (!snapshot.exists || snapshot.data()?.isDeleted === true) {
+    throw new Error('CREATION_NOT_FOUND');
+  }
+
+  await creationRef.set({
+    isDeleted: true,
+  }, { merge: true });
+
+  res.json({ success: true });
 };
 
 const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
@@ -2133,6 +2425,25 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
     const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
     const watermarkApplied = chargeResult.usedCreditType === 'daily';
     const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
+    let creationFilePath: string | null = null;
+
+    try {
+      creationFilePath = await uploadCreationAsset({
+        uid: user.uid,
+        creationId: requestId,
+        contentType: imageAssets.responseMimeType,
+        buffer: imageAssets.responseBuffer,
+      });
+      await upsertCreationRecord({
+        uid: user.uid,
+        creationId: requestId,
+        type: 'image',
+        fileUrl: creationFilePath,
+      });
+    } catch (creationError) {
+      functions.logger.error('Failed to persist image creation record', creationError);
+    }
+
     await markGenerationCompleted(user, requestId, generatedImage.metadata, {
       imageUrl: imageAssets.storedImageUrl,
       usedCreditType: chargeResult.usedCreditType,
@@ -2300,6 +2611,7 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
   const requestData = snapshot.data() ?? {};
   const openaiVideoId = typeof requestData.openaiVideoId === 'string' ? requestData.openaiVideoId : '';
   const requestStatus = typeof requestData.status === 'string' ? requestData.status : 'processing';
+  const storedVideoFileUrl = typeof requestData.fileUrl === 'string' ? requestData.fileUrl : '';
   if (!openaiVideoId) {
     res.json({
       success: requestStatus === 'completed',
@@ -2309,16 +2621,48 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
     return;
   }
 
+  if (requestStatus === 'completed' && storedVideoFileUrl) {
+    res.json({
+      success: true,
+      status: 'completed',
+      requestId,
+      estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
+      contentUrl: `/api/video-content?requestId=${encodeURIComponent(requestId)}`,
+    });
+    return;
+  }
+
   try {
     const videoStatus = await fetchOpenAIVideoStatus(openaiVideoId);
     const nextStatus = typeof videoStatus.status === 'string' ? videoStatus.status : requestStatus;
 
     if (nextStatus === 'completed') {
+      let creationFilePath = storedVideoFileUrl;
+
+      if (!creationFilePath) {
+        const contentResponse = await streamOpenAIVideoContent(openaiVideoId);
+        const contentType = contentResponse.headers.get('content-type') || 'video/mp4';
+        const contentBuffer = Buffer.from(await contentResponse.arrayBuffer());
+        creationFilePath = await uploadCreationAsset({
+          uid: user.uid,
+          creationId: requestId,
+          contentType,
+          buffer: contentBuffer,
+        });
+        await upsertCreationRecord({
+          uid: user.uid,
+          creationId: requestId,
+          type: 'video',
+          fileUrl: creationFilePath,
+        });
+      }
+
       await markVideoGenerationCompleted(user, requestId, {
         openaiVideoId,
         estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
         type: 'video_generation',
         subjectType: normalizeSubjectType(requestData.subjectType),
+        fileUrl: creationFilePath,
       });
       res.json({
         success: true,
@@ -2387,6 +2731,20 @@ const handleVideoContentRequest = async (req: functions.https.Request, res: func
 
   const requestData = snapshot.data() ?? {};
   const openaiVideoId = typeof requestData.openaiVideoId === 'string' ? requestData.openaiVideoId : '';
+  const storedVideoFileUrl = typeof requestData.fileUrl === 'string' ? requestData.fileUrl : '';
+
+  if (storedVideoFileUrl) {
+    try {
+      const [buffer] = await bucket.file(storedVideoFileUrl).download();
+      res.set('Content-Type', 'video/mp4');
+      res.set('Cache-Control', 'private, max-age=60');
+      res.status(200).send(buffer);
+      return;
+    } catch (error) {
+      functions.logger.error('Failed to read stored video asset', error);
+    }
+  }
+
   if (!openaiVideoId) {
     res.status(409).json({ error: 'Video not ready yet.' });
     return;
@@ -2455,6 +2813,33 @@ export const api = functions
           generationCost: GENERATION_COST,
           videoGenerationCost: VIDEO_GENERATION_COST,
         });
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/creations') {
+      try {
+        await handleGetCreationsRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && normalizedPath === '/creations/archive') {
+      try {
+        await handleArchiveCreationRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && normalizedPath === '/creations/delete') {
+      try {
+        await handleDeleteCreationRequest(req, res);
       } catch (error) {
         handleApiError(res, error, 500);
       }
@@ -2540,4 +2925,47 @@ export const generateTryOn = functions
     });
 
     await handleTryOnRequest(req, res, 'generateTryOn');
+  });
+
+export const cleanupExpiredCreations = functions
+  .region('asia-northeast3')
+  .pubsub.schedule('every 24 hours')
+  .timeZone(SEOUL_TIME_ZONE)
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const [expiredSnapshot, deletedSnapshot] = await Promise.all([
+      db.collectionGroup('creations').where('expireAt', '<', now).get(),
+      db.collectionGroup('creations').where('isDeleted', '==', true).get(),
+    ]);
+
+    const docs = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+    for (const snapshot of [...expiredSnapshot.docs, ...deletedSnapshot.docs]) {
+      docs.set(snapshot.ref.path, snapshot);
+    }
+
+    let batch = db.batch();
+    let opCount = 0;
+
+    for (const snapshot of docs.values()) {
+      const data = snapshot.data();
+      if (typeof data.fileUrl === 'string' && data.fileUrl) {
+        await deleteCreationAsset(data.fileUrl);
+      }
+
+      batch.delete(snapshot.ref);
+      opCount += 1;
+
+      if (opCount >= 400) {
+        await batch.commit();
+        batch = db.batch();
+        opCount = 0;
+      }
+    }
+
+    if (opCount > 0) {
+      await batch.commit();
+    }
+
+    functions.logger.info('cleanupExpiredCreations completed', { cleaned: docs.size });
+    return null;
   });

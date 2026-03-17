@@ -58,12 +58,12 @@ export const usePaymentSessionStatus = ({
           } : prev);
         }
 
-        if (response.status === 'paid') {
+        if (response.status === 'success') {
           setPaymentStatusMessage(statusMessages.success);
           return;
         }
 
-        if (response.status === 'failed' || response.status === 'canceled') {
+        if (response.status === 'failed') {
           setPaymentStatusMessage(statusMessages.failed);
           return;
         }
