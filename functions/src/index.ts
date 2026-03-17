@@ -5,8 +5,7 @@ import { Webhook } from 'standardwebhooks';
 
 admin.initializeApp();
 const db = admin.firestore();
-const configuredStorageBucket = process.env['APP_STORAGE_BUCKET']?.trim() || '';
-const bucket = configuredStorageBucket ? admin.storage().bucket(configuredStorageBucket) : admin.storage().bucket();
+const bucket = admin.storage().bucket('hamdeva.appspot.com');
 
 const CORS_ORIGIN = [
   'https://hamdeva.com',
@@ -1389,6 +1388,7 @@ const beginVideoGenerationRequest = async (
 
     const userData = userSnapshot.data() ?? {};
     const todayKey = getTodayKeyInSeoul();
+    const isPrivilegedVideoUser = account.role === 'admin';
     const storedFailureDateKey = typeof userData.videoGenerationFailureDateKey === 'string'
       ? userData.videoGenerationFailureDateKey
       : '';
@@ -1396,11 +1396,11 @@ const beginVideoGenerationRequest = async (
       ? Math.max(0, Math.trunc(userData.videoGenerationFailureCount))
       : 0;
 
-    if (currentFailureCount >= MAX_VIDEO_FAILURES_PER_DAY) {
+    if (!isPrivilegedVideoUser && currentFailureCount >= MAX_VIDEO_FAILURES_PER_DAY) {
       throw new Error(VIDEO_FAILURE_LIMIT_REACHED_ERROR);
     }
 
-    if (userData.videoGenerationInProgress === true) {
+    if (!isPrivilegedVideoUser && userData.videoGenerationInProgress === true) {
       throw new Error(VIDEO_GENERATION_IN_PROGRESS_ERROR);
     }
 
