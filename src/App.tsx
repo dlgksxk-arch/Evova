@@ -72,6 +72,7 @@ const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
 const VIDEO_GENERATION_COST = 1500;
+const VIDEO_DIALOGUE_MAX_LETTERS = 30;
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
 const CREDIT_PRODUCTS = [
   { id: 'starter', label: 'Starter', paidCredit: 1000, salePriceUsd: 3.99, compareAtPriceUsd: 5.69, badge: '30% OFF' },
@@ -95,6 +96,27 @@ type CreditKind = 'daily' | 'paid';
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
+
+const normalizeVideoDialogueInput = (value: string): { value: string; error: string | null; letterCount: number } => {
+  if (!/^[A-Za-z\s]*$/.test(value)) {
+    return {
+      value,
+      error: `Use only English letters and spaces. Max ${VIDEO_DIALOGUE_MAX_LETTERS} letters.`,
+      letterCount: value.replace(/[^A-Za-z]/g, '').length,
+    };
+  }
+
+  const letterCount = value.replace(/[^A-Za-z]/g, '').length;
+  if (letterCount > VIDEO_DIALOGUE_MAX_LETTERS) {
+    return {
+      value,
+      error: `Use only English letters and spaces. Max ${VIDEO_DIALOGUE_MAX_LETTERS} letters.`,
+      letterCount,
+    };
+  }
+
+  return { value, error: null, letterCount };
+};
 
 interface UserProfile {
   email: string;
@@ -1609,6 +1631,11 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoPrompt: '이 사진으로 영상을 제작 하시겠습니까? 성공 시 1500 credits가 차감됩니다.',
       videoButton: '🎬 영상 제작하기 (성공 시 1500 credits 차감)',
       videoGenerating: '영상 생성 중...',
+      videoDialogueLabel: '대사 입력',
+      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialogueHint: '영문 대사만 입력 가능, 최대 30자',
+      videoDialogueInvalid: '영문과 공백만 입력할 수 있으며, 영문자는 최대 30자입니다.',
+      videoDialogueRequired: '영상 생성에는 대사 입력이 필요합니다.',
       videoReady: '영상 생성이 완료되었습니다.',
       videoFailed: '영상 생성에 실패했습니다.',
       videoSection: '생성된 영상',
@@ -1624,6 +1651,11 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoPrompt: 'この画像から動画を生成しますか？成功時に1500 creditsが差し引かれます。',
       videoButton: '🎬 動画を生成する (成功時に1500 credits差し引き)',
       videoGenerating: '動画を生成中...',
+      videoDialogueLabel: 'Dialogue',
+      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialogueHint: 'English letters only, up to 30 letters',
+      videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
+      videoDialogueRequired: 'Dialogue is required for video generation.',
       videoReady: '動画生成が完了しました。',
       videoFailed: '動画生成に失敗しました。',
       videoSection: '生成された動画',
@@ -1639,6 +1671,11 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoPrompt: '要基于这张图片生成视频吗？仅在成功完成后扣除 1500 credits。',
       videoButton: '🎬 生成视频 (成功后扣除 1500 credits)',
       videoGenerating: '正在生成视频...',
+      videoDialogueLabel: 'Dialogue',
+      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialogueHint: 'English letters only, up to 30 letters',
+      videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
+      videoDialogueRequired: 'Dialogue is required for video generation.',
       videoReady: '视频生成完成。',
       videoFailed: '视频生成失败。',
       videoSection: '生成的视频',
@@ -1653,6 +1690,11 @@ const getSubjectUiText = (lang: LanguageCode) => {
     videoPrompt: 'Would you like to create a video from this image? 1500 credits are charged only after a successful result.',
     videoButton: '🎬 Generate Video (Charge 1500 credits on success)',
     videoGenerating: 'Generating video...',
+    videoDialogueLabel: 'Dialogue',
+    videoDialoguePlaceholder: 'Enter dialogue in English letters',
+    videoDialogueHint: 'English letters only, up to 30 letters',
+    videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
+    videoDialogueRequired: 'Dialogue is required for video generation.',
     videoReady: 'Video generation completed.',
     videoFailed: 'Video generation failed.',
     videoSection: 'Generated video',
@@ -2469,6 +2511,8 @@ const App: React.FC = () => {
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
+  const [videoDialogue, setVideoDialogue] = useState('');
+  const [videoDialogueError, setVideoDialogueError] = useState<string | null>(null);
   const [showVideoPrompt, setShowVideoPrompt] = useState(false);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
@@ -3365,6 +3409,11 @@ const App: React.FC = () => {
     setSubjectType(nextSubjectType);
     setSubjectTypeManualOverride(true);
   };
+  const handleVideoDialogueChange = (nextValue: string) => {
+    const normalized = normalizeVideoDialogueInput(nextValue);
+    setVideoDialogue(normalized.value);
+    setVideoDialogueError(normalized.error ? subjectUi.videoDialogueInvalid : null);
+  };
   const handleVideoGenerate = async () => {
     if (!currentUser || !finalImageSrc || isGeneratingVideo) {
       return;
@@ -3373,11 +3422,21 @@ const App: React.FC = () => {
       alert(t.notEnoughCredits);
       return;
     }
+    const normalizedDialogue = normalizeVideoDialogueInput(videoDialogue);
+    if (!videoDialogue.trim()) {
+      setVideoDialogueError(subjectUi.videoDialogueRequired);
+      return;
+    }
+    if (normalizedDialogue.error) {
+      setVideoDialogueError(subjectUi.videoDialogueInvalid);
+      return;
+    }
 
     clearGeneratedVideo();
     const videoSession = videoGenerationSessionRef.current + 1;
     videoGenerationSessionRef.current = videoSession;
     setIsGeneratingVideo(true);
+    setVideoDialogueError(null);
     setVideoStatusMessage(subjectUi.videoGenerating);
     try {
       const authToken = await currentUser.getIdToken();
@@ -3388,6 +3447,7 @@ const App: React.FC = () => {
         image: finalImageSrc,
         requestId,
         subjectType,
+        dialogue: normalizedDialogue.value.trim(),
         sourceResultId: latestSharedResultId,
       });
       if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
@@ -4418,6 +4478,8 @@ const App: React.FC = () => {
             isGeneratingVideo={isGeneratingVideo}
             showVideoPrompt={showVideoPrompt}
             videoStatusMessage={videoStatusMessage}
+            videoDialogue={videoDialogue}
+            videoDialogueError={videoDialogueError}
             shareStatus={shareStatus}
             subjectUi={subjectUi}
             lang={lang}
@@ -4498,6 +4560,7 @@ const App: React.FC = () => {
             onInstagramSave={(src) => { void handleInstagramSave(src); }}
             onTryAnotherOutfit={handleTryAnotherOutfit}
             onRandomOutfit={handleRandomOutfit}
+            onVideoDialogueChange={handleVideoDialogueChange}
             onGenerateVideo={() => { void handleVideoGenerate(); }}
             onOpenResultPreview={openResultPreviewModal}
             getSubjectTypeLabel={getSubjectTypeLabel}

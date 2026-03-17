@@ -5,7 +5,7 @@ import { Webhook } from 'standardwebhooks';
 
 admin.initializeApp();
 const db = admin.firestore();
-const bucket = admin.storage().bucket('hamdeva.appspot.com');
+const bucket = admin.storage().bucket();
 
 const CORS_ORIGIN = [
   'https://hamdeva.com',
@@ -29,11 +29,14 @@ const VIDEO_GENERATION_IN_PROGRESS_ERROR = 'VIDEO_GENERATION_IN_PROGRESS';
 const VIDEO_GENERATION_IN_PROGRESS_MESSAGE = '이미 영상 생성이 진행 중입니다.';
 const VIDEO_FAILURE_LIMIT_REACHED_ERROR = 'VIDEO_FAILURE_LIMIT_REACHED';
 const VIDEO_FAILURE_LIMIT_REACHED_MESSAGE = '오늘 영상 생성 실패 횟수 제한에 도달했습니다. 잠시 후 다시 시도해주세요.';
+const INVALID_VIDEO_DIALOGUE_ERROR = 'INVALID_VIDEO_DIALOGUE';
+const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and must use only letters and spaces, with a maximum of 30 letters.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30_000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1500;
 const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION_COST} 크레딧이 필요합니다.`;
 const MAX_VIDEO_FAILURES_PER_DAY = 3;
+const VIDEO_DIALOGUE_MAX_LETTERS = 30;
 const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
@@ -41,7 +44,11 @@ const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
 const OPENAI_IMAGE_SIZE = '1024x1536';
 const OPENAI_IMAGE_QUALITY = 'medium';
 const SUBJECT_CLASSIFICATION_MODEL = process.env['OPENAI_CLASSIFICATION_MODEL'] ?? 'gpt-4.1-nano';
-const VIDEO_MODEL = process.env['OPENAI_VIDEO_MODEL'] ?? 'sora-2';
+const GOOGLE_VIDEO_CONFIG_ERROR = 'VIDEO_GENERATION_NOT_CONFIGURED';
+const GOOGLE_VIDEO_CONFIG_MESSAGE = 'Google Video API key is missing. Set GOOGLE_VIDEO_API_KEY in functions/.env.';
+const VIDEO_PROVIDER = 'google-veo';
+const VIDEO_MODEL = process.env['GOOGLE_VIDEO_MODEL'] ?? 'veo-3.1-generate-preview';
+const GOOGLE_VIDEO_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 const VIDEO_SECONDS = '4';
 const VIDEO_SIZE = '1280x720';
 const VIDEO_ESTIMATED_COST = 0.4;
@@ -389,10 +396,29 @@ interface OpenAIClassificationResponse {
   };
 }
 
-interface OpenAIVideoCreateResponse {
-  id?: string;
-  status?: string;
+interface GoogleVideoGenerateResponse {
+  generatedVideos?: {
+    video?: {
+      uri?: string;
+      mimeType?: string;
+    };
+  }[];
+  generatedSamples?: {
+    video?: {
+      uri?: string;
+      mimeType?: string;
+    };
+  }[];
+}
+
+interface GoogleVideoOperationResponse {
+  name?: string;
+  done?: boolean;
+  response?: {
+    generateVideoResponse?: GoogleVideoGenerateResponse;
+  };
   error?: {
+    code?: number;
     message?: string;
   };
 }
@@ -400,6 +426,9 @@ interface OpenAIVideoCreateResponse {
 interface OpenAIVideoStatusResponse {
   id?: string;
   status?: string;
+  response?: {
+    generateVideoResponse?: GoogleVideoGenerateResponse;
+  };
   error?: {
     message?: string;
   };
@@ -529,6 +558,11 @@ const getOpenAIApiKey = (): string => {
   const state = getOpenAIApiKeyState();
   logOpenAIApiKeySource(state.source);
   return state.key;
+};
+
+const getGoogleVideoApiKey = (): string => {
+  const apiKey = process.env['GOOGLE_VIDEO_API_KEY'];
+  return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 
 const getPolarApiKey = (): string => {
@@ -661,8 +695,37 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
   return [basePrompt, bodyGuide].filter(Boolean).join('\n\n');
 };
 
-const buildVideoPrompt = (subjectType: SubjectType): string =>
-  `${VIDEO_PROMPT_TEMPLATE}\n\nSubject type: ${subjectType}.`;
+const normalizeVideoDialogue = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  if (!normalized) {
+    return null;
+  }
+
+  if (!/^[A-Za-z\s]+$/.test(normalized)) {
+    return null;
+  }
+
+  const alphabeticCount = normalized.replace(/[^A-Za-z]/g, '').length;
+  if (alphabeticCount < 1 || alphabeticCount > VIDEO_DIALOGUE_MAX_LETTERS) {
+    return null;
+  }
+
+  return normalized;
+};
+
+const buildTalkingVideoPrompt = (subjectType: SubjectType, dialogue: string): string => [
+  VIDEO_PROMPT_TEMPLATE,
+  `Subject type: ${subjectType}.`,
+  'Create a single talking-shot video from the provided source image.',
+  'Preserve the exact identity, outfit, face, and framing from the source image.',
+  `The subject must clearly say this exact dialogue with natural lip sync and speaking motion: "${dialogue}".`,
+  'Use subtle natural head movement, blinking, and realistic facial expression while speaking.',
+  'Keep the camera stable and the result realistic, clean, and cinematic.',
+].join('\n\n');
 
 const parseDataUrl = (input: string): { mimeType: string; data: string } => {
   if (input.startsWith('data:')) {
@@ -676,24 +739,21 @@ const parseDataUrl = (input: string): { mimeType: string; data: string } => {
   return { mimeType: 'image/png', data: input };
 };
 
-const mimeTypeToExtension = (mimeType: string): string => {
-  switch (mimeType) {
-    case 'image/jpeg':
-      return 'jpg';
-    case 'image/webp':
-      return 'webp';
-    default:
-      return 'png';
-  }
-};
-
-const toImageBlob = (input: string, fallbackName: string): { blob: Blob; filename: string } => {
-  const { mimeType, data } = parseDataUrl(input);
-  const buffer = Buffer.from(data, 'base64');
+const createVideoReferenceInlineData = async (input: string): Promise<{ mimeType: string; data: string }> => {
+  const { data } = parseDataUrl(input);
+  const sourceBuffer = Buffer.from(data, 'base64');
+  const normalizedBuffer = await sharp(sourceBuffer)
+    .resize(1280, 720, {
+      fit: 'cover',
+      position: 'centre',
+      withoutEnlargement: false,
+    })
+    .png()
+    .toBuffer();
 
   return {
-    blob: new Blob([buffer], { type: mimeType }),
-    filename: `${fallbackName}.${mimeTypeToExtension(mimeType)}`,
+    mimeType: 'image/png',
+    data: normalizedBuffer.toString('base64'),
   };
 };
 
@@ -816,77 +876,153 @@ const requestOpenAIComposite = async (
 const createOpenAIVideo = async (
   image: string,
   subjectType: SubjectType,
+  dialogue: string,
 ): Promise<{ id: string; status: string; estimatedCost: number }> => {
-  const apiKey = getOpenAIApiKey();
+  const apiKey = getGoogleVideoApiKey();
   if (!apiKey) {
-    throw new Error(OPENAI_CONFIG_MESSAGE);
+    throw new Error(GOOGLE_VIDEO_CONFIG_ERROR);
   }
 
-  const referenceFile = toImageBlob(image, 'video_reference');
-  const formData = new FormData();
-  formData.append('model', VIDEO_MODEL);
-  formData.append('prompt', buildVideoPrompt(subjectType));
-  formData.append('seconds', VIDEO_SECONDS);
-  formData.append('size', VIDEO_SIZE);
-  formData.append('input_reference', referenceFile.blob, referenceFile.filename);
-
-  const response = await fetch('https://api.openai.com/v1/videos', {
+  const referenceImage = await createVideoReferenceInlineData(image);
+  functions.logger.info(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+    phase: 'create',
+          model: VIDEO_MODEL,
+          requestSize: VIDEO_SIZE,
+          requestSeconds: Number(VIDEO_SECONDS),
+          subjectType,
+          dialogue,
+        });
+  const response = await fetch(`${GOOGLE_VIDEO_API_BASE_URL}/models/${encodeURIComponent(VIDEO_MODEL)}:predictLongRunning`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
     },
-    body: formData,
+    body: JSON.stringify({
+      instances: [
+        {
+          prompt: buildTalkingVideoPrompt(subjectType, dialogue),
+          image: {
+            imageBytes: referenceImage.data,
+            mimeType: referenceImage.mimeType,
+          },
+        },
+      ],
+      parameters: {
+        aspectRatio: '16:9',
+        durationSeconds: Number(VIDEO_SECONDS),
+        resolution: '720p',
+        ...(subjectType === 'human' ? { personGeneration: 'allow_adult' } : {}),
+      },
+    }),
   });
 
-  const responseBody = await response.json().catch(() => ({})) as OpenAIVideoCreateResponse;
-  if (!response.ok || !responseBody.id) {
-    throw new Error(responseBody.error?.message || `OpenAI video creation error ${response.status}`);
+  const responseBody = await response.json().catch(() => ({})) as GoogleVideoOperationResponse;
+  if (!response.ok || !responseBody.name) {
+    functions.logger.error(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+      phase: 'create',
+      status: response.status,
+      body: responseBody,
+    });
+    throw new Error(responseBody.error?.message || `Google Veo video creation error ${response.status}`);
   }
 
   return {
-    id: responseBody.id,
-    status: responseBody.status || 'processing',
+    id: responseBody.name,
+    status: responseBody.done ? 'completed' : 'processing',
     estimatedCost: VIDEO_ESTIMATED_COST,
   };
 };
 
 const fetchOpenAIVideoStatus = async (videoId: string): Promise<OpenAIVideoStatusResponse> => {
-  const apiKey = getOpenAIApiKey();
+  const apiKey = getGoogleVideoApiKey();
   if (!apiKey) {
-    throw new Error(OPENAI_CONFIG_MESSAGE);
+    throw new Error(GOOGLE_VIDEO_CONFIG_ERROR);
   }
 
-  const response = await fetch(`https://api.openai.com/v1/videos/${encodeURIComponent(videoId)}`, {
+  functions.logger.info(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+    phase: 'status',
+    operationName: videoId,
+  });
+  const response = await fetch(`${GOOGLE_VIDEO_API_BASE_URL}/${videoId}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'x-goog-api-key': apiKey,
     },
   });
 
-  const responseBody = await response.json().catch(() => ({})) as OpenAIVideoStatusResponse;
+  const responseBody = await response.json().catch(() => ({})) as GoogleVideoOperationResponse;
   if (!response.ok) {
-    throw new Error(responseBody.error?.message || `OpenAI video status error ${response.status}`);
+    functions.logger.error(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+      phase: 'status',
+      operationName: videoId,
+      status: response.status,
+      body: responseBody,
+    });
+    throw new Error(responseBody.error?.message || `Google Veo video status error ${response.status}`);
   }
 
-  return responseBody;
+  return {
+    id: responseBody.name || videoId,
+    status: responseBody.done
+      ? (responseBody.error?.message ? 'failed' : 'completed')
+      : 'processing',
+    response: responseBody.response,
+    error: responseBody.error?.message ? { message: responseBody.error.message } : undefined,
+  };
 };
 
 const streamOpenAIVideoContent = async (videoId: string): Promise<Response> => {
-  const apiKey = getOpenAIApiKey();
+  const apiKey = getGoogleVideoApiKey();
   if (!apiKey) {
-    throw new Error(OPENAI_CONFIG_MESSAGE);
+    throw new Error(GOOGLE_VIDEO_CONFIG_ERROR);
   }
 
-  const response = await fetch(`https://api.openai.com/v1/videos/${encodeURIComponent(videoId)}/content`, {
+  functions.logger.info(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+    phase: 'content',
+    operationName: videoId,
+  });
+  const statusResponse = await fetch(`${GOOGLE_VIDEO_API_BASE_URL}/${videoId}`, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'x-goog-api-key': apiKey,
+    },
+  });
+  const statusBody = await statusResponse.json().catch(() => ({})) as GoogleVideoOperationResponse;
+  if (!statusResponse.ok) {
+    functions.logger.error(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+      phase: 'content-status',
+      operationName: videoId,
+      status: statusResponse.status,
+      body: statusBody,
+    });
+    throw new Error(statusBody.error?.message || `Google Veo video content status error ${statusResponse.status}`);
+  }
+
+  const generatedVideo = statusBody.response?.generateVideoResponse?.generatedVideos?.[0]
+    ?? statusBody.response?.generateVideoResponse?.generatedSamples?.[0]
+    ?? null;
+  const videoUri = generatedVideo?.video?.uri;
+  if (!videoUri) {
+    throw new Error(statusBody.error?.message || 'Google Veo video content URI not found');
+  }
+
+  const response = await fetch(videoUri, {
+    method: 'GET',
+    headers: {
+      'x-goog-api-key': apiKey,
     },
   });
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => '');
-    throw new Error(errorBody || `OpenAI video content error ${response.status}`);
+    functions.logger.error(`[VIDEO_PROVIDER]=${VIDEO_PROVIDER}`, {
+      phase: 'content-download',
+      operationName: videoId,
+      status: response.status,
+      body: errorBody,
+    });
+    throw new Error(errorBody || `Google Veo video content error ${response.status}`);
   }
 
   return response;
@@ -1338,6 +1474,7 @@ const beginVideoGenerationRequest = async (
   requestId: string,
   subjectType: SubjectType,
   sourceResultId?: string,
+  dialogue?: string,
 ): Promise<VideoRequestStartResult> => {
   if (!requestId) {
     throw new Error(DUPLICATE_REQUEST_ERROR);
@@ -1430,6 +1567,7 @@ const beginVideoGenerationRequest = async (
       usedCreditAmount: 0,
       subjectType,
       sourceResultId: sourceResultId || null,
+      dialogue: dialogue || null,
       model: VIDEO_MODEL,
       quality: 'standard',
       size: VIDEO_SIZE,
@@ -2439,6 +2577,16 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
     return;
   }
 
+  if (error instanceof Error && error.message === GOOGLE_VIDEO_CONFIG_ERROR) {
+    res.status(500).json({ error: GOOGLE_VIDEO_CONFIG_ERROR, message: GOOGLE_VIDEO_CONFIG_MESSAGE });
+    return;
+  }
+
+  if (error instanceof Error && error.message === INVALID_VIDEO_DIALOGUE_ERROR) {
+    res.status(400).json({ error: INVALID_VIDEO_DIALOGUE_ERROR, message: INVALID_VIDEO_DIALOGUE_MESSAGE });
+    return;
+  }
+
   if (error instanceof Error && error.message === DUPLICATE_REQUEST_ERROR) {
     res.status(409).json({ error: DUPLICATE_REQUEST_ERROR, message: DUPLICATE_REQUEST_MESSAGE });
     return;
@@ -2805,14 +2953,20 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     return;
   }
 
-  const { image, requestId, subjectType, sourceResultId } = req.body as {
+  const { image, requestId, subjectType, sourceResultId, dialogue } = req.body as {
     image?: string;
     requestId?: string;
     subjectType?: SubjectType;
     sourceResultId?: string;
+    dialogue?: string;
   };
   if (!image || !requestId) {
     res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
+    return;
+  }
+  const normalizedDialogue = normalizeVideoDialogue(dialogue);
+  if (!normalizedDialogue) {
+    res.status(400).json({ error: INVALID_VIDEO_DIALOGUE_ERROR, message: INVALID_VIDEO_DIALOGUE_MESSAGE });
     return;
   }
 
@@ -2820,6 +2974,7 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     requestId,
     subjectType: normalizeSubjectType(subjectType),
     sourceResultId: sourceResultId || null,
+    dialogue: normalizedDialogue,
     imageLength: typeof image === 'string' ? image.length : 0,
     headers: {
       contentType: req.get('content-type') || '',
@@ -2838,16 +2993,17 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
   const resolvedSubjectType = normalizeSubjectType(subjectType);
   let startResult: VideoRequestStartResult;
   try {
-    startResult = await beginVideoGenerationRequest(user, requestId, resolvedSubjectType, sourceResultId);
+    startResult = await beginVideoGenerationRequest(user, requestId, resolvedSubjectType, sourceResultId, normalizedDialogue);
   } catch (error) {
     handleApiError(res, error, 500);
     return;
   }
 
   try {
-    const videoJob = await createOpenAIVideo(image, resolvedSubjectType);
+    const videoJob = await createOpenAIVideo(image, resolvedSubjectType, normalizedDialogue);
     await markChargedRequestInProgress(user, requestId, 'videoGenerationLocks', {
       subjectType: resolvedSubjectType,
+      dialogue: normalizedDialogue,
       openaiVideoId: videoJob.id,
       estimatedCost: videoJob.estimatedCost,
       model: VIDEO_MODEL,
@@ -2883,6 +3039,7 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
         requestId,
         subjectType: resolvedSubjectType,
         sourceResultId: sourceResultId || null,
+        dialogue: normalizedDialogue,
         imageLength: typeof image === 'string' ? image.length : 0,
       },
       headers: {

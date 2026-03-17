@@ -61,7 +61,8 @@ Frontend Firebase config now fails closed when required values are missing. It n
 - `OPENAI_API_KEY`
 - `OPENAI_IMAGE_MODEL`
 - `OPENAI_CLASSIFICATION_MODEL`
-- `OPENAI_VIDEO_MODEL`
+- `GOOGLE_VIDEO_API_KEY`
+- `GOOGLE_VIDEO_MODEL`
 - `POLAR_API_KEY`
 - `POLAR_WEBHOOK_SECRET`
 - `POLAR_PRODUCT_ID_STARTER`

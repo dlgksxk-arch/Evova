@@ -199,6 +199,7 @@ export const callVideoGeneration = async (payload: {
   image: string;
   requestId: string;
   subjectType: SubjectType;
+  dialogue: string;
   sourceResultId?: string | null;
 }): Promise<VideoGenerationResponse> => {
   const res = await fetch(VIDEO_ENDPOINT, {

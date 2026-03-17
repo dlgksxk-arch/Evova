@@ -57,6 +57,8 @@ interface TryOnStudioProps {
   isGeneratingVideo: boolean;
   showVideoPrompt: boolean;
   videoStatusMessage: string | null;
+  videoDialogue: string;
+  videoDialogueError: string | null;
   shareStatus: string | null;
   subjectUi: {
     title: string;
@@ -67,6 +69,11 @@ interface TryOnStudioProps {
     videoPrompt: string;
     videoButton: string;
     videoGenerating: string;
+    videoDialogueLabel: string;
+    videoDialoguePlaceholder: string;
+    videoDialogueHint: string;
+    videoDialogueInvalid: string;
+    videoDialogueRequired: string;
   };
   lang: LanguageCode;
   subjectTypes: readonly SubjectType[];
@@ -100,6 +107,7 @@ interface TryOnStudioProps {
   onInstagramSave: (src: string | null) => void;
   onTryAnotherOutfit: () => void;
   onRandomOutfit: () => void;
+  onVideoDialogueChange: (value: string) => void;
   onGenerateVideo: () => void;
   onOpenResultPreview: (src: string) => void;
   getSubjectTypeLabel: (lang: LanguageCode, subjectType: SubjectType) => string;
@@ -141,6 +149,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   isGeneratingVideo,
   showVideoPrompt,
   videoStatusMessage,
+  videoDialogue,
+  videoDialogueError,
   shareStatus,
   subjectUi,
   lang,
@@ -172,6 +182,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onInstagramSave,
   onTryAnotherOutfit,
   onRandomOutfit,
+  onVideoDialogueChange,
   onGenerateVideo,
   onOpenResultPreview,
   getSubjectTypeLabel,
@@ -488,6 +499,22 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       <div className="action-section video-action-section page-article">
         <p className="real-generation-label">{subjectUi.videoPrompt}</p>
         <p className="credit-cost-text">{videoHelperText}</p>
+        <label className="auth-field" htmlFor="video-dialogue-input">
+          <span>{subjectUi.videoDialogueLabel}</span>
+          <input
+            id="video-dialogue-input"
+            type="text"
+            value={videoDialogue}
+            onChange={(event) => onVideoDialogueChange(event.target.value)}
+            placeholder={subjectUi.videoDialoguePlaceholder}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </label>
+        <p className="loading-subtext">
+          {subjectUi.videoDialogueHint} ({videoDialogue.replace(/[^A-Za-z]/g, '').length}/30)
+        </p>
+        {videoDialogueError && <p className="auth-error-text">{videoDialogueError}</p>}
         <button
           className="generate-btn"
           disabled={!finalImageSrc || isGeneratingVideo || !canAffordVideo}
