@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { archiveCreation, deleteCreation, getCreations } from '../../lib/api/hamdeva';
 import type { UserCreationRecord } from '../../types/hamdeva';
@@ -8,6 +8,9 @@ type FilterType = 'all' | 'image' | 'video';
 interface CreationHistoryPanelProps {
   currentUser: User | null;
 }
+
+const MODAL_OPEN_MIN_LOADING_MS = 400;
+const MAX_ARCHIVED_CREATIONS = 5;
 
 const formatDateTime = (value?: number | null): string => {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -34,33 +37,38 @@ const downloadFile = (url: string, filename: string) => {
   document.body.removeChild(link);
 };
 
-const overlayStyle: React.CSSProperties = {
+const inferFileExtension = (item: UserCreationRecord): string => {
+  if (item.type === 'video') {
+    return 'mp4';
+  }
+
+  const match = item.fileUrl.match(/\.([a-z0-9]+)(?:\?|$)/i);
+  return match?.[1] || 'png';
+};
+
+const getModalShellStyle = (isMobile: boolean): React.CSSProperties => ({
   position: 'fixed',
   inset: 0,
-  background: 'rgba(16, 10, 6, 0.72)',
-  zIndex: 1200,
+  background: 'rgba(0, 0, 0, 0.6)',
+  zIndex: 2000,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '24px',
-};
+  padding: isMobile ? 0 : 24,
+});
 
-const panelStyle: React.CSSProperties = {
-  width: 'min(960px, 100%)',
-  maxHeight: '90vh',
+const getModalPanelStyle = (isMobile: boolean): React.CSSProperties => ({
+  width: isMobile ? '100%' : 'min(960px, 100%)',
+  height: isMobile ? '100%' : 'min(90vh, 100%)',
+  maxHeight: isMobile ? '100vh' : '90vh',
   overflow: 'hidden',
   background: 'var(--surface)',
-  borderRadius: '20px',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--shadow-lg)',
+  borderRadius: isMobile ? 0 : 20,
+  border: isMobile ? 'none' : '1px solid var(--border)',
+  boxShadow: isMobile ? 'none' : 'var(--shadow-lg)',
   display: 'flex',
   flexDirection: 'column',
-};
-
-const contentScrollStyle: React.CSSProperties = {
-  overflow: 'auto',
-  padding: '20px',
-};
+});
 
 const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser }) => {
   const [items, setItems] = useState<UserCreationRecord[]>([]);
@@ -69,7 +77,28 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedItem, setSelectedItem] = useState<UserCreationRecord | null>(null);
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [isContentLoaded, setIsContentLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const dragStateRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const loadingStartRef = useRef(0);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!currentUser) {
@@ -110,9 +139,131 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
     };
   }, [currentUser]);
 
+  useEffect(() => {
+    if (!selectedItem) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !submitting) {
+        event.preventDefault();
+        setSelectedItem(null);
+        return;
+      }
+
+      if (event.key !== 'Tab' || !modalRef.current) {
+        return;
+      }
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+
+      if (focusable.length === 0) {
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedItem, submitting]);
+
+  useEffect(() => {
+    if (!dragging) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const dragState = dragStateRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      setPosition({
+        x: dragState.originX + (event.clientX - dragState.startX),
+        y: dragState.originY + (event.clientY - dragState.startY),
+      });
+    };
+
+    const handlePointerUp = () => {
+      dragStateRef.current = null;
+      setDragging(false);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [dragging]);
+
   const filteredItems = useMemo(() => (
-    items.filter((item) => filter === 'all' || item.type === filter)
+    [...items]
+      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .filter((item) => filter === 'all' || item.type === filter)
   ), [filter, items]);
+
+  const archivedCount = useMemo(() => (
+    items.filter((item) => item.isArchived).length
+  ), [items]);
+
+  const canArchiveSelectedItem = Boolean(selectedItem && !selectedItem.isArchived && archivedCount < MAX_ARCHIVED_CREATIONS);
+
+  const closeModal = () => {
+    if (submitting) {
+      return;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+
+    setSelectedItem(null);
+    setModalLoading(false);
+    setIsContentLoaded(false);
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+    setDragging(false);
+    setIsVideoPlaying(false);
+  };
+
+  const startModalLoading = () => {
+    loadingStartRef.current = Date.now();
+    setModalLoading(true);
+    setIsContentLoaded(false);
+    setIsVideoPlaying(false);
+  };
+
+  const finishModalLoading = () => {
+    const elapsed = Date.now() - loadingStartRef.current;
+    const remaining = Math.max(0, MODAL_OPEN_MIN_LOADING_MS - elapsed);
+
+    window.setTimeout(() => {
+      setIsContentLoaded(true);
+      setModalLoading(false);
+    }, remaining);
+  };
 
   const refreshItems = async () => {
     if (!currentUser) {
@@ -127,6 +278,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
 
   const handleArchive = async () => {
     if (!currentUser || !selectedItem || selectedItem.isArchived) {
+      return;
+    }
+
+    if (archivedCount >= MAX_ARCHIVED_CREATIONS) {
+      alert('보관은 최대 5개까지 가능합니다');
       return;
     }
 
@@ -153,8 +309,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       const authToken = await currentUser.getIdToken();
       await deleteCreation(authToken, selectedItem.id);
       await refreshItems();
-      setSelectedItem(null);
-      setZoom(1);
+      closeModal();
     } catch (deleteError) {
       console.error('Failed to delete creation:', deleteError);
       alert(deleteError instanceof Error ? deleteError.message : '삭제에 실패했습니다.');
@@ -162,6 +317,37 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       setSubmitting(false);
     }
   };
+
+  const handleImageWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setZoom((prev) => {
+      const next = prev + (event.deltaY < 0 ? 0.15 : -0.15);
+      return Math.min(4, Math.max(0.6, next));
+    });
+  };
+
+  const handleImagePointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
+    if (selectedItem?.type !== 'image') {
+      return;
+    }
+
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: position.x,
+      originY: position.y,
+    };
+    setDragging(true);
+  };
+
+  const handleOpenItem = (item: UserCreationRecord) => {
+    setSelectedItem(item);
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+    startModalLoading();
+  };
+
+  const modalHeaderText = selectedItem ? `[${formatDateTime(selectedItem.createdAt)}] ${selectedItem.type.toUpperCase()}${selectedItem.isArchived ? ' (보관)' : ''}` : '';
 
   return (
     <article className="page-article">
@@ -181,15 +367,21 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
             <button
               key={item.id}
               className="outline-btn auth-inline-btn"
-              onClick={() => {
-                setSelectedItem(item);
-                setZoom(1);
+              onClick={() => handleOpenItem(item)}
+              onMouseEnter={() => setHoveredItemId(item.id)}
+              onMouseLeave={() => setHoveredItemId((prev) => prev === item.id ? null : prev)}
+              style={{
+                width: '100%',
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                padding: '14px 16px',
+                background: hoveredItemId === item.id ? 'var(--upload-hover-bg)' : 'transparent',
+                transition: 'background-color 0.2s ease, opacity 0.2s ease',
+                opacity: hoveredItemId === item.id ? 1 : 0.96,
               }}
-              style={{ justifyContent: 'space-between', textAlign: 'left' }}
               type="button"
             >
-              <span>[{formatDateTime(item.createdAt)}] {item.type.toUpperCase()}</span>
-              <span>{item.isArchived ? '보관됨' : '일반'}</span>
+              <span>[{formatDateTime(item.createdAt)}] {item.type.toUpperCase()}{item.isArchived ? ' (보관)' : ''}</span>
             </button>
           ))}
         </div>
@@ -197,61 +389,142 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
 
       {selectedItem ? (
         <div
-          onClick={() => {
-            if (!submitting) {
-              setSelectedItem(null);
-              setZoom(1);
-            }
-          }}
-          style={overlayStyle}
+          aria-modal="true"
+          role="dialog"
+          onClick={() => closeModal()}
+          style={getModalShellStyle(isMobile)}
         >
-          <div onClick={(event) => event.stopPropagation()} style={panelStyle}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <strong>{selectedItem.type === 'video' ? 'VIDEO' : 'IMAGE'}</strong>
-                <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{formatDateTime(selectedItem.createdAt)}</p>
+          <div
+            ref={modalRef}
+            onClick={(event) => event.stopPropagation()}
+            style={getModalPanelStyle(isMobile)}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{modalHeaderText}</strong>
+                <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>만료일: {formatDateTime(selectedItem.expireAt)}</p>
               </div>
-              <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={() => { setSelectedItem(null); setZoom(1); }} type="button">닫기</button>
+              <button ref={closeButtonRef} className="outline-btn auth-inline-btn" disabled={submitting} onClick={closeModal} type="button">닫기</button>
             </div>
-            <div style={contentScrollStyle}>
-              {selectedItem.type === 'video' ? (
-                <video controls src={selectedItem.fileUrl} style={{ width: '100%', maxHeight: '68vh', background: '#000', borderRadius: 16 }} />
-              ) : (
-                <>
-                  <div className="credit-cta-actions" style={{ marginBottom: 16 }}>
-                    <button className="outline-btn auth-inline-btn" onClick={() => setZoom((prev) => Math.max(0.5, prev - 0.25))} type="button">축소</button>
-                    <button className="outline-btn auth-inline-btn" onClick={() => setZoom((prev) => Math.min(3, prev + 0.25))} type="button">확대</button>
+
+            <div
+              onWheel={selectedItem.type === 'image' ? handleImageWheel : undefined}
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                padding: isMobile ? 16 : 20,
+                position: 'relative',
+                touchAction: selectedItem.type === 'image' ? 'pinch-zoom' : 'auto',
+              }}
+            >
+              {modalLoading || !isContentLoaded ? (
+                <div style={{ minHeight: isMobile ? '50vh' : '55vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
+                  Loading...
+                </div>
+              ) : null}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? '50vh' : '55vh' }}>
+                {selectedItem.type === 'video' ? (
+                  <div style={{ position: 'relative', width: '100%', visibility: modalLoading ? 'hidden' : 'visible' }}>
+                    <video
+                      ref={videoRef}
+                      controls
+                      onLoadedData={finishModalLoading}
+                      onPause={() => setIsVideoPlaying(false)}
+                      onPlay={() => setIsVideoPlaying(true)}
+                      preload="metadata"
+                      src={selectedItem.fileUrl}
+                      style={{ width: '100%', maxHeight: isMobile ? '62vh' : '68vh', background: '#000', borderRadius: 16 }}
+                    />
+                    {!isVideoPlaying ? (
+                      <button
+                        aria-label="Play video"
+                        onClick={() => {
+                          const video = videoRef.current;
+                          if (!video) {
+                            return;
+                          }
+                          void video.play();
+                        }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: 54,
+                        }}
+                        type="button"
+                      >
+                        ▶
+                      </button>
+                    ) : null}
                   </div>
-                  <div style={{ overflow: 'auto', maxHeight: '62vh', border: '1px solid var(--border)', borderRadius: 16, padding: 12 }}>
+                ) : (
+                  <div style={{ overflow: 'auto', maxWidth: '100%', maxHeight: isMobile ? '62vh' : '68vh', border: '1px solid var(--border)', borderRadius: 16, padding: 12, cursor: dragging ? 'grabbing' : 'grab', visibility: modalLoading ? 'hidden' : 'visible' }}>
                     <img
                       alt="Creation preview"
+                      onLoad={finishModalLoading}
+                      onPointerDown={handleImagePointerDown}
+                      draggable={false}
                       src={selectedItem.fileUrl}
                       style={{
                         display: 'block',
                         margin: '0 auto',
                         maxWidth: '100%',
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'top center',
+                        maxHeight: isMobile ? '56vh' : '64vh',
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                        transformOrigin: 'center center',
+                        userSelect: 'none',
                       }}
                     />
                   </div>
-                </>
-              )}
+                )}
+              </div>
+
+              {selectedItem.type === 'image' && !modalLoading ? (
+                <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
+                  마우스 휠로 확대/축소, 드래그로 이동할 수 있습니다.
+                </div>
+              ) : null}
             </div>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: isMobile ? 'stretch' : 'flex-end', padding: '16px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, position: 'sticky', bottom: 0, background: 'var(--surface)' }}>
               <button
                 className="outline-btn auth-inline-btn"
                 disabled={submitting}
-                onClick={() => downloadFile(selectedItem.fileUrl, `hamdeva-${selectedItem.type}-${selectedItem.id}`)}
+                onClick={() => downloadFile(selectedItem.fileUrl, `hamdeva-${selectedItem.type}-${selectedItem.id}.${inferFileExtension(selectedItem)}`)}
+                style={{ flex: isMobile ? 1 : undefined }}
                 type="button"
               >
                 다운로드
               </button>
-              <button className="outline-btn auth-inline-btn danger" disabled={submitting} onClick={() => { void handleDelete(); }} type="button">
-                삭제
-              </button>
-              <button className="generate-btn auth-inline-btn" disabled={submitting || selectedItem.isArchived} onClick={() => { void handleArchive(); }} type="button">
+              <button
+                className={selectedItem.isArchived ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+                disabled={submitting || selectedItem.isArchived}
+                onClick={() => {
+                  if (!canArchiveSelectedItem) {
+                    alert('보관은 최대 5개까지 가능합니다');
+                    return;
+                  }
+                  void handleArchive();
+                }}
+                style={{ flex: isMobile ? 1 : undefined }}
+                type="button"
+              >
                 {selectedItem.isArchived ? '보관됨' : '보관'}
+              </button>
+              <button
+                className="outline-btn auth-inline-btn"
+                disabled={submitting}
+                onClick={() => { void handleDelete(); }}
+                style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
+                type="button"
+              >
+                삭제
               </button>
             </div>
           </div>
