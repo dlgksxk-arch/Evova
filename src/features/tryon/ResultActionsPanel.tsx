@@ -51,8 +51,6 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   onShareOnX,
   onShareOnFacebook,
   onInstagramSave,
-  onTryAnotherOutfit,
-  onRandomOutfit,
   onGenerateVideo,
 }) => (
   <>
@@ -97,14 +95,6 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
           <span>{copy.saveForInstagram}</span>
         </button>
       </div>
-    </div>
-    <div className="result-action-grid result-utility-grid">
-      <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
-        {copy.tryAnotherOutfit}
-      </button>
-      <button className="outline-btn result-action-btn" onClick={onRandomOutfit} type="button">
-        {copy.randomOutfit}
-      </button>
     </div>
     {showVideoControls && (showVideoPrompt || isGeneratingVideo || generatedVideoUrl) && (
       <div className="page-article result-video-panel">

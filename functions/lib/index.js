@@ -359,7 +359,7 @@ const getOpenAIApiKey = () => {
     return state.key;
 };
 const getGoogleVideoApiKey = () => {
-    const apiKey = process.env['GOOGLE_VIDEO_API_KEY'];
+    const apiKey = process.env['GOOGLE_VIDEO_API_KEY'] ?? process.env['NANOBANANA_API_KEY'];
     return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 const getPolarApiKey = () => {
@@ -632,8 +632,8 @@ const createOpenAIVideo = async (image, subjectType, dialogue) => {
                 {
                     prompt: buildTalkingVideoPrompt(subjectType, dialogue),
                     image: {
-                        imageBytes: referenceImage.data,
                         mimeType: referenceImage.mimeType,
+                        bytesBase64Encoded: referenceImage.data,
                     },
                 },
             ],
@@ -1512,7 +1512,6 @@ const buildWatermarkSvg = (width, height) => Buffer.from(`
     </filter>
   </defs>
   <g filter="url(#shadow)">
-    <rect x="${Math.max(16, width - 260)}" y="${Math.max(16, height - 84)}" rx="24" ry="24" width="220" height="52" fill="rgba(255,255,255,0.88)"/>
     <text
       x="${Math.max(16, width - 150)}"
       y="${Math.max(16, height - 50)}"
@@ -2208,7 +2207,7 @@ const handleTryOnRequest = async (req, res, label) => {
     }
     try {
         const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
-        const watermarkApplied = chargeResult.usedCreditType === 'daily';
+        const watermarkApplied = true;
         const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
         let creationFilePath = null;
         try {

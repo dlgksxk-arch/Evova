@@ -128,9 +128,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   resultPreviewState,
   personUploadMessage,
   clothUploadMessage,
-  subjectType,
-  detectedSubjectType,
-  subjectDetectionStatus,
   finalImageSrc,
   creditNotice,
   currentDailyCredit,
@@ -153,8 +150,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   videoDialogueError,
   shareStatus,
   subjectUi,
-  lang,
-  subjectTypes,
   emptyFaceTips,
   emptyClothTips,
   emptyPreviewCopy,
@@ -168,8 +163,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onClothFileChange,
   onClearPerson,
   onClearCloth,
-  onAutoDetectSubject,
-  onSubjectTypeChange,
   onGenerate,
   onNavigateToMyPage,
   onDownloadResult,
@@ -185,7 +178,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onVideoDialogueChange,
   onGenerateVideo,
   onOpenResultPreview,
-  getSubjectTypeLabel,
   formatSecondsLabel,
 }) => {
   const videoHelperText = lang === 'ko'
@@ -347,36 +339,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         </div>
       </div>
 
-      <div className="subject-type-panel page-article">
-        <div className="subject-type-head">
-          <strong>{subjectUi.title}</strong>
-          <button className="outline-btn subject-detect-btn" disabled={isGenerating} onClick={onAutoDetectSubject} type="button">
-            {subjectUi.auto}
-          </button>
-        </div>
-        <div className="subject-type-controls">
-          <select
-            className="subject-type-select"
-            disabled={isGenerating}
-            value={subjectType}
-            onChange={(event) => onSubjectTypeChange(event.target.value as SubjectType)}
-          >
-            {subjectTypes.map((item) => (
-              <option key={item} value={item}>{getSubjectTypeLabel(lang, item)}</option>
-            ))}
-          </select>
-          <span className="subject-type-status">
-            {subjectDetectionStatus === 'detecting'
-              ? subjectUi.autoDetecting
-              : subjectDetectionStatus === 'ready' && detectedSubjectType
-                ? `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, detectedSubjectType)}`
-                : subjectDetectionStatus === 'error'
-                  ? subjectUi.autoFailed
-                  : `${subjectUi.autoDetected}: ${getSubjectTypeLabel(lang, subjectType)}`}
-          </span>
-        </div>
-      </div>
-
       <div className="action-section">
         <p className="real-generation-label">{copy.realGenerationCta}</p>
         <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
@@ -487,12 +449,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <div className="credit-result-notice page-article">
               <strong>{copy.freeResultNoticeTitle}</strong>
               <p>{copy.freeResultNoticeBody}</p>
-              <button className="outline-btn auth-inline-btn" onClick={onNavigateToMyPage} type="button">
-                {copy.chargeCredits}
-              </button>
             </div>
           )}
-          <p className="result-disclaimer-text">{copy.resultPrivacyNotice}</p>
         </div>
       )}
 

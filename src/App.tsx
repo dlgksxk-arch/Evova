@@ -98,24 +98,28 @@ type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
 
 const normalizeVideoDialogueInput = (value: string): { value: string; error: string | null; letterCount: number } => {
-  if (!/^[A-Za-z\s]*$/.test(value)) {
-    return {
-      value,
-      error: `Use only English letters and spaces. Max ${VIDEO_DIALOGUE_MAX_LETTERS} letters.`,
-      letterCount: value.replace(/[^A-Za-z]/g, '').length,
-    };
+  let letterCount = 0;
+  let normalizedValue = '';
+
+  for (const char of value) {
+    if (/[A-Za-z]/.test(char)) {
+      if (letterCount >= VIDEO_DIALOGUE_MAX_LETTERS) {
+        continue;
+      }
+      normalizedValue += char;
+      letterCount += 1;
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      if (!normalizedValue) {
+        continue;
+      }
+      normalizedValue += char;
+    }
   }
 
-  const letterCount = value.replace(/[^A-Za-z]/g, '').length;
-  if (letterCount > VIDEO_DIALOGUE_MAX_LETTERS) {
-    return {
-      value,
-      error: `Use only English letters and spaces. Max ${VIDEO_DIALOGUE_MAX_LETTERS} letters.`,
-      letterCount,
-    };
-  }
-
-  return { value, error: null, letterCount };
+  return { value: normalizedValue, error: null, letterCount };
 };
 
 interface UserProfile {
@@ -288,8 +292,8 @@ const translations = {
     starterProductName: 'starter',
     creatorProductName: 'creator',
     proProductName: 'pro',
-    freeResultNoticeTitle: '무료 생성 결과입니다.',
-    freeResultNoticeBody: '워터마크 없는 결과와 추가 생성을 원하면 크레딧을 충전하세요.',
+    freeResultNoticeTitle: '이미지에 워터마크가 적용됩니다.',
+    freeResultNoticeBody: '모든 이미지 결과에는 HAMDEVA AI 워터마크가 포함됩니다.',
     watermarkEnabled: '워터마크 적용',
     watermarkRemoved: '워터마크 없음',
     adminNav: '관리',
@@ -504,8 +508,8 @@ const translations = {
     starterProductName: 'starter',
     creatorProductName: 'creator',
     proProductName: 'pro',
-    freeResultNoticeTitle: 'This was generated with free credits.',
-    freeResultNoticeBody: 'If you want watermark-free results or more generations, charge paid credits.',
+    freeResultNoticeTitle: 'Watermark applied to this image.',
+    freeResultNoticeBody: 'All generated image results include the HAMDEVA AI watermark.',
     watermarkEnabled: 'Watermark on',
     watermarkRemoved: 'Watermark off',
     adminNav: 'Admin',
@@ -1632,7 +1636,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoButton: '🎬 영상 제작하기 (성공 시 1500 credits 차감)',
       videoGenerating: '영상 생성 중...',
       videoDialogueLabel: '대사 입력',
-      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialoguePlaceholder: '',
       videoDialogueHint: '영문 대사만 입력 가능, 최대 30자',
       videoDialogueInvalid: '영문과 공백만 입력할 수 있으며, 영문자는 최대 30자입니다.',
       videoDialogueRequired: '영상 생성에는 대사 입력이 필요합니다.',
@@ -1652,7 +1656,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoButton: '🎬 動画を生成する (成功時に1500 credits差し引き)',
       videoGenerating: '動画を生成中...',
       videoDialogueLabel: 'Dialogue',
-      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialoguePlaceholder: '',
       videoDialogueHint: 'English letters only, up to 30 letters',
       videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
       videoDialogueRequired: 'Dialogue is required for video generation.',
@@ -1672,7 +1676,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoButton: '🎬 生成视频 (成功后扣除 1500 credits)',
       videoGenerating: '正在生成视频...',
       videoDialogueLabel: 'Dialogue',
-      videoDialoguePlaceholder: 'Enter dialogue in English letters',
+      videoDialoguePlaceholder: '',
       videoDialogueHint: 'English letters only, up to 30 letters',
       videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
       videoDialogueRequired: 'Dialogue is required for video generation.',
@@ -1691,7 +1695,7 @@ const getSubjectUiText = (lang: LanguageCode) => {
     videoButton: '🎬 Generate Video (Charge 1500 credits on success)',
     videoGenerating: 'Generating video...',
     videoDialogueLabel: 'Dialogue',
-    videoDialoguePlaceholder: 'Enter dialogue in English letters',
+    videoDialoguePlaceholder: '',
     videoDialogueHint: 'English letters only, up to 30 letters',
     videoDialogueInvalid: 'Use only English letters and spaces, with a maximum of 30 letters.',
     videoDialogueRequired: 'Dialogue is required for video generation.',
@@ -3412,7 +3416,7 @@ const App: React.FC = () => {
   const handleVideoDialogueChange = (nextValue: string) => {
     const normalized = normalizeVideoDialogueInput(nextValue);
     setVideoDialogue(normalized.value);
-    setVideoDialogueError(normalized.error ? subjectUi.videoDialogueInvalid : null);
+    setVideoDialogueError(null);
   };
   const handleVideoGenerate = async () => {
     if (!currentUser || !finalImageSrc || isGeneratingVideo) {
@@ -3425,10 +3429,12 @@ const App: React.FC = () => {
     const normalizedDialogue = normalizeVideoDialogueInput(videoDialogue);
     if (!videoDialogue.trim()) {
       setVideoDialogueError(subjectUi.videoDialogueRequired);
+      setVideoStatusMessage(subjectUi.videoDialogueRequired);
       return;
     }
     if (normalizedDialogue.error) {
       setVideoDialogueError(subjectUi.videoDialogueInvalid);
+      setVideoStatusMessage(subjectUi.videoDialogueInvalid);
       return;
     }
 
@@ -4428,21 +4434,6 @@ const App: React.FC = () => {
         />
       ) : currentPage === 'home' ? (
         <>
-          <section className="section editorial-section">
-            <div className="section-inner">
-              <div className="compact-card-grid">
-                {contentLocale.home.cards.map((card) => (
-                  <article key={card.id} className="compact-info-card">
-                    <h2>{card.title}</h2>
-                    <p>{card.description}</p>
-                    <button className="text-link-btn" onClick={() => openContentModal(card.id as ModalTab)} type="button">
-                      {card.button}
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
           <TryOnStudio
             currentUser={currentUser}
             isGenerating={isGenerating}
@@ -4568,6 +4559,21 @@ const App: React.FC = () => {
           />
           {renderSeoContent('home')}
           <FAQSection title={getFaqTitle('home')} items={homeFaqs} />
+          <section className="section editorial-section">
+            <div className="section-inner">
+              <div className="compact-card-grid">
+                {contentLocale.home.cards.map((card) => (
+                  <article key={card.id} className="compact-info-card">
+                    <h2>{card.title}</h2>
+                    <p>{card.description}</p>
+                    <button className="text-link-btn" onClick={() => openContentModal(card.id as ModalTab)} type="button">
+                      {card.button}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
         </>
       ) : (
         <main className="section page-shell">
@@ -4835,30 +4841,38 @@ const App: React.FC = () => {
           onClose={() => setShowCreditPlanModal(false)}
         >
           <div className="credit-plan-grid">
-            {CREDIT_PRODUCTS.map((product) => (
-              <article key={product.id} className="credit-plan-card">
-                <div className="credit-plan-copy">
-                  <div className="credit-plan-badges">
-                    {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
-                    {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+            {CREDIT_PRODUCTS.map((product) => {
+              const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
+              const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
+              return (
+                <article key={product.id} className="credit-plan-card">
+                  <div className="credit-plan-copy">
+                    <div className="credit-plan-badges">
+                      {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
+                      {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+                    </div>
+                    <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                    <p className="credit-plan-price-row">
+                      <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
+                      <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
+                    </p>
+                    <p className="credit-plan-savings">
+                      <span className="credit-plan-save-pill">Save {discountPercent}%</span>
+                      <span className="credit-plan-save-amount">${savingsAmount.toFixed(2)} off</span>
+                    </p>
+                    <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
                   </div>
-                  <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
-                  <p className="credit-plan-price-row">
-                    <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
-                    <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
-                  </p>
-                  <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
-                </div>
-                <button
-                  className="generate-btn auth-inline-btn"
-                  disabled={isStartingCheckout === product.id}
-                  onClick={() => { void handleStartCheckout(product.id); }}
-                  type="button"
-                >
-                  {isStartingCheckout === product.id ? t.paymentRedirecting : t.purchaseNow}
-                </button>
-              </article>
-            ))}
+                  <button
+                    className="generate-btn auth-inline-btn"
+                    disabled={isStartingCheckout === product.id}
+                    onClick={() => { void handleStartCheckout(product.id); }}
+                    type="button"
+                  >
+                    {isStartingCheckout === product.id ? t.paymentRedirecting : t.purchaseNow}
+                  </button>
+                </article>
+              );
+            })}
           </div>
         </ShellModal>
       )}

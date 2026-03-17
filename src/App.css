@@ -1264,6 +1264,12 @@ a { color: inherit; text-decoration: none; }
   max-width: min(640px, calc(100vw - 24px)) !important;
 }
 
+.account-modal.credit-plan-modal {
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .account-modal.mypage-modal-shell {
   max-width: min(1120px, calc(100vw - 24px)) !important;
   max-height: 90vh;
@@ -1285,6 +1291,13 @@ a { color: inherit; text-decoration: none; }
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
+}
+
+.credit-plan-modal .account-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(94vh - 110px);
+  overflow-y: auto;
 }
 
 .mypage-modal-shell .account-modal-body {
@@ -1309,7 +1322,7 @@ a { color: inherit; text-decoration: none; }
 
 .credit-plan-grid {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .credit-plan-card {
@@ -1317,10 +1330,12 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px;
-  border: 1px solid var(--border);
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
   border-radius: 18px;
-  background: color-mix(in srgb, var(--surface-alt) 92%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #fff3e7 88%, transparent), color-mix(in srgb, var(--surface-alt) 94%, transparent));
+  box-shadow: 0 18px 34px rgba(184, 54, 14, 0.08);
 }
 
 .credit-plan-copy {
@@ -1371,14 +1386,44 @@ a { color: inherit; text-decoration: none; }
 
 .credit-plan-compare-price {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
   text-decoration: line-through;
 }
 
 .credit-plan-sale-price {
-  color: var(--text);
-  font-size: 22px;
+  color: #b8360e;
+  font-size: 28px;
   font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.credit-plan-savings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.credit-plan-save-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #b8360e, #f29d2e);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.credit-plan-save-amount {
+  color: #9a5200;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .mypage-modal-shell .mypage-layout,
@@ -1552,7 +1597,7 @@ a { color: inherit; text-decoration: none; }
 .content-modal {
   max-width: 980px !important;
   width: 100%;
-  max-height: 80vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1563,6 +1608,7 @@ a { color: inherit; text-decoration: none; }
   min-height: 0;
   overflow-y: auto;
   padding-right: 8px;
+  padding-bottom: 12px;
 }
 
 .content-modal-body::-webkit-scrollbar {
@@ -1576,6 +1622,7 @@ a { color: inherit; text-decoration: none; }
 
 .content-modal-article {
   padding: 28px;
+  overflow-wrap: anywhere;
 }
 
 .content-modal-intro {
@@ -2468,7 +2515,7 @@ a { color: inherit; text-decoration: none; }
     overflow: visible;
   }
   .sample-card:hover {
-    transform: translateY(-6px) scale(2.3);
+    transform: translateY(-6px) scale(4.6);
     z-index: 8;
     box-shadow: var(--shadow-lg);
   }

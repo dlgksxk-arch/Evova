@@ -93,30 +93,38 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           <h3>{copy.chargeCredits}</h3>
           <p>{copy.chargeDescription}</p>
           <div className="credit-product-grid">
-            {products.map((product) => (
-              <article key={product.id} className="credit-product-card">
-                <div className="credit-plan-copy">
-                  <div className="credit-plan-badges">
-                    {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
-                    {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+            {products.map((product) => {
+              const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
+              const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
+              return (
+                <article key={product.id} className="credit-product-card">
+                  <div className="credit-plan-copy">
+                    <div className="credit-plan-badges">
+                      {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
+                      {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+                    </div>
+                    <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                    <p className="credit-plan-price-row">
+                      <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
+                      <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
+                    </p>
+                    <p className="credit-plan-savings">
+                      <span className="credit-plan-save-pill">Save {discountPercent}%</span>
+                      <span className="credit-plan-save-amount">${savingsAmount.toFixed(2)} off</span>
+                    </p>
+                    <p>{copy.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
                   </div>
-                  <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
-                  <p className="credit-plan-price-row">
-                    <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
-                    <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
-                  </p>
-                  <p>{copy.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
-                </div>
-                <button
-                  className="generate-btn auth-inline-btn"
-                  disabled={isStartingCheckout === product.id}
-                  onClick={() => onStartCheckout(product.id)}
-                  type="button"
-                >
-                  {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.purchaseNow}
-                </button>
-              </article>
-            ))}
+                  <button
+                    className="generate-btn auth-inline-btn"
+                    disabled={isStartingCheckout === product.id}
+                    onClick={() => onStartCheckout(product.id)}
+                    type="button"
+                  >
+                    {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.purchaseNow}
+                  </button>
+                </article>
+              );
+            })}
           </div>
         </article>
       )}
