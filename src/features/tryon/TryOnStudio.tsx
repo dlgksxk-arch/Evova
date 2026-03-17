@@ -3,6 +3,10 @@ import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
 import ResultActionsPanel from './ResultActionsPanel';
 
+const lang =
+  (typeof window !== 'undefined' && localStorage.getItem('lang')) ||
+  'en';
+
 const EmptyPreviewState: React.FC<{
   title: string;
   tips: string[];
