@@ -107,13 +107,15 @@ export interface VideoGenerationResponse {
   success?: boolean;
   requestId?: string;
   openaiVideoId?: string;
-  status?: string;
+  status?: 'pending' | 'processing' | 'completed' | 'failed' | 'canceled' | string;
   dailyCredit?: number;
   paidCredit?: number;
   creditsRemaining?: number;
   estimatedCost?: number;
   subjectType?: SubjectType;
   refunded?: boolean;
+  message?: string;
+  error?: string;
 }
 
 export interface GenerationRecord {

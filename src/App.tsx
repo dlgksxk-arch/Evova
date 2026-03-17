@@ -1606,8 +1606,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetecting: '피사체를 자동 감지하는 중...',
       autoDetected: '자동 감지 결과',
       autoFailed: '자동 감지에 실패해 기본값(사람)을 유지합니다.',
-      videoPrompt: '이 사진으로 영상을 제작 하시겠습니까?',
-      videoButton: '🎬 영상 제작하기 (1500 credits)',
+      videoPrompt: '이 사진으로 영상을 제작 하시겠습니까? 성공 시 1500 credits가 차감됩니다.',
+      videoButton: '🎬 영상 제작하기 (성공 시 1500 credits 차감)',
       videoGenerating: '영상 생성 중...',
       videoReady: '영상 생성이 완료되었습니다.',
       videoFailed: '영상 생성에 실패했습니다.',
@@ -1621,8 +1621,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetecting: '被写体を自動判定中...',
       autoDetected: '自動検出結果',
       autoFailed: '自動検出に失敗したため、既定値の Human を使用します。',
-      videoPrompt: 'この画像から動画を生成しますか？',
-      videoButton: '🎬 動画を生成する (1500 credits)',
+      videoPrompt: 'この画像から動画を生成しますか？成功時に1500 creditsが差し引かれます。',
+      videoButton: '🎬 動画を生成する (成功時に1500 credits差し引き)',
       videoGenerating: '動画を生成中...',
       videoReady: '動画生成が完了しました。',
       videoFailed: '動画生成に失敗しました。',
@@ -1636,8 +1636,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       autoDetecting: '正在自动识别主体...',
       autoDetected: '自动识别结果',
       autoFailed: '自动识别失败，已保留默认值 Human。',
-      videoPrompt: '要基于这张图片生成视频吗？',
-      videoButton: '🎬 生成视频 (1500 credits)',
+      videoPrompt: '要基于这张图片生成视频吗？仅在成功完成后扣除 1500 credits。',
+      videoButton: '🎬 生成视频 (成功后扣除 1500 credits)',
       videoGenerating: '正在生成视频...',
       videoReady: '视频生成完成。',
       videoFailed: '视频生成失败。',
@@ -1650,8 +1650,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
     autoDetecting: 'Detecting subject type...',
     autoDetected: 'Detected subject',
     autoFailed: 'Subject detection failed. Keeping the default Human setting.',
-    videoPrompt: 'Would you like to create a video from this image?',
-    videoButton: '🎬 Generate Video (1500 credits)',
+    videoPrompt: 'Would you like to create a video from this image? 1500 credits are charged only after a successful result.',
+    videoButton: '🎬 Generate Video (Charge 1500 credits on success)',
     videoGenerating: 'Generating video...',
     videoReady: 'Video generation completed.',
     videoFailed: 'Video generation failed.',
@@ -2557,7 +2557,7 @@ const App: React.FC = () => {
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
-  const canAffordVideo = currentDailyCredit >= VIDEO_GENERATION_COST || currentPaidCredit >= VIDEO_GENERATION_COST;
+  const canAffordVideo = currentDailyCredit + currentPaidCredit >= VIDEO_GENERATION_COST;
   const preservedHistoryCount = historyItems.filter((item) => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
@@ -3383,7 +3383,7 @@ const App: React.FC = () => {
       const authToken = await currentUser.getIdToken();
       const requestId = createRequestId();
       activeVideoRequestIdRef.current = requestId;
-      const result = await callVideoGeneration({
+      await callVideoGeneration({
         authToken,
         image: finalImageSrc,
         requestId,
@@ -3393,13 +3393,6 @@ const App: React.FC = () => {
       if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
         return;
       }
-      setUserProfile((prev) => prev ? {
-        ...prev,
-        dailyCredit: typeof result.dailyCredit === 'number' ? result.dailyCredit : prev.dailyCredit,
-        paidCredit: typeof result.paidCredit === 'number' ? result.paidCredit : prev.paidCredit,
-        credits: typeof result.creditsRemaining === 'number' ? result.creditsRemaining : prev.credits,
-      } : prev);
-
       let attempts = 0;
       while (attempts < 40) {
         attempts += 1;
@@ -3411,8 +3404,17 @@ const App: React.FC = () => {
         if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
           return;
         }
-        if (typeof status.creditsRemaining === 'number') {
-          setUserProfile((prev) => prev ? { ...prev, credits: status.creditsRemaining as number } : prev);
+        if (
+          typeof status.creditsRemaining === 'number'
+          || typeof status.dailyCredit === 'number'
+          || typeof status.paidCredit === 'number'
+        ) {
+          setUserProfile((prev) => prev ? {
+            ...prev,
+            dailyCredit: typeof status.dailyCredit === 'number' ? status.dailyCredit : prev.dailyCredit,
+            paidCredit: typeof status.paidCredit === 'number' ? status.paidCredit : prev.paidCredit,
+            credits: typeof status.creditsRemaining === 'number' ? status.creditsRemaining : prev.credits,
+          } : prev);
         }
         if (status.status === 'completed') {
           const videoUrl = await fetchVideoBlobUrl(authToken, requestId);

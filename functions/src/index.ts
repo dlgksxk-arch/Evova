@@ -24,9 +24,16 @@ const NOT_ENOUGH_CREDITS_ERROR = 'PAYMENT_REQUIRED';
 const NOT_ENOUGH_CREDITS_MESSAGE = '크레딧이 부족합니다.';
 const DUPLICATE_REQUEST_ERROR = 'DUPLICATE_REQUEST';
 const DUPLICATE_REQUEST_MESSAGE = '이미 처리 중인 생성 요청입니다.';
+const VIDEO_NOT_ENOUGH_CREDITS_ERROR = 'VIDEO_NOT_ENOUGH_CREDITS';
+const VIDEO_GENERATION_IN_PROGRESS_ERROR = 'VIDEO_GENERATION_IN_PROGRESS';
+const VIDEO_GENERATION_IN_PROGRESS_MESSAGE = '이미 영상 생성이 진행 중입니다.';
+const VIDEO_FAILURE_LIMIT_REACHED_ERROR = 'VIDEO_FAILURE_LIMIT_REACHED';
+const VIDEO_FAILURE_LIMIT_REACHED_MESSAGE = '오늘 영상 생성 실패 횟수 제한에 도달했습니다. 잠시 후 다시 시도해주세요.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30_000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1500;
+const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION_COST} 크레딧이 필요합니다.`;
+const MAX_VIDEO_FAILURES_PER_DAY = 3;
 const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
@@ -302,11 +309,22 @@ type ChargeResult = BootstrapResult & {
   usedCreditType: CreditType;
   chargedAmount: number;
 };
+type VideoRequestStartResult = BootstrapResult & {
+  requestId: string;
+  dailyCreditAvailable: number;
+  paidCreditAvailable: number;
+  creditsAvailable: number;
+};
 type RefundResult = {
   refunded: boolean;
   dailyCreditAfter: number | null;
   paidCreditAfter: number | null;
   balanceAfter: number | null;
+};
+type VideoCompletionResult = {
+  dailyCredit: number;
+  paidCredit: number;
+  creditsRemaining: number;
 };
 type PaymentSessionStatusResult = {
   status: 'success' | 'pending' | 'failed';
@@ -1315,18 +1333,100 @@ const beginGenerationCharge = async (
     },
   });
 
-const beginVideoGenerationCharge = async (
+const beginVideoGenerationRequest = async (
   user: AuthenticatedUser,
   requestId: string,
   subjectType: SubjectType,
   sourceResultId?: string,
-): Promise<ChargeResult> =>
-  beginChargedRequest(user, requestId, {
-    cost: VIDEO_GENERATION_COST,
-    requestType: 'video_generation',
-    lockCollection: 'videoGenerationLocks',
-    insufficientErrorCode: NOT_ENOUGH_CREDITS_ERROR,
-    metadata: {
+): Promise<VideoRequestStartResult> => {
+  if (!requestId) {
+    throw new Error(DUPLICATE_REQUEST_ERROR);
+  }
+
+  const userRef = db.collection('users').doc(user.uid);
+  const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+  const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+  const result: VideoRequestStartResult = {
+    profile: {
+      dailyCredit: 0,
+      paidCredit: 0,
+      credits: 0,
+      totalGenerated: 0,
+      isSubscribed: false,
+      subscriptionPlan: 'free',
+      role: 'user',
+    },
+    dailyRewardGranted: 0,
+    signupBonusGranted: 0,
+    requestId,
+    dailyCreditAvailable: 0,
+    paidCreditAvailable: 0,
+    creditsAvailable: 0,
+  };
+
+  await db.runTransaction(async (transaction) => {
+    const [userSnapshot, requestSnapshot] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(requestRef),
+    ]);
+
+    if (requestSnapshot.exists) {
+      throw new Error(DUPLICATE_REQUEST_ERROR);
+    }
+
+    let account = normalizeUserAccount(user.email, userSnapshot.data());
+    const reset = applyDailyResetIfNeeded(transaction, user, account);
+    account = reset.account;
+    result.dailyRewardGranted = reset.dailyRewardGranted;
+    const signupBonus = applySignupBonusIfNeeded(transaction, user, account, !userSnapshot.exists);
+    account = signupBonus.account;
+    result.signupBonusGranted = signupBonus.signupBonusGranted;
+
+    if (account.credits < VIDEO_GENERATION_COST) {
+      throw new Error(VIDEO_NOT_ENOUGH_CREDITS_ERROR);
+    }
+
+    const userData = userSnapshot.data() ?? {};
+    const todayKey = getTodayKeyInSeoul();
+    const storedFailureDateKey = typeof userData.videoGenerationFailureDateKey === 'string'
+      ? userData.videoGenerationFailureDateKey
+      : '';
+    const currentFailureCount = storedFailureDateKey === todayKey && typeof userData.videoGenerationFailureCount === 'number'
+      ? Math.max(0, Math.trunc(userData.videoGenerationFailureCount))
+      : 0;
+
+    if (currentFailureCount >= MAX_VIDEO_FAILURES_PER_DAY) {
+      throw new Error(VIDEO_FAILURE_LIMIT_REACHED_ERROR);
+    }
+
+    if (userData.videoGenerationInProgress === true) {
+      throw new Error(VIDEO_GENERATION_IN_PROGRESS_ERROR);
+    }
+
+    transaction.set(
+      userRef,
+      {
+        ...buildUserAccountPayload(account, user.email || account.email, {
+          setCreatedAt: !userSnapshot.exists,
+          setLastDailyResetAt: reset.dailyResetApplied,
+          touchLogin: true,
+        }),
+        videoGenerationInProgress: true,
+        activeVideoGenerationRequestId: requestId,
+        videoGenerationStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+        videoGenerationFailureDateKey: todayKey,
+        videoGenerationFailureCount: currentFailureCount,
+      },
+      { merge: true },
+    );
+    transaction.set(requestRef, {
+      uid: user.uid,
+      email: user.email || account.email,
+      requestId,
+      type: 'video_generation',
+      cost: VIDEO_GENERATION_COST,
+      usedCreditType: null,
+      usedCreditAmount: 0,
       subjectType,
       sourceResultId: sourceResultId || null,
       model: VIDEO_MODEL,
@@ -1338,8 +1438,232 @@ const beginVideoGenerationCharge = async (
         output_tokens: 0,
       },
       estimatedCost: VIDEO_ESTIMATED_COST,
-    },
+      status: 'pending',
+      success: false,
+      refunded: false,
+      role: account.role,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    transaction.set(generationLockRef, {
+      uid: user.uid,
+      email: user.email || account.email,
+      requestId,
+      type: 'video_generation',
+      status: 'pending',
+      startedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    result.profile = buildBootstrapProfile(account);
+    result.dailyCreditAvailable = account.dailyCredit;
+    result.paidCreditAvailable = account.paidCredit;
+    result.creditsAvailable = account.credits;
   });
+
+  return result;
+};
+
+const releaseVideoGenerationLock = (
+  transaction: FirebaseFirestore.Transaction,
+  userRef: FirebaseFirestore.DocumentReference,
+  requestId: string,
+) => {
+  transaction.set(userRef, {
+    videoGenerationInProgress: false,
+    activeVideoGenerationRequestId: admin.firestore.FieldValue.delete(),
+    videoGenerationStartedAt: admin.firestore.FieldValue.delete(),
+    lastVideoGenerationRequestId: requestId,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+};
+
+const completeVideoGenerationAndCharge = async (
+  user: AuthenticatedUser,
+  requestId: string,
+  metadata: Record<string, unknown> & { fileUrl: string },
+): Promise<VideoCompletionResult> => {
+  const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+  const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+  const generationRef = createGenerationDocRef(user.uid, requestId);
+  const userRef = db.collection('users').doc(user.uid);
+  const result: VideoCompletionResult = {
+    dailyCredit: 0,
+    paidCredit: 0,
+    creditsRemaining: 0,
+  };
+
+  await db.runTransaction(async (transaction) => {
+    const [userSnapshot, requestSnapshot] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(requestRef),
+    ]);
+
+    if (!requestSnapshot.exists) {
+      throw new Error('Video request not found.');
+    }
+
+    const requestData = requestSnapshot.data() ?? {};
+    const account = normalizeUserAccount(user.email, userSnapshot.data());
+    if (requestData.status === 'completed' && requestData.success === true) {
+      result.dailyCredit = account.dailyCredit;
+      result.paidCredit = account.paidCredit;
+      result.creditsRemaining = account.credits;
+      return;
+    }
+
+    let remainingCharge = VIDEO_GENERATION_COST;
+    const dailyDeduction = Math.min(account.dailyCredit, remainingCharge);
+    remainingCharge -= dailyDeduction;
+    const paidDeduction = Math.min(account.paidCredit, remainingCharge);
+    remainingCharge -= paidDeduction;
+
+    if (remainingCharge > 0) {
+      throw new Error(VIDEO_NOT_ENOUGH_CREDITS_ERROR);
+    }
+
+    const nextAccount: UserAccount = {
+      ...account,
+      dailyCredit: account.dailyCredit - dailyDeduction,
+      paidCredit: account.paidCredit - paidDeduction,
+      credits: account.credits - VIDEO_GENERATION_COST,
+    };
+    const usedCreditType: CreditType = dailyDeduction > 0 ? 'daily' : 'paid';
+
+    transaction.set(userRef, buildUserAccountPayload(nextAccount, user.email || account.email), { merge: true });
+    releaseVideoGenerationLock(transaction, userRef, requestId);
+    transaction.set(requestRef, {
+      ...metadata,
+      status: 'completed',
+      success: true,
+      refunded: false,
+      usedCreditType,
+      usedCreditAmount: VIDEO_GENERATION_COST,
+      chargedAt: admin.firestore.FieldValue.serverTimestamp(),
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(generationRef, {
+      uid: user.uid,
+      email: user.email,
+      requestId,
+      videoRequestId: requestId,
+      resultType: 'video_generation',
+      subjectType: normalizeSubjectType(metadata.subjectType),
+      fileUrl: metadata.fileUrl,
+      status: 'completed',
+      usedCreditType,
+      usedCreditAmount: VIDEO_GENERATION_COST,
+      watermarkApplied: false,
+      imageUrl: null,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(generationLockRef, {
+      requestId,
+      status: 'completed',
+      releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    if (dailyDeduction > 0) {
+      writeCreditTransaction(transaction, {
+        uid: user.uid,
+        email: user.email || account.email,
+        type: 'use_daily',
+        amount: -dailyDeduction,
+        balanceDailyAfter: nextAccount.dailyCredit,
+        balancePaidAfter: paidDeduction > 0 ? account.paidCredit : nextAccount.paidCredit,
+        relatedGenerationId: buildGenerationRequestDocId(user.uid, requestId),
+        memo: `video request ${requestId}`,
+      });
+    }
+    if (paidDeduction > 0) {
+      writeCreditTransaction(transaction, {
+        uid: user.uid,
+        email: user.email || account.email,
+        type: 'use_paid',
+        amount: -paidDeduction,
+        balanceDailyAfter: nextAccount.dailyCredit,
+        balancePaidAfter: nextAccount.paidCredit,
+        relatedGenerationId: buildGenerationRequestDocId(user.uid, requestId),
+        memo: `video request ${requestId}`,
+      });
+    }
+
+    result.dailyCredit = nextAccount.dailyCredit;
+    result.paidCredit = nextAccount.paidCredit;
+    result.creditsRemaining = nextAccount.credits;
+  });
+
+  return result;
+};
+
+const markVideoGenerationFailed = async (
+  user: AuthenticatedUser,
+  requestId: string,
+  status: 'failed' | 'canceled',
+  errorMessage: string,
+): Promise<VideoCompletionResult> => {
+  const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
+  const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
+  const userRef = db.collection('users').doc(user.uid);
+  const result: VideoCompletionResult = {
+    dailyCredit: 0,
+    paidCredit: 0,
+    creditsRemaining: 0,
+  };
+
+  await db.runTransaction(async (transaction) => {
+    const [userSnapshot, requestSnapshot] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(requestRef),
+    ]);
+
+    if (!userSnapshot.exists || !requestSnapshot.exists) {
+      return;
+    }
+
+    const requestData = requestSnapshot.data() ?? {};
+    const account = normalizeUserAccount(user.email, userSnapshot.data());
+    const todayKey = getTodayKeyInSeoul();
+    const userData = userSnapshot.data() ?? {};
+    const storedFailureDateKey = typeof userData.videoGenerationFailureDateKey === 'string'
+      ? userData.videoGenerationFailureDateKey
+      : '';
+    const currentFailureCount = storedFailureDateKey === todayKey && typeof userData.videoGenerationFailureCount === 'number'
+      ? Math.max(0, Math.trunc(userData.videoGenerationFailureCount))
+      : 0;
+    const alreadyTerminal = requestData.status === 'failed' || requestData.status === 'canceled' || requestData.status === 'completed';
+    const nextFailureCount = alreadyTerminal ? currentFailureCount : currentFailureCount + 1;
+
+    releaseVideoGenerationLock(transaction, userRef, requestId);
+    transaction.set(userRef, {
+      videoGenerationFailureDateKey: todayKey,
+      videoGenerationFailureCount: nextFailureCount,
+    }, { merge: true });
+    transaction.set(requestRef, {
+      status,
+      success: false,
+      refunded: false,
+      errorMessage,
+      failedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    transaction.set(generationLockRef, {
+      requestId,
+      status,
+      errorMessage,
+      releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    result.dailyCredit = account.dailyCredit;
+    result.paidCredit = account.paidCredit;
+    result.creditsRemaining = account.credits;
+  });
+
+  return result;
+};
 
 const markChargedRequestInProgress = async (
   user: AuthenticatedUser,
@@ -1435,50 +1759,6 @@ const markGenerationCompleted = async (
   });
 };
 
-const markVideoGenerationCompleted = async (
-  user: AuthenticatedUser,
-  requestId: string,
-  metadata: Record<string, unknown> & { fileUrl?: string | null },
-): Promise<void> => {
-  const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
-  const generationLockRef = db.collection('videoGenerationLocks').doc(user.uid);
-  const generationRef = createGenerationDocRef(user.uid, requestId);
-  const historyTimestamps = buildHistoryRetentionTimestamps();
-  await requestRef.set({
-    ...metadata,
-    status: 'completed',
-    success: true,
-    refunded: false,
-    completedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-  await generationRef.set({
-    uid: user.uid,
-    email: user.email,
-    requestId,
-    videoRequestId: requestId,
-    resultType: 'video_generation',
-    subjectType: normalizeSubjectType(metadata.subjectType),
-    fileUrl: metadata.fileUrl ?? null,
-    status: 'completed',
-    usedCreditType: null,
-    usedCreditAmount: VIDEO_GENERATION_COST,
-    watermarkApplied: false,
-    imageUrl: null,
-    preservedAt: null,
-    preservedUntil: null,
-    expiresAt: historyTimestamps.expiresAt,
-    createdAt: historyTimestamps.createdAt,
-    updatedAt: historyTimestamps.updatedAt,
-  }, { merge: true });
-  await generationLockRef.set({
-    requestId,
-    status: 'completed',
-    releasedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-  }, { merge: true });
-};
-
 const refundChargedRequest = async (
   user: AuthenticatedUser,
   requestId: string,
@@ -1570,9 +1850,6 @@ const refundChargedRequest = async (
 
 const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string, errorMessage: string): Promise<RefundResult> =>
   refundChargedRequest(user, requestId, errorMessage, 'generationLocks');
-
-const refundVideoGenerationCharge = async (user: AuthenticatedUser, requestId: string, errorMessage: string): Promise<RefundResult> =>
-  refundChargedRequest(user, requestId, errorMessage, 'videoGenerationLocks');
 
 const buildWatermarkSvg = (width: number, height: number): Buffer => Buffer.from(`
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -2151,6 +2428,11 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
     return;
   }
 
+  if (error instanceof Error && error.message === VIDEO_NOT_ENOUGH_CREDITS_ERROR) {
+    res.status(402).json({ error: VIDEO_NOT_ENOUGH_CREDITS_ERROR, message: VIDEO_NOT_ENOUGH_CREDITS_MESSAGE, cost: VIDEO_GENERATION_COST });
+    return;
+  }
+
   if (error instanceof Error && error.message === PAYMENT_CONFIG_ERROR) {
     res.status(500).json({ error: PAYMENT_CONFIG_ERROR, message: PAYMENT_CONFIG_MESSAGE });
     return;
@@ -2158,6 +2440,16 @@ const handleApiError = (res: functions.Response, error: unknown, fallbackStatus 
 
   if (error instanceof Error && error.message === DUPLICATE_REQUEST_ERROR) {
     res.status(409).json({ error: DUPLICATE_REQUEST_ERROR, message: DUPLICATE_REQUEST_MESSAGE });
+    return;
+  }
+
+  if (error instanceof Error && error.message === VIDEO_GENERATION_IN_PROGRESS_ERROR) {
+    res.status(409).json({ error: VIDEO_GENERATION_IN_PROGRESS_ERROR, message: VIDEO_GENERATION_IN_PROGRESS_MESSAGE });
+    return;
+  }
+
+  if (error instanceof Error && error.message === VIDEO_FAILURE_LIMIT_REACHED_ERROR) {
+    res.status(429).json({ error: VIDEO_FAILURE_LIMIT_REACHED_ERROR, message: VIDEO_FAILURE_LIMIT_REACHED_MESSAGE });
     return;
   }
 
@@ -2532,9 +2824,9 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
   }
 
   const resolvedSubjectType = normalizeSubjectType(subjectType);
-  let chargeResult: ChargeResult;
+  let startResult: VideoRequestStartResult;
   try {
-    chargeResult = await beginVideoGenerationCharge(user, requestId, resolvedSubjectType, sourceResultId);
+    startResult = await beginVideoGenerationRequest(user, requestId, resolvedSubjectType, sourceResultId);
   } catch (error) {
     handleApiError(res, error, 500);
     return;
@@ -2556,27 +2848,27 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
       requestId,
       openaiVideoId: videoJob.id,
       status: videoJob.status,
-      dailyCredit: chargeResult.dailyCreditAfterCharge,
-      paidCredit: chargeResult.paidCreditAfterCharge,
-      creditsRemaining: chargeResult.creditsAfterCharge,
+      dailyCredit: startResult.dailyCreditAvailable,
+      paidCredit: startResult.paidCreditAvailable,
+      creditsRemaining: startResult.creditsAvailable,
       estimatedCost: videoJob.estimatedCost,
       subjectType: resolvedSubjectType,
-      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
+      ...buildApiBonusFields(startResult.dailyRewardGranted, startResult.signupBonusGranted),
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'OpenAI video generation failed';
-    const refundResult = await refundVideoGenerationCharge(user, requestId, errorMessage).catch((refundError) => {
-      functions.logger.error('Failed to refund credits after video generation error', refundError);
-      return { refunded: false, dailyCreditAfter: null, paidCreditAfter: null, balanceAfter: null } satisfies RefundResult;
+    const failureResult = await markVideoGenerationFailed(user, requestId, 'failed', errorMessage).catch((failureError) => {
+      functions.logger.error('Failed to finalize video generation failure state', failureError);
+      return { dailyCredit: startResult.dailyCreditAvailable, paidCredit: startResult.paidCreditAvailable, creditsRemaining: startResult.creditsAvailable } satisfies VideoCompletionResult;
     });
     res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({
       error: errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage,
       message: errorMessage,
-      refunded: refundResult.refunded,
-      dailyCredit: refundResult.dailyCreditAfter ?? chargeResult.dailyCreditAfterCharge,
-      paidCredit: refundResult.paidCreditAfter ?? chargeResult.paidCreditAfterCharge,
-      creditsRemaining: refundResult.balanceAfter ?? chargeResult.creditsAfterCharge,
-      ...buildApiBonusFields(chargeResult.dailyRewardGranted, chargeResult.signupBonusGranted),
+      refunded: false,
+      dailyCredit: failureResult.dailyCredit,
+      paidCredit: failureResult.paidCredit,
+      creditsRemaining: failureResult.creditsRemaining,
+      ...buildApiBonusFields(startResult.dailyRewardGranted, startResult.signupBonusGranted),
     });
   }
 };
@@ -2657,7 +2949,7 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
         });
       }
 
-      await markVideoGenerationCompleted(user, requestId, {
+      const completionResult = await completeVideoGenerationAndCharge(user, requestId, {
         openaiVideoId,
         estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
         type: 'video_generation',
@@ -2668,6 +2960,9 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
         success: true,
         status: 'completed',
         requestId,
+        dailyCredit: completionResult.dailyCredit,
+        paidCredit: completionResult.paidCredit,
+        creditsRemaining: completionResult.creditsRemaining,
         estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
         contentUrl: `/api/video-content?requestId=${encodeURIComponent(requestId)}`,
       });
@@ -2676,13 +2971,15 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
 
     if (nextStatus === 'failed' || nextStatus === 'canceled') {
       const errorMessage = videoStatus.error?.message || `Video generation ${nextStatus}`;
-      const refundResult = await refundVideoGenerationCharge(user, requestId, errorMessage);
+      const failureResult = await markVideoGenerationFailed(user, requestId, nextStatus, errorMessage);
       res.status(502).json({
         success: false,
         status: nextStatus,
         error: errorMessage,
-        refunded: refundResult.refunded,
-        creditsRemaining: refundResult.balanceAfter,
+        refunded: false,
+        dailyCredit: failureResult.dailyCredit,
+        paidCredit: failureResult.paidCredit,
+        creditsRemaining: failureResult.creditsRemaining,
       });
       return;
     }
@@ -2699,7 +2996,23 @@ const handleVideoStatusRequest = async (req: functions.https.Request, res: funct
       estimatedCost: typeof requestData.estimatedCost === 'number' ? requestData.estimatedCost : VIDEO_ESTIMATED_COST,
     });
   } catch (error) {
-    handleApiError(res, error, 500);
+    const errorMessage = error instanceof Error ? error.message : 'Video generation failed';
+    try {
+      const failureResult = await markVideoGenerationFailed(user, requestId, 'failed', errorMessage);
+      res.status(502).json({
+        success: false,
+        status: 'failed',
+        error: errorMessage,
+        message: errorMessage,
+        refunded: false,
+        dailyCredit: failureResult.dailyCredit,
+        paidCredit: failureResult.paidCredit,
+        creditsRemaining: failureResult.creditsRemaining,
+      });
+    } catch (failureError) {
+      functions.logger.error('Failed to mark video generation request as failed', failureError);
+      handleApiError(res, error, 500);
+    }
   }
 };
 

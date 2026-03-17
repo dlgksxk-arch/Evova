@@ -31,11 +31,17 @@ const parseApiError = async (res: Response): Promise<Error> => {
   if (errBody.error === 'PAYMENT_REQUIRED' || errBody.error === 'INSUFFICIENT_CREDITS') {
     return new Error('PAYMENT_REQUIRED');
   }
+  if (errBody.error === 'VIDEO_NOT_ENOUGH_CREDITS') {
+    return new Error(errBody.message || '영상 생성에는 1500 크레딧이 필요합니다.');
+  }
   if (errBody.error === 'AUTH_REQUIRED') {
     return new Error('AUTH_REQUIRED');
   }
   if (errBody.error === 'DUPLICATE_REQUEST') {
     return new Error('DUPLICATE_REQUEST');
+  }
+  if (errBody.error === 'VIDEO_GENERATION_IN_PROGRESS' || errBody.error === 'VIDEO_FAILURE_LIMIT_REACHED') {
+    return new Error(errBody.message || errBody.error);
   }
   if (errBody.error === 'PAYMENT_NOT_CONFIGURED') {
     return new Error('PAYMENT_NOT_CONFIGURED');
