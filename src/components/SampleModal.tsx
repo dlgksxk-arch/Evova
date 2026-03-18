@@ -49,6 +49,12 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang: _lang, onCl
     error: string;
     disclaimer: string;
   };
+  const updateHoverPreviewPosition = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const nextX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
+    const clampedX = Math.min(82, Math.max(18, nextX));
+    event.currentTarget.style.setProperty('--sample-hover-x', `${clampedX}%`);
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -82,28 +88,34 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang: _lang, onCl
               <button
                 key={url}
                 className={`sample-card ${currentUrl === url ? 'selected' : ''} ${erroredUrls[url] ? 'error' : ''}`}
+                onMouseEnter={updateHoverPreviewPosition}
+                onMouseMove={updateHoverPreviewPosition}
+                onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
                 onClick={() => {
                   onSelect(url, category);
                   onClose();
                 }}
                 type="button"
               >
-                {!loadedUrls[url] && !erroredUrls[url] && (
-                  <div className="sample-card-overlay">
-                    <span className="spinner sample-spinner"></span>
-                  </div>
-                )}
-                <img
-                  src={url}
-                  alt={`${labels[category]} sample ${index + 1}`}
-                  className={loadedUrls[url] ? 'is-visible' : ''}
-                  loading="eager"
-                  onError={() => {
-                    console.error('[HAMDEVA] face sample thumbnail failed', url);
-                    setErroredUrls((prev) => ({ ...prev, [url]: true }));
-                  }}
-                  onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
-                />
+                <div className="sample-card-thumb">
+                  {!loadedUrls[url] && !erroredUrls[url] && (
+                    <div className="sample-card-overlay">
+                      <span className="spinner sample-spinner"></span>
+                    </div>
+                  )}
+                  <img
+                    src={url}
+                    alt={`${labels[category]} sample ${index + 1}`}
+                    className={loadedUrls[url] ? 'is-visible' : ''}
+                    loading="eager"
+                    onError={() => {
+                      console.error('[HAMDEVA] face sample thumbnail failed', url);
+                      setErroredUrls((prev) => ({ ...prev, [url]: true }));
+                    }}
+                    onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
+                  />
+                  <div className="error-placeholder">{copy.error}</div>
+                </div>
                 <div className="sample-hover-preview" aria-hidden="true">
                   <img
                     src={url}
@@ -112,7 +124,6 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang: _lang, onCl
                     loading="lazy"
                   />
                 </div>
-                <div className="error-placeholder">{copy.error}</div>
               </button>
             ))}
           </div>

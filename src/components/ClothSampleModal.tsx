@@ -52,6 +52,12 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
+  const updateHoverPreviewPosition = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const nextX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
+    const clampedX = Math.min(82, Math.max(18, nextX));
+    event.currentTarget.style.setProperty('--sample-hover-x', `${clampedX}%`);
+  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -85,28 +91,34 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _
               <button
                 key={sample.id}
                 className={`sample-card ${currentUrl === sample.image ? 'selected' : ''} ${erroredUrls[sample.image] ? 'error' : ''}`}
+                onMouseEnter={updateHoverPreviewPosition}
+                onMouseMove={updateHoverPreviewPosition}
+                onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
                 onClick={() => {
                   onSelect(sample.image);
                   onClose();
                 }}
                 type="button"
               >
-                {!loadedUrls[sample.image] && !erroredUrls[sample.image] && (
-                  <div className="sample-card-overlay">
-                    <span className="spinner sample-spinner"></span>
-                  </div>
-                )}
-                <img
-                  src={sample.image}
-                  alt={`Outfit sample ${index + 1}`}
-                  className={loadedUrls[sample.image] ? 'is-visible' : ''}
-                  loading="eager"
-                  onError={() => {
-                    console.error('[HAMDEVA] cloth sample thumbnail failed', sample.image);
-                    setErroredUrls((prev) => ({ ...prev, [sample.image]: true }));
-                  }}
-                  onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
-                />
+                <div className="sample-card-thumb">
+                  {!loadedUrls[sample.image] && !erroredUrls[sample.image] && (
+                    <div className="sample-card-overlay">
+                      <span className="spinner sample-spinner"></span>
+                    </div>
+                  )}
+                  <img
+                    src={sample.image}
+                    alt={`Outfit sample ${index + 1}`}
+                    className={loadedUrls[sample.image] ? 'is-visible' : ''}
+                    loading="eager"
+                    onError={() => {
+                      console.error('[HAMDEVA] cloth sample thumbnail failed', sample.image);
+                      setErroredUrls((prev) => ({ ...prev, [sample.image]: true }));
+                    }}
+                    onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
+                  />
+                  <div className="error-placeholder">{copy.error}</div>
+                </div>
                 <div className="sample-hover-preview" aria-hidden="true">
                   <img
                     src={sample.image}
@@ -115,7 +127,6 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _
                     loading="lazy"
                   />
                 </div>
-                <div className="error-placeholder">{copy.error}</div>
               </button>
             ))}
           </div>
