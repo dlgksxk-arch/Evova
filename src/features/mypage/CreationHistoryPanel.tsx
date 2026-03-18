@@ -71,9 +71,9 @@ const getModalShellStyle = (isMobile: boolean): React.CSSProperties => ({
 });
 
 const getModalPanelStyle = (isMobile: boolean): React.CSSProperties => ({
-  width: isMobile ? '100%' : 'min(960px, 100%)',
-  height: isMobile ? '100%' : 'min(90vh, 100%)',
-  maxHeight: isMobile ? '100vh' : '90vh',
+  width: isMobile ? '100%' : 'min(1280px, calc(100vw - 48px))',
+  height: isMobile ? '100%' : 'min(94vh, 100%)',
+  maxHeight: isMobile ? '100vh' : '94vh',
   overflow: 'hidden',
   background: 'var(--surface)',
   borderRadius: isMobile ? 0 : 20,

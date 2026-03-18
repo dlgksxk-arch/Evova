@@ -3886,23 +3886,8 @@ const App: React.FC = () => {
                 {contentLocale.nav[page]}
               </button>
             ))}
-            {isAdminUser && (
-              <button
-                className={`nav-link ${currentPage === 'admin' ? 'active' : ''}`}
-                onClick={openAdminModal}
-                type="button"
-              >
-                {t.adminNav}
-              </button>
-            )}
           </div>
           <div className="nav-right desktop-header-actions">
-            {currentUser && (
-              <div className="credit-summary" aria-label={t.currentCredits(currentCredits)}>
-                <span className="credit-summary-chip">{t.dailyCreditLabel} {currentDailyCredit}</span>
-                <span className="credit-summary-chip">{t.paidCreditLabel} {currentPaidCredit}</span>
-              </div>
-            )}
             {currentUser && (
               <button className="outline-btn auth-nav-btn" onClick={openCreditPlanModal} type="button">
                 {t.chargeCredits}
@@ -3918,11 +3903,6 @@ const App: React.FC = () => {
                     <button className="lang-option" onClick={openMyPageModal} type="button">
                       {t.myPage}
                     </button>
-                    {isAdminUser && (
-                      <button className="lang-option" onClick={openAdminModal} type="button">
-                        {t.adminNav}
-                      </button>
-                    )}
                     <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
                       {t.logout}
                     </button>
@@ -4003,41 +3983,6 @@ const App: React.FC = () => {
               ))}
             </div>
             <div className="mobile-menu-divider" />
-            <div className="mobile-nav-section mobile-nav-credits">
-              <div className="mobile-credit-row">
-                <span>{t.dailyCreditLabel}</span>
-                <strong>{currentDailyCredit}</strong>
-              </div>
-              <div className="mobile-credit-row">
-                <span>{t.paidCreditLabel}</span>
-                <strong>{currentPaidCredit}</strong>
-              </div>
-              {currentUser ? (
-                <button
-                  className="mobile-menu-link mobile-menu-action"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setShowCreditPlanModal(true);
-                  }}
-                  type="button"
-                >
-                  {t.chargeCredits}
-                </button>
-              ) : (
-                <button
-                  className="mobile-menu-link mobile-menu-action"
-                  disabled={!isFirebaseConfigured}
-                  onClick={() => {
-                    openAuthModal('login');
-                    setMobileMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  {t.chargeCredits}
-                </button>
-              )}
-            </div>
-            <div className="mobile-menu-divider" />
             <div className="mobile-nav-section mobile-nav-actions">
               <div className="mobile-menu-label">Language</div>
               <div className="mobile-language-list">
@@ -4075,15 +4020,6 @@ const App: React.FC = () => {
                   type="button"
                 >
                   {t.myPage}
-                </button>
-              )}
-              {isAdminUser && (
-                <button
-                  className="mobile-menu-link mobile-menu-action"
-                  onClick={openAdminModal}
-                  type="button"
-                >
-                  {t.adminNav}
                 </button>
               )}
               {!currentUser && (
