@@ -62,6 +62,7 @@ interface TryOnStudioProps {
   showVideoPrompt: boolean;
   videoStatusMessage: string | null;
   videoDialogue: string;
+  videoDialogueCharacterCount: number;
   videoDialogueError: string | null;
   shareStatus: string | null;
   subjectUi: {
@@ -151,6 +152,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   showVideoPrompt,
   videoStatusMessage,
   videoDialogue,
+  videoDialogueCharacterCount,
   videoDialogueError,
   shareStatus,
   subjectUi,
@@ -474,7 +476,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           />
         </label>
         <p className="loading-subtext">
-          {subjectUi.videoDialogueHint} ({videoDialogue.replace(/[^A-Za-z]/g, '').length}/30)
+          {subjectUi.videoDialogueHint} ({videoDialogueCharacterCount}/30)
         </p>
         {videoDialogueError && <p className="auth-error-text">{videoDialogueError}</p>}
         <button

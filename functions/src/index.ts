@@ -30,13 +30,13 @@ const VIDEO_GENERATION_IN_PROGRESS_MESSAGE = '이미 영상 생성이 진행 중
 const VIDEO_FAILURE_LIMIT_REACHED_ERROR = 'VIDEO_FAILURE_LIMIT_REACHED';
 const VIDEO_FAILURE_LIMIT_REACHED_MESSAGE = '오늘 영상 생성 실패 횟수 제한에 도달했습니다. 잠시 후 다시 시도해주세요.';
 const INVALID_VIDEO_DIALOGUE_ERROR = 'INVALID_VIDEO_DIALOGUE';
-const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and must use only letters and spaces, with a maximum of 30 letters.';
+const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and can use any language, up to 30 characters.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30_000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1500;
 const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION_COST} 크레딧이 필요합니다.`;
 const MAX_VIDEO_FAILURES_PER_DAY = 3;
-const VIDEO_DIALOGUE_MAX_LETTERS = 30;
+const VIDEO_DIALOGUE_MAX_CHARACTERS = 30;
 const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
@@ -129,6 +129,16 @@ const OPENAI_IMAGE_UNIT_PRICING = {
     high: { '1024x1024': 0.133, '1024x1536': 0.2, '1536x1024': 0.2 },
   },
 } as const;
+
+class UpstreamApiError extends Error {
+  statusCode: number;
+
+  constructor(statusCode: number, message: string) {
+    super(message);
+    this.name = 'UpstreamApiError';
+    this.statusCode = statusCode;
+  }
+}
 const HUMAN_PROMPT = `Create a single full-body fashion photograph.
 
 The first uploaded image is the face reference image.
@@ -695,22 +705,24 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
   return [basePrompt, bodyGuide].filter(Boolean).join('\n\n');
 };
 
+const countVideoDialogueCharacters = (value: string): number => Array.from(value).length;
+
 const normalizeVideoDialogue = (value: unknown): string | null => {
   if (typeof value !== 'string') {
     return null;
   }
 
-  const normalized = value.replace(/\s+/g, ' ').trim();
+  const normalized = value.normalize('NFC').replace(/\s+/gu, ' ').trim();
   if (!normalized) {
     return null;
   }
 
-  if (!/^[A-Za-z\s]+$/.test(normalized)) {
+  if (/[\p{Cc}\p{Cs}]/u.test(normalized)) {
     return null;
   }
 
-  const alphabeticCount = normalized.replace(/[^A-Za-z]/g, '').length;
-  if (alphabeticCount < 1 || alphabeticCount > VIDEO_DIALOGUE_MAX_LETTERS) {
+  const characterCount = countVideoDialogueCharacters(normalized);
+  if (characterCount < 1 || characterCount > VIDEO_DIALOGUE_MAX_CHARACTERS) {
     return null;
   }
 
@@ -722,7 +734,7 @@ const buildTalkingVideoPrompt = (subjectType: SubjectType, dialogue: string): st
   `Subject type: ${subjectType}.`,
   'Create a single talking-shot video from the provided source image.',
   'Preserve the exact identity, outfit, face, and framing from the source image.',
-  `The subject must clearly say this exact dialogue with natural lip sync and speaking motion: "${dialogue}".`,
+  `The subject must clearly say this exact dialogue with natural lip sync and speaking motion: ${JSON.stringify(dialogue)}.`,
   'Use subtle natural head movement, blinking, and realistic facial expression while speaking.',
   'Keep the camera stable and the result realistic, clean, and cinematic.',
 ].join('\n\n');
@@ -924,7 +936,10 @@ const createOpenAIVideo = async (
       status: response.status,
       body: responseBody,
     });
-    throw new Error(responseBody.error?.message || `Google Veo video creation error ${response.status}`);
+    throw new UpstreamApiError(
+      response.status || 502,
+      responseBody.error?.message || `Google Veo video creation error ${response.status}`,
+    );
   }
 
   return {
@@ -3024,6 +3039,9 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'OpenAI video generation failed';
+    const upstreamStatus = error instanceof UpstreamApiError ? error.statusCode : null;
+    const isVideoConfigError = errorMessage === GOOGLE_VIDEO_CONFIG_ERROR;
+    const responseMessage = isVideoConfigError ? GOOGLE_VIDEO_CONFIG_MESSAGE : errorMessage;
     const failureResult = await markVideoGenerationFailed(user, requestId, 'failed', errorMessage).catch((failureError) => {
       functions.logger.error('Failed to finalize video generation failure state', failureError);
       return { dailyCredit: startResult.dailyCreditAvailable, paidCredit: startResult.paidCreditAvailable, creditsRemaining: startResult.creditsAvailable } satisfies VideoCompletionResult;
@@ -3046,9 +3064,15 @@ const handleVideoGenerationRequest = async (req: functions.https.Request, res: f
         userAgent: req.get('user-agent') || '',
       },
     });
-    res.status(errorMessage === OPENAI_CONFIG_MESSAGE ? 500 : 502).json({
-      error: errorMessage === OPENAI_CONFIG_MESSAGE ? OPENAI_CONFIG_ERROR : errorMessage,
-      message: errorMessage,
+    res.status(
+      isVideoConfigError
+        ? 500
+        : upstreamStatus && upstreamStatus >= 400 && upstreamStatus < 500
+          ? upstreamStatus
+          : 502,
+    ).json({
+      error: isVideoConfigError ? GOOGLE_VIDEO_CONFIG_ERROR : errorMessage,
+      message: responseMessage,
       refunded: false,
       dailyCredit: failureResult.dailyCredit,
       paidCredit: failureResult.paidCredit,
