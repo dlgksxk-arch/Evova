@@ -98,6 +98,12 @@ const MAX_ARCHIVED_CREATIONS = 5;
 const POLAR_PROVIDER = 'polar';
 const PAYMENT_CURRENCY = 'usd';
 const DEFAULT_POLAR_PRODUCT_ID = 'f6417ea7-1715-47e0-8799-4671c3b04fb5';
+const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
+const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
+const DEFAULT_ADMIN_GIFT_SENDER_NAME = 'EVOVA 운영팀';
+const ADMIN_USER_LIST_DEFAULT_LIMIT = 20;
+const ADMIN_USER_LIST_MAX_LIMIT = 50;
+const ADMIN_GIFT_MAX_AMOUNT = 1000000;
 const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
 Return ONLY one word:
 
@@ -789,6 +795,14 @@ const requireAuthenticatedUser = async (req) => {
         uid: decoded.uid,
         email: decoded.email ?? '',
     };
+};
+const requireAdminUser = async (user) => {
+    const snapshot = await db.collection('users').doc(user.uid).get();
+    const account = normalizeUserAccount(user.email, snapshot.data());
+    if (account.role !== 'admin') {
+        throw new Error('FORBIDDEN');
+    }
+    return account;
 };
 const createCreditTransactionRef = () => db.collection('credit_transactions').doc();
 const buildPaymentDocId = (provider, providerPaymentId) => `${provider}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
@@ -2021,6 +2035,10 @@ const handleApiError = (res, error, fallbackStatus = 500) => {
         res.status(404).json({ error: 'CREATION_NOT_FOUND', message: '생성 이력을 찾을 수 없습니다.' });
         return;
     }
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+        res.status(404).json({ error: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다.' });
+        return;
+    }
     res.status(fallbackStatus).json({
         error: error instanceof Error ? error.message : 'INTERNAL_ERROR',
         message: error instanceof Error ? error.message : 'Unexpected server error',
@@ -2031,6 +2049,116 @@ const serializeTimestamp = (value) => {
         return value.toMillis();
     }
     return null;
+};
+const getTrimmedString = (value, maxLength) => {
+    if (typeof value !== 'string') {
+        return '';
+    }
+    return value.trim().slice(0, maxLength);
+};
+const getDisplayNameValue = (data) => {
+    const displayName = getTrimmedString(data?.displayName, 120);
+    if (displayName) {
+        return displayName;
+    }
+    const nickname = getTrimmedString(data?.nickname, 120);
+    return nickname || null;
+};
+const buildAdminUserListItem = (snapshot) => {
+    if (!snapshot.exists) {
+        return null;
+    }
+    const data = snapshot.data() ?? {};
+    const account = normalizeUserAccount(typeof data.email === 'string' ? data.email : '', data);
+    const displayName = getDisplayNameValue(data);
+    const nickname = getTrimmedString(data.nickname, 120) || null;
+    return {
+        uid: snapshot.id,
+        email: account.email,
+        displayName,
+        nickname,
+        credits: account.credits,
+        dailyCredit: account.dailyCredit,
+        paidCredit: account.paidCredit,
+        totalGenerated: account.totalGenerated,
+        isSubscribed: account.isSubscribed,
+        subscriptionPlan: account.subscriptionPlan,
+        role: account.role,
+        createdAt: serializeTimestamp(data.createdAt),
+        lastLoginAt: serializeTimestamp(data.lastLoginAt),
+    };
+};
+const buildAdminUserDetail = (snapshot) => {
+    const summary = buildAdminUserListItem(snapshot);
+    if (!summary) {
+        return null;
+    }
+    const data = snapshot.data() ?? {};
+    return {
+        ...summary,
+        updatedAt: serializeTimestamp(data.updatedAt),
+    };
+};
+const parseAdminListLimit = (value) => {
+    const parsed = typeof value === 'string' ? Number.parseInt(value, 10) : Number.NaN;
+    if (!Number.isFinite(parsed)) {
+        return ADMIN_USER_LIST_DEFAULT_LIMIT;
+    }
+    return Math.min(ADMIN_USER_LIST_MAX_LIMIT, Math.max(1, Math.trunc(parsed)));
+};
+const buildAdminUserSearchResults = async (queryText, limit) => {
+    const trimmedQuery = queryText.trim();
+    if (!trimmedQuery) {
+        return [];
+    }
+    const prefixLimit = Math.min(limit, ADMIN_USER_LIST_DEFAULT_LIMIT);
+    const deduped = new Map();
+    const [uidSnapshot, emailSnapshot, displayNameSnapshot, nicknameSnapshot] = await Promise.all([
+        db.collection('users')
+            .orderBy(admin.firestore.FieldPath.documentId())
+            .startAt(trimmedQuery)
+            .endAt(`${trimmedQuery}\uf8ff`)
+            .limit(prefixLimit)
+            .get(),
+        db.collection('users')
+            .orderBy('email')
+            .startAt(trimmedQuery)
+            .endAt(`${trimmedQuery}\uf8ff`)
+            .limit(prefixLimit)
+            .get(),
+        db.collection('users')
+            .orderBy('displayName')
+            .startAt(trimmedQuery)
+            .endAt(`${trimmedQuery}\uf8ff`)
+            .limit(prefixLimit)
+            .get()
+            .catch(() => null),
+        db.collection('users')
+            .orderBy('nickname')
+            .startAt(trimmedQuery)
+            .endAt(`${trimmedQuery}\uf8ff`)
+            .limit(prefixLimit)
+            .get()
+            .catch(() => null),
+    ]);
+    [uidSnapshot, emailSnapshot, displayNameSnapshot, nicknameSnapshot].forEach((snapshot) => {
+        snapshot?.docs.forEach((doc) => {
+            const item = buildAdminUserListItem(doc);
+            if (item && !deduped.has(item.uid)) {
+                deduped.set(item.uid, item);
+            }
+        });
+    });
+    return Array.from(deduped.values())
+        .sort((left, right) => {
+        const leftCreatedAt = left.createdAt ?? 0;
+        const rightCreatedAt = right.createdAt ?? 0;
+        if (leftCreatedAt !== rightCreatedAt) {
+            return rightCreatedAt - leftCreatedAt;
+        }
+        return left.uid.localeCompare(right.uid);
+    })
+        .slice(0, limit);
 };
 const serializeCreationRecord = async (snapshot) => {
     if (!snapshot.exists) {
@@ -2123,12 +2251,137 @@ const handleDeleteCreationRequest = async (req, res) => {
     }, { merge: true });
     res.json({ success: true });
 };
-const buildAdminDashboardPayload = async (user) => {
-    const userSnapshot = await db.collection('users').doc(user.uid).get();
-    const profile = normalizeUserAccount(user.email, userSnapshot.data());
-    if (profile.role !== 'admin') {
-        throw new Error('FORBIDDEN');
+const handleAdminUsersListRequest = async (req, res) => {
+    const user = await requireAuthenticatedUser(req);
+    await requireAdminUser(user);
+    const queryText = getTrimmedString(req.query.query, 120);
+    const limit = parseAdminListLimit(req.query.limit);
+    if (queryText) {
+        const users = await buildAdminUserSearchResults(queryText, limit);
+        res.json({
+            users,
+            nextCursor: null,
+            hasMore: false,
+        });
+        return;
     }
+    let usersQuery = db.collection('users')
+        .orderBy('createdAt', 'desc')
+        .limit(limit);
+    const cursor = getTrimmedString(req.query.cursor, 200);
+    if (cursor) {
+        const cursorSnapshot = await db.collection('users').doc(cursor).get();
+        if (cursorSnapshot.exists) {
+            usersQuery = usersQuery.startAfter(cursorSnapshot);
+        }
+    }
+    const snapshot = await usersQuery.get();
+    const users = snapshot.docs
+        .map((doc) => buildAdminUserListItem(doc))
+        .filter((item) => item !== null);
+    const nextCursor = snapshot.docs.length === limit ? snapshot.docs[snapshot.docs.length - 1]?.id ?? null : null;
+    res.json({
+        users,
+        nextCursor,
+        hasMore: Boolean(nextCursor),
+    });
+};
+const handleAdminUserDetailRequest = async (req, res) => {
+    const user = await requireAuthenticatedUser(req);
+    await requireAdminUser(user);
+    const targetUid = getTrimmedString(req.query.uid, 200);
+    if (!targetUid) {
+        res.status(400).json({ error: 'INVALID_USER_ID', message: 'uid is required.' });
+        return;
+    }
+    const snapshot = await db.collection('users').doc(targetUid).get();
+    const detail = buildAdminUserDetail(snapshot);
+    if (!detail) {
+        res.status(404).json({ error: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다.' });
+        return;
+    }
+    res.json({ user: detail });
+};
+const handleAdminGiftCreditRequest = async (req, res) => {
+    const user = await requireAuthenticatedUser(req);
+    const targetUid = getTrimmedString(req.body?.uid, 200);
+    const amount = typeof req.body?.amount === 'number'
+        ? Math.trunc(req.body.amount)
+        : Number.parseInt(String(req.body?.amount ?? ''), 10);
+    const title = getTrimmedString(req.body?.title, 160) || DEFAULT_ADMIN_GIFT_TITLE;
+    const message = getTrimmedString(req.body?.message, 1000) || DEFAULT_ADMIN_GIFT_MESSAGE;
+    const senderName = getTrimmedString(req.body?.senderName, 120) || DEFAULT_ADMIN_GIFT_SENDER_NAME;
+    const adminMemo = getTrimmedString(req.body?.adminMemo, 1000) || '';
+    if (!targetUid) {
+        res.status(400).json({ error: 'INVALID_USER_ID', message: 'uid is required.' });
+        return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0 || amount > ADMIN_GIFT_MAX_AMOUNT) {
+        res.status(400).json({ error: 'INVALID_AMOUNT', message: `amount must be between 1 and ${ADMIN_GIFT_MAX_AMOUNT}.` });
+        return;
+    }
+    const targetUserRef = db.collection('users').doc(targetUid);
+    const adminUserRef = db.collection('users').doc(user.uid);
+    let updatedUser = null;
+    await db.runTransaction(async (transaction) => {
+        const [adminSnapshot, targetSnapshot] = await Promise.all([
+            transaction.get(adminUserRef),
+            transaction.get(targetUserRef),
+        ]);
+        const adminAccount = normalizeUserAccount(user.email, adminSnapshot.data());
+        if (adminAccount.role !== 'admin') {
+            throw new Error('FORBIDDEN');
+        }
+        if (!targetSnapshot.exists) {
+            throw new Error('USER_NOT_FOUND');
+        }
+        const targetData = targetSnapshot.data() ?? {};
+        const targetAccount = normalizeUserAccount(typeof targetData.email === 'string' ? targetData.email : '', targetData);
+        const nextAccount = {
+            ...targetAccount,
+            paidCredit: targetAccount.paidCredit + amount,
+            credits: targetAccount.credits + amount,
+        };
+        transaction.set(targetUserRef, buildUserAccountPayload(nextAccount, targetAccount.email || user.email, {
+            setCreatedAt: !targetSnapshot.exists,
+        }), { merge: true });
+        writeCreditTransaction(transaction, {
+            uid: targetUid,
+            email: targetAccount.email,
+            type: 'admin_gift',
+            amount,
+            balanceDailyAfter: nextAccount.dailyCredit,
+            balancePaidAfter: nextAccount.paidCredit,
+            memo: title,
+        });
+        transaction.set(db.collection('creditGifts').doc(), {
+            userId: targetUid,
+            amount,
+            title,
+            message,
+            senderName,
+            adminMemo: adminMemo || null,
+            grantedByAdminId: user.uid,
+            grantedByAdminEmail: user.email || adminAccount.email,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        updatedUser = {
+            ...buildAdminUserDetail(targetSnapshot),
+            credits: nextAccount.credits,
+            dailyCredit: nextAccount.dailyCredit,
+            paidCredit: nextAccount.paidCredit,
+            updatedAt: null,
+        };
+    });
+    const latestSnapshot = await targetUserRef.get();
+    const latestUser = buildAdminUserDetail(latestSnapshot) ?? updatedUser;
+    res.json({
+        success: true,
+        user: latestUser,
+    });
+};
+const buildAdminDashboardPayload = async (user) => {
+    await requireAdminUser(user);
     const [usersSnapshot, postsSnapshot, sharedResultsSnapshot, recentUsersSnapshot, generationSnapshot, creditSnapshot,] = await Promise.all([
         db.collection('users').get(),
         db.collection('bbsPosts').get(),
@@ -2704,6 +2957,33 @@ exports.api = functions
             const user = await requireAuthenticatedUser(req);
             const payload = await buildAdminDashboardPayload(user);
             res.json(payload);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (req.method === 'GET' && normalizedPath === '/admin/users') {
+        try {
+            await handleAdminUsersListRequest(req, res);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (req.method === 'GET' && normalizedPath === '/admin/users/detail') {
+        try {
+            await handleAdminUserDetailRequest(req, res);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (req.method === 'POST' && normalizedPath === '/admin/users/gift') {
+        try {
+            await handleAdminGiftCreditRequest(req, res);
         }
         catch (error) {
             handleApiError(res, error, 500);

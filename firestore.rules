@@ -58,6 +58,11 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // 운영 감사용 선물 기록 — 클라이언트 직접 접근 금지
+    match /creditGifts/{giftId} {
+      allow read, create, update, delete: if false;
+    }
+
     // 생성 요청 잠금 — 서버 쓰기, 관리자 읽기 가능
     match /generationRequests/{requestId} {
       allow read: if isAdmin();

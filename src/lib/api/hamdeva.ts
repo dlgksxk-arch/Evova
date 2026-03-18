@@ -1,5 +1,7 @@
 import type { User } from 'firebase/auth';
 import type {
+  AdminUserDetail,
+  AdminUserListResponse,
   CheckoutProductId,
   CheckoutSessionResponse,
   CheckoutSessionStatusResponse,
@@ -18,6 +20,9 @@ const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
 const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
 const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
+const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
+const ADMIN_USER_DETAIL_ENDPOINT = apiUrl('/api/admin/users/detail');
+const ADMIN_USER_GIFT_ENDPOINT = apiUrl('/api/admin/users/gift');
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -234,4 +239,133 @@ export const deleteCreation = async (authToken: string, creationId: string): Pro
   if (!res.ok) {
     throw await parseApiError(res);
   }
+};
+
+const toTimestampLike = (value: unknown) => (
+  typeof value === 'number' && Number.isFinite(value)
+    ? ({
+        toDate: () => new Date(value),
+      })
+    : null
+);
+
+const normalizeAdminUser = <T extends {
+  createdAt?: number | null;
+  lastLoginAt?: number | null;
+  updatedAt?: number | null;
+}>(user: T) => ({
+  ...user,
+  createdAt: toTimestampLike(user.createdAt),
+  lastLoginAt: toTimestampLike(user.lastLoginAt),
+  updatedAt: toTimestampLike(user.updatedAt),
+});
+
+export const callAdminUserList = async (payload: {
+  authToken: string;
+  query?: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<AdminUserListResponse> => {
+  const params = new URLSearchParams();
+  if (payload.query?.trim()) {
+    params.set('query', payload.query.trim());
+  }
+  if (payload.cursor) {
+    params.set('cursor', payload.cursor);
+  }
+  params.set('limit', String(payload.limit ?? 20));
+
+  const res = await fetch(`${ADMIN_USERS_ENDPOINT}?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as {
+    users?: Array<AdminUserListResponse['users'][number] & {
+      createdAt?: number | null;
+      lastLoginAt?: number | null;
+    }>;
+    nextCursor?: string | null;
+    hasMore?: boolean;
+  };
+
+  return {
+    users: Array.isArray(data.users) ? data.users.map((user) => normalizeAdminUser(user)) : [],
+    nextCursor: data.nextCursor ?? null,
+    hasMore: data.hasMore === true,
+  };
+};
+
+export const callAdminUserDetail = async (payload: {
+  authToken: string;
+  uid: string;
+}): Promise<AdminUserDetail> => {
+  const params = new URLSearchParams({ uid: payload.uid });
+  const res = await fetch(`${ADMIN_USER_DETAIL_ENDPOINT}?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as {
+    user?: AdminUserDetail & {
+      createdAt?: number | null;
+      lastLoginAt?: number | null;
+      updatedAt?: number | null;
+    };
+  };
+
+  if (!data.user) {
+    throw new Error('사용자 정보를 찾을 수 없습니다.');
+  }
+
+  return normalizeAdminUser(data.user) as AdminUserDetail;
+};
+
+export const callAdminGiftCredit = async (payload: {
+  authToken: string;
+  uid: string;
+  amount: number;
+  title: string;
+  message: string;
+  senderName: string;
+  adminMemo: string;
+}): Promise<AdminUserDetail> => {
+  const res = await fetch(ADMIN_USER_GIFT_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as {
+    user?: AdminUserDetail & {
+      createdAt?: number | null;
+      lastLoginAt?: number | null;
+      updatedAt?: number | null;
+    };
+  };
+
+  if (!data.user) {
+    throw new Error('사용자 정보를 갱신하지 못했습니다.');
+  }
+
+  return normalizeAdminUser(data.user) as AdminUserDetail;
 };

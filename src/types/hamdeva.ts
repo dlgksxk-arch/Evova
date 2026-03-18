@@ -66,6 +66,32 @@ export interface AdminUserRecord {
   createdAt?: Timestamp | null;
 }
 
+export interface AdminUserListItem {
+  uid: string;
+  email: string;
+  displayName?: string | null;
+  nickname?: string | null;
+  credits: number;
+  dailyCredit: number;
+  paidCredit: number;
+  totalGenerated: number;
+  isSubscribed: boolean;
+  subscriptionPlan: SubscriptionPlan;
+  role: UserRole;
+  createdAt?: Timestamp | null;
+  lastLoginAt?: Timestamp | null;
+}
+
+export interface AdminUserDetail extends AdminUserListItem {
+  updatedAt?: Timestamp | null;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserListItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
 export interface CreditLogRecord {
   id: string;
   uid: string;
