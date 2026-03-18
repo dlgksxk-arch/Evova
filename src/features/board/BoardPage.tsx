@@ -1,44 +1,129 @@
 import React from 'react';
-import type { BbsPostRecord } from '../../types/hamdeva';
+import type { BbsPostRecord, BoardNoticeRecord } from '../../types/hamdeva';
 
 interface BoardPageProps {
   pageTitle: string;
   pageDescription: string;
+  notices: BoardNoticeRecord[];
   posts: BbsPostRecord[];
   form: {
     nickname: string;
     content: string;
     tempPassword: string;
   };
+  noticeForm: {
+    title: string;
+    content: string;
+  };
   status: string | null;
+  noticeStatus: string | null;
   submitting: boolean;
+  noticeSubmitting: boolean;
   editingPostId: string | null;
+  isAdminUser: boolean;
   copy: Record<string, any>;
   onFormChange: (next: { nickname: string; content: string; tempPassword: string }) => void;
+  onNoticeFormChange: (next: { title: string; content: string }) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onNoticeSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onResetEdit: () => void;
   onEditStart: (post: BbsPostRecord) => void;
   onDelete: (post: BbsPostRecord) => void;
+  onDeleteNotice: (notice: BoardNoticeRecord) => void;
   formatTimestampLabel: (value?: BbsPostRecord['createdAt'] | null) => string;
 }
 
 const BoardPage: React.FC<BoardPageProps> = ({
   pageTitle,
   pageDescription,
+  notices,
   posts,
   form,
+  noticeForm,
   status,
+  noticeStatus,
   submitting,
+  noticeSubmitting,
   editingPostId,
+  isAdminUser,
   copy,
   onFormChange,
+  onNoticeFormChange,
   onSubmit,
+  onNoticeSubmit,
   onResetEdit,
   onEditStart,
   onDelete,
+  onDeleteNotice,
   formatTimestampLabel,
 }) => (
   <div className="bbs-layout">
+    <article className="page-article board-notice-section">
+      <div className="board-notice-header">
+        <div>
+          <h2>{copy.boardNoticeTitle}</h2>
+          <p>{copy.boardNoticeDescription}</p>
+        </div>
+        <span className="board-notice-count">{notices.length}</span>
+      </div>
+
+      {isAdminUser ? (
+        <form className="suggestion-form bbs-form board-notice-form" onSubmit={onNoticeSubmit}>
+          <label>
+            {copy.boardNoticeFormTitle}
+            <input
+              placeholder={copy.boardNoticeTitlePlaceholder}
+              type="text"
+              value={noticeForm.title}
+              onChange={(event) => onNoticeFormChange({ ...noticeForm, title: event.target.value })}
+            />
+          </label>
+          <label>
+            {copy.boardNoticeFormContent}
+            <textarea
+              placeholder={copy.boardNoticeContentPlaceholder}
+              rows={4}
+              value={noticeForm.content}
+              onChange={(event) => onNoticeFormChange({ ...noticeForm, content: event.target.value })}
+            />
+          </label>
+          <div className="bbs-form-footer">
+            <button className="generate-btn suggestion-submit-btn" disabled={noticeSubmitting} type="submit">
+              {noticeSubmitting ? copy.boardNoticeSubmitting : copy.boardNoticeSubmit}
+            </button>
+            {noticeStatus && <p className="suggestion-status">{noticeStatus}</p>}
+          </div>
+        </form>
+      ) : null}
+
+      <div className="board-notice-list">
+        {notices.length > 0 ? notices.map((notice) => (
+          <article key={notice.id} className="board-notice-card">
+            <div className="bbs-post-header">
+              <div className="bbs-post-meta">
+                <strong>{notice.title}</strong>
+                {notice.createdAt && <span>{formatTimestampLabel(notice.updatedAt || notice.createdAt)}</span>}
+              </div>
+              {isAdminUser ? (
+                <div className="bbs-post-actions">
+                  <button className="bbs-icon-btn danger" disabled={noticeSubmitting} onClick={() => onDeleteNotice(notice)} title={copy.boardDelete} type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
+                    </svg>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            <p>{notice.content}</p>
+          </article>
+        )) : (
+          <article className="board-notice-card">
+            <p>{copy.boardNoticeEmpty}</p>
+          </article>
+        )}
+      </div>
+    </article>
+
     <article className="page-article">
       <h2>{pageTitle}</h2>
       <p>{pageDescription}</p>

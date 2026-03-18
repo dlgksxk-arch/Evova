@@ -1,6 +1,6 @@
 import React from 'react';
 import type { User } from 'firebase/auth';
-import type { BbsPostRecord, CreditLogRecord, GenerationRequestRecord, UserProfile } from '../../types/hamdeva';
+import type { BbsPostRecord, BoardNoticeRecord, CreditLogRecord, GenerationRequestRecord, UserProfile } from '../../types/hamdeva';
 import type { AdminSummary } from '../../hooks/useAdminDashboardData';
 import { estimateGenerationCost } from '../../lib/costs';
 
@@ -23,6 +23,7 @@ interface AdminDashboardProps {
   adminError: string | null;
   appVersion: string;
   isFirebaseConfigured: boolean;
+  boardNotices: BoardNoticeRecord[];
   bbsPosts: BbsPostRecord[];
   bbsSubmitting: boolean;
   copy: Record<string, any>;
@@ -44,6 +45,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   adminError,
   appVersion,
   isFirebaseConfigured,
+  boardNotices,
   bbsPosts,
   bbsSubmitting,
   copy,
@@ -133,6 +135,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </article>
       <article className="page-article">
         <h3>{copy.adminBoardSection}</h3>
+        <div className="admin-table">
+          <div className="admin-table-head admin-board-head">
+            <span>{copy.boardNoticeFormTitle}</span>
+            <span>{copy.boardNoticeFormContent}</span>
+            <span>{copy.adminCreatedAt}</span>
+            <span>{copy.boardDelete}</span>
+          </div>
+          {boardNotices.length > 0 ? boardNotices.slice(0, 10).map((notice) => (
+            <div key={notice.id} className="admin-table-row admin-board-row">
+              <span>{notice.title}</span>
+              <span>{notice.content}</span>
+              <span>{formatTimestampLabel(notice.createdAt)}</span>
+              <span>-</span>
+            </div>
+          )) : <p>{copy.boardNoticeEmpty}</p>}
+        </div>
+      </article>
+      <article className="page-article">
+        <h3>{copy.adminRecentPosts}</h3>
         <div className="admin-table">
           <div className="admin-table-head admin-board-head">
             <span>{copy.boardNicknameLabel}</span>

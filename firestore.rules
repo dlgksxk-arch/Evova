@@ -120,6 +120,18 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /boardNotices/{noticeId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.content is string
+        && request.resource.data.content.size() > 0
+        && request.resource.data.content.size() <= 4000;
+      allow delete: if isAdmin();
+    }
+
     // 나머지 모든 문서 차단
     match /{document=**} {
       allow read, write: if false;

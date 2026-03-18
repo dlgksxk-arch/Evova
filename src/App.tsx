@@ -10,6 +10,7 @@ import StructuredData from './components/seo/StructuredData';
 import AdminDashboard from './features/admin/AdminDashboard';
 import MyPageSection from './features/account/MyPageSection';
 import BoardPage from './features/board/BoardPage';
+import HowItWorksVisualGuide from './features/guide/HowItWorksVisualGuide';
 import PaymentStatusPage from './features/payment/PaymentStatusPage';
 import SharedResultSection from './features/shared/SharedResultSection';
 import TryOnStudio from './features/tryon/TryOnStudio';
@@ -33,6 +34,7 @@ import {
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
+import { FACE_SAMPLES } from './data/faceSamples';
 import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
@@ -131,6 +133,16 @@ interface BbsPostRecord {
   tempPassword?: string;
   uid?: string | null;
   deleted?: boolean;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+}
+
+interface BoardNoticeRecord {
+  id: string;
+  title: string;
+  content: string;
+  authorUid?: string | null;
+  authorEmail?: string | null;
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }
@@ -2482,6 +2494,10 @@ const App: React.FC = () => {
   const [bbsStatus, setBbsStatus] = useState<string | null>(null);
   const [bbsSubmitting, setBbsSubmitting] = useState(false);
   const [bbsPosts, setBbsPosts] = useState<BbsPostRecord[]>([]);
+  const [boardNotices, setBoardNotices] = useState<BoardNoticeRecord[]>([]);
+  const [noticeForm, setNoticeForm] = useState({ title: '', content: '' });
+  const [noticeStatus, setNoticeStatus] = useState<string | null>(null);
+  const [noticeSubmitting, setNoticeSubmitting] = useState(false);
   const [editingBbsPostId, setEditingBbsPostId] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
@@ -2549,6 +2565,9 @@ const App: React.FC = () => {
   const currentDailyCredit = userProfile?.dailyCredit ?? 0;
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
+  const latestHistoryImage = historyItems.find((item) => Boolean(item.imageUrl))?.imageUrl ?? null;
+  const guideSampleFace = FACE_SAMPLES.female[0];
+  const guideSampleCloth = clothSampleOptions[0]?.image ?? '';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
   const preservedHistoryCount = historyItems.filter((item) => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
@@ -2556,6 +2575,76 @@ const App: React.FC = () => {
   }).length;
   const loginComingSoonLabel = `${t.login} (Coming Soon)`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (Coming Soon)`;
+  const boardUiCopy = lang === 'ko'
+    ? {
+        boardNoticeTitle: '공지사항',
+        boardNoticeDescription: '운영 공지와 중요한 안내를 먼저 확인해 주세요.',
+        boardNoticeFormTitle: '공지 제목',
+        boardNoticeFormContent: '공지 내용',
+        boardNoticeTitlePlaceholder: '공지 제목을 입력해 주세요.',
+        boardNoticeContentPlaceholder: '게시판 상단에 노출할 공지 내용을 입력해 주세요.',
+        boardNoticeSubmit: '공지 등록하기',
+        boardNoticeSubmitting: '공지사항을 등록하고 있습니다...',
+        boardNoticeSaved: '공지사항이 등록되었습니다.',
+        boardNoticeDeleted: '공지사항이 삭제되었습니다.',
+        boardNoticeInvalid: '공지 제목과 내용을 모두 입력해 주세요.',
+        boardNoticeAdminOnly: '공지 등록은 관리자만 가능합니다.',
+        boardNoticeFailed: '공지 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+        boardNoticeEmpty: '등록된 공지사항이 없습니다.',
+      }
+    : {
+        boardNoticeTitle: 'Notices',
+        boardNoticeDescription: 'Check service updates and important announcements first.',
+        boardNoticeFormTitle: 'Notice title',
+        boardNoticeFormContent: 'Notice content',
+        boardNoticeTitlePlaceholder: 'Enter a notice title.',
+        boardNoticeContentPlaceholder: 'Enter the notice text shown at the top of the board.',
+        boardNoticeSubmit: 'Publish notice',
+        boardNoticeSubmitting: 'Publishing notice...',
+        boardNoticeSaved: 'Notice published.',
+        boardNoticeDeleted: 'Notice deleted.',
+        boardNoticeInvalid: 'Enter both a notice title and content.',
+        boardNoticeAdminOnly: 'Only administrators can publish notices.',
+        boardNoticeFailed: 'Failed to process the notice. Please try again later.',
+        boardNoticeEmpty: 'No notices have been posted yet.',
+      };
+  const howItWorksVisualCopy = lang === 'ko'
+    ? {
+        eyebrow: '실제 화면 흐름',
+        title: '샘플 입력에서 내 결과까지 한 번에 확인',
+        description: '샘플 얼굴과 샘플 의상을 선택한 뒤 제작하면, 결과 이미지는 내 히스토리에 저장된 최근 생성물로 이어집니다.',
+        inputFaceLabel: '샘플 얼굴',
+        inputClothLabel: '샘플 의상',
+        resultLabel: '내 최근 결과',
+        stepChooseFace: '샘플 얼굴 선택',
+        stepChooseCloth: '샘플 의상 선택',
+        stepGenerate: '제작 후 결과 확인',
+        faceCaption: '사용방법 예시에 쓰이는 샘플 얼굴 이미지입니다.',
+        clothCaption: '사용방법 예시에 쓰이는 샘플 의상 이미지입니다.',
+        resultCaption: latestHistoryImage
+          ? '마이페이지 히스토리에 저장된 최근 결과 이미지를 사용합니다.'
+          : '로그인 후 이미지를 생성하면 이 위치에 내 히스토리 결과가 표시됩니다.',
+        emptyResultTitle: '히스토리 결과가 아직 없습니다',
+        emptyResultDescription: '로그인 후 이미지를 한 번 생성하면 사용 방법 예시의 결과 칸에 내 이미지가 표시됩니다.',
+      }
+    : {
+        eyebrow: 'Real flow preview',
+        title: 'See the flow from sample inputs to your saved result',
+        description: 'Pick a sample face and sample outfit, then compare them with the latest image saved in your own history.',
+        inputFaceLabel: 'Sample face',
+        inputClothLabel: 'Sample outfit',
+        resultLabel: 'My latest result',
+        stepChooseFace: 'Choose sample face',
+        stepChooseCloth: 'Choose sample outfit',
+        stepGenerate: 'Generate and review',
+        faceCaption: 'Sample face image used in the guide.',
+        clothCaption: 'Sample outfit image used in the guide.',
+        resultCaption: latestHistoryImage
+          ? 'The guide uses the latest result image saved in your My Page history.'
+          : 'After you sign in and generate an image, your own history result will appear here.',
+        emptyResultTitle: 'No history result yet',
+        emptyResultDescription: 'Generate one image after signing in and this guide will show your own saved result here.',
+      };
   const paymentSessionId = (() => {
     const params = new URLSearchParams(routeSearch);
     return params.get('checkout_id') || params.get('session_id');
@@ -2741,10 +2830,12 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!db) {
       setBbsPosts([]);
+      setBoardNotices([]);
       return;
     }
 
     const postsQuery = query(collection(db, 'bbsPosts'), orderBy('createdAt', 'desc'));
+    const noticesQuery = query(collection(db, 'boardNotices'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(postsQuery, (snapshot) => {
       setBbsPosts(snapshot.docs.map((postDoc) => ({
         id: postDoc.id,
@@ -2755,8 +2846,21 @@ const App: React.FC = () => {
       setBbsStatus(t.boardFailed);
     });
 
-    return () => unsubscribe();
-  }, [db, t.boardFailed]);
+    const unsubscribeNotices = onSnapshot(noticesQuery, (snapshot) => {
+      setBoardNotices(snapshot.docs.map((noticeDoc) => ({
+        id: noticeDoc.id,
+        ...(noticeDoc.data() as Omit<BoardNoticeRecord, 'id'>),
+      })));
+    }, (error) => {
+      console.error('Failed to load board notices:', error);
+      setNoticeStatus(boardUiCopy.boardNoticeFailed);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeNotices();
+    };
+  }, [boardUiCopy.boardNoticeFailed, db, t.boardFailed]);
   useEffect(() => {
     if (!currentUser || !db) {
       return;
@@ -3382,7 +3486,7 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
     setShowCreditPlanModal(false);
     setShowAdminModal(false);
-    setShowMyPageModal(true);
+    navigateToPage('mypage');
   };
   const openAdminModal = () => {
     if (!currentUser) {
@@ -3397,7 +3501,7 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
     setShowCreditPlanModal(false);
     setShowMyPageModal(false);
-    setShowAdminModal(true);
+    navigateToPage('admin');
   };
   const closeResultPreviewModal = () => {
     if (resultPreviewModalSrc?.startsWith('blob:')) {
@@ -3734,6 +3838,68 @@ const App: React.FC = () => {
     }
   };
 
+  const handleBoardNoticeSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!db) {
+      setNoticeStatus(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
+      return;
+    }
+
+    if (!isAdminUser) {
+      setNoticeStatus(boardUiCopy.boardNoticeAdminOnly);
+      return;
+    }
+
+    if (!noticeForm.title.trim() || !noticeForm.content.trim()) {
+      setNoticeStatus(boardUiCopy.boardNoticeInvalid);
+      return;
+    }
+
+    setNoticeSubmitting(true);
+    setNoticeStatus(boardUiCopy.boardNoticeSubmitting);
+    try {
+      await addDoc(collection(db, 'boardNotices'), {
+        title: noticeForm.title.trim(),
+        content: noticeForm.content.trim(),
+        authorUid: currentUser?.uid || null,
+        authorEmail: currentUser?.email || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setNoticeForm({ title: '', content: '' });
+      setNoticeStatus(boardUiCopy.boardNoticeSaved);
+    } catch (error) {
+      console.error('Failed to create board notice:', error);
+      setNoticeStatus(boardUiCopy.boardNoticeFailed);
+    } finally {
+      setNoticeSubmitting(false);
+    }
+  };
+
+  const handleBoardNoticeDelete = async (notice: BoardNoticeRecord) => {
+    if (!db || !isAdminUser) {
+      setNoticeStatus(boardUiCopy.boardNoticeAdminOnly);
+      return;
+    }
+
+    const confirmed = window.confirm(lang === 'ko' ? '이 공지사항을 삭제하시겠습니까?' : 'Delete this notice?');
+    if (!confirmed) {
+      return;
+    }
+
+    setNoticeSubmitting(true);
+    try {
+      await deleteDoc(doc(db, 'boardNotices', notice.id));
+      setNoticeStatus(boardUiCopy.boardNoticeDeleted);
+    } catch (error) {
+      console.error('Failed to delete board notice:', error);
+      setNoticeStatus(boardUiCopy.boardNoticeFailed);
+    } finally {
+      setNoticeSubmitting(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (generationLockRef.current) {
       return;
@@ -3886,6 +4052,15 @@ const App: React.FC = () => {
                 {contentLocale.nav[page]}
               </button>
             ))}
+            {currentUser && (
+              <button
+                className={`nav-link ${currentPage === 'mypage' ? 'active' : ''}`}
+                onClick={() => navigateToPage('mypage')}
+                type="button"
+              >
+                {t.myPage}
+              </button>
+            )}
           </div>
           <div className="nav-right desktop-header-actions">
             {currentUser && (
@@ -3900,9 +4075,11 @@ const App: React.FC = () => {
                 </button>
                 {userMenuOpen && (
                   <div className="user-menu-dropdown">
-                    <button className="lang-option" onClick={openMyPageModal} type="button">
-                      {t.myPage}
-                    </button>
+                    {isAdminUser ? (
+                      <button className="lang-option" onClick={openAdminModal} type="button">
+                        {t.adminTitle}
+                      </button>
+                    ) : null}
                     <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
                       {t.logout}
                     </button>
@@ -3931,7 +4108,7 @@ const App: React.FC = () => {
             disabled={!currentUser}
             onClick={() => {
               if (currentUser) {
-                openMyPageModal();
+                navigateToPage('mypage');
                 return;
               }
 
@@ -4015,11 +4192,24 @@ const App: React.FC = () => {
                 <button
                   className="mobile-menu-link mobile-menu-action"
                   onClick={() => {
-                    openMyPageModal();
+                    navigateToPage('mypage');
+                    setMobileMenuOpen(false);
                   }}
                   type="button"
                 >
                   {t.myPage}
+                </button>
+              )}
+              {isAdminUser && (
+                <button
+                  className="mobile-menu-link mobile-menu-action"
+                  onClick={() => {
+                    openAdminModal();
+                    setMobileMenuOpen(false);
+                  }}
+                  type="button"
+                >
+                  {t.adminTitle}
                 </button>
               )}
               {!currentUser && (
@@ -4284,10 +4474,12 @@ const App: React.FC = () => {
                 adminLoading={adminLoading}
                 appVersion={appVersion}
                 isFirebaseConfigured={isFirebaseConfigured}
+                boardNotices={boardNotices}
                 bbsPosts={bbsPosts}
                 bbsSubmitting={bbsSubmitting}
                 copy={{
                   ...t,
+                  ...boardUiCopy,
                   loginComingSoon: loginComingSoonLabel,
                   generationCost: GENERATION_COST,
                   formatEstimatedCostLabel,
@@ -4326,17 +4518,25 @@ const App: React.FC = () => {
               <BoardPage
                 pageTitle={contentLocale.pages.board.title}
                 pageDescription={contentLocale.pages.board.description}
+                notices={boardNotices}
                 posts={bbsPosts}
                 form={bbsForm}
+                noticeForm={noticeForm}
                 status={bbsStatus}
+                noticeStatus={noticeStatus}
                 submitting={bbsSubmitting}
+                noticeSubmitting={noticeSubmitting}
                 editingPostId={editingBbsPostId}
-                copy={t}
+                isAdminUser={isAdminUser}
+                copy={{ ...t, ...boardUiCopy }}
                 onFormChange={setBbsForm}
+                onNoticeFormChange={setNoticeForm}
                 onSubmit={handleBbsSubmit}
+                onNoticeSubmit={handleBoardNoticeSubmit}
                 onResetEdit={resetBbsEditor}
                 onEditStart={handleBbsEditStart}
                 onDelete={(post) => { void handleBbsDelete(post); }}
+                onDeleteNotice={(notice) => { void handleBoardNoticeDelete(notice); }}
                 formatTimestampLabel={formatTimestampLabel}
               />
             )}
@@ -4506,6 +4706,14 @@ const App: React.FC = () => {
               />
             )}
             {currentPage === 'about' && renderSeoContent('about')}
+            {currentPage === 'how-it-works' && (
+              <HowItWorksVisualGuide
+                copy={howItWorksVisualCopy}
+                sampleFaceSrc={guideSampleFace}
+                sampleClothSrc={guideSampleCloth}
+                resultImageSrc={latestHistoryImage}
+              />
+            )}
             {currentPage === 'how-it-works' && renderSeoContent('how-it-works')}
             {currentPage === 'traditional-clothing' && renderSeoContent('traditional-clothing')}
             {currentFaqItems.length > 0 && currentPage !== 'home' && (
@@ -4567,75 +4775,6 @@ const App: React.FC = () => {
               );
             })}
           </div>
-        </ShellModal>
-      )}
-
-      {showMyPageModal && (
-        <ShellModal
-          title={t.myPage}
-          className="mypage-modal-shell"
-          onClose={() => setShowMyPageModal(false)}
-        >
-          <MyPageSection
-            currentUser={currentUser}
-            userProfile={userProfile}
-            currentDailyCredit={currentDailyCredit}
-            currentPaidCredit={currentPaidCredit}
-            currentCredits={currentCredits}
-            historyItems={historyItems}
-            preservedHistoryCount={preservedHistoryCount}
-            historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
-            isFirebaseConfigured={isFirebaseConfigured}
-            firebaseDisabledMessage={firebaseDisabledMessage}
-            isStartingCheckout={isStartingCheckout}
-            products={CREDIT_PRODUCTS}
-            copy={{ ...t, loginComingSoon: loginComingSoonLabel }}
-            onLogin={() => openAuthModal('login')}
-            onNavigateSiteManagement={openAdminModal}
-            onNavigateTerms={() => {
-              setShowMyPageModal(false);
-              navigateToPage('terms');
-            }}
-            onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
-            formatTimestampLabel={formatTimestampLabel}
-            onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
-            onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
-            onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
-            onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
-          />
-        </ShellModal>
-      )}
-
-      {showAdminModal && (
-        <ShellModal
-          title={t.adminTitle}
-          className="admin-modal-shell"
-          onClose={() => setShowAdminModal(false)}
-        >
-          <AdminDashboard
-            currentUser={currentUser}
-            userProfile={userProfile}
-            isAdminUser={isAdminUser}
-            adminSummary={adminSummary}
-            adminUsers={adminUsers}
-            adminGenerationLogs={adminGenerationLogs}
-            adminCreditLogs={adminCreditLogs}
-            adminLoading={adminLoading}
-            appVersion={appVersion}
-            isFirebaseConfigured={isFirebaseConfigured}
-            bbsPosts={bbsPosts}
-            bbsSubmitting={bbsSubmitting}
-            copy={{
-              ...t,
-              loginComingSoon: loginComingSoonLabel,
-              generationCost: GENERATION_COST,
-              formatEstimatedCostLabel,
-            }}
-            onOpenAuth={() => openAuthModal('login')}
-            onGoHome={() => setShowAdminModal(false)}
-            onDeletePost={(post) => { void handleBbsDelete(post); }}
-            formatTimestampLabel={formatTimestampLabel}
-          />
         </ShellModal>
       )}
 

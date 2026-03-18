@@ -1033,6 +1033,56 @@ a { color: inherit; text-decoration: none; }
   white-space: pre-wrap;
 }
 
+.board-notice-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.board-notice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.board-notice-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.board-notice-form {
+  max-width: none;
+}
+
+.board-notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.board-notice-card {
+  padding: 20px 22px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--border));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--surface-alt) 98%, transparent));
+  box-shadow: var(--shadow-sm);
+}
+
+.board-notice-card p {
+  white-space: pre-wrap;
+}
+
 .bbs-post-header {
   display: flex;
   justify-content: space-between;
@@ -1636,6 +1686,129 @@ a { color: inherit; text-decoration: none; }
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.howto-visual-section {
+  margin-top: 4px;
+}
+
+.howto-visual-card {
+  overflow: hidden;
+}
+
+.howto-visual-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.howto-visual-eyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.howto-visual-flow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.35fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.howto-visual-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.howto-visual-stage-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.howto-stage-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), #f29d2e);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.howto-stage-image-card {
+  position: relative;
+  min-height: 320px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at top right, var(--guide-orb-gold), transparent 36%),
+    radial-gradient(circle at left bottom, var(--guide-orb-blue), transparent 34%),
+    var(--guide-card-bg);
+  box-shadow: var(--shadow-md);
+}
+
+.howto-stage-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.howto-stage-chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.howto-empty-result {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-sub);
+}
+
+.howto-empty-result strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.howto-flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 34px;
+  font-weight: 900;
 }
 
 .country-card {
@@ -2699,6 +2872,13 @@ a { color: inherit; text-decoration: none; }
   }
   .mobile-language-list {
     grid-template-columns: 1fr;
+  }
+  .howto-visual-flow {
+    grid-template-columns: 1fr;
+  }
+  .howto-flow-arrow {
+    min-height: 40px;
+    transform: rotate(90deg);
   }
 }
 

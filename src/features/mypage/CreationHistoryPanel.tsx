@@ -322,7 +322,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
                 type="button"
               >
-                축소
+                -
               </button>
               <button
                 className="outline-btn auth-inline-btn"
@@ -338,11 +338,16 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 onClick={() => setZoom((prev) => Math.min(3, Number((prev + 0.25).toFixed(2))))}
                 type="button"
               >
-                확대
+                +
               </button>
             </div>
 
             <div
+              onWheel={(event) => {
+                if (event.ctrlKey) {
+                  event.preventDefault();
+                }
+              }}
               style={{
                 flex: 1,
                 overflow: 'auto',

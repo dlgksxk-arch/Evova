@@ -179,3 +179,13 @@ export interface BbsPostRecord {
   createdAt?: Timestamp | null;
   updatedAt?: Timestamp | null;
 }
+
+export interface BoardNoticeRecord {
+  id: string;
+  title: string;
+  content: string;
+  authorUid?: string | null;
+  authorEmail?: string | null;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+}
