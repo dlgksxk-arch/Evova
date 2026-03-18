@@ -2067,6 +2067,14 @@ const getGenerateErrorMessage = (
     return `${t.alertError}\n\n${details.prepTimeoutDetail}`;
   }
 
+  if (
+    raw === 'IMAGE_RESIZE_TIMEOUT'
+    || raw === 'IMAGE_RESIZE_CONTEXT_UNAVAILABLE'
+    || raw === 'IMAGE_RESIZE_FAILED'
+  ) {
+    return `${t.alertError}\n\n${details.prepTimeoutDetail}`;
+  }
+
   if (raw === 'GENERATION_AUTH_TIMEOUT') {
     return `${t.alertError}\n\n${details.authTimeoutDetail}`;
   }
