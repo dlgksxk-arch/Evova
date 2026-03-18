@@ -2454,34 +2454,6 @@ const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-const simpleHash = (a: string, b: string): string => {
-  const s = a.slice(-300) + b.slice(-300);
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
-  return Math.abs(h).toString(36);
-};
-
-const getCached = (k: string) => {
-  try {
-    return JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}')[k] ?? null;
-  } catch {
-    return null;
-  }
-};
-const setCached = (k: string, v: string) => {
-  try {
-    const c = JSON.parse(localStorage.getItem('HAMDEVA-cache') ?? '{}');
-    c[k] = v;
-    localStorage.setItem('HAMDEVA-cache', JSON.stringify(c));
-  } catch (error) {
-    try {
-      localStorage.removeItem('HAMDEVA-cache');
-    } catch {
-    }
-    console.warn('Failed to persist HAMDEVA cache:', error);
-  }
-};
-
 const readGenerationDurations = (): number[] => {
   try {
     const raw = JSON.parse(localStorage.getItem(GENERATION_DURATION_CACHE_KEY) ?? '[]');
@@ -4225,17 +4197,6 @@ const App: React.FC = () => {
         'GENERATION_PREP_TIMEOUT',
       );
 
-      const cacheKey = simpleHash(preparedPersonImage, preparedClothImage);
-      const cached = getCached(cacheKey);
-      if (cached) {
-        clearGeneratedResult();
-        setFinalImageSrc(cached);
-        setResultPreviewState('ready');
-        writeGenerationDuration(Date.now() - startedAt);
-        setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
-        return;
-      }
-
       const resolvedSubjectType = subjectType;
 
       const requestId = createRequestId();
@@ -4287,8 +4248,6 @@ const App: React.FC = () => {
       } catch (error) {
         console.error('Failed to persist generation history:', error);
       }
-
-      setCached(cacheKey, result);
     } catch (err) {
       setResultPreviewState('error');
       alert(getGenerateErrorMessage(err, t, generationErrorCopy));

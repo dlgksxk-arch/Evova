@@ -191,13 +191,15 @@ Priority:
 
 Use the first image as the identity reference and the second image as the clothing reference.
 The result must be the same real person, not a similar person.
+Treat this generation as a completely fresh standalone request.
+Do not borrow, blend, average, or infer identity details from any previous generation.
 Completely ignore any face, head, hair, skin, body, or identity cues that may appear in the clothing reference image.
 Use only the first image for facial identity.
 Match the first image as closely as possible and treat facial identity preservation as the most important requirement.
 Preserve the same face shape, forehead, eyebrows, eyes, eye distance, nose, nostrils, lips, mouth width, jawline, chin, ears, skin tone, skin texture, hairstyle, hairline, and facial proportions.
 Keep the same apparent age, ethnicity, bone structure, and overall facial geometry.
 Do not beautify, idealize, rejuvenate, feminize, masculinize, stylize, retouch, or reinterpret the face.
-Allow only very light natural makeup.
+Allow only soft polished Korean idol-style makeup: light skin-evening, subtle eyeliner, delicate lash definition, soft gradient lips, and natural blush.
 Keep a neutral natural expression.
 The face must remain immediately recognizable as the same person.
 
@@ -206,7 +208,8 @@ Do not redesign, simplify, replace, restyle, or merge the outfit with another fa
 
 One person only. One image only. Full body from head to toe.
 Keep the full head, full hair, both hands, both feet, and the entire outfit fully inside the frame.
-Use realistic body proportions and a straightforward full-body portrait.
+Use realistic but flattering editorial body proportions with clean posture and balanced head-to-body ratio.
+Make the overall silhouette look elegant and proportionate without changing the person's core build unrealistically.
 Keep the face clearly visible and not smaller than necessary.
 
 Use a simple realistic studio or plain fashion-photo background with clean realistic lighting.
