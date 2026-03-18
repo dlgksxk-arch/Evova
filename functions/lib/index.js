@@ -367,7 +367,7 @@ const getOpenAIApiKey = () => {
     return state.key;
 };
 const getGoogleVideoApiKey = () => {
-    const apiKey = process.env['GOOGLE_VIDEO_API_KEY'] ?? process.env['NANOBANANA_API_KEY'];
+    const apiKey = process.env['GOOGLE_VIDEO_API_KEY'];
     return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 const getPolarApiKey = () => {

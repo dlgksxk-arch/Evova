@@ -572,7 +572,7 @@ const getOpenAIApiKey = (): string => {
 };
 
 const getGoogleVideoApiKey = (): string => {
-  const apiKey = process.env['GOOGLE_VIDEO_API_KEY'] ?? process.env['NANOBANANA_API_KEY'];
+  const apiKey = process.env['GOOGLE_VIDEO_API_KEY'];
   return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 

@@ -106,18 +106,29 @@ const isAllowedVideoDialogueCharacter = (char: string): boolean => (
   || VIDEO_DIALOGUE_ALLOWED_PUNCTUATION.includes(char)
 );
 
-const normalizeVideoDialogueInput = (value: string): { value: string; error: string | null; characterCount: number } => {
-  const whitespaceNormalized = value.normalize('NFC').replace(/\s+/gu, ' ');
-  for (const char of whitespaceNormalized) {
+const validateVideoDialogueInput = (
+  value: string,
+  options?: { normalizeWhitespace?: boolean; trim?: boolean },
+): { value: string; error: string | null; characterCount: number } => {
+  const normalizeWhitespace = options?.normalizeWhitespace ?? false;
+  const trim = options?.trim ?? false;
+  const normalizedUnicode = value.normalize('NFC');
+  const processedValue = normalizeWhitespace
+    ? normalizedUnicode.replace(/\s+/gu, ' ')
+    : normalizedUnicode;
+
+  for (const char of processedValue) {
     if (/[\p{Cc}\p{Cs}]/u.test(char)) {
-      return { value: whitespaceNormalized.trim(), error: 'invalid', characterCount: countVideoDialogueCharacters(whitespaceNormalized.trim()) };
+      const failedValue = trim ? processedValue.trim() : processedValue;
+      return { value: failedValue, error: 'invalid', characterCount: countVideoDialogueCharacters(failedValue) };
     }
     if (!isAllowedVideoDialogueCharacter(char)) {
-      return { value: whitespaceNormalized.trim(), error: 'invalid', characterCount: countVideoDialogueCharacters(whitespaceNormalized.trim()) };
+      const failedValue = trim ? processedValue.trim() : processedValue;
+      return { value: failedValue, error: 'invalid', characterCount: countVideoDialogueCharacters(failedValue) };
     }
   }
 
-  const normalizedValue = whitespaceNormalized.trim();
+  const normalizedValue = trim ? processedValue.trim() : processedValue;
   const characterCount = countVideoDialogueCharacters(normalizedValue);
   if (characterCount > VIDEO_DIALOGUE_MAX_CHARACTERS) {
     return { value: normalizedValue, error: 'invalid', characterCount };
@@ -3402,8 +3413,11 @@ const App: React.FC = () => {
     setSubjectTypeManualOverride(true);
   };
   const handleVideoDialogueChange = (nextValue: string) => {
-    const normalized = normalizeVideoDialogueInput(nextValue);
-    setVideoDialogue(normalized.value);
+    const validated = validateVideoDialogueInput(nextValue);
+    if (validated.error) {
+      return;
+    }
+    setVideoDialogue(validated.value);
     setVideoDialogueError(null);
   };
   const handleVideoGenerate = async () => {
@@ -3414,7 +3428,7 @@ const App: React.FC = () => {
       alert(t.notEnoughCredits);
       return;
     }
-    const normalizedDialogue = normalizeVideoDialogueInput(videoDialogue);
+    const normalizedDialogue = validateVideoDialogueInput(videoDialogue, { normalizeWhitespace: true, trim: true });
     if (!normalizedDialogue.value) {
       setVideoDialogueError(subjectUi.videoDialogueRequired);
       setVideoStatusMessage(subjectUi.videoDialogueRequired);
