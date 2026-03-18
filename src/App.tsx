@@ -2393,7 +2393,7 @@ const getHistoryExpiryMillis = (item: GenerationRecord): number | null => {
   return createdAt ? createdAt + HISTORY_RETENTION_MS : null;
 };
 
-const prepareGenerationInput = async (source: File | string, maxPx = 1280): Promise<string> => {
+const prepareGenerationInput = async (source: File | string, maxPx = 1024): Promise<string> => {
   const dataUrl = source instanceof File
     ? await blobToDataUrl(source)
     : source.startsWith('data:')

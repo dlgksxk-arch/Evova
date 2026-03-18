@@ -184,57 +184,32 @@ class UpstreamApiError extends Error {
 }
 const HUMAN_PROMPT = `Create one realistic full-body studio photograph of the exact same person from the first uploaded image wearing the exact same clothing from the second uploaded image.
 
-Priority order:
-1) Exact facial identity match
-2) Exact clothing preservation
-3) Natural full-body framing
+Priority:
+1) exact facial identity
+2) exact clothing preservation
+3) natural full-body framing
 
-Identity rules:
-- The first image is the face and identity reference.
-- The result must be the exact same person, not a similar person.
-- Preserve the exact facial identity with no reinterpretation:
-  same face shape, forehead, eyebrows, eyes, eye distance, nose shape, nostrils, lips, mouth width, jawline, chin, ears, skin tone, skin texture, hairstyle, hairline, and overall facial proportions.
-- Do not beautify, idealize, rejuvenate, feminize, masculinize, or stylize the face.
-- Do not add makeup unless it is clearly visible in the reference image.
-- Do not change expression beyond a neutral natural expression.
-- The face must remain immediately recognizable as the same real person.
+Use the first image as the identity reference and the second image as the clothing reference.
+The result must be the same real person, not a similar person.
+Completely ignore any face, head, hair, skin, body, or identity cues that may appear in the clothing reference image.
+Use only the first image for facial identity.
+Preserve the same face shape, forehead, eyebrows, eyes, eye distance, nose, nostrils, lips, mouth width, jawline, chin, ears, skin tone, skin texture, hairstyle, hairline, and facial proportions.
+Do not beautify, idealize, rejuvenate, feminize, masculinize, stylize, retouch, or reinterpret the face.
+Allow only very light natural makeup.
+Keep a neutral natural expression.
+The face must remain immediately recognizable as the same person.
 
-Clothing rules:
-- The second image is the clothing reference.
-- Put that exact same person into the exact same outfit.
-- Preserve the clothing exactly as shown:
-  same design, color, fabric feel, embroidery, print, silhouette, sleeve shape, neckline, hem, fit, and accessories if present.
-- Do not redesign, simplify, replace, or reinterpret the clothing.
-- Do not merge the outfit with a different fashion style.
+Preserve the clothing exactly: same design, color, fabric feel, embroidery, print, silhouette, sleeve shape, neckline, hem, fit, and accessories if present.
+Do not redesign, simplify, replace, restyle, or merge the outfit with another fashion style.
 
-Composition rules:
-- One person only.
-- One image only.
-- Full body visible from head to toe.
-- Keep the entire head, full hair, both hands, both feet, and the complete outfit fully inside the frame.
-- Use a straightforward full-body portrait with realistic body proportions.
-- Do not make the face smaller than necessary.
-- Keep enough space around the subject, but maintain clear facial visibility.
+One person only. One image only. Full body from head to toe.
+Keep the full head, full hair, both hands, both feet, and the entire outfit fully inside the frame.
+Use realistic body proportions and a straightforward full-body portrait.
+Keep the face clearly visible and not smaller than necessary.
 
-Background and lighting:
-- Use a simple, non-distracting, realistic studio or plain fashion-photo background.
-- Keep the background secondary and unobtrusive.
-- Use clean, realistic lighting that does not alter skin tone or facial structure.
+Use a simple realistic studio or plain fashion-photo background with clean realistic lighting.
 
-Strict negatives:
-- no identity change
-- no beautification
-- no face reshaping
-- no different model
-- no age change
-- no ethnicity change
-- no exaggerated smile
-- no glamour retouching
-- no costume redesign
-- no cropped head
-- no missing hands or feet
-- no extra fingers
-- no distorted face`;
+Strict negatives: no identity change, no different model, no age change, no ethnicity change, no beautification, no face reshaping, no exaggerated smile, no glamour retouching, no costume redesign, no cropped head, no missing hands or feet, no extra fingers, no distorted face.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
