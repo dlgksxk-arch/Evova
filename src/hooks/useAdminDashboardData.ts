@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { Firestore, Timestamp } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 import { auth } from '../firebase';
-import type { AdminUserRecord, CreditLogRecord, GenerationRequestRecord } from '../types/hamdeva';
 
 export type AdminSummary = {
   users: number;
@@ -34,16 +33,6 @@ const EMPTY_SUMMARY: AdminSummary = {
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
 const ADMIN_DASHBOARD_ENDPOINT = `${API_BASE_URL}/api/admin/dashboard`;
 
-const toTimestampLike = (value: unknown): Timestamp | null => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return null;
-  }
-
-  return {
-    toDate: () => new Date(value),
-  } as Timestamp;
-};
-
 export const useAdminDashboardData = ({
   db: _db,
   enabled,
@@ -52,34 +41,25 @@ export const useAdminDashboardData = ({
   enabled: boolean;
 }) => {
   const [adminSummary, setAdminSummary] = useState<AdminSummary>(EMPTY_SUMMARY);
-  const [adminUsers, setAdminUsers] = useState<AdminUserRecord[]>([]);
-  const [adminGenerationLogs, setAdminGenerationLogs] = useState<GenerationRequestRecord[]>([]);
-  const [adminCreditLogs, setAdminCreditLogs] = useState<CreditLogRecord[]>([]);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!enabled) {
       setAdminSummary(EMPTY_SUMMARY);
-      setAdminUsers([]);
-      setAdminGenerationLogs([]);
-      setAdminCreditLogs([]);
       setAdminLoading(false);
       setAdminError(null);
       return;
     }
 
     let cancelled = false;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const loadAdminData = async () => {
       const currentUser = auth?.currentUser;
       if (!currentUser) {
         if (!cancelled) {
           setAdminSummary(EMPTY_SUMMARY);
-          setAdminUsers([]);
-          setAdminGenerationLogs([]);
-          setAdminCreditLogs([]);
           setAdminLoading(false);
           setAdminError(null);
         }
@@ -105,13 +85,6 @@ export const useAdminDashboardData = ({
 
       const payload = await response.json() as {
         summary?: AdminSummary;
-        users?: Array<Omit<AdminUserRecord, 'createdAt'> & { createdAt?: number | null }>;
-        generationLogs?: Array<Omit<GenerationRequestRecord, 'createdAt' | 'completedAt' | 'updatedAt'> & {
-          createdAt?: number | null;
-          completedAt?: number | null;
-          updatedAt?: number | null;
-        }>;
-        creditLogs?: Array<Omit<CreditLogRecord, 'createdAt'> & { createdAt?: number | null }>;
       };
 
       if (cancelled) {
@@ -119,20 +92,6 @@ export const useAdminDashboardData = ({
       }
 
       setAdminSummary(payload.summary ?? EMPTY_SUMMARY);
-      setAdminUsers((payload.users ?? []).map((item) => ({
-        ...item,
-        createdAt: toTimestampLike(item.createdAt),
-      })));
-      setAdminGenerationLogs((payload.generationLogs ?? []).map((item) => ({
-        ...item,
-        createdAt: toTimestampLike(item.createdAt),
-        completedAt: toTimestampLike(item.completedAt),
-        updatedAt: toTimestampLike(item.updatedAt),
-      })));
-      setAdminCreditLogs((payload.creditLogs ?? []).map((item) => ({
-        ...item,
-        createdAt: toTimestampLike(item.createdAt),
-      })));
       setAdminLoading(false);
       setAdminError(null);
     };
@@ -145,30 +104,15 @@ export const useAdminDashboardData = ({
       }
     });
 
-    intervalId = setInterval(() => {
-      void loadAdminData().catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to refresh admin data:', error);
-          setAdminLoading(false);
-          setAdminError(error instanceof Error ? error.message : 'ADMIN_DASHBOARD_REFRESH_FAILED');
-        }
-      });
-    }, 10_000);
-
     return () => {
       cancelled = true;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
     };
-  }, [enabled]);
+  }, [enabled, reloadKey]);
 
   return {
     adminSummary,
-    adminUsers,
-    adminGenerationLogs,
-    adminCreditLogs,
     adminLoading,
     adminError,
+    refreshAdminSummary: () => setReloadKey((prev) => prev + 1),
   };
 };

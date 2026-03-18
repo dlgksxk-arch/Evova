@@ -3491,3 +3491,277 @@ a { color: inherit; text-decoration: none; }
     display: flex;
   }
 }
+
+/* Pop Fashion Playground Refresh */
+:root,
+[data-theme='light'] {
+  --primary: #ff4db8;
+  --primary-hover: #f03aa8;
+  --accent-blue: #64c8ff;
+  --accent-gold: #ffd85c;
+  --accent-green: #34c786;
+  --bg: #fff8fd;
+  --bg-alt: #f6f1ff;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-alt: #fff4fc;
+  --nav-bg: rgba(255, 248, 253, 0.82);
+  --nav-border: rgba(112, 87, 201, 0.14);
+  --hero-bg: #fff7ff;
+  --hero-overlay: radial-gradient(circle at top left, rgba(255, 95, 184, 0.16), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1));
+  --text: #1c2140;
+  --text-sub: #575d82;
+  --text-muted: #8f90b3;
+  --border: rgba(110, 96, 176, 0.14);
+  --upload-bg: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,243,252,0.98));
+  --upload-hover-bg: #fff1fb;
+  --shadow-sm: 0 10px 24px rgba(104, 85, 188, 0.08);
+  --shadow-md: 0 22px 44px rgba(104, 85, 188, 0.12);
+  --shadow-lg: 0 30px 70px rgba(104, 85, 188, 0.16);
+  --r-md: 18px;
+  --r-lg: 26px;
+  --r-xl: 34px;
+}
+
+[data-theme='dark'],
+.app-root.dark {
+  --primary: #ff6fc5;
+  --primary-hover: #ff5abb;
+  --accent-blue: #74d0ff;
+  --accent-gold: #ffe16f;
+  --accent-green: #54d69b;
+  --bg: #121225;
+  --bg-alt: #181833;
+  --surface: rgba(26, 27, 48, 0.9);
+  --surface-alt: #1e1f3f;
+  --nav-bg: rgba(18, 18, 37, 0.86);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --hero-bg: #101124;
+  --hero-overlay: radial-gradient(circle at top left, rgba(255, 111, 197, 0.18), transparent 42%), linear-gradient(180deg, rgba(9,9,20,0.1), rgba(9,9,20,0.24));
+  --text: #f7f5ff;
+  --text-sub: #c6c1ee;
+  --text-muted: #918db8;
+  --border: rgba(255, 255, 255, 0.1);
+  --upload-bg: linear-gradient(180deg, rgba(34,35,63,0.92), rgba(24,24,51,0.98));
+  --upload-hover-bg: #25264a;
+  --shadow-sm: 0 12px 26px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 24px 50px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 34px 80px rgba(0, 0, 0, 0.42);
+}
+
+body {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 105, 180, 0.14), transparent 34%),
+    radial-gradient(circle at 100% 12%, rgba(100, 200, 255, 0.16), transparent 28%),
+    linear-gradient(180deg, var(--bg) 0%, #f5f3ff 100%);
+}
+
+.landing-nav,
+.page-article,
+.compact-info-card,
+.credit-product-card,
+.credit-plan-card,
+.content-modal,
+.auth-modal,
+.mobile-nav-panel,
+.preview-box,
+.share-section,
+.country-card,
+.contact-form,
+.admin-table,
+.admin-user-list-panel,
+.admin-user-detail-panel {
+  backdrop-filter: blur(18px);
+}
+
+.landing-nav {
+  box-shadow: 0 18px 40px rgba(106, 90, 193, 0.08);
+}
+
+.nav-logo {
+  font-size: 1.45rem;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.nav-logo span,
+.hero-eyebrow,
+.section-label,
+.sample-badge,
+.credit-plan-badge,
+.credit-plan-save-pill,
+.empty-preview-badge {
+  background: linear-gradient(135deg, var(--primary), #a86bff 68%, var(--accent-blue));
+  color: #fff;
+  border: none;
+  box-shadow: 0 10px 24px rgba(255, 77, 184, 0.18);
+}
+
+.nav-link,
+.lang-dropdown-trigger,
+.dark-toggle,
+.mobile-menu-link,
+.mobile-language-button,
+.outline-btn {
+  border-radius: 999px;
+  border-color: rgba(111, 95, 185, 0.16);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: none;
+}
+
+.nav-link:hover,
+.lang-dropdown-trigger:hover,
+.dark-toggle:hover,
+.mobile-menu-link:hover,
+.mobile-language-button:hover,
+.outline-btn:hover {
+  background: rgba(255, 255, 255, 0.94);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(108, 89, 190, 0.12);
+}
+
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  min-height: 660px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 94, 184, 0.22), transparent 28%),
+    radial-gradient(circle at 84% 22%, rgba(100, 200, 255, 0.2), transparent 24%),
+    radial-gradient(circle at 76% 72%, rgba(173, 117, 255, 0.16), transparent 22%),
+    linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0.18));
+}
+
+.hero-content {
+  max-width: 1180px;
+  padding: 148px 24px 108px;
+}
+
+.hero-title {
+  max-width: 10ch;
+  font-size: clamp(3rem, 7vw, 5.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.08em;
+}
+
+.hero-subtitle,
+.hero-sub {
+  max-width: 640px;
+  font-size: clamp(1.02rem, 2vw, 1.2rem);
+  color: var(--text-sub);
+}
+
+.hero-cta-btn,
+.generate-btn {
+  min-height: 58px;
+  padding: 0 28px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--primary), #9f6bff 90%);
+  box-shadow: 0 20px 36px rgba(255, 77, 184, 0.28);
+}
+
+.generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 24px 44px rgba(255, 77, 184, 0.32);
+}
+
+.page-article,
+.compact-info-card,
+.credit-product-card,
+.credit-plan-card,
+.country-card,
+.contact-form {
+  border-radius: 30px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,245,252,0.92));
+  box-shadow: var(--shadow-md);
+}
+
+.page-article h2,
+.page-article h3,
+.compact-info-card h2,
+.card-title {
+  letter-spacing: -0.04em;
+}
+
+.try-layout,
+.credit-product-grid,
+.credit-plan-grid,
+.compact-card-grid {
+  gap: 20px;
+}
+
+.card-header,
+.usage-bar,
+.credit-cta-panel,
+.generation-gauge,
+.result-actions-panel,
+.result-preview-shell .account-modal-body {
+  border-radius: 28px;
+}
+
+.usage-bar,
+.credit-notice-banner,
+.credit-cta-panel {
+  border: 1px solid rgba(255, 77, 184, 0.16);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.94), rgba(247,240,255,0.96));
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-box,
+.empty-preview {
+  border-radius: 28px;
+  background: var(--upload-bg);
+  border: 1px dashed rgba(255, 77, 184, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), var(--shadow-sm);
+}
+
+.preview-box.has-image {
+  border: 1px solid rgba(111, 95, 185, 0.14);
+  background: rgba(12, 13, 26, 0.9);
+}
+
+.result-action-grid .result-action-btn,
+.share-platform-btn,
+.contact-submit,
+.auth-inline-btn {
+  border-radius: 20px;
+}
+
+.mobile-nav-panel {
+  border-radius: 32px 32px 0 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,243,255,0.96));
+  box-shadow: 0 -24px 60px rgba(68, 56, 130, 0.18);
+}
+
+.modal-backdrop {
+  background: rgba(18, 18, 37, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.site-footer {
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.62));
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    padding: 132px 20px 76px;
+  }
+
+  .hero-title {
+    max-width: 100%;
+    font-size: clamp(2.55rem, 12vw, 3.6rem);
+  }
+
+  .page-article,
+  .compact-info-card,
+  .credit-product-card,
+  .credit-plan-card,
+  .country-card,
+  .contact-form,
+  .preview-box,
+  .empty-preview {
+    border-radius: 24px;
+  }
+}

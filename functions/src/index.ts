@@ -66,6 +66,8 @@ const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧�
 const DEFAULT_ADMIN_GIFT_SENDER_NAME = 'EVOVA 운영팀';
 const ADMIN_USER_LIST_DEFAULT_LIMIT = 20;
 const ADMIN_USER_LIST_MAX_LIMIT = 50;
+const ADMIN_LOG_LIST_DEFAULT_LIMIT = 20;
+const ADMIN_LOG_LIST_MAX_LIMIT = 50;
 const ADMIN_GIFT_MAX_AMOUNT = 1_000_000;
 const SUBJECT_CLASSIFICATION_PROMPT = `Look at this uploaded subject image and determine whether the subject is a human, a dog, or a cat.
 Return ONLY one word:
@@ -154,10 +156,14 @@ The second uploaded image is the clothing reference image.
 Identity preservation is the highest priority.
 Use the exact same person from the face reference image.
 Keep the exact same identity, face shape, eyes, nose, lips, skin tone, and hairstyle.
+Keep the exact same facial proportions, eye spacing, jawline, cheek volume, brow shape, and age impression.
 Do not change the person into a different model.
 Do not beautify the face into a different face.
 Do not alter facial structure.
+Do not reshape the face, slim the face, enlarge the eyes, alter the nose bridge, change the lip shape, or modify the jaw.
+No face retouching that changes identity.
 Keep the face truly recognizable as the same person.
+Identity drift is unacceptable.
 
 Dress that same person in the clothing from the clothing reference image.
 Preserve the uploaded clothing exactly as shown in the clothing reference image.
@@ -2764,6 +2770,47 @@ const parseAdminListLimit = (value: unknown): number => {
   return Math.min(ADMIN_USER_LIST_MAX_LIMIT, Math.max(1, Math.trunc(parsed)));
 };
 
+const parseAdminLogLimit = (value: unknown): number => {
+  const parsed = typeof value === 'string' ? Number.parseInt(value, 10) : Number.NaN;
+  if (!Number.isFinite(parsed)) {
+    return ADMIN_LOG_LIST_DEFAULT_LIMIT;
+  }
+
+  return Math.min(ADMIN_LOG_LIST_MAX_LIMIT, Math.max(1, Math.trunc(parsed)));
+};
+
+const getPaginatedQuerySnapshot = async (
+  collectionName: string,
+  orderField: string,
+  limit: number,
+  cursor: string,
+): Promise<FirebaseFirestore.QuerySnapshot> => {
+  let query: FirebaseFirestore.Query = db.collection(collectionName)
+    .orderBy(orderField, 'desc')
+    .limit(limit);
+
+  if (cursor) {
+    const cursorSnapshot = await db.collection(collectionName).doc(cursor).get();
+    if (cursorSnapshot.exists) {
+      query = query.startAfter(cursorSnapshot);
+    }
+  }
+
+  return query.get();
+};
+
+const buildPaginatedResponse = <T extends { id: string }>(
+  items: T[],
+  limit: number,
+): { items: T[]; nextCursor: string | null; hasMore: boolean } => {
+  const nextCursor = items.length === limit ? items[items.length - 1]?.id ?? null : null;
+  return {
+    items,
+    nextCursor,
+    hasMore: Boolean(nextCursor),
+  };
+};
+
 const buildAdminUserSearchResults = async (queryText: string, limit: number): Promise<AdminUserListItem[]> => {
   const trimmedQuery = queryText.trim();
   if (!trimmedQuery) {
@@ -3000,6 +3047,90 @@ const handleAdminUserDetailRequest = async (req: functions.https.Request, res: f
   res.json({ user: detail });
 };
 
+const serializeGenerationRequestRecord = (snapshot: FirebaseFirestore.QueryDocumentSnapshot) => {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    createdAt: serializeTimestamp(data.createdAt),
+    completedAt: serializeTimestamp(data.completedAt),
+    updatedAt: serializeTimestamp(data.updatedAt),
+  };
+};
+
+const serializeCreditTransactionRecord = (snapshot: FirebaseFirestore.QueryDocumentSnapshot) => {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    createdAt: serializeTimestamp(data.createdAt),
+  };
+};
+
+const serializePaymentRecord = (snapshot: FirebaseFirestore.QueryDocumentSnapshot) => {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    paidAt: serializeTimestamp(data.paidAt),
+    createdAt: serializeTimestamp(data.createdAt),
+    updatedAt: serializeTimestamp(data.updatedAt),
+  };
+};
+
+const serializeActivityRecord = (snapshot: FirebaseFirestore.QueryDocumentSnapshot) => {
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    ...data,
+    createdAt: serializeTimestamp(data.createdAt),
+  };
+};
+
+const handleAdminGenerationLogsRequest = async (req: functions.https.Request, res: functions.Response) => {
+  const user = await requireAuthenticatedUser(req);
+  await requireAdminUser(user);
+
+  const limit = parseAdminLogLimit(req.query.limit);
+  const cursor = getTrimmedString(req.query.cursor, 200);
+  const snapshot = await getPaginatedQuerySnapshot('generationRequests', 'createdAt', limit, cursor);
+  const items = snapshot.docs.map((doc) => serializeGenerationRequestRecord(doc));
+  res.json(buildPaginatedResponse(items, limit));
+};
+
+const handleAdminCreditLogsRequest = async (req: functions.https.Request, res: functions.Response) => {
+  const user = await requireAuthenticatedUser(req);
+  await requireAdminUser(user);
+
+  const limit = parseAdminLogLimit(req.query.limit);
+  const cursor = getTrimmedString(req.query.cursor, 200);
+  const snapshot = await getPaginatedQuerySnapshot('credit_transactions', 'createdAt', limit, cursor);
+  const items = snapshot.docs.map((doc) => serializeCreditTransactionRecord(doc));
+  res.json(buildPaginatedResponse(items, limit));
+};
+
+const handleAdminPaymentLogsRequest = async (req: functions.https.Request, res: functions.Response) => {
+  const user = await requireAuthenticatedUser(req);
+  await requireAdminUser(user);
+
+  const limit = parseAdminLogLimit(req.query.limit);
+  const cursor = getTrimmedString(req.query.cursor, 200);
+  const snapshot = await getPaginatedQuerySnapshot('payments', 'createdAt', limit, cursor);
+  const items = snapshot.docs.map((doc) => serializePaymentRecord(doc));
+  res.json(buildPaginatedResponse(items, limit));
+};
+
+const handleAdminActivityLogsRequest = async (req: functions.https.Request, res: functions.Response) => {
+  const user = await requireAuthenticatedUser(req);
+  await requireAdminUser(user);
+
+  const limit = parseAdminLogLimit(req.query.limit);
+  const cursor = getTrimmedString(req.query.cursor, 200);
+  const snapshot = await getPaginatedQuerySnapshot('creditGifts', 'createdAt', limit, cursor);
+  const items = snapshot.docs.map((doc) => serializeActivityRecord(doc));
+  res.json(buildPaginatedResponse(items, limit));
+};
+
 const handleAdminGiftCreditRequest = async (req: functions.https.Request, res: functions.Response) => {
   const user = await requireAuthenticatedUser(req);
   const targetUid = getTrimmedString(req.body?.uid, 200);
@@ -3104,16 +3235,12 @@ const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
     usersSnapshot,
     postsSnapshot,
     sharedResultsSnapshot,
-    recentUsersSnapshot,
     generationSnapshot,
-    creditSnapshot,
   ] = await Promise.all([
     db.collection('users').get(),
     db.collection('bbsPosts').get(),
     db.collection('publicResults').get(),
-    db.collection('users').orderBy('createdAt', 'desc').limit(20).get(),
     db.collection('generationRequests').orderBy('createdAt', 'desc').get(),
-    db.collection('credit_transactions').orderBy('createdAt', 'desc').limit(20).get(),
   ]);
 
   const now = Date.now();
@@ -3153,23 +3280,6 @@ const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
       todayVideoGenerations: todayVideoGenerations.length,
       estimatedVideoCost: videoGenerationLogs.reduce((sum, item) => sum + getEstimatedCost(item), 0),
     },
-    users: recentUsersSnapshot.docs.map((snapshot) => {
-      const data = snapshot.data();
-      return {
-        id: snapshot.id,
-        ...data,
-        createdAt: serializeTimestamp(data.createdAt),
-      };
-    }),
-    generationLogs: generationLogs.slice(0, 20),
-    creditLogs: creditSnapshot.docs.map((snapshot) => {
-      const data = snapshot.data();
-      return {
-        id: snapshot.id,
-        ...data,
-        createdAt: serializeTimestamp(data.createdAt),
-      };
-    }),
   };
 };
 
@@ -3745,6 +3855,42 @@ export const api = functions
     if (req.method === 'GET' && normalizedPath === '/admin/users/detail') {
       try {
         await handleAdminUserDetailRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/admin/logs/generations') {
+      try {
+        await handleAdminGenerationLogsRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/admin/logs/credits') {
+      try {
+        await handleAdminCreditLogsRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/admin/logs/payments') {
+      try {
+        await handleAdminPaymentLogsRequest(req, res);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/admin/logs/activities') {
+      try {
+        await handleAdminActivityLogsRequest(req, res);
       } catch (error) {
         handleApiError(res, error, 500);
       }

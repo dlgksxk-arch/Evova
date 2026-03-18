@@ -287,6 +287,10 @@ const translations = {
     adminBoardSection: '최근 게시글',
     adminGenerationSection: '최근 생성 활동',
     adminCreditsSection: '최근 크레딧 로그',
+    adminPaymentsSection: '결제 로그',
+    adminActivitiesSection: '활동 로그',
+    adminLogsTitle: '관리자 로그',
+    adminLogsSubtitle: '로그는 탭을 열었을 때만 불러오며, 자동 새로고침하지 않습니다.',
     adminSystemSection: '시스템 상태',
     adminTotalUsers: '총 사용자 수',
     adminTotalPosts: '총 게시글 수',
@@ -321,6 +325,7 @@ const translations = {
     adminUserListLoadingMore: '불러오는 중...',
     adminUserSearchEmpty: '검색 결과가 없습니다.',
     adminLoadMore: '더 보기',
+    refresh: '새로고침',
     adminDisplayName: '닉네임 / 이름',
     adminLastLoginAt: '최근 로그인',
     adminDailyCredit: 'dailyCredit',
@@ -406,6 +411,55 @@ const translations = {
     ],
     footer: '© 2025 HAMDEVA. All rights reserved.',
     footerPrivacy: '개인정보 처리방침', footerTerms: '이용약관', footerAbout: '서비스 소개',
+    comingSoon: '준비 중',
+    languageLabel: '언어',
+    lightMode: '라이트 모드',
+    darkMode: '다크 모드',
+    closeMobileMenu: '모바일 메뉴 닫기',
+    shareDefaultText: 'HAMDEVA에서 AI 가상 피팅을 체험해봤어요',
+    paymentFailedMessage: '결제가 실패했습니다.',
+    cancel: '취소',
+    logoutConfirmTitle: '로그아웃',
+    logoutConfirmBody: '정말 로그아웃하시겠습니까?',
+    logoutConfirmAction: '로그아웃',
+    generationRemainingLabel: '예상 완료까지',
+    resultPreviewZoomOut: '축소',
+    resultPreviewZoomIn: '확대',
+    resultPreviewLoading: '결과를 불러오는 중입니다...',
+    resultPreviewLoadFailed: '결과를 불러오지 못했습니다.',
+    resultPreviewAlt: '확대된 결과 이미지',
+    historyTitle: '생성 히스토리',
+    historyGuide: '생성물은 기본 15일 보관되며, 최대 5개까지 30일 보관할 수 있습니다.',
+    historyEmpty: '생성 이력이 없습니다.',
+    historyPreviewClose: '클릭하여 닫기',
+    historyPreviewOpen: '클릭하여 아래에서 보기',
+    historyExpiresAt: '만료일',
+    close: '닫기',
+    historyZoomOut: '-',
+    historyZoomReset: '기본 크기',
+    historyZoomIn: '+',
+    historyLoading: '불러오는 중...',
+    historyZoomHint: '이미지 전체가 보이도록 기본 크기를 절반으로 줄였습니다. 필요하면 + / - 버튼으로만 조절할 수 있습니다.',
+    historyDownload: '다운로드',
+    historyArchived: '보관됨',
+    historyArchive: '보관',
+    historyDelete: '삭제',
+    historyProcessing: '처리 중...',
+    historyArchiveLimit: (n: number) => `보관은 최대 ${n}개까지 가능합니다.`,
+    historyArchiveFailed: '보관 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    historyDownloadFailed: '결과물을 다운로드하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    historyDeleteConfirm: '이 결과물을 히스토리에서 삭제하시겠습니까?',
+    historyDeleteFailed: '히스토리 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+    savePercent: (n: number) => `${n}% 할인`,
+    saveAmountOff: (amount: string) => `${amount} 절약`,
+    adminGenerationType: '유형',
+    adminGenerationSubject: '피사체',
+    adminPaymentProvider: '결제사',
+    adminPaymentProduct: '상품',
+    adminActivityUserId: '사용자 ID',
+    adminActivityTitle: '제목',
+    adminActivitySender: '발송자',
+    adminSummaryLoadFailed: '관리자 데이터를 불러오지 못했습니다.',
   },
   en: {
     navFeatures: 'Features', navHowto: 'How It Works', navFaq: 'FAQ',
@@ -545,6 +599,10 @@ const translations = {
     adminBoardSection: 'Recent Board Posts',
     adminGenerationSection: 'Recent Generation Activity',
     adminCreditsSection: 'Recent Credit Logs',
+    adminPaymentsSection: 'Payment Logs',
+    adminActivitiesSection: 'Activity Logs',
+    adminLogsTitle: 'Admin Logs',
+    adminLogsSubtitle: 'Logs load only when you open a tab, and they never auto-refresh.',
     adminSystemSection: 'System Status',
     adminTotalUsers: 'Total users',
     adminTotalPosts: 'Total posts',
@@ -579,6 +637,7 @@ const translations = {
     adminUserListLoadingMore: 'Loading...',
     adminUserSearchEmpty: 'No matching users found.',
     adminLoadMore: 'Load more',
+    refresh: 'Refresh',
     adminDisplayName: 'Nickname / Name',
     adminLastLoginAt: 'Last login',
     adminDailyCredit: 'dailyCredit',
@@ -664,6 +723,55 @@ const translations = {
     ],
     footer: '© 2025 HAMDEVA. All rights reserved.',
     footerPrivacy: 'Privacy Policy', footerTerms: 'Terms of Service', footerAbout: 'About',
+    comingSoon: 'Coming Soon',
+    languageLabel: 'Language',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
+    closeMobileMenu: 'Close mobile menu',
+    shareDefaultText: 'I tried AI virtual fitting on HAMDEVA',
+    paymentFailedMessage: 'Payment failed.',
+    cancel: 'Cancel',
+    logoutConfirmTitle: 'Log out',
+    logoutConfirmBody: 'Are you sure you want to log out?',
+    logoutConfirmAction: 'Log out',
+    generationRemainingLabel: 'Estimated time',
+    resultPreviewZoomOut: 'Zoom out',
+    resultPreviewZoomIn: 'Zoom in',
+    resultPreviewLoading: 'Loading result...',
+    resultPreviewLoadFailed: 'Failed to load the result.',
+    resultPreviewAlt: 'Expanded result preview',
+    historyTitle: 'Creation history',
+    historyGuide: 'Results are kept for 15 days by default, and you can preserve up to 5 items for 30 days.',
+    historyEmpty: 'No generation history yet.',
+    historyPreviewClose: 'Click to close',
+    historyPreviewOpen: 'Click to view below',
+    historyExpiresAt: 'Expires',
+    close: 'Close',
+    historyZoomOut: '-',
+    historyZoomReset: 'Reset zoom',
+    historyZoomIn: '+',
+    historyLoading: 'Loading...',
+    historyZoomHint: 'The default zoom is reduced so the full image stays visible. Use only the + / - buttons if you need to adjust it.',
+    historyDownload: 'Download',
+    historyArchived: 'Archived',
+    historyArchive: 'Archive',
+    historyDelete: 'Delete',
+    historyProcessing: 'Processing...',
+    historyArchiveLimit: (n: number) => `You can preserve up to ${n} items.`,
+    historyArchiveFailed: 'Failed to update the preserve status. Please try again later.',
+    historyDownloadFailed: 'Failed to download the result. Please try again later.',
+    historyDeleteConfirm: 'Delete this result from your history?',
+    historyDeleteFailed: 'Failed to delete the history item. Please try again later.',
+    savePercent: (n: number) => `Save ${n}%`,
+    saveAmountOff: (amount: string) => `${amount} off`,
+    adminGenerationType: 'Type',
+    adminGenerationSubject: 'Subject',
+    adminPaymentProvider: 'Provider',
+    adminPaymentProduct: 'Product',
+    adminActivityUserId: 'User ID',
+    adminActivityTitle: 'Title',
+    adminActivitySender: 'Sender',
+    adminSummaryLoadFailed: 'Failed to load admin data.',
   },
 };
 
@@ -813,6 +921,55 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultDisplayError: '无法显示结果图。',
     clothingSamplesPending: '示例服装数据正在准备中。',
     footer: '© 2025 HAMDEVA。保留所有权利。',
+    comingSoon: '即将上线',
+    languageLabel: '语言',
+    lightMode: '浅色模式',
+    darkMode: '深色模式',
+    closeMobileMenu: '关闭移动菜单',
+    shareDefaultText: '我在 HAMDEVA 体验了 AI 虚拟试穿',
+    paymentFailedMessage: '支付失败。',
+    cancel: '取消',
+    logoutConfirmTitle: '退出登录',
+    logoutConfirmBody: '确定要退出登录吗？',
+    logoutConfirmAction: '退出登录',
+    generationRemainingLabel: '预计剩余时间',
+    resultPreviewZoomOut: '缩小',
+    resultPreviewZoomIn: '放大',
+    resultPreviewLoading: '正在加载结果...',
+    resultPreviewLoadFailed: '无法加载结果。',
+    resultPreviewAlt: '放大的结果预览',
+    historyTitle: '生成历史',
+    historyGuide: '生成结果默认保留 15 天，最多可额外保留 5 个结果 30 天。',
+    historyEmpty: '还没有生成记录。',
+    historyPreviewClose: '点击关闭',
+    historyPreviewOpen: '点击在下方查看',
+    historyExpiresAt: '到期时间',
+    close: '关闭',
+    historyZoomOut: '-',
+    historyZoomReset: '恢复默认大小',
+    historyZoomIn: '+',
+    historyLoading: '加载中...',
+    historyZoomHint: '默认缩放已调低，方便完整查看图片。如需调整，请使用 + / - 按钮。',
+    historyDownload: '下载',
+    historyArchived: '已保留',
+    historyArchive: '保留',
+    historyDelete: '删除',
+    historyProcessing: '处理中...',
+    historyArchiveLimit: (n: number) => `最多只能保留 ${n} 个结果。`,
+    historyArchiveFailed: '无法更新保留状态，请稍后再试。',
+    historyDownloadFailed: '无法下载结果，请稍后再试。',
+    historyDeleteConfirm: '要从历史记录中删除这个结果吗？',
+    historyDeleteFailed: '删除历史记录失败，请稍后再试。',
+    savePercent: (n: number) => `立省 ${n}%`,
+    saveAmountOff: (amount: string) => `优惠 ${amount}`,
+    adminGenerationType: '类型',
+    adminGenerationSubject: '主体',
+    adminPaymentProvider: '支付渠道',
+    adminPaymentProduct: '商品',
+    adminActivityUserId: '用户 ID',
+    adminActivityTitle: '标题',
+    adminActivitySender: '发放者',
+    adminSummaryLoadFailed: '无法加载管理员数据。',
   },
   ja: {
     ...translations.en,
@@ -926,6 +1083,55 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultDisplayError: '結果画像を表示できません。',
     clothingSamplesPending: '服サンプルは準備中です。',
     footer: '© 2025 HAMDEVA. All rights reserved.',
+    comingSoon: '近日公開',
+    languageLabel: '言語',
+    lightMode: 'ライトモード',
+    darkMode: 'ダークモード',
+    closeMobileMenu: 'モバイルメニューを閉じる',
+    shareDefaultText: 'HAMDEVA で AI バーチャル試着を体験しました',
+    paymentFailedMessage: '決済に失敗しました。',
+    cancel: 'キャンセル',
+    logoutConfirmTitle: 'ログアウト',
+    logoutConfirmBody: 'ログアウトしてもよろしいですか？',
+    logoutConfirmAction: 'ログアウト',
+    generationRemainingLabel: '完了予想まで',
+    resultPreviewZoomOut: '縮小',
+    resultPreviewZoomIn: '拡大',
+    resultPreviewLoading: '結果を読み込み中...',
+    resultPreviewLoadFailed: '結果を読み込めませんでした。',
+    resultPreviewAlt: '拡大した結果プレビュー',
+    historyTitle: '生成履歴',
+    historyGuide: '生成結果は通常 15 日間保存され、最大 5 件まで 30 日間保管できます。',
+    historyEmpty: '生成履歴はまだありません。',
+    historyPreviewClose: 'クリックして閉じる',
+    historyPreviewOpen: 'クリックして下に表示',
+    historyExpiresAt: '有効期限',
+    close: '閉じる',
+    historyZoomOut: '-',
+    historyZoomReset: '標準サイズ',
+    historyZoomIn: '+',
+    historyLoading: '読み込み中...',
+    historyZoomHint: '画像全体が見えるように初期倍率を下げています。必要に応じて + / - ボタンで調整してください。',
+    historyDownload: 'ダウンロード',
+    historyArchived: '保管済み',
+    historyArchive: '保管',
+    historyDelete: '削除',
+    historyProcessing: '処理中...',
+    historyArchiveLimit: (n: number) => `保管できる件数は最大 ${n} 件です。`,
+    historyArchiveFailed: '保管状態を更新できませんでした。しばらくしてからもう一度お試しください。',
+    historyDownloadFailed: '結果をダウンロードできませんでした。しばらくしてからもう一度お試しください。',
+    historyDeleteConfirm: 'この結果を履歴から削除しますか？',
+    historyDeleteFailed: '履歴の削除に失敗しました。しばらくしてからもう一度お試しください。',
+    savePercent: (n: number) => `${n}% オフ`,
+    saveAmountOff: (amount: string) => `${amount} お得`,
+    adminGenerationType: '種類',
+    adminGenerationSubject: '被写体',
+    adminPaymentProvider: '決済事業者',
+    adminPaymentProduct: '商品',
+    adminActivityUserId: 'ユーザー ID',
+    adminActivityTitle: 'タイトル',
+    adminActivitySender: '送信者',
+    adminSummaryLoadFailed: '管理データを読み込めませんでした。',
   },
   hi: {
     ...translations.en,
@@ -2320,138 +2526,22 @@ const getFaqItemsForPage = (page: SitePage): FAQItem[] => {
 };
 
 const renderSeoContent = (page: SitePage | 'contact-route', contentLocale?: ReturnType<typeof getContentLocale>): React.ReactNode => {
-  switch (page) {
-    case 'home':
-      if (!contentLocale) {
-        return null;
-      }
-      return (
-        <section className="seo-content">
-          <h2>{contentLocale.homeSeo.title}</h2>
-          {contentLocale.homeSeo.introParagraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-          <h3>{contentLocale.homeSeo.whyTitle}</h3>
-          <p>{contentLocale.homeSeo.whyBody}</p>
-          <h3>{contentLocale.homeSeo.exploreTitle}</h3>
-          <p>{contentLocale.homeSeo.exploreBody}</p>
-        </section>
-      );
-    case 'about':
-      return (
-        <section className="seo-content">
-          <h1>About HAMDEVA</h1>
-          <p>
-            HAMDEVA는 인공지능 기술을 활용한 가상 피팅 플랫폼입니다. 사용자는 온라인에서 다양한 의상 스타일을 체험하고 새로운 패션 아이디어를 발견할 수 있습니다.
-            이 서비스는 단순히 이미지를 합성하는 도구를 넘어서, 패션과 문화, 디지털 경험을 연결하는 정보형 플랫폼을 지향합니다.
-            전통 의상이나 특색 있는 스타일은 실제로 접해보기 전까지 감이 잘 오지 않는 경우가 많습니다. HAMDEVA는 이러한 간극을 줄이기 위해 설명형 콘텐츠와 체험형 기능을 함께 제공합니다.
-            사용자는 읽고 이해한 뒤 직접 시도해 보면서, 단순한 방문자가 아니라 능동적으로 패션을 탐색하는 사용자로 전환됩니다.
-          </p>
-          <h2>Our Mission</h2>
-          <p>
-            HAMDEVA의 목표는 패션과 기술을 결합하여 누구나 쉽게 다양한 스타일을 탐색할 수 있는 새로운 디지털 패션 경험을 제공하는 것입니다.
-            누구나 고가의 촬영 장비나 전문 스타일링 지식 없이도 가상 피팅을 이용해 스타일을 확인할 수 있도록 접근성을 높이는 것이 핵심입니다.
-            동시에 각 의상과 스타일이 가지는 문화적 맥락, 시각적 차이, 활용 가능성을 설명함으로써 더 깊이 있는 탐색 경험을 제공합니다.
-            이는 검색 엔진 관점에서도 사이트의 전문성과 주제 일관성을 강화하는 요소가 되며, AdSense 심사에서 중요하게 보는 콘텐츠 품질과 체류 가치를 높이는 방향과도 맞닿아 있습니다.
-          </p>
-          <h2>AI Technology</h2>
-          <p>
-            AI 이미지 합성 기술을 이용하여 얼굴 이미지와 의상 이미지를 자연스럽게 결합합니다. 사용자가 업로드한 얼굴 사진과 선택한 의상 이미지를 바탕으로,
-            인공지능은 인물의 인상과 의상의 특징을 유지하면서 새로운 결과 이미지를 생성합니다. 이러한 기술은 전자상거래, 디지털 패션, 콘텐츠 제작, 교육형 시각 자료 등 다양한 분야에서 활용될 수 있습니다.
-            HAMDEVA는 기술을 기술 자체로만 설명하지 않고, 실제 사용자가 왜 이 기능을 필요로 하는지에 초점을 맞춥니다. 그래서 About 페이지는 브랜드 소개뿐 아니라,
-            서비스가 해결하려는 문제와 AI Virtual Fitting이 사용자에게 제공하는 구체적인 가치까지 함께 전달합니다.
-          </p>
-        </section>
-      );
-    case 'how-it-works':
-      return (
-        <section className="seo-content">
-          <h1>How to Use HAMDEVA</h1>
-          <h2>Upload Your Image</h2>
-          <p>
-            얼굴 이미지를 업로드하거나 샘플 이미지를 선택할 수 있습니다. 사용자가 직접 촬영한 사진을 사용할 수도 있고, 빠르게 기능을 체험하고 싶은 경우에는 샘플 이미지를 선택해 즉시 결과를 확인할 수도 있습니다.
-            이 과정은 가능한 한 단순하게 설계되어 있어 처음 방문한 사용자도 몇 번의 클릭만으로 체험을 시작할 수 있습니다. 좋은 결과를 얻기 위해서는 정면에 가까운 사진과 얼굴이 선명한 이미지를 사용하는 것이 좋습니다.
-          </p>
-          <h2>Select an Outfit</h2>
-          <p>
-            원하는 의상 스타일을 선택하면 AI가 자동으로 이미지를 분석합니다. 의상 이미지는 가상 피팅 결과의 분위기와 완성도를 좌우하는 중요한 요소이기 때문에,
-            실루엣과 디테일이 분명한 이미지를 고를수록 더 나은 결과를 기대할 수 있습니다. HAMDEVA는 전통 의상, 샘플 의상, 다양한 스타일 카테고리를 제공하여 사용자가 폭넓은 룩을 탐색하도록 돕습니다.
-            이 단계는 단순한 선택 기능이 아니라, 사용자가 어떤 스타일 언어를 선호하는지 발견하는 과정이기도 합니다.
-          </p>
-          <h2>Generate Result</h2>
-          <p>
-            AI가 얼굴과 의상을 합성하여 결과 이미지를 생성합니다. 생성된 이미지는 사용자의 인상과 선택한 의상의 특징을 바탕으로 새로운 시각적 조합을 보여주며,
-            스타일링 비교나 콘셉트 탐색에 활용할 수 있습니다. 이 결과는 실제 옷의 소재감과 착용감을 완벽히 대체하는 것은 아니지만, 온라인 환경에서 미리 시각적 판단을 내리는 데 매우 유용합니다.
-            특히 여러 의상을 연속으로 테스트할 수 있기 때문에 의상 선택 과정의 효율성이 높아집니다.
-          </p>
-          <h2>Tips for Better Results</h2>
-          <ul>
-            <li>밝은 환경에서 촬영된 이미지 사용</li>
-            <li>정면 얼굴 사진 사용</li>
-            <li>해상도 높은 이미지 사용</li>
-          </ul>
-          <p>
-            위의 팁은 단순한 권장 사항이 아니라 실제 결과 품질과 직접 연결됩니다. 조명이 어둡거나 얼굴이 가려져 있으면 인식 정확도가 떨어질 수 있고,
-            의상 이미지가 복잡하면 AI가 형태를 해석하는 과정에서 불필요한 왜곡이 생길 수 있습니다. 따라서 How to Use 페이지는 단순 사용 설명을 넘어,
-            더 좋은 결과를 얻기 위한 실전 가이드를 제공하는 역할을 합니다. 검색 유입 관점에서도 이런 설명형 콘텐츠는 사용자가 페이지에 오래 머물게 하고,
-            서비스 신뢰도를 높이는 데 도움이 됩니다.
-          </p>
-        </section>
-      );
-    case 'traditional-clothing':
-      return (
-        <section className="seo-content">
-          <h1>Sample Outfits</h1>
-          <p>
-            HAMDEVA에서는 다양한 의상 스타일을 가상 피팅으로 체험할 수 있습니다. 샘플 의상 페이지는 사용자가 어떤 스타일을 선택할 수 있는지 한눈에 이해하도록 돕는 동시에,
-            각 의상이 전달하는 분위기와 문화적 맥락을 탐색하는 공간이기도 합니다. 단순히 이미지 모음으로 끝나는 것이 아니라, 어떤 옷이 전통적이고 어떤 옷이 현대적인지,
-            어떤 콘셉트가 자신의 취향과 어울리는지 비교할 수 있는 정보형 페이지로 작동합니다.
-          </p>
-          <h2>Traditional Styles</h2>
-          <p>
-            전통 의상은 각 나라의 문화와 역사를 반영합니다. 실루엣, 색상, 장식 요소, 착용 방식은 지역과 시대에 따라 다르며, 이러한 차이는 단순한 외형 이상의 의미를 가집니다.
-            사용자는 가상 피팅을 통해 전통 의상의 특징을 시각적으로 확인할 수 있고, 텍스트 설명을 통해 그 차이를 보다 명확하게 이해할 수 있습니다.
-            이는 SEO 관점에서도 중요한데, 스타일 카테고리와 설명 텍스트가 함께 있을 때 페이지는 더 풍부한 주제 정보를 제공하게 됩니다.
-          </p>
-          <h2>Modern Fashion</h2>
-          <p>
-            현대 패션 스타일 역시 가상 피팅을 통해 쉽게 비교할 수 있습니다. 같은 인물 이미지에 다양한 무드의 의상을 적용해 보면,
-            전통적인 스타일과 현대적인 스타일이 어떤 방식으로 다르게 보이는지 직관적으로 이해할 수 있습니다. 이 과정은 온라인 쇼핑, 스타일링 기획, 콘텐츠 제작, 개인 취향 탐색 등 여러 상황에서 유용합니다.
-            특히 이미지만 나열된 페이지보다 텍스트가 함께 제공되는 페이지가 검색 엔진과 사용자 모두에게 더 높은 정보를 전달할 수 있습니다.
-          </p>
-          <h2>Digital Fashion Experience</h2>
-          <p>
-            HAMDEVA는 AI 기술을 활용하여 새로운 패션 탐색 경험을 제공합니다. 사용자는 한 번의 방문으로 여러 나라의 전통 의상, 고전적인 룩, 현대적인 패션 콘셉트를 비교하고,
-            실제로 자신의 얼굴이나 샘플 이미지에 적용해 볼 수 있습니다. 이처럼 샘플 의상 페이지는 단순 갤러리가 아니라,
-            디지털 패션 체험의 입구이자 스타일 이해를 돕는 콘텐츠 허브입니다. 풍부한 설명과 체험 기능이 함께 있을 때, 사이트는 광고 승인이나 검색 노출 측면에서 더 신뢰할 수 있는 정보형 구조를 갖추게 됩니다.
-          </p>
-        </section>
-      );
-    case 'contact-route':
-      return (
-        <section className="seo-content">
-          <h1>Contact</h1>
-          <p>
-            HAMDEVA 서비스에 대한 문의나 제안 사항이 있다면 문의 페이지를 통해 전달할 수 있습니다. 이 페이지는 단순히 이메일 주소를 노출하는 역할만 하는 것이 아니라,
-            사용자가 서비스 사용 중 느낀 점, 개선이 필요한 부분, 광고나 협업 관련 문의, 콘텐츠 제안, 기술적 문제 제보 등을 체계적으로 전달할 수 있도록 돕습니다.
-            실제 서비스 운영에서는 사용자 피드백이 매우 중요한데, 특히 AI 기반 플랫폼은 사용자의 경험을 통해 품질 개선 포인트를 지속적으로 발견하게 되기 때문입니다.
-          </p>
-          <h2>Feedback</h2>
-          <p>
-            사용자 경험 개선을 위해 다양한 의견을 수집하고 있습니다. 예를 들어 샘플 이미지 선택 과정, 결과 이미지 품질, 다국어 텍스트, 전통 의상 정보, 모바일 사용성, 광고 노출 방식 등
-            여러 주제에 대한 피드백은 사이트 운영 방향을 정하는 데 중요한 자료가 됩니다. 또한 문의 페이지가 잘 정리되어 있으면 방문자는 사이트가 실제로 관리되고 있다는 신뢰를 느끼게 됩니다.
-            이는 AdSense 심사에서도 긍정적인 요소가 될 수 있습니다. 연락 가능한 운영 주체와 명확한 안내는 정보성 사이트의 기본 요건 중 하나이기 때문입니다.
-          </p>
-          <p>
-            HAMDEVA는 패션과 기술을 결합한 서비스로서, 단순 기능 제공을 넘어 사용자와의 상호작용을 중요하게 생각합니다.
-            따라서 Contact 페이지는 고객지원 창구이자 서비스 개선 루프의 시작점입니다. 방문자는 질문을 남길 수 있고, 운영자는 이를 바탕으로 페이지 품질, 콘텐츠 명확성, 기능 안정성을 지속적으로 개선할 수 있습니다.
-            검색 엔진과 광고 심사 관점에서도 이런 구조는 사이트가 단발성 랜딩 페이지가 아니라 실제로 운영되는 서비스라는 신호를 제공합니다.
-          </p>
-        </section>
-      );
-    default:
-      return null;
+  if (page !== 'home' || !contentLocale) {
+    return null;
   }
+
+  return (
+    <section className="seo-content">
+      <h2>{contentLocale.homeSeo.title}</h2>
+      {contentLocale.homeSeo.introParagraphs.map((paragraph) => (
+        <p key={paragraph}>{paragraph}</p>
+      ))}
+      <h3>{contentLocale.homeSeo.whyTitle}</h3>
+      <p>{contentLocale.homeSeo.whyBody}</p>
+      <h3>{contentLocale.homeSeo.exploreTitle}</h3>
+      <p>{contentLocale.homeSeo.exploreBody}</p>
+    </section>
+  );
 };
 
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
@@ -2692,8 +2782,8 @@ const App: React.FC = () => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
   }).length;
-  const loginComingSoonLabel = `${t.login} (Coming Soon)`;
-  const googleLoginComingSoonLabel = `${t.googleLogin} (Coming Soon)`;
+  const loginComingSoonLabel = `${t.login} (${t.comingSoon})`;
+  const googleLoginComingSoonLabel = `${t.googleLogin} (${t.comingSoon})`;
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -2706,6 +2796,7 @@ const App: React.FC = () => {
         boardNoticeSubmitting: '공지사항을 등록하고 있습니다...',
         boardNoticeSaved: '공지사항이 등록되었습니다.',
         boardNoticeDeleted: '공지사항이 삭제되었습니다.',
+        boardNoticeDeleteConfirm: '이 공지사항을 삭제하시겠습니까?',
         boardNoticeInvalid: '공지 제목과 내용을 모두 입력해 주세요.',
         boardNoticeAdminOnly: '공지 등록은 관리자만 가능합니다.',
         boardNoticeFailed: '공지 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.',
@@ -2722,6 +2813,7 @@ const App: React.FC = () => {
         boardNoticeSubmitting: 'Publishing notice...',
         boardNoticeSaved: 'Notice published.',
         boardNoticeDeleted: 'Notice deleted.',
+        boardNoticeDeleteConfirm: 'Delete this notice?',
         boardNoticeInvalid: 'Enter both a notice title and content.',
         boardNoticeAdminOnly: 'Only administrators can publish notices.',
         boardNoticeFailed: 'Failed to process the notice. Please try again later.',
@@ -2776,9 +2868,12 @@ const App: React.FC = () => {
       : 0;
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
-  const logoutModalCopy = lang === 'ko'
-    ? { title: '로그아웃', body: '정말 로그아웃 하시겠습니까?', cancel: '취소', confirm: '로그아웃' }
-    : { title: 'Log out', body: 'Are you sure you want to log out?', cancel: 'Cancel', confirm: 'Log out' };
+  const logoutModalCopy = {
+    title: t.logoutConfirmTitle,
+    body: t.logoutConfirmBody,
+    cancel: t.cancel,
+    confirm: t.logoutConfirmAction,
+  };
   const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const isContactRoute = normalizedPathname === '/contact';
   const currentFaqItems = getFaqItemsForPage(currentPage);
@@ -2827,11 +2922,9 @@ const App: React.FC = () => {
     : [];
   const {
     adminSummary,
-    adminUsers,
-    adminGenerationLogs,
-    adminCreditLogs,
     adminLoading,
     adminError,
+    refreshAdminSummary,
   } = useAdminDashboardData({
     db,
     enabled: Boolean(isAdminUser),
@@ -2865,13 +2958,7 @@ const App: React.FC = () => {
     setPaymentStatusMessage,
     setUserProfile,
   });
-  const generationStatusLabel = lang === 'ko'
-    ? '예상 완료까지'
-    : lang === 'ja'
-      ? '完了予想まで'
-      : lang === 'zh'
-        ? '预计剩余时间'
-        : 'Estimated time';
+  const generationStatusLabel = t.generationRemainingLabel;
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     if (!isSupportedLanguageCode(nextLanguage)) {
       return;
@@ -3502,7 +3589,7 @@ const App: React.FC = () => {
       try {
         await navigator.share({
           title: 'HAMDEVA - AI Virtual Fitting Playground',
-          text: 'I tried AI virtual fitting on HAMDEVA',
+          text: t.shareDefaultText,
           url: resolvedLink,
         });
         return;
@@ -3513,7 +3600,7 @@ const App: React.FC = () => {
       }
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedLink)}`);
   };
   const handleShareOnKakao = async (link: string | null) => {
     const resolvedLink = await ensureSharedResultLink(link);
@@ -3568,7 +3655,7 @@ const App: React.FC = () => {
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedLink)}`);
   };
   const handleShareOnFacebook = async (link: string | null) => {
     const resolvedLink = await ensureSharedResultLink(link);
@@ -3691,7 +3778,7 @@ const App: React.FC = () => {
     const isCurrentlyPreserved = typeof preservedUntil === 'number' && preservedUntil > Date.now();
 
     if (!isCurrentlyPreserved && preservedHistoryCount >= PRESERVED_HISTORY_LIMIT) {
-      alert(`보관은 최대 ${PRESERVED_HISTORY_LIMIT}개까지 가능합니다.`);
+      alert(t.historyArchiveLimit(PRESERVED_HISTORY_LIMIT));
       return;
     }
 
@@ -3707,7 +3794,7 @@ const App: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to update history retention:', error);
-      alert('보관 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      alert(t.historyArchiveFailed);
     }
   };
   const handleDownloadHistoryItem = async (item: GenerationRecord) => {
@@ -3717,7 +3804,7 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to download history item:', error);
-      alert('결과물을 다운로드하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      alert(t.historyDownloadFailed);
     }
   };
   const handleDeleteHistoryItem = async (item: GenerationRecord) => {
@@ -3725,7 +3812,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const confirmed = window.confirm('이 결과물을 히스토리에서 삭제하시겠습니까?');
+    const confirmed = window.confirm(t.historyDeleteConfirm);
     if (!confirmed) {
       return;
     }
@@ -3734,7 +3821,7 @@ const App: React.FC = () => {
       await deleteDoc(doc(db, 'generations', item.id));
     } catch (error) {
       console.error('Failed to delete history item:', error);
-      alert('히스토리 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      alert(t.historyDeleteFailed);
     }
   };
   const openLogoutConfirmModal = () => {
@@ -4038,7 +4125,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const confirmed = window.confirm(lang === 'ko' ? '이 공지사항을 삭제하시겠습니까?' : 'Delete this notice?');
+    const confirmed = window.confirm(boardUiCopy.boardNoticeDeleteConfirm);
     if (!confirmed) {
       return;
     }
@@ -4233,7 +4320,7 @@ const App: React.FC = () => {
                 className="outline-btn auth-nav-btn auth-disabled-btn"
                 disabled
                 onClick={() => openAuthModal('login')}
-                title="Coming Soon"
+                title={loginComingSoonLabel}
                 type="button"
               >
                 {loginComingSoonLabel}
@@ -4256,7 +4343,7 @@ const App: React.FC = () => {
 
               openAuthModal('login');
             }}
-            title={!currentUser ? 'Coming Soon' : undefined}
+            title={!currentUser ? loginComingSoonLabel : undefined}
             type="button"
           >
             {currentUser ? '👤' : '↗'}
@@ -4277,7 +4364,7 @@ const App: React.FC = () => {
               <button
                 ref={mobileMenuCloseRef}
                 className="mobile-nav-close"
-                aria-label="Close mobile menu"
+                aria-label={t.closeMobileMenu}
                 onClick={() => setMobileMenuOpen(false)}
                 type="button"
               >
@@ -4303,7 +4390,7 @@ const App: React.FC = () => {
             </div>
             <div className="mobile-menu-divider" />
             <div className="mobile-nav-section mobile-nav-actions">
-              <div className="mobile-menu-label">Language</div>
+              <div className="mobile-menu-label">{t.languageLabel}</div>
               <div className="mobile-language-list">
                 {VISIBLE_LANGUAGE_OPTIONS.map((option) => (
                   <button
@@ -4328,7 +4415,7 @@ const App: React.FC = () => {
                 }}
                 type="button"
               >
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
+                {darkMode ? t.lightMode : t.darkMode}
               </button>
               {currentUser && (
                 <button
@@ -4610,11 +4697,9 @@ const App: React.FC = () => {
                 userProfile={userProfile}
                 isAdminUser={isAdminUser}
                 adminSummary={adminSummary}
-                adminUsers={adminUsers}
-                adminGenerationLogs={adminGenerationLogs}
-                adminCreditLogs={adminCreditLogs}
                 adminLoading={adminLoading}
                 adminError={adminError}
+                onRefreshSummary={refreshAdminSummary}
                 appVersion={appVersion}
                 isFirebaseConfigured={isFirebaseConfigured}
                 boardNotices={boardNotices}
@@ -4829,6 +4914,7 @@ const App: React.FC = () => {
                 currentDailyCredit={currentDailyCredit}
                 currentPaidCredit={currentPaidCredit}
                 currentCredits={currentCredits}
+                locale={lang}
                 historyItems={historyItems}
                 preservedHistoryCount={preservedHistoryCount}
                 historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
@@ -4895,14 +4981,14 @@ const App: React.FC = () => {
                       {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
                       {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
                     </div>
-                    <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                    <strong>{product.label} - {product.paidCredit.toLocaleString()} {t.credits}</strong>
                     <p className="credit-plan-price-row">
                       <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
                       <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
                     </p>
                     <p className="credit-plan-savings">
-                      <span className="credit-plan-save-pill">Save {discountPercent}%</span>
-                      <span className="credit-plan-save-amount">${savingsAmount.toFixed(2)} off</span>
+                      <span className="credit-plan-save-pill">{t.savePercent(discountPercent)}</span>
+                      <span className="credit-plan-save-amount">{t.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
                     </p>
                     <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
                   </div>
@@ -4955,7 +5041,7 @@ const App: React.FC = () => {
                 onClick={() => setResultPreviewZoom((prev) => Math.max(0.6, Number((prev - 0.2).toFixed(2))))}
                 type="button"
               >
-                축소
+                {t.resultPreviewZoomOut}
               </button>
               <span className="result-preview-zoom-label">{Math.round(resultPreviewZoom * 100)}%</span>
               <button
@@ -4964,26 +5050,26 @@ const App: React.FC = () => {
                 onClick={() => setResultPreviewZoom((prev) => Math.min(3, Number((prev + 0.2).toFixed(2))))}
                 type="button"
               >
-                확대
+                {t.resultPreviewZoomIn}
               </button>
             </div>
           )}
           <div className="result-preview-modal-body">
             {resultPreviewModalLoading ? (
-              <p>결과를 불러오는 중입니다...</p>
+              <p>{t.resultPreviewLoading}</p>
             ) : resultPreviewModalSrc ? (
               <div className="result-preview-scroll">
                 <div className="result-preview-image-stage">
                   <img
                     className="result-preview-modal-image"
                     src={resultPreviewModalSrc}
-                    alt="Expanded result"
+                    alt={t.resultPreviewAlt}
                     style={{ width: `${resultPreviewZoom * 100}%` }}
                   />
                 </div>
               </div>
             ) : (
-              <p>결과를 불러오지 못했습니다.</p>
+              <p>{t.resultPreviewLoadFailed}</p>
             )}
           </div>
         </ShellModal>

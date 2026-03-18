@@ -127,6 +127,44 @@ export interface GenerationRequestRecord {
   refunded?: boolean;
   errorMessage?: string;
   createdAt?: Timestamp | null;
+  completedAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+}
+
+export interface PaymentLogRecord {
+  id: string;
+  uid?: string;
+  email?: string;
+  provider?: string;
+  providerPaymentId?: string;
+  productId?: string;
+  amount?: number;
+  amountCents?: number;
+  currency?: string;
+  paidCredit?: number;
+  status?: string;
+  paidAt?: Timestamp | null;
+  createdAt?: Timestamp | null;
+  updatedAt?: Timestamp | null;
+}
+
+export interface ActivityLogRecord {
+  id: string;
+  userId?: string;
+  amount?: number;
+  title?: string;
+  message?: string;
+  senderName?: string;
+  adminMemo?: string | null;
+  grantedByAdminId?: string;
+  grantedByAdminEmail?: string;
+  createdAt?: Timestamp | null;
+}
+
+export interface AdminLogListResponse<T> {
+  items: T[];
+  nextCursor: string | null;
+  hasMore: boolean;
 }
 
 export interface VideoGenerationResponse {

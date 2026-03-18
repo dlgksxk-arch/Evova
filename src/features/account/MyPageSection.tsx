@@ -9,6 +9,7 @@ interface MyPageSectionProps {
   currentDailyCredit: number;
   currentPaidCredit: number;
   currentCredits: number;
+  locale: string;
   historyItems: GenerationRecord[];
   preservedHistoryCount: number;
   historyPreserveLimit: number;
@@ -42,6 +43,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentDailyCredit: _currentDailyCredit,
   currentPaidCredit: _currentPaidCredit,
   currentCredits: _currentCredits,
+  locale,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -69,7 +71,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
             <p>{firebaseDisabledMessage || copy.authRequired}</p>
             {isFirebaseConfigured && (
               <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={onLogin} type="button">
-                {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
+                {copy.loginComingSoon ?? `${copy.login} (${copy.comingSoon})`}
               </button>
             )}
           </div>
@@ -78,6 +80,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
       {currentUser && (
         <CreationHistoryPanel
           items={historyItems}
+          locale={locale}
+          copy={copy}
           preservedCount={preservedHistoryCount}
           maxPreserved={historyPreserveLimit}
           onTogglePreserve={onToggleHistoryPreserve}
@@ -99,14 +103,14 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                       {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
                       {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
                     </div>
-                    <strong>{product.label} - {product.paidCredit.toLocaleString()} Credits</strong>
+                    <strong>{product.label} - {product.paidCredit.toLocaleString()} {copy.credits}</strong>
                     <p className="credit-plan-price-row">
                       <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
                       <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
                     </p>
                     <p className="credit-plan-savings">
-                      <span className="credit-plan-save-pill">Save {discountPercent}%</span>
-                      <span className="credit-plan-save-amount">${savingsAmount.toFixed(2)} off</span>
+                      <span className="credit-plan-save-pill">{copy.savePercent(discountPercent)}</span>
+                      <span className="credit-plan-save-amount">{copy.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
                     </p>
                     <p>{copy.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
                   </div>

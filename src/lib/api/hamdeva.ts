@@ -1,14 +1,19 @@
 import type { User } from 'firebase/auth';
 import type {
+  ActivityLogRecord,
+  AdminLogListResponse,
   AdminUserDetail,
   AdminUserListResponse,
   CheckoutProductId,
   CheckoutSessionResponse,
   CheckoutSessionStatusResponse,
   CreditBootstrapResponse,
+  CreditLogRecord,
+  PaymentLogRecord,
   SubjectType,
   TryOnResponse,
   UserCreationRecord,
+  GenerationRequestRecord,
 } from '../../types/hamdeva';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
@@ -23,6 +28,10 @@ const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
 const ADMIN_USER_DETAIL_ENDPOINT = apiUrl('/api/admin/users/detail');
 const ADMIN_USER_GIFT_ENDPOINT = apiUrl('/api/admin/users/gift');
+const ADMIN_GENERATION_LOGS_ENDPOINT = apiUrl('/api/admin/logs/generations');
+const ADMIN_CREDIT_LOGS_ENDPOINT = apiUrl('/api/admin/logs/credits');
+const ADMIN_PAYMENT_LOGS_ENDPOINT = apiUrl('/api/admin/logs/payments');
+const ADMIN_ACTIVITY_LOGS_ENDPOINT = apiUrl('/api/admin/logs/activities');
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -260,6 +269,57 @@ const normalizeAdminUser = <T extends {
   updatedAt: toTimestampLike(user.updatedAt),
 });
 
+const normalizeTimestampFields = <T extends Record<string, unknown>>(
+  record: T,
+  timestampFields: string[],
+): T => {
+  const nextRecord = { ...record };
+  timestampFields.forEach((field) => {
+    nextRecord[field] = toTimestampLike(record[field]);
+  });
+  return nextRecord;
+};
+
+const callAdminLogList = async <T extends Record<string, unknown>>(payload: {
+  authToken: string;
+  endpoint: string;
+  cursor?: string | null;
+  limit?: number;
+  timestampFields: string[];
+}): Promise<AdminLogListResponse<T>> => {
+  const params = new URLSearchParams();
+  if (payload.cursor) {
+    params.set('cursor', payload.cursor);
+  }
+  params.set('limit', String(payload.limit ?? 20));
+
+  const queryString = params.toString();
+  const res = await fetch(queryString ? `${payload.endpoint}?${queryString}` : payload.endpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as {
+    items?: T[];
+    nextCursor?: string | null;
+    hasMore?: boolean;
+  };
+
+  return {
+    items: Array.isArray(data.items)
+      ? data.items.map((item) => normalizeTimestampFields(item, payload.timestampFields))
+      : [],
+    nextCursor: data.nextCursor ?? null,
+    hasMore: data.hasMore === true,
+  };
+};
+
 export const callAdminUserList = async (payload: {
   authToken: string;
   query?: string;
@@ -369,3 +429,55 @@ export const callAdminGiftCredit = async (payload: {
 
   return normalizeAdminUser(data.user) as AdminUserDetail;
 };
+
+export const callAdminGenerationLogs = async (payload: {
+  authToken: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<AdminLogListResponse<GenerationRequestRecord>> =>
+  callAdminLogList<GenerationRequestRecord>({
+    authToken: payload.authToken,
+    endpoint: ADMIN_GENERATION_LOGS_ENDPOINT,
+    cursor: payload.cursor,
+    limit: payload.limit,
+    timestampFields: ['createdAt', 'completedAt', 'updatedAt'],
+  });
+
+export const callAdminCreditLogs = async (payload: {
+  authToken: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<AdminLogListResponse<CreditLogRecord>> =>
+  callAdminLogList<CreditLogRecord>({
+    authToken: payload.authToken,
+    endpoint: ADMIN_CREDIT_LOGS_ENDPOINT,
+    cursor: payload.cursor,
+    limit: payload.limit,
+    timestampFields: ['createdAt'],
+  });
+
+export const callAdminPaymentLogs = async (payload: {
+  authToken: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<AdminLogListResponse<PaymentLogRecord>> =>
+  callAdminLogList<PaymentLogRecord>({
+    authToken: payload.authToken,
+    endpoint: ADMIN_PAYMENT_LOGS_ENDPOINT,
+    cursor: payload.cursor,
+    limit: payload.limit,
+    timestampFields: ['paidAt', 'createdAt', 'updatedAt'],
+  });
+
+export const callAdminActivityLogs = async (payload: {
+  authToken: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<AdminLogListResponse<ActivityLogRecord>> =>
+  callAdminLogList<ActivityLogRecord>({
+    authToken: payload.authToken,
+    endpoint: ADMIN_ACTIVITY_LOGS_ENDPOINT,
+    cursor: payload.cursor,
+    limit: payload.limit,
+    timestampFields: ['createdAt'],
+  });

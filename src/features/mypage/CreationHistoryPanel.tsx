@@ -5,6 +5,8 @@ interface CreationHistoryPanelProps {
   items: GenerationRecord[];
   preservedCount: number;
   maxPreserved: number;
+  locale: string;
+  copy: Record<string, any>;
   onTogglePreserve: (item: GenerationRecord) => Promise<void> | void;
   onDelete: (item: GenerationRecord) => Promise<void> | void;
 }
@@ -21,13 +23,13 @@ const getTimestampMillis = (value: unknown): number | null => {
   return null;
 };
 
-const formatDateTime = (value: unknown): string => {
+const formatDateTime = (value: unknown, locale: string): string => {
   const millis = getTimestampMillis(value);
   if (typeof millis !== 'number' || !Number.isFinite(millis)) {
     return '-';
   }
 
-  return new Intl.DateTimeFormat('ko-KR', {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -61,6 +63,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   items,
   preservedCount,
   maxPreserved,
+  locale,
+  copy,
   onTogglePreserve,
   onDelete,
 }) => {
@@ -129,7 +133,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
 
     if (preservedCount >= maxPreserved) {
-      alert(`보관은 최대 ${maxPreserved}개까지 가능합니다`);
+      alert(copy.historyArchiveLimit(maxPreserved));
       return;
     }
 
@@ -138,7 +142,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       await onTogglePreserve(selectedItem);
     } catch (archiveError) {
       console.error('Failed to archive creation:', archiveError);
-      alert(archiveError instanceof Error ? archiveError.message : '보관 처리에 실패했습니다.');
+      alert(archiveError instanceof Error ? archiveError.message : copy.historyArchiveFailed);
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +159,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       resetExpandedPanel();
     } catch (deleteError) {
       console.error('Failed to delete creation:', deleteError);
-      alert(deleteError instanceof Error ? deleteError.message : '삭제에 실패했습니다.');
+      alert(deleteError instanceof Error ? deleteError.message : copy.historyDeleteFailed);
     } finally {
       setSubmitting(false);
     }
@@ -172,13 +176,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     startImageLoading();
   };
 
-  const selectedHeaderText = selectedItem ? `[${formatDateTime(selectedItem.createdAt)}] IMAGE${isPreservedItem(selectedItem) ? ' (보관)' : ''}` : '';
+  const selectedHeaderText = selectedItem ? `[${formatDateTime(selectedItem.createdAt, locale)}] IMAGE${isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}` : '';
 
   return (
     <article className="page-article">
-      <h3>생성 히스토리</h3>
-      <p className="history-guide-copy">생성물은 기본 15일 보관되며, 최대 5개까지 30일 보관할 수 있습니다.</p>
-      {!hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
+      <h3>{copy.historyTitle}</h3>
+      <p className="history-guide-copy">{copy.historyGuide}</p>
+      {!hasVisibleItems ? <p>{copy.historyEmpty}</p> : null}
       {hasVisibleItems ? (
         <div
           style={{
@@ -211,9 +215,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               type="button"
             >
               <span style={{ display: 'grid', gap: 4 }}>
-                <strong>[{formatDateTime(item.createdAt)}] IMAGE{isPreservedItem(item) ? ' (보관)' : ''}</strong>
+                <strong>[{formatDateTime(item.createdAt, locale)}] IMAGE{isPreservedItem(item) ? ` (${copy.historyArchived})` : ''}</strong>
                 <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {selectedItem?.id === item.id ? '클릭하여 닫기' : '클릭하여 아래에서 보기'}
+                  {selectedItem?.id === item.id ? copy.historyPreviewClose : copy.historyPreviewOpen}
                 </span>
               </span>
             </button>
@@ -236,9 +240,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0 }}>
               <strong style={{ display: 'block' }}>{selectedHeaderText}</strong>
-              <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>만료일: {formatDateTime(selectedItem.expiresAt)}</p>
+              <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
             </div>
-            <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={resetExpandedPanel} type="button">닫기</button>
+            <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={resetExpandedPanel} type="button">{copy.close}</button>
           </div>
 
           <div
@@ -256,7 +260,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
               type="button"
             >
-              -
+              {copy.historyZoomOut}
             </button>
             <button
               className="outline-btn auth-inline-btn"
@@ -264,7 +268,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               onClick={() => setZoom(0.5)}
               type="button"
             >
-              기본 크기
+              {copy.historyZoomReset}
             </button>
             <button
               className="outline-btn auth-inline-btn"
@@ -272,7 +276,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
               type="button"
             >
-              +
+              {copy.historyZoomIn}
             </button>
           </div>
 
@@ -288,7 +292,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
           >
             {isImageLoading || !isImageReady ? (
               <div style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
-                Loading...
+                {copy.historyLoading}
               </div>
             ) : null}
 
@@ -304,7 +308,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               }}
             >
               <img
-                alt="Creation preview"
+                alt={copy.resultPreviewAlt}
                 onLoad={finishImageLoading}
                 draggable={false}
                 src={selectedItem.imageUrl || ''}
@@ -322,7 +326,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
             {!isImageLoading ? (
               <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
-                이미지 전체가 보이도록 기본 크기를 절반으로 줄였습니다. 필요하면 + / - 버튼으로만 조절할 수 있습니다.
+                {copy.historyZoomHint}
               </div>
             ) : null}
           </div>
@@ -348,14 +352,14 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               style={{ flex: isMobile ? 1 : undefined }}
               type="button"
             >
-              다운로드
+              {copy.historyDownload}
             </button>
             <button
               className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
               disabled={submitting || isPreservedItem(selectedItem)}
               onClick={() => {
                 if (!canArchiveSelectedItem) {
-                  alert(`보관은 최대 ${maxPreserved}개까지 가능합니다`);
+                  alert(copy.historyArchiveLimit(maxPreserved));
                   return;
                 }
                 void handleArchive();
@@ -363,7 +367,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               style={{ flex: isMobile ? 1 : undefined }}
               type="button"
             >
-              {isPreservedItem(selectedItem) ? '보관됨' : '보관'}
+              {isPreservedItem(selectedItem) ? copy.historyArchived : copy.historyArchive}
             </button>
             <button
               className="outline-btn auth-inline-btn"
@@ -372,7 +376,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
               type="button"
             >
-              {submitting ? '처리 중...' : '삭제'}
+              {submitting ? copy.historyProcessing : copy.historyDelete}
             </button>
           </div>
         </div>

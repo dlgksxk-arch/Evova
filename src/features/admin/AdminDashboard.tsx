@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
+import { useAdminLogList, type AdminLogType } from '../../hooks/useAdminLogs';
 import { useAdminGiftCredit, useAdminUserDetail, useAdminUserList } from '../../hooks/useAdminUserManagement';
 import type {
+  ActivityLogRecord,
   AdminUserDetail,
   BbsPostRecord,
   BoardNoticeRecord,
   CreditLogRecord,
   GenerationRequestRecord,
+  PaymentLogRecord,
   UserProfile,
 } from '../../types/hamdeva';
 import type { AdminSummary } from '../../hooks/useAdminDashboardData';
@@ -17,18 +20,9 @@ interface AdminDashboardProps {
   userProfile: UserProfile | null;
   isAdminUser: boolean;
   adminSummary: AdminSummary;
-  adminUsers: Array<{
-    id: string;
-    email: string;
-    credits: number;
-    subscriptionPlan: string;
-    role: string;
-    createdAt?: unknown;
-  }>;
-  adminGenerationLogs: GenerationRequestRecord[];
-  adminCreditLogs: CreditLogRecord[];
   adminLoading: boolean;
   adminError?: string | null;
+  onRefreshSummary: () => void;
   appVersion: string;
   isFirebaseConfigured: boolean;
   boardNotices: BoardNoticeRecord[];
@@ -90,16 +84,21 @@ const renderDetailValue = (
   </div>
 );
 
+const LOG_TABS: Array<{ key: AdminLogType; label: string }> = [
+  { key: 'generations', label: 'Generation Logs' },
+  { key: 'credits', label: 'Credit Logs' },
+  { key: 'payments', label: 'Payment Logs' },
+  { key: 'activities', label: 'Activity Logs' },
+];
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   userProfile,
   isAdminUser,
   adminSummary,
-  adminUsers,
-  adminGenerationLogs,
-  adminCreditLogs,
   adminLoading,
   adminError,
+  onRefreshSummary,
   appVersion,
   isFirebaseConfigured,
   boardNotices,
@@ -112,6 +111,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   formatTimestampLabel,
 }) => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [activeLogTab, setActiveLogTab] = useState<AdminLogType>('generations');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [giftTarget, setGiftTarget] = useState<AdminUserDetail | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -154,6 +155,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     currentUser,
     enabled: isAdminUser,
   });
+  const generationLogsState = useAdminLogList({
+    currentUser,
+    enabled: isAdminUser,
+    isOpen: isLogModalOpen,
+    isActive: activeLogTab === 'generations',
+    type: 'generations',
+  });
+  const creditLogsState = useAdminLogList({
+    currentUser,
+    enabled: isAdminUser,
+    isOpen: isLogModalOpen,
+    isActive: activeLogTab === 'credits',
+    type: 'credits',
+  });
+  const paymentLogsState = useAdminLogList({
+    currentUser,
+    enabled: isAdminUser,
+    isOpen: isLogModalOpen,
+    isActive: activeLogTab === 'payments',
+    type: 'payments',
+  });
+  const activityLogsState = useAdminLogList({
+    currentUser,
+    enabled: isAdminUser,
+    isOpen: isLogModalOpen,
+    isActive: activeLogTab === 'activities',
+    type: 'activities',
+  });
 
   useEffect(() => {
     if (!statusMessage) {
@@ -170,6 +199,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const selectedUserSummary = users.find((item) => item.uid === selectedUserId) ?? null;
   const activeDetailUser = userDetail ?? selectedUserSummary ?? giftTarget;
+  const activeLogState = activeLogTab === 'generations'
+    ? generationLogsState
+    : activeLogTab === 'credits'
+      ? creditLogsState
+      : activeLogTab === 'payments'
+        ? paymentLogsState
+        : activityLogsState;
 
   const openUserModal = () => {
     setIsUserModalOpen(true);
@@ -177,11 +213,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setStatusTone(null);
   };
 
+  const openLogModal = (tab: AdminLogType) => {
+    setActiveLogTab(tab);
+    setIsLogModalOpen(true);
+  };
+
   const closeUserModal = () => {
     setIsUserModalOpen(false);
     setSelectedUserId(null);
     setGiftTarget(null);
     setQuery('');
+  };
+
+  const closeLogModal = () => {
+    setIsLogModalOpen(false);
   };
 
   const handleSelectUser = (uid: string) => {
@@ -224,13 +269,115 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const renderLogTableHead = () => {
+    if (activeLogTab === 'generations') {
+      return (
+        <div className="admin-table-head">
+          <span>{copy.emailLabel}</span>
+          <span>{copy.adminCreatedAt}</span>
+          <span>{copy.adminGenerationType}</span>
+          <span>{copy.adminGenerationSubject}</span>
+          <span>{copy.adminStatus}</span>
+          <span>{copy.adminModel}</span>
+          <span>{copy.adminEstimatedCost}</span>
+          <span>{copy.adminResultId}</span>
+        </div>
+      );
+    }
+
+    if (activeLogTab === 'credits') {
+      return (
+        <div className="admin-table-head">
+          <span>{copy.emailLabel}</span>
+          <span>{copy.adminStatus}</span>
+          <span>{copy.adminCreditsColumn}</span>
+          <span>{copy.adminCreatedAt}</span>
+        </div>
+      );
+    }
+
+    if (activeLogTab === 'payments') {
+      return (
+        <div className="admin-table-head">
+          <span>{copy.emailLabel}</span>
+          <span>{copy.adminPaymentProvider}</span>
+          <span>{copy.adminPaymentProduct}</span>
+          <span>{copy.adminStatus}</span>
+          <span>{copy.adminCreditsColumn}</span>
+          <span>{copy.adminCreatedAt}</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="admin-table-head">
+        <span>{copy.adminActivityUserId}</span>
+        <span>{copy.adminCreditsColumn}</span>
+        <span>{copy.adminActivityTitle}</span>
+        <span>{copy.adminActivitySender}</span>
+        <span>{copy.adminCreatedAt}</span>
+      </div>
+    );
+  };
+
+  const renderLogRows = () => {
+    if (activeLogTab === 'generations') {
+      return (activeLogState.items as GenerationRequestRecord[]).map((item) => (
+        <div key={item.id} className="admin-table-row">
+          <span>{item.email || item.uid}</span>
+          <span>{formatTimestampLabel(item.createdAt)}</span>
+          <span>{item.type || 'image_generation'}</span>
+          <span>{item.subjectType || '-'}</span>
+          <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
+          <span>{item.model || '-'}</span>
+          <span>{copy.formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
+          <span>{item.requestId}</span>
+        </div>
+      ));
+    }
+
+    if (activeLogTab === 'credits') {
+      return (activeLogState.items as CreditLogRecord[]).map((item) => (
+        <div key={item.id} className="admin-table-row">
+          <span>{item.email || item.uid}</span>
+          <span>{item.type}</span>
+          <span>{item.amount}</span>
+          <span>{formatTimestampLabel(item.createdAt)}</span>
+        </div>
+      ));
+    }
+
+    if (activeLogTab === 'payments') {
+      return (activeLogState.items as PaymentLogRecord[]).map((item) => (
+        <div key={item.id} className="admin-table-row">
+          <span>{item.email || item.uid || '-'}</span>
+          <span>{item.provider || '-'}</span>
+          <span>{item.productId || '-'}</span>
+          <span>{item.status || '-'}</span>
+          <span>{item.paidCredit ?? 0}</span>
+          <span>{formatTimestampLabel(item.createdAt)}</span>
+        </div>
+      ));
+    }
+
+    return (activeLogState.items as ActivityLogRecord[]).map((item) => (
+      <div key={item.id} className="admin-table-row">
+        <span>{item.userId || '-'}</span>
+        <span>{item.amount ?? 0}</span>
+        <span>{item.title || '-'}</span>
+        <span>{item.senderName || item.grantedByAdminEmail || '-'}</span>
+        <span>{formatTimestampLabel(item.createdAt)}</span>
+      </div>
+    ));
+  };
+
   if (!currentUser) {
     return (
       <article className="page-article">
         <h2>{copy.adminTitle}</h2>
         <p>{copy.authRequired}</p>
         <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={onOpenAuth} type="button">
-          {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
+          {copy.loginComingSoon ?? `${copy.login} (${copy.comingSoon})`}
         </button>
       </article>
     );
@@ -261,10 +408,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <>
       <div className="admin-layout">
         <article className="page-article">
-          <h2>{copy.adminTitle}</h2>
-          <p>{currentUser.email}</p>
-          <p>{copy.adminSubtitle}</p>
-          {adminError ? <p className="admin-error-banner">관리자 데이터를 불러오지 못했습니다. {adminError}</p> : null}
+          <div className="admin-section-header">
+            <div>
+              <h2>{copy.adminTitle}</h2>
+              <p>{currentUser.email}</p>
+              <p>{copy.adminSubtitle}</p>
+            </div>
+            <button className="outline-btn auth-inline-btn" disabled={adminLoading} onClick={onRefreshSummary} type="button">
+              {copy.refresh ?? 'Refresh'}
+            </button>
+          </div>
+          {adminError ? <p className="admin-error-banner">{copy.adminSummaryLoadFailed} {adminError}</p> : null}
           {adminLoading ? <p className="admin-loading-banner">{copy.loadingSharedResult}</p> : null}
           {statusMessage ? (
             <p className={statusTone === 'success' ? 'admin-success-banner' : 'admin-error-banner'}>
@@ -292,29 +446,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="admin-section-header">
             <div>
               <h3>{copy.adminUsersSection}</h3>
-              <p className="admin-section-helper">{copy.adminUsersSectionHelper ?? '무거운 전체 사용자 조회는 별도 모달에서만 불러옵니다.'}</p>
+              <p className="admin-section-helper">{copy.adminUsersSectionHelper ?? '초기 진입에서는 사용자 로그를 불러오지 않고, 필요할 때만 별도 모달에서 조회합니다.'}</p>
             </div>
             <button className="outline-btn auth-inline-btn" onClick={openUserModal} type="button">
               {copy.adminOpenUserList ?? '사용자 검색 / 선물'}
             </button>
           </div>
-          <div className="admin-table">
-            <div className="admin-table-head">
-              <span>{copy.emailLabel}</span>
-              <span>{copy.adminJoinedAt}</span>
-              <span>{copy.adminCreditsColumn}</span>
-              <span>{copy.subscriptionPlanLabel}</span>
-              <span>{copy.adminRole}</span>
-            </div>
-            {adminUsers.length > 0 ? adminUsers.map((item) => (
-              <div key={item.id} className="admin-table-row">
-                <span>{item.email || '-'}</span>
-                <span>{formatTimestampLabel(item.createdAt)}</span>
-                <span>{item.credits ?? 0}</span>
-                <span>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
-                <span>{item.role || 'user'}</span>
-              </div>
-            )) : <p>{copy.adminNoData}</p>}
+          <div className="admin-inline-actions">
+            <button className="outline-btn auth-inline-btn" onClick={() => openLogModal('generations')} type="button">
+              {copy.adminGenerationSection}
+            </button>
+            <button className="outline-btn auth-inline-btn" onClick={() => openLogModal('credits')} type="button">
+              {copy.adminCreditsSection}
+            </button>
+            <button className="outline-btn auth-inline-btn" onClick={() => openLogModal('payments')} type="button">
+              {copy.adminPaymentsSection ?? '결제 로그'}
+            </button>
+            <button className="outline-btn auth-inline-btn" onClick={() => openLogModal('activities')} type="button">
+              {copy.adminActivitiesSection ?? '활동 로그'}
+            </button>
           </div>
         </article>
         <article className="page-article">
@@ -355,52 +505,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v8h-2V9zm4 0h2v8h-2V9zM7 9h2v8H7V9z" fill="currentColor" />
                   </svg>
                 </button>
-              </div>
-            )) : <p>{copy.adminNoData}</p>}
-          </div>
-        </article>
-        <article className="page-article">
-          <h3>{copy.adminGenerationSection}</h3>
-          <div className="admin-table">
-            <div className="admin-table-head">
-              <span>{copy.emailLabel}</span>
-              <span>{copy.adminCreatedAt}</span>
-              <span>type</span>
-              <span>subject</span>
-              <span>{copy.adminStatus}</span>
-              <span>{copy.adminModel}</span>
-              <span>{copy.adminEstimatedCost}</span>
-              <span>{copy.adminResultId}</span>
-            </div>
-            {adminGenerationLogs.length > 0 ? adminGenerationLogs.map((item) => (
-              <div key={item.id} className="admin-table-row">
-                <span>{item.email || item.uid}</span>
-                <span>{formatTimestampLabel(item.createdAt)}</span>
-                <span>{item.type || 'image_generation'}</span>
-                <span>{item.subjectType || '-'}</span>
-                <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
-                <span>{item.model || '-'}</span>
-                <span>{copy.formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
-                <span>{item.requestId}</span>
-              </div>
-            )) : <p>{copy.adminNoData}</p>}
-          </div>
-        </article>
-        <article className="page-article">
-          <h3>{copy.adminCreditsSection}</h3>
-          <div className="admin-table">
-            <div className="admin-table-head">
-              <span>{copy.emailLabel}</span>
-              <span>{copy.adminStatus}</span>
-              <span>{copy.adminCreditsColumn}</span>
-              <span>{copy.adminCreatedAt}</span>
-            </div>
-            {adminCreditLogs.length > 0 ? adminCreditLogs.map((item) => (
-              <div key={item.id} className="admin-table-row">
-                <span>{item.email || item.uid}</span>
-                <span>{item.type}</span>
-                <span>{item.amount}</span>
-                <span>{formatTimestampLabel(item.createdAt)}</span>
               </div>
             )) : <p>{copy.adminNoData}</p>}
           </div>
@@ -562,6 +666,56 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </AdminModalFrame>
       ) : null}
 
+      {isLogModalOpen ? (
+        <AdminModalFrame
+          title={copy.adminLogsTitle ?? '관리자 로그'}
+          subtitle={copy.adminLogsSubtitle ?? '로그는 탭을 열었을 때만 불러오며, 자동 새로고침하지 않습니다.'}
+          className="admin-user-modal-shell"
+          onClose={closeLogModal}
+        >
+          <div className="admin-section-header">
+            <div className="admin-inline-actions">
+              {LOG_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  className={activeLogTab === tab.key ? 'generate-btn auth-inline-btn' : 'outline-btn auth-inline-btn'}
+                  onClick={() => setActiveLogTab(tab.key)}
+                  type="button"
+                >
+                  {tab.key === 'generations'
+                    ? copy.adminGenerationSection
+                    : tab.key === 'credits'
+                      ? copy.adminCreditsSection
+                      : tab.key === 'payments'
+                        ? (copy.adminPaymentsSection ?? '결제 로그')
+                        : (copy.adminActivitiesSection ?? '활동 로그')}
+                </button>
+              ))}
+            </div>
+            <button className="outline-btn auth-inline-btn" disabled={activeLogState.loading} onClick={() => { void activeLogState.refresh(); }} type="button">
+              {copy.refresh ?? 'Refresh'}
+            </button>
+          </div>
+
+          {activeLogState.error ? <p className="admin-error-banner">{activeLogState.error}</p> : null}
+          {activeLogState.loading ? <p className="admin-loading-banner">{copy.loadingSharedResult}</p> : null}
+
+          <div className="admin-table">
+            {renderLogTableHead()}
+            {!activeLogState.loading && activeLogState.items.length > 0 ? renderLogRows() : null}
+            {!activeLogState.loading && activeLogState.items.length === 0 ? <p>{copy.adminNoData}</p> : null}
+          </div>
+
+          {activeLogState.hasMore ? (
+            <div className="admin-user-list-footer">
+              <button className="outline-btn auth-inline-btn" disabled={activeLogState.loadingMore} onClick={() => { void activeLogState.loadMore(); }} type="button">
+                {activeLogState.loadingMore ? (copy.adminUserListLoadingMore ?? '불러오는 중...') : (copy.adminLoadMore ?? '더 보기')}
+              </button>
+            </div>
+          ) : null}
+        </AdminModalFrame>
+      ) : null}
+
       {giftTarget ? (
         <AdminModalFrame
           title={copy.adminGiftModalTitle ?? '크레딧 선물'}
@@ -627,7 +781,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {giftError ? <p className="admin-error-banner">{giftError}</p> : null}
             <div className="confirm-modal-actions admin-gift-actions">
               <button className="outline-btn auth-inline-btn" disabled={giftSubmitting} onClick={() => setGiftTarget(null)} type="button">
-                {copy.cancel ?? '취소'}
+                {copy.cancel}
               </button>
               <button className="generate-btn auth-inline-btn" disabled={giftSubmitting} type="submit">
                 {giftSubmitting ? (copy.adminGiftSubmitting ?? '지급 중...') : (copy.adminGiftSubmit ?? '즉시 지급')}

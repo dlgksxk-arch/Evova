@@ -3,10 +3,6 @@ import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
 import ResultActionsPanel from './ResultActionsPanel';
 
-const lang =
-  (typeof window !== 'undefined' && localStorage.getItem('lang')) ||
-  'en';
-
 const EmptyPreviewState: React.FC<{
   title: string;
   tips: string[];
@@ -175,7 +171,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               {copy.signUpGetCredits}
             </button>
             <button className="outline-btn auth-inline-btn auth-disabled-btn" disabled onClick={() => copy.openAuthModal('login')} type="button">
-              {copy.loginComingSoon ?? `${copy.login} (Coming Soon)`}
+              {copy.loginComingSoon ?? `${copy.login} (${copy.comingSoon})`}
             </button>
           </div>
         </div>
