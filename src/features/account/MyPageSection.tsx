@@ -38,10 +38,10 @@ interface MyPageSectionProps {
 
 const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
-  userProfile,
-  currentDailyCredit,
-  currentPaidCredit,
-  currentCredits,
+  userProfile: _userProfile,
+  currentDailyCredit: _currentDailyCredit,
+  currentPaidCredit: _currentPaidCredit,
+  currentCredits: _currentCredits,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -62,19 +62,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
 }) => {
   return (
     <div className="mypage-layout">
-      <article className="page-article">
-        <h2>{copy.myPage}</h2>
-        {currentUser && userProfile ? (
-          <div className="mypage-summary">
-            <p><strong>{copy.emailLabel}</strong> {currentUser.email}</p>
-            <div className="credit-balance-grid">
-              <div className="credit-balance-card"><span>{copy.dailyCreditLabel}</span><strong>{currentDailyCredit}</strong></div>
-              <div className="credit-balance-card"><span>{copy.paidCreditLabel}</span><strong>{currentPaidCredit}</strong></div>
-              <div className="credit-balance-card"><span>{copy.totalCreditLabel}</span><strong>{currentCredits}</strong></div>
-            </div>
-            <p><strong>{copy.subscriptionPlanLabel}</strong> {copy.subscriptionPlanValue(userProfile.subscriptionPlan)}</p>
-          </div>
-        ) : (
+      {!currentUser && (
+        <article className="page-article">
+          <h2>{copy.myPage}</h2>
           <div className="mypage-empty">
             <p>{firebaseDisabledMessage || copy.authRequired}</p>
             {isFirebaseConfigured && (
@@ -83,8 +73,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               </button>
             )}
           </div>
-        )}
-      </article>
+        </article>
+      )}
       {currentUser && (
         <CreationHistoryPanel
           items={historyItems}

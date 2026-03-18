@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { GenerationRecord } from '../../types/hamdeva';
 
-type FilterType = 'all' | 'image';
-
 interface CreationHistoryPanelProps {
   items: GenerationRecord[];
   preservedCount: number;
@@ -71,9 +69,9 @@ const getModalShellStyle = (isMobile: boolean): React.CSSProperties => ({
 });
 
 const getModalPanelStyle = (isMobile: boolean): React.CSSProperties => ({
-  width: isMobile ? '100%' : 'min(1280px, calc(100vw - 48px))',
-  height: isMobile ? '100%' : 'min(94vh, 100%)',
-  maxHeight: isMobile ? '100vh' : '94vh',
+  width: isMobile ? '100%' : 'min(1280px, calc((100vh - 48px) * 1.7778), calc(100vw - 48px))',
+  height: isMobile ? '100%' : 'min(720px, calc((100vw - 48px) * 0.5625), calc(100vh - 48px))',
+  maxHeight: isMobile ? '100vh' : 'calc(100vh - 48px)',
   overflow: 'hidden',
   background: 'var(--surface)',
   borderRadius: isMobile ? 0 : 20,
@@ -91,7 +89,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   onDelete,
 }) => {
   const [submitting, setSubmitting] = useState(false);
-  const [filter, setFilter] = useState<FilterType>('all');
   const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -163,8 +160,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     [...items]
       .filter((item) => Boolean(item.imageUrl))
       .sort((a, b) => (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0))
-      .filter((item) => filter === 'all' || filter === 'image')
-  ), [filter, items]);
+  ), [items]);
 
   const hasVisibleItems = filteredItems.length > 0;
   const canArchiveSelectedItem = Boolean(selectedItem && !isPreservedItem(selectedItem) && preservedCount < maxPreserved);
@@ -246,10 +242,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     <article className="page-article">
       <h3>생성 히스토리</h3>
       <p className="history-guide-copy">생성물은 기본 15일 보관되며, 최대 5개까지 30일 보관할 수 있습니다.</p>
-      <div className="credit-cta-actions" style={{ marginTop: 12, marginBottom: 12 }}>
-        <button className={`outline-btn auth-inline-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')} type="button">전체</button>
-        <button className={`outline-btn auth-inline-btn ${filter === 'image' ? 'active' : ''}`} onClick={() => setFilter('image')} type="button">이미지</button>
-      </div>
       {!hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
       {hasVisibleItems ? (
         <div
@@ -281,7 +273,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               }}
               type="button"
             >
-              <span>[{formatDateTime(item.createdAt)}] IMAGE{isPreservedItem(item) ? ' (보관)' : ''}</span>
+              <span style={{ display: 'grid', gap: 4 }}>
+                <strong>[{formatDateTime(item.createdAt)}] IMAGE{isPreservedItem(item) ? ' (보관)' : ''}</strong>
+                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>클릭하여 팝업으로 보기</span>
+              </span>
             </button>
           ))}
         </div>

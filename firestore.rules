@@ -70,13 +70,17 @@ service cloud.firestore {
       allow create: if
         isSignedIn()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'resultImageUrl', 'language', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'resultImageUrl', 'language', 'createdAt', 'sharedAt'])
         && request.resource.data.resultImageUrl is string
         && request.resource.data.resultImageUrl.size() > 0
         && request.resource.data.resultImageUrl.size() <= 1500000
         && (
           !('language' in request.resource.data)
           || request.resource.data.language is string
+        )
+        && (
+          !('sharedAt' in request.resource.data)
+          || request.resource.data.sharedAt is timestamp
         );
       allow update, delete: if false;
     }

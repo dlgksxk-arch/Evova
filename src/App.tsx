@@ -3325,14 +3325,48 @@ const App: React.FC = () => {
       setShareStatus(t.alertError);
     }
   };
-  const handleCopyLink = async (link: string | null) => {
-    if (!link) {
+  const ensureSharedResultLink = async (link: string | null): Promise<string | null> => {
+    if (link) {
+      return link;
+    }
+
+    if (latestSharedResultId) {
+      return buildSharedResultUrl(latestSharedResultId);
+    }
+
+    if (!finalImageSrc || !currentUser) {
       setShareStatus(t.noResultToShare);
+      return null;
+    }
+
+    try {
+      const sharedPreview = await createHistoryPreview(finalImageSrc, 720);
+      const publicResultRef = doc(collection(requireDb(), 'publicResults'));
+
+      await setDoc(publicResultRef, {
+        uid: currentUser.uid,
+        resultImageUrl: sharedPreview,
+        language: lang,
+        createdAt: serverTimestamp(),
+        sharedAt: serverTimestamp(),
+      });
+
+      setLatestSharedResultId(publicResultRef.id);
+      return buildSharedResultUrl(publicResultRef.id);
+    } catch (error) {
+      console.error('Failed to create shared result link:', error);
+      setShareStatus(t.shareLinkUnavailable);
+      return null;
+    }
+  };
+  const handleCopyLink = async (link: string | null) => {
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(resolvedLink);
       setShareStatus(t.linkCopied);
     } catch (error) {
       console.error('Failed to copy share link:', error);
@@ -3340,8 +3374,8 @@ const App: React.FC = () => {
     }
   };
   const handleShareLink = async (link: string | null) => {
-    if (!link) {
-      setShareStatus(t.noResultToShare);
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
@@ -3350,7 +3384,7 @@ const App: React.FC = () => {
         await navigator.share({
           title: 'HAMDEVA - AI Virtual Fitting Playground',
           text: 'I tried AI virtual fitting on HAMDEVA',
-          url: link,
+          url: resolvedLink,
         });
         return;
       } catch (error) {
@@ -3360,11 +3394,11 @@ const App: React.FC = () => {
       }
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(link)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(resolvedLink)}`);
   };
   const handleShareOnKakao = async (link: string | null) => {
-    if (!link) {
-      setShareStatus(t.noResultToShare);
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
@@ -3382,16 +3416,16 @@ const App: React.FC = () => {
           description: 'Try AI virtual fitting online with HAMDEVA.',
           imageUrl: 'https://hamdeva.com/og-image.png',
           link: {
-            mobileWebUrl: link,
-            webUrl: link,
+            mobileWebUrl: resolvedLink,
+            webUrl: resolvedLink,
           },
         },
         buttons: [
           {
             title: 'Open Result',
             link: {
-              mobileWebUrl: link,
-              webUrl: link,
+              mobileWebUrl: resolvedLink,
+              webUrl: resolvedLink,
             },
           },
         ],
@@ -3401,29 +3435,29 @@ const App: React.FC = () => {
       await handleShareLink(link);
     }
   };
-  const handleShareOnLine = (link: string | null) => {
-    if (!link) {
-      setShareStatus(t.noResultToShare);
+  const handleShareOnLine = async (link: string | null) => {
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
-    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}`);
+    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(resolvedLink)}`);
   };
-  const handleShareOnX = (link: string | null) => {
-    if (!link) {
-      setShareStatus(t.noResultToShare);
+  const handleShareOnX = async (link: string | null) => {
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(link)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent('I tried AI virtual fitting on HAMDEVA')}&url=${encodeURIComponent(resolvedLink)}`);
   };
-  const handleShareOnFacebook = (link: string | null) => {
-    if (!link) {
-      setShareStatus(t.noResultToShare);
+  const handleShareOnFacebook = async (link: string | null) => {
+    const resolvedLink = await ensureSharedResultLink(link);
+    if (!resolvedLink) {
       return;
     }
 
-    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`);
+    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(resolvedLink)}`);
   };
   const handleInstagramSave = async (src: string | null) => {
     if (!src) {
@@ -3998,16 +4032,6 @@ const App: React.FC = () => {
           setCreditNotice(notices.join(' '));
         }
 
-        const historyResultImage = await createHistoryPreview(result, 720);
-        const publicResultRef = doc(collection(requireDb(), 'publicResults'));
-
-        await setDoc(publicResultRef, {
-          uid: currentUser.uid,
-          resultImageUrl: historyResultImage,
-          language: lang,
-          createdAt: serverTimestamp(),
-        });
-        setLatestSharedResultId(publicResultRef.id);
       } catch (error) {
         console.error('Failed to persist generation history:', error);
       }

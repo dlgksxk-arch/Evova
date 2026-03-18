@@ -2818,7 +2818,7 @@ const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
       users: usersSnapshot.size,
       posts: postsSnapshot.size,
       generations: generationLogs.length,
-      sharedResults: sharedResultsSnapshot.size,
+      sharedResults: sharedResultsSnapshot.docs.filter((snapshot) => snapshot.data().sharedAt).length,
       todayGenerations: todayGenerations.length,
       todayEstimatedCost: todayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
       totalEstimatedCost: generationLogs.reduce((sum, item) => sum + getEstimatedCost(item), 0),
