@@ -39,7 +39,17 @@ service cloud.firestore {
     // 생성 이력 — 서버만 쓰기, 본인 데이터만 조회 가능
     match /generations/{generationId} {
       allow read: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
-      allow create, update, delete: if false;
+      allow create: if false;
+      allow update: if (
+        (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin()
+      )
+      && request.resource.data.uid == resource.data.uid
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'preservedAt',
+        'preservedUntil',
+        'updatedAt'
+      ]);
+      allow delete: if (isSignedIn() && resource.data.uid == request.auth.uid) || isAdmin();
     }
 
     // 크레딧 트랜잭션 — 서버만 쓰기, 본인만 읽기 가능

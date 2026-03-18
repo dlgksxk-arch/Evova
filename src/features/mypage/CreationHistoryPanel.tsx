@@ -98,11 +98,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [modalLoading, setModalLoading] = useState(false);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const dragStateRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const loadingStartRef = useRef(0);
 
   useEffect(() => {
@@ -162,37 +159,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     };
   }, [selectedItem, submitting]);
 
-  useEffect(() => {
-    if (!dragging) {
-      return;
-    }
-
-    const handlePointerMove = (event: PointerEvent) => {
-      const dragState = dragStateRef.current;
-      if (!dragState) {
-        return;
-      }
-
-      setPosition({
-        x: dragState.originX + (event.clientX - dragState.startX),
-        y: dragState.originY + (event.clientY - dragState.startY),
-      });
-    };
-
-    const handlePointerUp = () => {
-      dragStateRef.current = null;
-      setDragging(false);
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-    };
-  }, [dragging]);
-
   const filteredItems = useMemo(() => (
     [...items]
       .filter((item) => Boolean(item.imageUrl))
@@ -212,8 +178,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setModalLoading(false);
     setIsContentLoaded(false);
     setZoom(1);
-    setPosition({ x: 0, y: 0 });
-    setDragging(false);
   };
 
   const startModalLoading = () => {
@@ -270,28 +234,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
   };
 
-  const handleImageWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setZoom((prev) => {
-      const next = prev + (event.deltaY < 0 ? 0.15 : -0.15);
-      return Math.min(4, Math.max(0.6, next));
-    });
-  };
-
-  const handleImagePointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
-    dragStateRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: position.x,
-      originY: position.y,
-    };
-    setDragging(true);
-  };
-
   const handleOpenItem = (item: GenerationRecord) => {
     setSelectedItem(item);
     setZoom(1);
-    setPosition({ x: 0, y: 0 });
     startModalLoading();
   };
 
@@ -307,7 +252,16 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       </div>
       {!hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
       {hasVisibleItems ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: 8,
+            maxHeight: 304,
+            overflowY: 'auto',
+            paddingRight: 4,
+          }}
+        >
           {filteredItems.map((item) => (
             <button
               key={item.id}
@@ -320,6 +274,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 justifyContent: 'flex-start',
                 textAlign: 'left',
                 padding: '14px 16px',
+                minHeight: 70,
                 background: hoveredItemId === item.id ? 'var(--upload-hover-bg)' : 'transparent',
                 transition: 'background-color 0.2s ease, opacity 0.2s ease',
                 opacity: hoveredItemId === item.id ? 1 : 0.96,
@@ -353,13 +308,47 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
             </div>
 
             <div
-              onWheel={handleImageWheel}
+              style={{
+                display: 'flex',
+                gap: 8,
+                justifyContent: 'flex-end',
+                padding: '12px 20px 0',
+                flexShrink: 0,
+              }}
+            >
+              <button
+                className="outline-btn auth-inline-btn"
+                disabled={zoom <= 0.75}
+                onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+                type="button"
+              >
+                축소
+              </button>
+              <button
+                className="outline-btn auth-inline-btn"
+                disabled={zoom === 1}
+                onClick={() => setZoom(1)}
+                type="button"
+              >
+                원본 맞춤
+              </button>
+              <button
+                className="outline-btn auth-inline-btn"
+                disabled={zoom >= 3}
+                onClick={() => setZoom((prev) => Math.min(3, Number((prev + 0.25).toFixed(2))))}
+                type="button"
+              >
+                확대
+              </button>
+            </div>
+
+            <div
               style={{
                 flex: 1,
                 overflow: 'auto',
                 padding: isMobile ? 16 : 20,
                 position: 'relative',
-                touchAction: 'pinch-zoom',
+                touchAction: 'pan-x pan-y pinch-zoom',
               }}
             >
               {modalLoading || !isContentLoaded ? (
@@ -369,20 +358,29 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               ) : null}
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? '50vh' : '55vh' }}>
-                <div style={{ overflow: 'auto', maxWidth: '100%', maxHeight: isMobile ? '62vh' : '68vh', border: '1px solid var(--border)', borderRadius: 16, padding: 12, cursor: dragging ? 'grabbing' : 'grab', visibility: modalLoading ? 'hidden' : 'visible' }}>
+                <div
+                  style={{
+                    overflow: 'auto',
+                    width: '100%',
+                    maxHeight: isMobile ? '62vh' : '68vh',
+                    border: '1px solid var(--border)',
+                    borderRadius: 16,
+                    padding: 12,
+                    background: 'rgba(255,255,255,0.35)',
+                    visibility: modalLoading ? 'hidden' : 'visible',
+                  }}
+                >
                   <img
                     alt="Creation preview"
                     onLoad={finishModalLoading}
-                    onPointerDown={handleImagePointerDown}
                     draggable={false}
                     src={selectedItem.imageUrl || ''}
                     style={{
                       display: 'block',
                       margin: '0 auto',
-                      maxWidth: '100%',
-                      maxHeight: isMobile ? '56vh' : '64vh',
-                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-                      transformOrigin: 'center center',
+                      width: `${zoom * 100}%`,
+                      maxWidth: 'none',
+                      height: 'auto',
                       userSelect: 'none',
                     }}
                   />
@@ -391,7 +389,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
               {!modalLoading ? (
                 <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
-                  마우스 휠로 확대/축소, 드래그로 이동할 수 있습니다.
+                  확대 버튼으로 배율을 바꾸고, 화면은 일반 스크롤로 이동할 수 있습니다.
                 </div>
               ) : null}
             </div>
