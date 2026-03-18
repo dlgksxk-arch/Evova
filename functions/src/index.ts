@@ -41,7 +41,7 @@ const VIDEO_DIALOGUE_ALLOWED_PUNCTUATION = '!?.,';
 const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
-const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1';
+const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1.5';
 const OPENAI_IMAGE_SIZE = '1024x1536';
 const OPENAI_IMAGE_QUALITY = 'medium';
 const SUBJECT_CLASSIFICATION_MODEL = process.env['OPENAI_CLASSIFICATION_MODEL'] ?? 'gpt-4.1-nano';
@@ -148,7 +148,7 @@ class UpstreamApiError extends Error {
     this.statusCode = statusCode;
   }
 }
-const HUMAN_PROMPT = `Create one realistic full-body studio photograph of the exact same person from the first uploaded image wearing the exact same clothing from the second uploaded image.
+const HUMAN_PROMPT = `Create one realistic full-body studio photograph of the exact same real person from the first uploaded image wearing the exact same clothing from the second uploaded image.
 
 Priority:
 1) exact facial identity
@@ -159,7 +159,9 @@ Use the first image as the identity reference and the second image as the clothi
 The result must be the same real person, not a similar person.
 Completely ignore any face, head, hair, skin, body, or identity cues that may appear in the clothing reference image.
 Use only the first image for facial identity.
+Match the first image as closely as possible and treat facial identity preservation as the most important requirement.
 Preserve the same face shape, forehead, eyebrows, eyes, eye distance, nose, nostrils, lips, mouth width, jawline, chin, ears, skin tone, skin texture, hairstyle, hairline, and facial proportions.
+Keep the same apparent age, ethnicity, bone structure, and overall facial geometry.
 Do not beautify, idealize, rejuvenate, feminize, masculinize, stylize, retouch, or reinterpret the face.
 Allow only very light natural makeup.
 Keep a neutral natural expression.
@@ -842,10 +844,8 @@ const requestOpenAIComposite = async (
     output_format: 'png',
     background: 'opaque',
     n: 1,
+    input_fidelity: 'high',
   };
-  if (OPENAI_IMAGE_MODEL === 'gpt-image-1') {
-    requestBody['input_fidelity'] = 'high';
-  }
 
   functions.logger.info('openai image edit request', {
     model: OPENAI_IMAGE_MODEL,
