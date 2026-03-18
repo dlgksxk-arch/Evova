@@ -4,19 +4,8 @@ interface ResultActionsPanelProps {
   imageSrc: string;
   link: string | null;
   disableDownload: boolean;
-  showVideoControls: boolean;
-  showVideoPrompt: boolean;
-  isGeneratingVideo: boolean;
-  canAffordVideo: boolean;
-  generatedVideoUrl: string | null;
-  videoStatusMessage: string | null;
   shareStatus: string | null;
   copy: Record<string, any>;
-  subjectUi: {
-    videoPrompt: string;
-    videoButton: string;
-    videoGenerating: string;
-  };
   onDownload: (src: string) => void;
   onShareLink: (link: string | null) => void;
   onCopyLink: (link: string | null) => void;
@@ -27,22 +16,14 @@ interface ResultActionsPanelProps {
   onInstagramSave: (src: string | null) => void;
   onTryAnotherOutfit: () => void;
   onRandomOutfit: () => void;
-  onGenerateVideo: () => void;
 }
 
 const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   imageSrc,
   link,
   disableDownload,
-  showVideoControls,
-  showVideoPrompt,
-  isGeneratingVideo,
-  canAffordVideo,
-  generatedVideoUrl,
-  videoStatusMessage,
   shareStatus,
   copy,
-  subjectUi,
   onDownload,
   onShareLink,
   onCopyLink,
@@ -51,7 +32,6 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   onShareOnX,
   onShareOnFacebook,
   onInstagramSave,
-  onGenerateVideo,
 }) => (
   <>
     <div className="page-article share-section">
@@ -96,27 +76,6 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
         </button>
       </div>
     </div>
-    {showVideoControls && (showVideoPrompt || isGeneratingVideo || generatedVideoUrl) && (
-      <div className="page-article result-video-panel">
-        <p>{subjectUi.videoPrompt}</p>
-        <button
-          className="generate-btn"
-          disabled={disableDownload || isGeneratingVideo || !canAffordVideo}
-          onClick={onGenerateVideo}
-          type="button"
-        >
-          {isGeneratingVideo ? subjectUi.videoGenerating : subjectUi.videoButton}
-        </button>
-        {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
-        {generatedVideoUrl && (
-          <div className="composite-result result-video-shell">
-            <video controls playsInline preload="metadata" className="is-visible">
-              <source src={generatedVideoUrl} type="video/mp4" />
-            </video>
-          </div>
-        )}
-      </div>
-    )}
     {shareStatus && <p className="result-status-text">{shareStatus}</p>}
   </>
 );

@@ -26,7 +26,6 @@ interface AdminDashboardProps {
   bbsPosts: BbsPostRecord[];
   bbsSubmitting: boolean;
   copy: Record<string, any>;
-  adminVideoLabels: Record<string, string>;
   onOpenAuth: () => void;
   onGoHome: () => void;
   onDeletePost: (post: BbsPostRecord) => void;
@@ -48,7 +47,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   bbsPosts,
   bbsSubmitting,
   copy,
-  adminVideoLabels,
   onOpenAuth,
   onGoHome,
   onDeletePost,
@@ -87,8 +85,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   }
 
-  const videoLogs = adminGenerationLogs.filter((item) => item.type === 'video_generation');
-
   return (
     <div className="admin-layout">
       <article className="page-article">
@@ -107,9 +103,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <article className="page-article admin-stat-card"><h3>{copy.adminTodayEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p></article>
         <article className="page-article admin-stat-card"><h3>{copy.adminTotalEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p></article>
         <article className="page-article admin-stat-card"><h3>{copy.adminRecent7DaysEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p></article>
-        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.totalVideoCount}</h3><p>{adminSummary.totalVideoGenerations}</p></article>
-        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.todayVideoCount}</h3><p>{adminSummary.todayVideoGenerations}</p></article>
-        <article className="page-article admin-stat-card"><h3>{adminVideoLabels.estimatedVideoCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.estimatedVideoCost)}</p></article>
       </div>
       <article className="page-article">
         <h3>{copy.adminSystemSection}</h3>
@@ -167,8 +160,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="admin-table-head">
             <span>{copy.emailLabel}</span>
             <span>{copy.adminCreatedAt}</span>
-            <span>{adminVideoLabels.requestType}</span>
-            <span>{adminVideoLabels.subjectType}</span>
+            <span>type</span>
+            <span>subject</span>
             <span>{copy.adminStatus}</span>
             <span>{copy.adminModel}</span>
             <span>{copy.adminEstimatedCost}</span>
@@ -182,29 +175,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span>{item.subjectType || '-'}</span>
               <span>{item.status || (item.success ? 'completed' : 'unknown')}{item.refunded ? ' / refunded' : ''}</span>
               <span>{item.model || '-'}</span>
-              <span>{copy.formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
-              <span>{item.requestId}</span>
-            </div>
-          )) : <p>{copy.adminNoData}</p>}
-        </div>
-      </article>
-      <article className="page-article">
-        <h3>{adminVideoLabels.recentVideos}</h3>
-        <div className="admin-table">
-          <div className="admin-table-head">
-            <span>{copy.emailLabel}</span>
-            <span>{copy.adminCreatedAt}</span>
-            <span>{adminVideoLabels.subjectType}</span>
-            <span>{copy.adminStatus}</span>
-            <span>{copy.adminEstimatedCost}</span>
-            <span>{copy.adminResultId}</span>
-          </div>
-          {videoLogs.length > 0 ? videoLogs.map((item) => (
-            <div key={item.id} className="admin-table-row">
-              <span>{item.email || item.uid}</span>
-              <span>{formatTimestampLabel(item.createdAt)}</span>
-              <span>{item.subjectType || '-'}</span>
-              <span>{item.status || (item.success ? 'completed' : 'unknown')}</span>
               <span>{copy.formatEstimatedCostLabel(estimateGenerationCost(item))}</span>
               <span>{item.requestId}</span>
             </div>

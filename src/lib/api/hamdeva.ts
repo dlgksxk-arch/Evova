@@ -7,7 +7,6 @@ import type {
   SubjectType,
   TryOnResponse,
   UserCreationRecord,
-  VideoGenerationResponse,
 } from '../../types/hamdeva';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
@@ -16,9 +15,6 @@ const apiUrl = (path: string): string => `${API_BASE_URL}${path}`;
 const TRYON_ENDPOINT = apiUrl('/api/tryon');
 const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
 const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
-const VIDEO_ENDPOINT = apiUrl('/api/video');
-const VIDEO_STATUS_ENDPOINT = apiUrl('/api/video-status');
-const VIDEO_CONTENT_ENDPOINT = apiUrl('/api/video-content');
 const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
 const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
@@ -192,63 +188,6 @@ export const callSubjectClassifier = async (subjectImage: string): Promise<Subje
 
   const data = await res.json() as { subjectType?: SubjectType };
   return data.subjectType === 'dog' || data.subjectType === 'cat' ? data.subjectType : 'human';
-};
-
-export const callVideoGeneration = async (payload: {
-  authToken: string;
-  image: string;
-  requestId: string;
-  subjectType: SubjectType;
-  dialogue: string;
-  sourceResultId?: string | null;
-}): Promise<VideoGenerationResponse> => {
-  const res = await fetch(VIDEO_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${payload.authToken}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    throw await parseApiError(res);
-  }
-
-  return await res.json() as VideoGenerationResponse;
-};
-
-export const pollVideoGeneration = async (
-  authToken: string,
-  requestId: string,
-): Promise<VideoGenerationResponse & { contentUrl?: string }> => {
-  const res = await fetch(`${VIDEO_STATUS_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw await parseApiError(res);
-  }
-
-  return await res.json() as VideoGenerationResponse & { contentUrl?: string };
-};
-
-export const fetchVideoBlobUrl = async (authToken: string, requestId: string): Promise<string> => {
-  const res = await fetch(`${VIDEO_CONTENT_ENDPOINT}?requestId=${encodeURIComponent(requestId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${authToken}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw await parseApiError(res);
-  }
-
-  return URL.createObjectURL(await res.blob());
 };
 
 export const getCreations = async (authToken: string): Promise<UserCreationRecord[]> => {

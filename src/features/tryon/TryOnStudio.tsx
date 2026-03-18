@@ -48,7 +48,6 @@ interface TryOnStudioProps {
   currentDailyCredit: number;
   currentPaidCredit: number;
   canAffordGeneration: boolean;
-  canAffordVideo: boolean;
   generationCost: number;
   generationStatusLabel: string;
   generationRemainingMs: number;
@@ -57,13 +56,6 @@ interface TryOnStudioProps {
   generationProgressPercent: number;
   resultWatermarkApplied: boolean;
   shareResultLink: string | null;
-  generatedVideoUrl: string | null;
-  isGeneratingVideo: boolean;
-  showVideoPrompt: boolean;
-  videoStatusMessage: string | null;
-  videoDialogue: string;
-  videoDialogueCharacterCount: number;
-  videoDialogueError: string | null;
   shareStatus: string | null;
   subjectUi: {
     title: string;
@@ -71,14 +63,6 @@ interface TryOnStudioProps {
     autoDetecting: string;
     autoDetected: string;
     autoFailed: string;
-    videoPrompt: string;
-    videoButton: string;
-    videoGenerating: string;
-    videoDialogueLabel: string;
-    videoDialoguePlaceholder: string;
-    videoDialogueHint: string;
-    videoDialogueInvalid: string;
-    videoDialogueRequired: string;
   };
   lang: LanguageCode;
   subjectTypes: readonly SubjectType[];
@@ -112,8 +96,6 @@ interface TryOnStudioProps {
   onInstagramSave: (src: string | null) => void;
   onTryAnotherOutfit: () => void;
   onRandomOutfit: () => void;
-  onVideoDialogueChange: (value: string) => void;
-  onGenerateVideo: () => void;
   onOpenResultPreview: (src: string) => void;
   getSubjectTypeLabel: (lang: LanguageCode, subjectType: SubjectType) => string;
   formatSecondsLabel: (ms: number) => string;
@@ -138,7 +120,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   currentDailyCredit,
   currentPaidCredit,
   canAffordGeneration,
-  canAffordVideo,
   generationCost,
   generationStatusLabel,
   generationRemainingMs,
@@ -147,13 +128,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   generationProgressPercent,
   resultWatermarkApplied,
   shareResultLink,
-  generatedVideoUrl,
-  isGeneratingVideo,
-  showVideoPrompt,
-  videoStatusMessage,
-  videoDialogue,
-  videoDialogueCharacterCount,
-  videoDialogueError,
   shareStatus,
   subjectUi,
   emptyFaceTips,
@@ -181,19 +155,9 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onInstagramSave,
   onTryAnotherOutfit,
   onRandomOutfit,
-  onVideoDialogueChange,
-  onGenerateVideo,
   onOpenResultPreview,
   formatSecondsLabel,
 }) => {
-  const videoHelperText = lang === 'ko'
-    ? '생성된 이미지를 기반으로 영상을 생성합니다.'
-    : lang === 'ja'
-      ? '生成された画像をもとに動画を生成します。'
-      : lang === 'zh'
-        ? '视频会基于已生成的图片创建。'
-        : 'The video is generated from the created image.';
-
   return (
   <section id="try" className="section try-section">
     <div className="section-inner">
@@ -426,31 +390,23 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               />
             )}
           </div>
-          <ResultActionsPanel
-            imageSrc={finalImageSrc}
-            link={shareResultLink}
-            disableDownload={resultPreviewState !== 'ready'}
-            showVideoControls={false}
-            showVideoPrompt={showVideoPrompt}
-            isGeneratingVideo={isGeneratingVideo}
-            canAffordVideo={canAffordVideo}
-            generatedVideoUrl={generatedVideoUrl}
-            videoStatusMessage={videoStatusMessage}
-            shareStatus={shareStatus}
-            copy={copy}
-            subjectUi={subjectUi}
-            onDownload={onDownloadResult}
-            onShareLink={onShareLink}
-            onCopyLink={onCopyLink}
+            <ResultActionsPanel
+              imageSrc={finalImageSrc}
+              link={shareResultLink}
+              disableDownload={resultPreviewState !== 'ready'}
+              shareStatus={shareStatus}
+              copy={copy}
+              onDownload={onDownloadResult}
+              onShareLink={onShareLink}
+              onCopyLink={onCopyLink}
             onShareOnKakao={onShareOnKakao}
             onShareOnLine={onShareOnLine}
             onShareOnX={onShareOnX}
-            onShareOnFacebook={onShareOnFacebook}
-            onInstagramSave={onInstagramSave}
-            onTryAnotherOutfit={onTryAnotherOutfit}
-            onRandomOutfit={onRandomOutfit}
-            onGenerateVideo={onGenerateVideo}
-          />
+              onShareOnFacebook={onShareOnFacebook}
+              onInstagramSave={onInstagramSave}
+              onTryAnotherOutfit={onTryAnotherOutfit}
+              onRandomOutfit={onRandomOutfit}
+            />
           {resultWatermarkApplied && (
             <div className="credit-result-notice page-article">
               <strong>{copy.freeResultNoticeTitle}</strong>
@@ -460,44 +416,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         </div>
       )}
 
-      <div className="action-section video-action-section page-article">
-        <p className="real-generation-label">{subjectUi.videoPrompt}</p>
-        <p className="credit-cost-text">{videoHelperText}</p>
-        <label className="auth-field" htmlFor="video-dialogue-input">
-          <span>{subjectUi.videoDialogueLabel}</span>
-          <input
-            id="video-dialogue-input"
-            type="text"
-            value={videoDialogue}
-            onChange={(event) => onVideoDialogueChange(event.target.value)}
-            placeholder={subjectUi.videoDialoguePlaceholder}
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </label>
-        <p className="loading-subtext">
-          {subjectUi.videoDialogueHint} ({videoDialogueCharacterCount}/30)
-        </p>
-        {videoDialogueError && <p className="auth-error-text">{videoDialogueError}</p>}
-        <button
-          className="generate-btn"
-          disabled={!finalImageSrc || isGeneratingVideo || !canAffordVideo}
-          onClick={onGenerateVideo}
-          type="button"
-        >
-          {isGeneratingVideo ? <><span className="spinner"></span>{subjectUi.videoGenerating}</> : subjectUi.videoButton}
-        </button>
-        {!finalImageSrc && <p className="loading-subtext">{videoHelperText}</p>}
-        {finalImageSrc && !canAffordVideo && <p className="loading-subtext">{copy.notEnoughCredits}</p>}
-        {videoStatusMessage && <p className="result-status-text">{videoStatusMessage}</p>}
-        {generatedVideoUrl && (
-          <div className="composite-result result-video-shell">
-            <video controls playsInline preload="metadata" className="is-visible">
-              <source src={generatedVideoUrl} type="video/mp4" />
-            </video>
-          </div>
-        )}
-      </div>
     </div>
   </section>
 );

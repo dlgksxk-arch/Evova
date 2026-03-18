@@ -3307,6 +3307,10 @@ const handleVideoContentRequest = async (req: functions.https.Request, res: func
   }
 };
 
+void handleVideoGenerationRequest;
+void handleVideoStatusRequest;
+void handleVideoContentRequest;
+
 export const api = functions
   .region('asia-northeast3')
   .runWith({ timeoutSeconds: 120, memory: '512MB' })
@@ -3431,18 +3435,12 @@ export const api = functions
       return;
     }
 
-    if (req.method === 'POST' && normalizedPath === '/video') {
-      await handleVideoGenerationRequest(req, res);
-      return;
-    }
-
-    if (req.method === 'GET' && normalizedPath === '/video-status') {
-      await handleVideoStatusRequest(req, res);
-      return;
-    }
-
-    if (req.method === 'GET' && normalizedPath === '/video-content') {
-      await handleVideoContentRequest(req, res);
+    if (
+      normalizedPath === '/video'
+      || normalizedPath === '/video-status'
+      || normalizedPath === '/video-content'
+    ) {
+      res.status(410).json({ error: 'VIDEO_FEATURE_REMOVED', message: 'Video generation has been removed.' });
       return;
     }
 

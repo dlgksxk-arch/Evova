@@ -3,7 +3,7 @@ import type { User } from 'firebase/auth';
 import { archiveCreation, deleteCreation, getCreations } from '../../lib/api/hamdeva';
 import type { UserCreationRecord } from '../../types/hamdeva';
 
-type FilterType = 'all' | 'image' | 'video';
+type FilterType = 'all' | 'image';
 
 interface CreationHistoryPanelProps {
   currentUser: User | null;
@@ -38,10 +38,6 @@ const downloadFile = (url: string, filename: string) => {
 };
 
 const inferFileExtension = (item: UserCreationRecord): string => {
-  if (item.type === 'video') {
-    return 'mp4';
-  }
-
   const match = item.fileUrl.match(/\.([a-z0-9]+)(?:\?|$)/i);
   return match?.[1] || 'png';
 };
@@ -84,10 +80,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const dragStateRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
   const loadingStartRef = useRef(0);
 
@@ -220,6 +214,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
 
   const filteredItems = useMemo(() => (
     [...items]
+      .filter((item) => item.type === 'image')
       .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .filter((item) => filter === 'all' || item.type === filter)
   ), [filter, items]);
@@ -237,24 +232,18 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       return;
     }
 
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-
     setSelectedItem(null);
     setModalLoading(false);
     setIsContentLoaded(false);
     setZoom(1);
     setPosition({ x: 0, y: 0 });
     setDragging(false);
-    setIsVideoPlaying(false);
   };
 
   const startModalLoading = () => {
     loadingStartRef.current = Date.now();
     setModalLoading(true);
     setIsContentLoaded(false);
-    setIsVideoPlaying(false);
   };
 
   const finishModalLoading = () => {
@@ -358,7 +347,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
       <div className="credit-cta-actions" style={{ marginTop: 12, marginBottom: 12 }}>
         <button className={`outline-btn auth-inline-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')} type="button">전체</button>
         <button className={`outline-btn auth-inline-btn ${filter === 'image' ? 'active' : ''}`} onClick={() => setFilter('image')} type="button">이미지</button>
-        <button className={`outline-btn auth-inline-btn ${filter === 'video' ? 'active' : ''}`} onClick={() => setFilter('video')} type="button">영상</button>
       </div>
       {loading ? <p>생성 이력을 불러오는 중입니다.</p> : null}
       {error ? <p>{error}</p> : null}
@@ -426,68 +414,27 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
               ) : null}
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: isMobile ? '50vh' : '55vh' }}>
-                {selectedItem.type === 'video' ? (
-                  <div style={{ position: 'relative', width: '100%', visibility: modalLoading ? 'hidden' : 'visible' }}>
-                    <video
-                      ref={videoRef}
-                      controls
-                      onLoadedData={finishModalLoading}
-                      onPause={() => setIsVideoPlaying(false)}
-                      onPlay={() => setIsVideoPlaying(true)}
-                      preload="metadata"
-                      src={selectedItem.fileUrl}
-                      style={{ width: '100%', maxHeight: isMobile ? '62vh' : '68vh', background: '#000', borderRadius: 16 }}
-                    />
-                    {!isVideoPlaying ? (
-                      <button
-                        aria-label="Play video"
-                        onClick={() => {
-                          const video = videoRef.current;
-                          if (!video) {
-                            return;
-                          }
-                          void video.play();
-                        }}
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#fff',
-                          fontSize: 54,
-                        }}
-                        type="button"
-                      >
-                        ▶
-                      </button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div style={{ overflow: 'auto', maxWidth: '100%', maxHeight: isMobile ? '62vh' : '68vh', border: '1px solid var(--border)', borderRadius: 16, padding: 12, cursor: dragging ? 'grabbing' : 'grab', visibility: modalLoading ? 'hidden' : 'visible' }}>
-                    <img
-                      alt="Creation preview"
-                      onLoad={finishModalLoading}
-                      onPointerDown={handleImagePointerDown}
-                      draggable={false}
-                      src={selectedItem.fileUrl}
-                      style={{
-                        display: 'block',
-                        margin: '0 auto',
-                        maxWidth: '100%',
-                        maxHeight: isMobile ? '56vh' : '64vh',
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-                        transformOrigin: 'center center',
-                        userSelect: 'none',
-                      }}
-                    />
-                  </div>
-                )}
+                <div style={{ overflow: 'auto', maxWidth: '100%', maxHeight: isMobile ? '62vh' : '68vh', border: '1px solid var(--border)', borderRadius: 16, padding: 12, cursor: dragging ? 'grabbing' : 'grab', visibility: modalLoading ? 'hidden' : 'visible' }}>
+                  <img
+                    alt="Creation preview"
+                    onLoad={finishModalLoading}
+                    onPointerDown={handleImagePointerDown}
+                    draggable={false}
+                    src={selectedItem.fileUrl}
+                    style={{
+                      display: 'block',
+                      margin: '0 auto',
+                      maxWidth: '100%',
+                      maxHeight: isMobile ? '56vh' : '64vh',
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                      transformOrigin: 'center center',
+                      userSelect: 'none',
+                    }}
+                  />
+                </div>
               </div>
 
-              {selectedItem.type === 'image' && !modalLoading ? (
+              {!modalLoading ? (
                 <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
                   마우스 휠로 확대/축소, 드래그로 이동할 수 있습니다.
                 </div>

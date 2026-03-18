@@ -68,19 +68,8 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
               imageSrc={record.resultImageUrl}
               link={link}
               disableDownload={false}
-              showVideoControls={false}
-              showVideoPrompt={false}
-              isGeneratingVideo={false}
-              canAffordVideo={false}
-              generatedVideoUrl={null}
-              videoStatusMessage={null}
               shareStatus={shareStatus}
               copy={copy}
-              subjectUi={{
-                videoPrompt: '',
-                videoButton: '',
-                videoGenerating: '',
-              }}
               onDownload={onDownloadResult}
               onShareLink={onShareLink}
               onCopyLink={onCopyLink}
@@ -91,7 +80,6 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
               onInstagramSave={onInstagramSave}
               onTryAnotherOutfit={onTryAnotherOutfit}
               onRandomOutfit={onRandomOutfit}
-              onGenerateVideo={() => {}}
             />
           </>
         )}

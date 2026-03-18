@@ -29,9 +29,6 @@ import {
   callCreditBootstrap,
   callSubjectClassifier,
   callTryOn,
-  callVideoGeneration,
-  fetchVideoBlobUrl,
-  pollVideoGeneration,
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
@@ -71,9 +68,6 @@ const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
-const VIDEO_GENERATION_COST = 1500;
-const VIDEO_DIALOGUE_MAX_CHARACTERS = 30;
-const VIDEO_DIALOGUE_ALLOWED_PUNCTUATION = '!?.,';
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
 const CREDIT_PRODUCTS = [
   { id: 'starter', label: 'Starter', paidCredit: 1000, salePriceUsd: 3.99, compareAtPriceUsd: 5.69, badge: '30% OFF' },
@@ -97,45 +91,6 @@ type CreditKind = 'daily' | 'paid';
 type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
-
-const countVideoDialogueCharacters = (value: string): number => Array.from(value).length;
-
-const isAllowedVideoDialogueCharacter = (char: string): boolean => (
-  /[\p{L}\p{M}\p{N}]/u.test(char)
-  || /\s/u.test(char)
-  || VIDEO_DIALOGUE_ALLOWED_PUNCTUATION.includes(char)
-);
-
-const validateVideoDialogueInput = (
-  value: string,
-  options?: { normalizeWhitespace?: boolean; trim?: boolean },
-): { value: string; error: string | null; characterCount: number } => {
-  const normalizeWhitespace = options?.normalizeWhitespace ?? false;
-  const trim = options?.trim ?? false;
-  const normalizedUnicode = value.normalize('NFC');
-  const processedValue = normalizeWhitespace
-    ? normalizedUnicode.replace(/\s+/gu, ' ')
-    : normalizedUnicode;
-
-  for (const char of processedValue) {
-    if (/[\p{Cc}\p{Cs}]/u.test(char)) {
-      const failedValue = trim ? processedValue.trim() : processedValue;
-      return { value: failedValue, error: 'invalid', characterCount: countVideoDialogueCharacters(failedValue) };
-    }
-    if (!isAllowedVideoDialogueCharacter(char)) {
-      const failedValue = trim ? processedValue.trim() : processedValue;
-      return { value: failedValue, error: 'invalid', characterCount: countVideoDialogueCharacters(failedValue) };
-    }
-  }
-
-  const normalizedValue = trim ? processedValue.trim() : processedValue;
-  const characterCount = countVideoDialogueCharacters(normalizedValue);
-  if (characterCount > VIDEO_DIALOGUE_MAX_CHARACTERS) {
-    return { value: normalizedValue, error: 'invalid', characterCount };
-  }
-
-  return { value: normalizedValue, error: null, characterCount };
-};
 
 interface UserProfile {
   email: string;
@@ -2511,12 +2466,6 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
-  const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
-  const [videoDialogue, setVideoDialogue] = useState('');
-  const [videoDialogueError, setVideoDialogueError] = useState<string | null>(null);
-  const [showVideoPrompt, setShowVideoPrompt] = useState(false);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
   const [shareStatus, setShareStatus] = useState<string | null>(null);
@@ -2553,7 +2502,6 @@ const App: React.FC = () => {
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
   const [showResultPreviewModal, setShowResultPreviewModal] = useState(false);
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
-  const [resultPreviewModalType, setResultPreviewModalType] = useState<'image' | 'video'>('image');
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
@@ -2561,8 +2509,6 @@ const App: React.FC = () => {
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
   const [generationEstimateMs, setGenerationEstimateMs] = useState(DEFAULT_GENERATION_ESTIMATE_MS);
   const generationLockRef = useRef(false);
-  const videoGenerationSessionRef = useRef(0);
-  const activeVideoRequestIdRef = useRef<string | null>(null);
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
   const contentLocale = getContentLocale(lang);
@@ -2604,7 +2550,6 @@ const App: React.FC = () => {
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
-  const canAffordVideo = currentDailyCredit + currentPaidCredit >= VIDEO_GENERATION_COST;
   const preservedHistoryCount = historyItems.filter((item) => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
@@ -2623,7 +2568,6 @@ const App: React.FC = () => {
       : 0;
   const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
-  const adminVideoLabels = getAdminVideoLabels(lang);
   const logoutModalCopy = lang === 'ko'
     ? { title: '로그아웃', body: '정말 로그아웃 하시겠습니까?', cancel: '취소', confirm: '로그아웃' }
     : { title: 'Log out', body: 'Are you sure you want to log out?', cancel: 'Cancel', confirm: 'Log out' };
@@ -2888,7 +2832,6 @@ const App: React.FC = () => {
     setShowResultPreviewModal(false);
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
-    setResultPreviewModalType('image');
     setResultPreviewZoom(1);
   }, [currentPage]);
   useEffect(() => {
@@ -3031,7 +2974,6 @@ const App: React.FC = () => {
   useEffect(() => () => {
     if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-    if (generatedVideoUrl?.startsWith('blob:')) URL.revokeObjectURL(generatedVideoUrl);
   }, []);
   useEffect(() => {
     const runtimeSiteUrl = getRuntimeSiteUrl();
@@ -3106,18 +3048,6 @@ const App: React.FC = () => {
     }
   }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
-  const clearGeneratedVideo = () => {
-    videoGenerationSessionRef.current += 1;
-    activeVideoRequestIdRef.current = null;
-    if (generatedVideoUrl?.startsWith('blob:')) {
-      URL.revokeObjectURL(generatedVideoUrl);
-    }
-    setGeneratedVideoUrl(null);
-    setVideoStatusMessage(null);
-    setShowVideoPrompt(false);
-    setIsGeneratingVideo(false);
-  };
-
   const detectSubjectTypeFromImage = async (source: File | string) => {
     setSubjectDetectionStatus('detecting');
     try {
@@ -3149,7 +3079,6 @@ const App: React.FC = () => {
     setDetectedSubjectType(null);
     setPersonUploadMessage(null);
     setPersonPreviewState('ready');
-    clearGeneratedVideo();
     void detectSubjectTypeFromImage(file);
   };
 
@@ -3164,7 +3093,6 @@ const App: React.FC = () => {
     setClothImage(previewUrl);
     setClothUploadMessage(null);
     setClothPreviewState('ready');
-    clearGeneratedVideo();
   };
 
   const loadPersonSample = async (url: string, category: 'female' | 'male' | 'dog' | 'cat') => {
@@ -3181,7 +3109,6 @@ const App: React.FC = () => {
     setPersonFile(null);
     setPersonUploadMessage(null);
     setPersonPreviewState('loading');
-    clearGeneratedVideo();
 
     try {
       const sampleDataUrl = await fetchAssetDataUrl(url);
@@ -3205,7 +3132,6 @@ const App: React.FC = () => {
     setClothFile(null);
     setClothUploadMessage(null);
     setClothPreviewState('loading');
-    clearGeneratedVideo();
 
     try {
       const sampleDataUrl = await fetchAssetDataUrl(url);
@@ -3251,7 +3177,6 @@ const App: React.FC = () => {
     setResultPreviewState('idle');
     setResultWatermarkApplied(false);
     setResultUsedCreditType(null);
-    clearGeneratedVideo();
   };
   const handleRandomOutfit = () => {
     if (clothSampleOptions.length === 0) {
@@ -3412,110 +3337,6 @@ const App: React.FC = () => {
     setSubjectType(nextSubjectType);
     setSubjectTypeManualOverride(true);
   };
-  const handleVideoDialogueChange = (nextValue: string) => {
-    const validated = validateVideoDialogueInput(nextValue);
-    if (validated.error) {
-      return;
-    }
-    setVideoDialogue(validated.value);
-    setVideoDialogueError(null);
-  };
-  const handleVideoGenerate = async () => {
-    if (!currentUser || !finalImageSrc || isGeneratingVideo) {
-      return;
-    }
-    if (!canAffordVideo) {
-      alert(t.notEnoughCredits);
-      return;
-    }
-    const normalizedDialogue = validateVideoDialogueInput(videoDialogue, { normalizeWhitespace: true, trim: true });
-    if (!normalizedDialogue.value) {
-      setVideoDialogueError(subjectUi.videoDialogueRequired);
-      setVideoStatusMessage(subjectUi.videoDialogueRequired);
-      return;
-    }
-    if (normalizedDialogue.error) {
-      setVideoDialogueError(subjectUi.videoDialogueInvalid);
-      setVideoStatusMessage(subjectUi.videoDialogueInvalid);
-      return;
-    }
-
-    clearGeneratedVideo();
-    const videoSession = videoGenerationSessionRef.current + 1;
-    videoGenerationSessionRef.current = videoSession;
-    setIsGeneratingVideo(true);
-    setVideoDialogueError(null);
-    setVideoStatusMessage(subjectUi.videoGenerating);
-    try {
-      const authToken = await currentUser.getIdToken();
-      const requestId = createRequestId();
-      activeVideoRequestIdRef.current = requestId;
-      await callVideoGeneration({
-        authToken,
-        image: finalImageSrc,
-        requestId,
-        subjectType,
-        dialogue: normalizedDialogue.value.trim(),
-        sourceResultId: latestSharedResultId,
-      });
-      if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
-        return;
-      }
-      let attempts = 0;
-      while (attempts < 40) {
-        attempts += 1;
-        await new Promise((resolve) => window.setTimeout(resolve, 5000));
-        if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
-          return;
-        }
-        const status = await pollVideoGeneration(authToken, requestId);
-        if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
-          return;
-        }
-        if (
-          typeof status.creditsRemaining === 'number'
-          || typeof status.dailyCredit === 'number'
-          || typeof status.paidCredit === 'number'
-        ) {
-          setUserProfile((prev) => prev ? {
-            ...prev,
-            dailyCredit: typeof status.dailyCredit === 'number' ? status.dailyCredit : prev.dailyCredit,
-            paidCredit: typeof status.paidCredit === 'number' ? status.paidCredit : prev.paidCredit,
-            credits: typeof status.creditsRemaining === 'number' ? status.creditsRemaining : prev.credits,
-          } : prev);
-        }
-        if (status.status === 'completed') {
-          const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
-          if (videoGenerationSessionRef.current !== videoSession || activeVideoRequestIdRef.current !== requestId) {
-            if (videoUrl.startsWith('blob:')) {
-              URL.revokeObjectURL(videoUrl);
-            }
-            return;
-          }
-          setGeneratedVideoUrl(videoUrl);
-          setVideoStatusMessage(subjectUi.videoReady);
-          activeVideoRequestIdRef.current = null;
-          return;
-        }
-        if (status.status === 'failed' || status.status === 'canceled') {
-          throw new Error(subjectUi.videoFailed);
-        }
-      }
-
-      throw new Error(subjectUi.videoFailed);
-    } catch (error) {
-      if (videoGenerationSessionRef.current !== videoSession) {
-        return;
-      }
-      console.error('Failed to generate video:', error);
-      setVideoStatusMessage(error instanceof Error ? error.message : subjectUi.videoFailed);
-    } finally {
-      if (videoGenerationSessionRef.current === videoSession) {
-        activeVideoRequestIdRef.current = null;
-        setIsGeneratingVideo(false);
-      }
-    }
-  };
   const handleStartCheckout = async (productId: CheckoutProductId) => {
     if (!currentUser || isStartingCheckout) {
       if (!currentUser) {
@@ -3585,52 +3406,18 @@ const App: React.FC = () => {
     setShowResultPreviewModal(false);
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
-    setResultPreviewModalType('image');
     setResultPreviewZoom(1);
   };
   const openResultPreviewModal = (src: string) => {
     if (resultPreviewModalSrc?.startsWith('blob:')) {
       URL.revokeObjectURL(resultPreviewModalSrc);
     }
-    setResultPreviewModalType('image');
     setResultPreviewModalLoading(false);
     setResultPreviewZoom(1);
     setResultPreviewModalSrc(src);
     setShowResultPreviewModal(true);
   };
   const handleOpenHistoryItem = async (item: GenerationRecord) => {
-    if (!currentUser) {
-      return;
-    }
-
-    if (item.resultType === 'video_generation') {
-      const requestId = item.videoRequestId || item.requestId;
-      if (!requestId) {
-        return;
-      }
-
-      try {
-        setResultPreviewModalType('video');
-        setResultPreviewModalLoading(true);
-        setResultPreviewZoom(1);
-        setShowResultPreviewModal(true);
-        const authToken = await currentUser.getIdToken();
-        const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
-        if (resultPreviewModalSrc?.startsWith('blob:')) {
-          URL.revokeObjectURL(resultPreviewModalSrc);
-        }
-        setResultPreviewModalSrc(videoUrl);
-      } catch (error) {
-        console.error('Failed to open history video preview:', error);
-        setShowResultPreviewModal(false);
-        setResultPreviewModalSrc(null);
-        alert('영상 결과를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
-      } finally {
-        setResultPreviewModalLoading(false);
-      }
-      return;
-    }
-
     if (item.imageUrl) {
       openResultPreviewModal(item.imageUrl);
     }
@@ -3665,28 +3452,7 @@ const App: React.FC = () => {
     }
   };
   const handleDownloadHistoryItem = async (item: GenerationRecord) => {
-    if (!currentUser) {
-      return;
-    }
-
     try {
-      if (item.resultType === 'video_generation') {
-        const requestId = item.videoRequestId || item.requestId;
-        if (!requestId) {
-          return;
-        }
-        const authToken = await currentUser.getIdToken();
-        const videoUrl = await fetchVideoBlobUrl(authToken, requestId);
-        try {
-          downloadBlobUrl(videoUrl, `hamdeva-video-${requestId}.mp4`);
-        } finally {
-          if (videoUrl.startsWith('blob:')) {
-            window.setTimeout(() => URL.revokeObjectURL(videoUrl), 1000);
-          }
-        }
-        return;
-      }
-
       if (item.imageUrl) {
         await downloadImageFile(item.imageUrl, `hamdeva-result-${item.id}.png`);
       }
@@ -3982,7 +3748,6 @@ const App: React.FC = () => {
       return;
     }
 
-    clearGeneratedVideo();
     generationLockRef.current = true;
     setIsGenerating(true);
     const startedAt = Date.now();
@@ -4458,7 +4223,6 @@ const App: React.FC = () => {
             currentDailyCredit={currentDailyCredit}
             currentPaidCredit={currentPaidCredit}
             canAffordGeneration={canAffordGeneration}
-            canAffordVideo={canAffordVideo}
             generationCost={GENERATION_COST}
             generationStatusLabel={generationStatusLabel}
             generationRemainingMs={generationRemainingMs}
@@ -4467,13 +4231,6 @@ const App: React.FC = () => {
             generationProgressPercent={generationProgressPercent}
             resultWatermarkApplied={resultWatermarkApplied}
             shareResultLink={shareResultLink}
-            generatedVideoUrl={generatedVideoUrl}
-            isGeneratingVideo={isGeneratingVideo}
-            showVideoPrompt={showVideoPrompt}
-            videoStatusMessage={videoStatusMessage}
-            videoDialogue={videoDialogue}
-            videoDialogueCharacterCount={countVideoDialogueCharacters(videoDialogue)}
-            videoDialogueError={videoDialogueError}
             shareStatus={shareStatus}
             subjectUi={subjectUi}
             lang={lang}
@@ -4554,8 +4311,6 @@ const App: React.FC = () => {
             onInstagramSave={(src) => { void handleInstagramSave(src); }}
             onTryAnotherOutfit={handleTryAnotherOutfit}
             onRandomOutfit={handleRandomOutfit}
-            onVideoDialogueChange={handleVideoDialogueChange}
-            onGenerateVideo={() => { void handleVideoGenerate(); }}
             onOpenResultPreview={openResultPreviewModal}
             getSubjectTypeLabel={getSubjectTypeLabel}
             formatSecondsLabel={formatSecondsLabel}
@@ -4601,7 +4356,6 @@ const App: React.FC = () => {
                   generationCost: GENERATION_COST,
                   formatEstimatedCostLabel,
                 }}
-                adminVideoLabels={adminVideoLabels}
                 onOpenAuth={() => openAuthModal('login')}
                 onGoHome={() => navigateToPage('home')}
                 onDeletePost={(post) => { void handleBbsDelete(post); }}
@@ -4941,7 +4695,6 @@ const App: React.FC = () => {
               generationCost: GENERATION_COST,
               formatEstimatedCostLabel,
             }}
-            adminVideoLabels={adminVideoLabels}
             onOpenAuth={() => openAuthModal('login')}
             onGoHome={() => setShowAdminModal(false)}
             onDeletePost={(post) => { void handleBbsDelete(post); }}
@@ -4972,11 +4725,11 @@ const App: React.FC = () => {
 
       {showResultPreviewModal && (
         <ShellModal
-          title={resultPreviewModalType === 'video' ? '생성된 영상' : t.resultTitle}
+          title={t.resultTitle}
           className="result-preview-shell"
           onClose={closeResultPreviewModal}
         >
-          {!resultPreviewModalLoading && resultPreviewModalType === 'image' && resultPreviewModalSrc && (
+          {!resultPreviewModalLoading && resultPreviewModalSrc && (
             <div className="result-preview-toolbar">
               <button
                 className="outline-btn result-preview-zoom-btn"
@@ -5001,20 +4754,16 @@ const App: React.FC = () => {
             {resultPreviewModalLoading ? (
               <p>결과를 불러오는 중입니다...</p>
             ) : resultPreviewModalSrc ? (
-              resultPreviewModalType === 'video' ? (
-                <video className="result-preview-modal-video" controls src={resultPreviewModalSrc} />
-              ) : (
-                <div className="result-preview-scroll">
-                  <div className="result-preview-image-stage">
-                    <img
-                      className="result-preview-modal-image"
-                      src={resultPreviewModalSrc}
-                      alt="Expanded result"
-                      style={{ width: `${resultPreviewZoom * 100}%` }}
-                    />
-                  </div>
+              <div className="result-preview-scroll">
+                <div className="result-preview-image-stage">
+                  <img
+                    className="result-preview-modal-image"
+                    src={resultPreviewModalSrc}
+                    alt="Expanded result"
+                    style={{ width: `${resultPreviewZoom * 100}%` }}
+                  />
                 </div>
-              )
+              </div>
             ) : (
               <p>결과를 불러오지 못했습니다.</p>
             )}
