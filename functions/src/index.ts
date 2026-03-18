@@ -148,58 +148,59 @@ class UpstreamApiError extends Error {
     this.statusCode = statusCode;
   }
 }
-const HUMAN_PROMPT = `Create a single full-body fashion photograph.
+const HUMAN_PROMPT = `Create one realistic full-body studio photograph of the exact same person from the first uploaded image wearing the exact same clothing from the second uploaded image.
 
-The first uploaded image is the face reference image.
-The second uploaded image is the clothing reference image.
+Priority order:
+1) Exact facial identity match
+2) Exact clothing preservation
+3) Natural full-body framing
 
-Identity preservation is the highest priority.
-Use the exact same person from the face reference image.
-Keep the exact same identity, face shape, eyes, nose, lips, skin tone, and hairstyle.
-Keep the exact same facial proportions, eye spacing, jawline, cheek volume, brow shape, and age impression.
-Do not change the person into a different model.
-Do not beautify the face into a different face.
-Do not alter facial structure.
-Do not reshape the face, slim the face, enlarge the eyes, alter the nose bridge, change the lip shape, or modify the jaw.
-No face retouching that changes identity.
-Keep the face truly recognizable as the same person.
-Identity drift is unacceptable.
+Identity rules:
+- The first image is the face and identity reference.
+- The result must be the exact same person, not a similar person.
+- Preserve the exact facial identity with no reinterpretation:
+  same face shape, forehead, eyebrows, eyes, eye distance, nose shape, nostrils, lips, mouth width, jawline, chin, ears, skin tone, skin texture, hairstyle, hairline, and overall facial proportions.
+- Do not beautify, idealize, rejuvenate, feminize, masculinize, or stylize the face.
+- Do not add makeup unless it is clearly visible in the reference image.
+- Do not change expression beyond a neutral natural expression.
+- The face must remain immediately recognizable as the same real person.
 
-Dress that same person in the clothing from the clothing reference image.
-Preserve the uploaded clothing exactly as shown in the clothing reference image.
-Do not redesign the outfit.
-Do not change the outfit's design, color, pattern, silhouette, or material appearance.
-Do not invent a different outfit.
-Do not ignore the uploaded clothing reference.
+Clothing rules:
+- The second image is the clothing reference.
+- Put that exact same person into the exact same outfit.
+- Preserve the clothing exactly as shown:
+  same design, color, fabric feel, embroidery, print, silhouette, sleeve shape, neckline, hem, fit, and accessories if present.
+- Do not redesign, simplify, replace, or reinterpret the clothing.
+- Do not merge the outfit with a different fashion style.
 
-Natural attractive light makeup.
-A subtle natural smile.
-An elegant but slightly more active fashion pose that matches the outfit concept.
-A fitting background that supports the outfit without distracting from it.
-Balanced head-to-body ratio.
+Composition rules:
+- One person only.
+- One image only.
+- Full body visible from head to toe.
+- Keep the entire head, full hair, both hands, both feet, and the complete outfit fully inside the frame.
+- Use a straightforward full-body portrait with realistic body proportions.
+- Do not make the face smaller than necessary.
+- Keep enough space around the subject, but maintain clear facial visibility.
 
-One model only.
-One image only.
-Full body visible from head to toe.
-Show the entire head, full hair, full body, both hands, both feet, and the complete outfit inside the frame.
-Show the complete hairstyle and all hair volume clearly inside the frame.
-Use a slightly wider, zoomed-out camera framing so the subject is fully visible.
-Use a wider full-body long shot instead of a close fashion crop.
-Place the camera slightly farther back so the face appears about 10% smaller within the full-body frame.
-Keep the head proportion a little smaller relative to the overall body in the composition.
-Frame the shot with clear space above the head and below the feet.
-Leave noticeable margin above the hair and below the shoes.
-Use a tall portrait composition with generous headroom above the hairstyle.
-Keep extra empty space above the head so the hairstyle never feels cramped.
-Keep the full silhouette comfortably inside the image boundaries.
-Do not crop the top of the head, any part of the hair, arms, hands, legs, or feet.
-Leave comfortable space around the subject so the full body fits naturally in frame.
-Avoid close-up or tight crop composition.
-Each hand must have exactly five fingers.
-Each foot must have exactly five toes.
-Do not generate extra fingers, missing fingers, extra toes, or missing toes.
-No face distortion.
-No identity change.`;
+Background and lighting:
+- Use a simple, non-distracting, realistic studio or plain fashion-photo background.
+- Keep the background secondary and unobtrusive.
+- Use clean, realistic lighting that does not alter skin tone or facial structure.
+
+Strict negatives:
+- no identity change
+- no beautification
+- no face reshaping
+- no different model
+- no age change
+- no ethnicity change
+- no exaggerated smile
+- no glamour retouching
+- no costume redesign
+- no cropped head
+- no missing hands or feet
+- no extra fingers
+- no distorted face`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
