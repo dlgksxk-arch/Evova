@@ -2111,15 +2111,41 @@ const getCountryShowcaseCards = (
 const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
   new Promise((resolve, reject) => {
     const img = new Image();
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      reject(new Error('IMAGE_RESIZE_TIMEOUT'));
+    }, 15_000);
+
     img.onload = () => {
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * scale);
-      c.height = Math.round(img.height * scale);
-      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-      resolve(c.toDataURL('image/jpeg', 0.85));
+      if (timedOut) {
+        return;
+      }
+
+      try {
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * scale));
+        c.height = Math.max(1, Math.round(img.height * scale));
+        const context = c.getContext('2d');
+
+        if (!context) {
+          throw new Error('IMAGE_RESIZE_CONTEXT_UNAVAILABLE');
+        }
+
+        context.drawImage(img, 0, 0, c.width, c.height);
+        window.clearTimeout(timeoutId);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      } catch (error) {
+        window.clearTimeout(timeoutId);
+        reject(error instanceof Error ? error : new Error('IMAGE_RESIZE_FAILED'));
+      }
     };
-    img.onerror = reject;
+    img.onerror = () => {
+      window.clearTimeout(timeoutId);
+      reject(new Error('IMAGE_RESIZE_FAILED'));
+    };
+    img.decoding = 'async';
     img.src = dataUrl;
   });
 

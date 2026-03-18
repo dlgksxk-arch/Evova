@@ -107,6 +107,14 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _
                   }}
                   onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.image]: true }))}
                 />
+                <div className="sample-hover-preview" aria-hidden="true">
+                  <img
+                    src={sample.image}
+                    alt=""
+                    className={loadedUrls[sample.image] ? 'is-visible' : ''}
+                    loading="lazy"
+                  />
+                </div>
                 <div className="error-placeholder">{copy.error}</div>
               </button>
             ))}

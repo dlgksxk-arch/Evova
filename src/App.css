@@ -2903,14 +2903,44 @@ a { color: inherit; text-decoration: none; }
 }
 .sample-card img.is-visible { opacity: 1; }
 
+.sample-hover-preview {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  width: min(220px, 28vw);
+  aspect-ratio: 3 / 4;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 14;
+}
+
+.sample-hover-preview img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .sample-grid {
     overflow: visible;
   }
   .sample-card:hover {
-    transform: translateY(-6px) scale(4.6);
+    transform: translateY(-2px);
     z-index: 8;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
+  }
+  .sample-card:hover .sample-hover-preview,
+  .sample-card:focus-visible .sample-hover-preview {
+    opacity: 1;
+    transform: translate(-50%, 0);
   }
 }
 
@@ -3296,6 +3326,9 @@ a { color: inherit; text-decoration: none; }
     aspect-ratio: 3 / 4;
     border-width: 2px;
     border-radius: 8px;
+  }
+  .sample-hover-preview {
+    display: none;
   }
   .sample-card:hover {
     transform: none;
