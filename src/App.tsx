@@ -4078,7 +4078,6 @@ const App: React.FC = () => {
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
-    setShowVideoPrompt(false);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await withTimeout(
@@ -4096,7 +4095,6 @@ const App: React.FC = () => {
         clearGeneratedResult();
         setFinalImageSrc(cached);
         setResultPreviewState('ready');
-        setShowVideoPrompt(true);
         writeGenerationDuration(Date.now() - startedAt);
         setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
         return;
@@ -4128,7 +4126,6 @@ const App: React.FC = () => {
       setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
       setResultWatermarkApplied(resultPayload.watermarkApplied === true);
       setResultUsedCreditType(resultPayload.usedCreditType ?? null);
-      setShowVideoPrompt(true);
       writeGenerationDuration(Date.now() - startedAt);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
       setIsGenerating(false);
