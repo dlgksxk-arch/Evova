@@ -2438,6 +2438,7 @@ const getPageFromLocation = (pathname: string, hash: string): SitePage => {
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
 const DEFAULT_LANGUAGE: LanguageCode = 'en';
+const SITE_KEYWORDS = '가상피팅, 옷 입혀보기, 옷 미리 입어보기, 코디 추천, 패션 추천, 옷 조합, 스타일 추천, 옷 추천 사이트, 피팅 앱, 의류 추천, 함데바, 햄데바, 햄디바, HAMDEVA, virtual try on, clothes try on online, outfit generator, dress try on, virtual fitting room, outfit ideas, what to wear, clothing app, style generator, fashion outfit generator, hamdeva, バーチャル試着, 試着 シミュレーション, 服 試着 アプリ, コーディネート アプリ, ファッション コーデ, 服 組み合わせ, コーデ 作成, スタイリング アプリ, 服 合わせ, 洋服 試着, ハムデバ, ハンデバ, ハムディバ, 虚拟试衣, 在线试衣, 穿搭推荐, 服装搭配, 穿搭软件, 试衣软件, 服装试穿, 穿搭建议, 衣服搭配, 时尚穿搭, 哈姆德瓦, 汉德瓦, 哈姆迪瓦';
 
 const isSupportedLanguageCode = (value: string | null): value is LanguageCode =>
   value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]);
@@ -3142,6 +3143,7 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
     upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
+    upsertMeta('meta[name="keywords"]', { name: 'keywords', content: SITE_KEYWORDS });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
     if (isPreviewHost) {
