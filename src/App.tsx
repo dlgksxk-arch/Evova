@@ -73,6 +73,7 @@ const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
 const VIDEO_GENERATION_COST = 1500;
 const VIDEO_DIALOGUE_MAX_CHARACTERS = 30;
+const VIDEO_DIALOGUE_ALLOWED_PUNCTUATION = '!?.,';
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
 const CREDIT_PRODUCTS = [
   { id: 'starter', label: 'Starter', paidCredit: 1000, salePriceUsd: 3.99, compareAtPriceUsd: 5.69, badge: '30% OFF' },
@@ -99,23 +100,30 @@ type UserRole = 'user' | 'admin';
 
 const countVideoDialogueCharacters = (value: string): number => Array.from(value).length;
 
+const isAllowedVideoDialogueCharacter = (char: string): boolean => (
+  /[\p{L}\p{M}\p{N}]/u.test(char)
+  || /\s/u.test(char)
+  || VIDEO_DIALOGUE_ALLOWED_PUNCTUATION.includes(char)
+);
+
 const normalizeVideoDialogueInput = (value: string): { value: string; error: string | null; characterCount: number } => {
   const whitespaceNormalized = value.normalize('NFC').replace(/\s+/gu, ' ');
-  let normalizedValue = '';
-
   for (const char of whitespaceNormalized) {
     if (/[\p{Cc}\p{Cs}]/u.test(char)) {
-      continue;
+      return { value: whitespaceNormalized.trim(), error: 'invalid', characterCount: countVideoDialogueCharacters(whitespaceNormalized.trim()) };
     }
-    if (countVideoDialogueCharacters(normalizedValue) >= VIDEO_DIALOGUE_MAX_CHARACTERS) {
-      continue;
+    if (!isAllowedVideoDialogueCharacter(char)) {
+      return { value: whitespaceNormalized.trim(), error: 'invalid', characterCount: countVideoDialogueCharacters(whitespaceNormalized.trim()) };
     }
-    normalizedValue += char;
   }
 
-  normalizedValue = normalizedValue.trim();
+  const normalizedValue = whitespaceNormalized.trim();
+  const characterCount = countVideoDialogueCharacters(normalizedValue);
+  if (characterCount > VIDEO_DIALOGUE_MAX_CHARACTERS) {
+    return { value: normalizedValue, error: 'invalid', characterCount };
+  }
 
-  return { value: normalizedValue, error: null, characterCount: countVideoDialogueCharacters(normalizedValue) };
+  return { value: normalizedValue, error: null, characterCount };
 };
 
 interface UserProfile {
@@ -1633,8 +1641,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoGenerating: '영상 생성 중...',
       videoDialogueLabel: '대사 입력',
       videoDialoguePlaceholder: '',
-      videoDialogueHint: '모든 언어 입력 가능, 최대 30자',
-      videoDialogueInvalid: '대사는 최대 30자까지 입력할 수 있습니다.',
+      videoDialogueHint: '모든 언어와 공백, ! ? , . 입력 가능, 최대 30자',
+      videoDialogueInvalid: '대사는 모든 언어와 공백, ! ? , . 만 입력할 수 있으며 최대 30자입니다.',
       videoDialogueRequired: '영상 생성에는 대사 입력이 필요합니다.',
       videoReady: '영상 생성이 완료되었습니다.',
       videoFailed: '영상 생성에 실패했습니다.',
@@ -1653,8 +1661,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoGenerating: '動画を生成中...',
       videoDialogueLabel: 'Dialogue',
       videoDialoguePlaceholder: '',
-      videoDialogueHint: 'Any language, up to 30 characters',
-      videoDialogueInvalid: 'Dialogue can be up to 30 characters.',
+      videoDialogueHint: 'Any language, spaces, and ! ? , . up to 30 characters',
+      videoDialogueInvalid: 'Dialogue can use any language, spaces, and ! ? , . only, up to 30 characters.',
       videoDialogueRequired: 'Dialogue is required for video generation.',
       videoReady: '動画生成が完了しました。',
       videoFailed: '動画生成に失敗しました。',
@@ -1673,8 +1681,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
       videoGenerating: '正在生成视频...',
       videoDialogueLabel: 'Dialogue',
       videoDialoguePlaceholder: '',
-      videoDialogueHint: '支持所有语言，最多 30 个字符',
-      videoDialogueInvalid: '台词最多可输入 30 个字符。',
+      videoDialogueHint: '支持所有语言、空格和 ! ? , .，最多 30 个字符',
+      videoDialogueInvalid: '台词仅可使用所有语言字符、空格和 ! ? , .，且最多 30 个字符。',
       videoDialogueRequired: 'Dialogue is required for video generation.',
       videoReady: '视频生成完成。',
       videoFailed: '视频生成失败。',
@@ -1692,8 +1700,8 @@ const getSubjectUiText = (lang: LanguageCode) => {
     videoGenerating: 'Generating video...',
     videoDialogueLabel: 'Dialogue',
     videoDialoguePlaceholder: '',
-    videoDialogueHint: 'Any language, up to 30 characters',
-    videoDialogueInvalid: 'Dialogue can be up to 30 characters.',
+    videoDialogueHint: 'Any language, spaces, and ! ? , . up to 30 characters',
+    videoDialogueInvalid: 'Dialogue can use any language, spaces, and ! ? , . only, up to 30 characters.',
     videoDialogueRequired: 'Dialogue is required for video generation.',
     videoReady: 'Video generation completed.',
     videoFailed: 'Video generation failed.',

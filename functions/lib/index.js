@@ -67,13 +67,14 @@ const VIDEO_GENERATION_IN_PROGRESS_MESSAGE = '이미 영상 생성이 진행 중
 const VIDEO_FAILURE_LIMIT_REACHED_ERROR = 'VIDEO_FAILURE_LIMIT_REACHED';
 const VIDEO_FAILURE_LIMIT_REACHED_MESSAGE = '오늘 영상 생성 실패 횟수 제한에 도달했습니다. 잠시 후 다시 시도해주세요.';
 const INVALID_VIDEO_DIALOGUE_ERROR = 'INVALID_VIDEO_DIALOGUE';
-const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and can use any language, up to 30 characters.';
+const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and can use any language, spaces, and ! ? , . only, up to 30 characters.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1500;
 const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION_COST} 크레딧이 필요합니다.`;
 const MAX_VIDEO_FAILURES_PER_DAY = 3;
 const VIDEO_DIALOGUE_MAX_CHARACTERS = 30;
+const VIDEO_DIALOGUE_ALLOWED_PUNCTUATION = '!?.,';
 const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
@@ -472,6 +473,9 @@ const buildTryOnPrompt = (subjectType, bodyProfile) => {
     return [basePrompt, bodyGuide].filter(Boolean).join('\n\n');
 };
 const countVideoDialogueCharacters = (value) => Array.from(value).length;
+const isAllowedVideoDialogueCharacter = (char) => (/[\p{L}\p{M}\p{N}]/u.test(char)
+    || /\s/u.test(char)
+    || VIDEO_DIALOGUE_ALLOWED_PUNCTUATION.includes(char));
 const normalizeVideoDialogue = (value) => {
     if (typeof value !== 'string') {
         return null;
@@ -480,8 +484,13 @@ const normalizeVideoDialogue = (value) => {
     if (!normalized) {
         return null;
     }
-    if (/[\p{Cc}\p{Cs}]/u.test(normalized)) {
-        return null;
+    for (const char of normalized) {
+        if (/[\p{Cc}\p{Cs}]/u.test(char)) {
+            return null;
+        }
+        if (!isAllowedVideoDialogueCharacter(char)) {
+            return null;
+        }
     }
     const characterCount = countVideoDialogueCharacters(normalized);
     if (characterCount < 1 || characterCount > VIDEO_DIALOGUE_MAX_CHARACTERS) {
