@@ -52,13 +52,13 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onNavigateTerms: _onNavigateTerms,
   onStartCheckout,
   formatTimestampLabel: _formatTimestampLabel,
-  historyItems: _historyItems,
-  preservedHistoryCount: _preservedHistoryCount,
-  historyPreserveLimit: _historyPreserveLimit,
+  historyItems,
+  preservedHistoryCount,
+  historyPreserveLimit,
   onOpenHistoryItem: _onOpenHistoryItem,
-  onToggleHistoryPreserve: _onToggleHistoryPreserve,
+  onToggleHistoryPreserve,
   onDownloadHistoryItem: _onDownloadHistoryItem,
-  onDeleteHistoryItem: _onDeleteHistoryItem,
+  onDeleteHistoryItem,
 }) => {
   return (
     <div className="mypage-layout">
@@ -86,7 +86,13 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         )}
       </article>
       {currentUser && (
-        <CreationHistoryPanel currentUser={currentUser} />
+        <CreationHistoryPanel
+          items={historyItems}
+          preservedCount={preservedHistoryCount}
+          maxPreserved={historyPreserveLimit}
+          onTogglePreserve={onToggleHistoryPreserve}
+          onDelete={onDeleteHistoryItem}
+        />
       )}
       {currentUser && (
         <article className="page-article">

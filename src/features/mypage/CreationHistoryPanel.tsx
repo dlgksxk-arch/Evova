@@ -1,19 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { User } from 'firebase/auth';
-import { archiveCreation, deleteCreation, getCreations } from '../../lib/api/hamdeva';
-import type { UserCreationRecord } from '../../types/hamdeva';
+import type { GenerationRecord } from '../../types/hamdeva';
 
 type FilterType = 'all' | 'image';
 
 interface CreationHistoryPanelProps {
-  currentUser: User | null;
+  items: GenerationRecord[];
+  preservedCount: number;
+  maxPreserved: number;
+  onTogglePreserve: (item: GenerationRecord) => Promise<void> | void;
+  onDelete: (item: GenerationRecord) => Promise<void> | void;
 }
 
 const MODAL_OPEN_MIN_LOADING_MS = 400;
-const MAX_ARCHIVED_CREATIONS = 5;
 
-const formatDateTime = (value?: number | null): string => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
+const getTimestampMillis = (value: unknown): number | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  if ('toMillis' in value && typeof (value as { toMillis?: unknown }).toMillis === 'function') {
+    return (value as { toMillis: () => number }).toMillis();
+  }
+  return null;
+};
+
+const formatDateTime = (value: unknown): string => {
+  const millis = getTimestampMillis(value);
+  if (typeof millis !== 'number' || !Number.isFinite(millis)) {
     return '-';
   }
 
@@ -24,7 +36,12 @@ const formatDateTime = (value?: number | null): string => {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }).format(new Date(value)).replace(/\.\s/g, '-').replace('.', '').trim();
+  }).format(new Date(millis)).replace(/\.\s/g, '-').replace('.', '').trim();
+};
+
+const isPreservedItem = (item: GenerationRecord): boolean => {
+  const preservedUntil = getTimestampMillis(item.preservedUntil);
+  return typeof preservedUntil === 'number' && preservedUntil > Date.now();
 };
 
 const downloadFile = (url: string, filename: string) => {
@@ -37,8 +54,8 @@ const downloadFile = (url: string, filename: string) => {
   document.body.removeChild(link);
 };
 
-const inferFileExtension = (item: UserCreationRecord): string => {
-  const match = item.fileUrl.match(/\.([a-z0-9]+)(?:\?|$)/i);
+const inferFileExtension = (item: GenerationRecord): string => {
+  const match = item.imageUrl?.match(/\.([a-z0-9]+)(?:\?|$)/i);
   return match?.[1] || 'png';
 };
 
@@ -66,13 +83,16 @@ const getModalPanelStyle = (isMobile: boolean): React.CSSProperties => ({
   flexDirection: 'column',
 });
 
-const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser }) => {
-  const [items, setItems] = useState<UserCreationRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
+  items,
+  preservedCount,
+  maxPreserved,
+  onTogglePreserve,
+  onDelete,
+}) => {
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [selectedItem, setSelectedItem] = useState<UserCreationRecord | null>(null);
+  const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [modalLoading, setModalLoading] = useState(false);
@@ -93,45 +113,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (!currentUser) {
-      setItems([]);
-      setSelectedItem(null);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const authToken = await currentUser.getIdToken();
-        const creations = await getCreations(authToken);
-        if (!cancelled) {
-          setItems(creations);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          console.error('Failed to load creations:', loadError);
-          setError(loadError instanceof Error ? loadError.message : '생성 이력을 불러오지 못했습니다.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser]);
 
   useEffect(() => {
     if (!selectedItem) {
@@ -214,18 +195,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
 
   const filteredItems = useMemo(() => (
     [...items]
-      .filter((item) => item.type === 'image')
-      .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-      .filter((item) => filter === 'all' || item.type === filter)
+      .filter((item) => Boolean(item.imageUrl))
+      .sort((a, b) => (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0))
+      .filter((item) => filter === 'all' || filter === 'image')
   ), [filter, items]);
 
   const hasVisibleItems = filteredItems.length > 0;
-
-  const archivedCount = useMemo(() => (
-    items.filter((item) => item.isArchived).length
-  ), [items]);
-
-  const canArchiveSelectedItem = Boolean(selectedItem && !selectedItem.isArchived && archivedCount < MAX_ARCHIVED_CREATIONS);
+  const canArchiveSelectedItem = Boolean(selectedItem && !isPreservedItem(selectedItem) && preservedCount < maxPreserved);
 
   const closeModal = () => {
     if (submitting) {
@@ -256,32 +232,19 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
     }, remaining);
   };
 
-  const refreshItems = async () => {
-    if (!currentUser) {
-      return;
-    }
-
-    const authToken = await currentUser.getIdToken();
-    const creations = await getCreations(authToken);
-    setItems(creations);
-    setSelectedItem((prev) => creations.find((item) => item.id === prev?.id) ?? null);
-  };
-
   const handleArchive = async () => {
-    if (!currentUser || !selectedItem || selectedItem.isArchived) {
+    if (!selectedItem || isPreservedItem(selectedItem)) {
       return;
     }
 
-    if (archivedCount >= MAX_ARCHIVED_CREATIONS) {
-      alert('보관은 최대 5개까지 가능합니다');
+    if (preservedCount >= maxPreserved) {
+      alert(`보관은 최대 ${maxPreserved}개까지 가능합니다`);
       return;
     }
 
     setSubmitting(true);
     try {
-      const authToken = await currentUser.getIdToken();
-      await archiveCreation(authToken, selectedItem.id);
-      await refreshItems();
+      await onTogglePreserve(selectedItem);
     } catch (archiveError) {
       console.error('Failed to archive creation:', archiveError);
       alert(archiveError instanceof Error ? archiveError.message : '보관 처리에 실패했습니다.');
@@ -291,15 +254,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
   };
 
   const handleDelete = async () => {
-    if (!currentUser || !selectedItem) {
+    if (!selectedItem) {
       return;
     }
 
     setSubmitting(true);
     try {
-      const authToken = await currentUser.getIdToken();
-      await deleteCreation(authToken, selectedItem.id);
-      await refreshItems();
+      await onDelete(selectedItem);
       closeModal();
     } catch (deleteError) {
       console.error('Failed to delete creation:', deleteError);
@@ -318,10 +279,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
   };
 
   const handleImagePointerDown = (event: React.PointerEvent<HTMLImageElement>) => {
-    if (selectedItem?.type !== 'image') {
-      return;
-    }
-
     dragStateRef.current = {
       startX: event.clientX,
       startY: event.clientY,
@@ -331,14 +288,14 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
     setDragging(true);
   };
 
-  const handleOpenItem = (item: UserCreationRecord) => {
+  const handleOpenItem = (item: GenerationRecord) => {
     setSelectedItem(item);
     setZoom(1);
     setPosition({ x: 0, y: 0 });
     startModalLoading();
   };
 
-  const modalHeaderText = selectedItem ? `[${formatDateTime(selectedItem.createdAt)}] ${selectedItem.type.toUpperCase()}${selectedItem.isArchived ? ' (보관)' : ''}` : '';
+  const modalHeaderText = selectedItem ? `[${formatDateTime(selectedItem.createdAt)}] IMAGE${isPreservedItem(selectedItem) ? ' (보관)' : ''}` : '';
 
   return (
     <article className="page-article">
@@ -348,10 +305,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
         <button className={`outline-btn auth-inline-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')} type="button">전체</button>
         <button className={`outline-btn auth-inline-btn ${filter === 'image' ? 'active' : ''}`} onClick={() => setFilter('image')} type="button">이미지</button>
       </div>
-      {loading ? <p>생성 이력을 불러오는 중입니다.</p> : null}
-      {error ? <p>{error}</p> : null}
-      {!loading && !error && !hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
-      {!loading && !error && hasVisibleItems ? (
+      {!hasVisibleItems ? <p>생성 이력이 없습니다.</p> : null}
+      {hasVisibleItems ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {filteredItems.map((item) => (
             <button
@@ -371,7 +326,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
               }}
               type="button"
             >
-              <span>[{formatDateTime(item.createdAt)}] {item.type.toUpperCase()}{item.isArchived ? ' (보관)' : ''}</span>
+              <span>[{formatDateTime(item.createdAt)}] IMAGE{isPreservedItem(item) ? ' (보관)' : ''}</span>
             </button>
           ))}
         </div>
@@ -392,19 +347,19 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               <div style={{ minWidth: 0 }}>
                 <strong style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{modalHeaderText}</strong>
-                <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>만료일: {formatDateTime(selectedItem.expireAt)}</p>
+                <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>만료일: {formatDateTime(selectedItem.expiresAt)}</p>
               </div>
               <button ref={closeButtonRef} className="outline-btn auth-inline-btn" disabled={submitting} onClick={closeModal} type="button">닫기</button>
             </div>
 
             <div
-              onWheel={selectedItem.type === 'image' ? handleImageWheel : undefined}
+              onWheel={handleImageWheel}
               style={{
                 flex: 1,
                 overflow: 'auto',
                 padding: isMobile ? 16 : 20,
                 position: 'relative',
-                touchAction: selectedItem.type === 'image' ? 'pinch-zoom' : 'auto',
+                touchAction: 'pinch-zoom',
               }}
             >
               {modalLoading || !isContentLoaded ? (
@@ -420,7 +375,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
                     onLoad={finishModalLoading}
                     onPointerDown={handleImagePointerDown}
                     draggable={false}
-                    src={selectedItem.fileUrl}
+                    src={selectedItem.imageUrl || ''}
                     style={{
                       display: 'block',
                       margin: '0 auto',
@@ -445,18 +400,22 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
               <button
                 className="outline-btn auth-inline-btn"
                 disabled={submitting}
-                onClick={() => downloadFile(selectedItem.fileUrl, `hamdeva-${selectedItem.type}-${selectedItem.id}.${inferFileExtension(selectedItem)}`)}
+                onClick={() => {
+                  if (selectedItem.imageUrl) {
+                    downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                  }
+                }}
                 style={{ flex: isMobile ? 1 : undefined }}
                 type="button"
               >
                 다운로드
               </button>
               <button
-                className={selectedItem.isArchived ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
-                disabled={submitting || selectedItem.isArchived}
+                className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+                disabled={submitting || isPreservedItem(selectedItem)}
                 onClick={() => {
                   if (!canArchiveSelectedItem) {
-                    alert('보관은 최대 5개까지 가능합니다');
+                    alert(`보관은 최대 ${maxPreserved}개까지 가능합니다`);
                     return;
                   }
                   void handleArchive();
@@ -464,7 +423,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({ currentUser
                 style={{ flex: isMobile ? 1 : undefined }}
                 type="button"
               >
-                {selectedItem.isArchived ? '보관됨' : '보관'}
+                {isPreservedItem(selectedItem) ? '보관됨' : '보관'}
               </button>
               <button
                 className="outline-btn auth-inline-btn"
