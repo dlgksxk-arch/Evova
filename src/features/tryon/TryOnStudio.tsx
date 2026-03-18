@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
 import ResultActionsPanel from './ResultActionsPanel';
@@ -21,6 +21,41 @@ const EmptyPreviewState: React.FC<{
     </div>
   </div>
 );
+
+const extractImageSourceFromHtml = (html: string): string | null => {
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] ?? null;
+};
+
+const getDroppedImageSource = (dataTransfer: DataTransfer): File | string | null => {
+  const imageFile = Array.from(dataTransfer.files).find((file) => file.type.startsWith('image/'));
+  if (imageFile) {
+    return imageFile;
+  }
+
+  const uriList = dataTransfer.getData('text/uri-list').trim();
+  if (uriList) {
+    const firstUrl = uriList.split('\n').find((line) => line && !line.startsWith('#'));
+    if (firstUrl) {
+      return firstUrl.trim();
+    }
+  }
+
+  const html = dataTransfer.getData('text/html');
+  if (html) {
+    const imageSrc = extractImageSourceFromHtml(html);
+    if (imageSrc) {
+      return imageSrc;
+    }
+  }
+
+  const plainText = dataTransfer.getData('text/plain').trim();
+  if (/^(https?:|data:image\/)/i.test(plainText)) {
+    return plainText;
+  }
+
+  return null;
+};
 
 interface TryOnStudioProps {
   currentUser: unknown;
@@ -76,6 +111,8 @@ interface TryOnStudioProps {
   onOpenClothSampleModal: () => void;
   onPersonFileChange: (file: File) => void;
   onClothFileChange: (file: File) => void;
+  onPersonExternalDrop: (source: File | string) => Promise<void> | void;
+  onClothExternalDrop: (source: File | string) => Promise<void> | void;
   onClearPerson: () => void;
   onClearCloth: () => void;
   onAutoDetectSubject: () => void;
@@ -137,6 +174,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onOpenClothSampleModal,
   onPersonFileChange,
   onClothFileChange,
+  onPersonExternalDrop,
+  onClothExternalDrop,
   onClearPerson,
   onClearCloth,
   onGenerate,
@@ -154,6 +193,39 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onOpenResultPreview,
   formatSecondsLabel,
 }) => {
+  const [personDragActive, setPersonDragActive] = useState(false);
+  const [clothDragActive, setClothDragActive] = useState(false);
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDrop = async (
+    event: React.DragEvent<HTMLDivElement>,
+    target: 'person' | 'cloth',
+  ) => {
+    event.preventDefault();
+    setPersonDragActive(false);
+    setClothDragActive(false);
+
+    if (isGenerating) {
+      return;
+    }
+
+    const droppedSource = getDroppedImageSource(event.dataTransfer);
+    if (!droppedSource) {
+      return;
+    }
+
+    if (target === 'person') {
+      await onPersonExternalDrop(droppedSource);
+      return;
+    }
+
+    await onClothExternalDrop(droppedSource);
+  };
+
   return (
   <section id="try" className="section try-section">
     <div className="section-inner">
@@ -206,7 +278,20 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             />
           </div>
 
-          <div className={`preview-box ${activePersonImage ? 'has-image' : ''}`}>
+          <div
+            className={`preview-box ${activePersonImage ? 'has-image' : ''} ${personDragActive ? 'drag-active' : ''}`}
+            onDragEnter={(event) => {
+              handleDragOver(event);
+              setPersonDragActive(true);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setPersonDragActive(false);
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDrop={(event) => { void handleDrop(event, 'person'); }}
+          >
             {activePersonImage ? (
               <>
                 {personPreviewState === 'loading' && (
@@ -267,7 +352,20 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
-          <div className={`preview-box ${activeClothImage ? 'has-image' : ''}`}>
+          <div
+            className={`preview-box ${activeClothImage ? 'has-image' : ''} ${clothDragActive ? 'drag-active' : ''}`}
+            onDragEnter={(event) => {
+              handleDragOver(event);
+              setClothDragActive(true);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setClothDragActive(false);
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDrop={(event) => { void handleDrop(event, 'cloth'); }}
+          >
             {activeClothImage ? (
               <>
                 {clothPreviewState === 'loading' && (

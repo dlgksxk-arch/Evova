@@ -2147,6 +2147,27 @@ const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+const createImageFileFromRemoteSource = async (src: string, prefix: string): Promise<File> => {
+  const response = await fetch(src);
+  if (!response.ok) {
+    throw new Error('REMOTE_IMAGE_FETCH_FAILED');
+  }
+
+  const blob = await response.blob();
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('REMOTE_IMAGE_INVALID');
+  }
+
+  const url = new URL(src, window.location.href);
+  const fileNameFromPath = url.pathname.split('/').pop()?.trim();
+  const fallbackExtension = blob.type.split('/')[1] || 'png';
+  const fileName = fileNameFromPath && fileNameFromPath.includes('.')
+    ? fileNameFromPath
+    : `${prefix}-${Date.now()}.${fallbackExtension}`;
+
+  return new File([blob], fileName, { type: blob.type });
+};
+
 const imageSrcToDataUrl = (src: string): Promise<string> =>
   new Promise((resolve, reject) => {
     const img = new Image();
@@ -3407,6 +3428,34 @@ const App: React.FC = () => {
     setClothPreviewState('ready');
   };
 
+  const handlePersonExternalDrop = async (source: File | string) => {
+    try {
+      setPersonUploadMessage(t.loadingImage);
+      setPersonPreviewState('loading');
+      const file = source instanceof File ? source : await createImageFileFromRemoteSource(source, 'hamdeva-person-drop');
+      await loadPersonUpload(file);
+    } catch (error) {
+      console.error('Failed to import dropped person image:', error);
+      setPersonUploadMessage(null);
+      setPersonPreviewState('error');
+      alert(t.imageLoadError);
+    }
+  };
+
+  const handleClothExternalDrop = async (source: File | string) => {
+    try {
+      setClothUploadMessage(t.loadingImage);
+      setClothPreviewState('loading');
+      const file = source instanceof File ? source : await createImageFileFromRemoteSource(source, 'hamdeva-cloth-drop');
+      await loadClothUpload(file);
+    } catch (error) {
+      console.error('Failed to import dropped clothing image:', error);
+      setClothUploadMessage(null);
+      setClothPreviewState('error');
+      alert(t.imageLoadError);
+    }
+  };
+
   const loadPersonSample = async (url: string, category: 'female' | 'male' | 'dog' | 'cat') => {
     if (isGenerating) {
       return;
@@ -4626,6 +4675,8 @@ const App: React.FC = () => {
             onOpenClothSampleModal={handleOpenClothSampleModal}
             onPersonFileChange={(file) => { void loadPersonUpload(file); }}
             onClothFileChange={(file) => { void loadClothUpload(file); }}
+            onPersonExternalDrop={(source) => { void handlePersonExternalDrop(source); }}
+            onClothExternalDrop={(source) => { void handleClothExternalDrop(source); }}
             onClearPerson={() => {
               if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
               setPersonImage(null);

@@ -2384,7 +2384,16 @@ a { color: inherit; text-decoration: none; }
   padding: 18px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
 }
+.preview-box.drag-active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--upload-hover-bg) 82%, white);
+  box-shadow: 0 0 0 4px rgba(255, 77, 184, 0.14), var(--shadow-md);
+}
 .preview-box.has-image { border: none; background: #000; }
+.preview-box.has-image.drag-active {
+  border: 1px solid rgba(255,255,255,0.34);
+  background: #111;
+}
 .preview-box img {
   width: 100%;
   height: 100%;
