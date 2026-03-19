@@ -10,7 +10,7 @@ interface ClothSampleModalProps {
   onSelect: (url: string) => void;
 }
 
-const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'animal', 'future', 'classic'];
+const CLOTH_SAMPLE_CATEGORIES: ClothSampleCategory[] = ['female', 'male', 'future', 'classic'];
 
 const findCategoryByUrl = (url: string | null): ClothSampleCategory => {
   if (!url) {
