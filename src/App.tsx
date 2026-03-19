@@ -5119,18 +5119,6 @@ const App: React.FC = () => {
                     </article>
                   ))}
                 </div>
-                <div className="country-card-grid page-country-grid">
-                  {countryShowcaseCards.map((item) => (
-                    <article key={`${item.code}-${item.clothing}`} className="country-card country-card-visual">
-                      <div className="country-card-thumb">
-                        <img src={item.image} alt={`${item.country} ${item.clothing}`} loading="lazy" />
-                      </div>
-                      <span className="country-card-name">{item.country}</span>
-                      <h4>{item.clothing}</h4>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
-                </div>
               </>
             )}
 
@@ -5333,7 +5321,7 @@ const App: React.FC = () => {
                 resultImageSrc={latestHistoryImage}
               />
             )}
-            {relatedEditorialCards.length > 0 && (
+            {relatedEditorialCards.length > 0 && currentPage !== 'traditional-clothing' && (
               <section className="section editorial-section editorial-related-section">
                 <div className="section-copy">
                   <h2>{editorialUiCopy.relatedTitle}</h2>
