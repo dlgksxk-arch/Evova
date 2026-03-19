@@ -70,8 +70,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           <div className="mypage-empty">
             <p>{firebaseDisabledMessage || copy.authRequired}</p>
             {isFirebaseConfigured && (
-              <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={onLogin} type="button">
-                {copy.loginComingSoon ?? `${copy.login} (${copy.comingSoon})`}
+              <button className="generate-btn auth-inline-btn" onClick={onLogin} type="button">
+                {copy.login}
               </button>
             )}
           </div>

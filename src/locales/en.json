@@ -18,8 +18,8 @@
     "mypage": "My Page"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Pet Outfit Preview",
-    "homeDescription": "Preview pet outfits in seconds with HAMDEVA AI using one pet photo and one outfit image."
+    "homeTitle": "HAMDEVA | Pet Outfit Generator, Dog Outfit Generator, Cat Outfit Generator",
+    "homeDescription": "Use one pet photo and one outfit image to preview dog outfits, cat outfits, and dress-up your pet ideas in seconds."
   },
   "hero_click": "Click Click,",
   "hero_space": "Virtual Fitting Space",
@@ -131,7 +131,7 @@
   "pages": {
     "traditional-clothing": {
       "title": "Sample Outfits",
-      "description": "Browse sample outfits and style references that can work as useful pet fitting references.",
+      "description": "Browse Hanbok, Kimono, Qipao, Saree, Ao Dai, and other country-based sample outfits for pet outfit preview ideas.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -172,7 +172,7 @@
     },
     "sample-friends": {
       "title": "Sample Friends",
-      "description": "Browse dog and cat sample images by breed so you can choose a stable starting reference before you generate.",
+      "description": "Browse dog and cat sample images by breed so you can choose a stable reference before you generate a pet outfit preview.",
       "sections": [
         {
           "heading": "Breed sample overview",
@@ -223,7 +223,7 @@
     },
     "how-it-works": {
       "title": "How It Works",
-      "description": "See how HAMDEVA turns a pet photo and outfit reference into one coordinated preview.",
+      "description": "See how HAMDEVA turns one pet photo and one outfit image into a dog outfit preview or cat outfit preview.",
       "sections": [
         {
           "heading": "Step 1 – Upload a pet photo",
@@ -262,7 +262,7 @@
     },
     "fashion-technology": {
       "title": "Pet Style Guide",
-      "description": "Understand how AI imaging helps preview playful pet looks and costume ideas.",
+      "description": "Understand how AI imaging helps compare pet outfit ideas, dog costume looks, and cat costume previews.",
       "sections": [
         {
           "heading": "Technology with reference discipline",
@@ -306,7 +306,7 @@
     },
     "about": {
       "title": "About",
-      "description": "Learn why HAMDEVA exists and how it frames AI pet outfit previews.",
+      "description": "Learn why HAMDEVA exists and how it frames AI pet outfit previews for dogs and cats.",
       "sections": [
         {
           "heading": "Why HAMDEVA exists",

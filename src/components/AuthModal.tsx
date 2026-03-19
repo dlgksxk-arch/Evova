@@ -93,7 +93,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           {error && <p className="auth-error-text">{error}</p>}
 
           <button
-            className={`generate-btn auth-submit-btn ${mode === 'login' ? 'auth-disabled-btn' : ''}`}
+            className="generate-btn auth-submit-btn"
             disabled={mode === 'login' ? loginActionsDisabled : isSubmitting}
             onClick={onSubmit}
             type="button"
@@ -102,7 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </button>
 
           <button
-            className="outline-btn auth-google-btn auth-disabled-btn"
+            className="outline-btn auth-google-btn"
             disabled={loginActionsDisabled}
             onClick={onGoogleLogin}
             type="button"

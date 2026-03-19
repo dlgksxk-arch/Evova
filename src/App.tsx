@@ -27,7 +27,6 @@ import {
   createWebSiteSchema,
 } from './lib/seo/schema';
 import {
-  FEATURED_EDITORIAL_PAGES,
   getEditorialPage,
   getEditorialPageSummary,
   getEditorialPageTitle,
@@ -36,7 +35,6 @@ import {
 } from './lib/editorial';
 import { getLandingContent } from './data/landingContent';
 import {
-  callCreateCheckoutSession,
   callCreditBootstrap,
   callSubjectClassifier,
   callTryOn,
@@ -71,6 +69,7 @@ declare global {
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
+const PURCHASE_NOTICE_DISMISS_PREFIX = 'HAMDEVA-purchase-notice-dismissed';
 const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
 const MIN_GENERATION_ESTIMATE_MS = 12_000;
 const MAX_GENERATION_ESTIMATE_MS = 70_000;
@@ -125,6 +124,95 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
 ]);
+const getPurchasePauseCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      attemptMessage: '죄송합니다, 준비중입니다.',
+      homeTitle: '앗, 크레딧 상점은 잠깐 쉬는 중이에요',
+      homeBody: '지금은 크레딧을 구매하실 수 없어요. 곧 다시 열릴 예정이니 조금만 기다려 주세요.',
+      homeFootnote: '로그인과 이미지 생성은 그대로 이용하실 수 있어요.',
+      closeToday: '오늘은 이 창을 더이상 열지 않기',
+      close: '귀엽게 닫기',
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      attemptMessage: '申し訳ありません。ただいま準備中です。',
+      homeTitle: 'クレジットショップは少しだけお休み中です',
+      homeBody: '今はクレジットを購入できません。まもなく再開予定ですので、少しだけお待ちください。',
+      homeFootnote: 'ログインと画像生成はそのまま利用できます。',
+      closeToday: '今日はもう表示しない',
+      close: '閉じる',
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      attemptMessage: '抱歉，正在准备中。',
+      homeTitle: '积分商店暂时休息中',
+      homeBody: '现在还不能购买积分，很快就会开放，请再稍等一下。',
+      homeFootnote: '登录和图片生成功能仍可正常使用。',
+      closeToday: '今天不再显示',
+      close: '关闭',
+    };
+  }
+  return {
+    attemptMessage: 'Sorry, this is still in preparation.',
+    homeTitle: 'The credit shop is taking a tiny break',
+    homeBody: 'You cannot buy credits right now, but it should be back soon.',
+    homeFootnote: 'Login and image generation still work as usual.',
+    closeToday: "Don't show this again today",
+    close: 'Close',
+  };
+};
+const getPurchaseNoticeDismissKey = () => `${PURCHASE_NOTICE_DISMISS_PREFIX}:${new Date().toISOString().slice(0, 10)}`;
+const getHomeQuickCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      previewEyebrow: '결과 예시',
+      previewTitle: '이런 흐름으로 바로 결과를 만들어요',
+      previewBody: '반려동물 사진과 의상 이미지를 넣으면, 귀여운 결과 예시처럼 빠르게 비교할 수 있습니다.',
+      petLabel: '반려동물 사진',
+      outfitLabel: '의상 이미지',
+      resultLabel: '결과 예시',
+      ctaTitle: '지금 바로 시작해보세요',
+      ctaBody: '반려동물 의상 미리보기를 몇 초 안에 만들어볼 수 있어요.',
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      previewEyebrow: '結果プレビュー',
+      previewTitle: 'こんな流れですぐに結果を作れます',
+      previewBody: 'ペット写真と衣装画像を入れるだけで、かわいい結果をすばやく比較できます。',
+      petLabel: 'ペット写真',
+      outfitLabel: '衣装画像',
+      resultLabel: '結果イメージ',
+      ctaTitle: '今すぐ試してみましょう',
+      ctaBody: '数秒でペット衣装プレビューを作れます。',
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      previewEyebrow: '结果预览',
+      previewTitle: '按这个流程就能快速生成结果',
+      previewBody: '上传宠物照片和服装图片后，就能像下面这样快速看到可爱的效果预览。',
+      petLabel: '宠物照片',
+      outfitLabel: '服装图片',
+      resultLabel: '结果示例',
+      ctaTitle: '现在就试试看',
+      ctaBody: '几秒内就能生成宠物穿搭预览。',
+    };
+  }
+  return {
+    previewEyebrow: 'Preview',
+    previewTitle: 'See the result before you scroll',
+    previewBody: 'Upload your pet, add an outfit image, and get a cute preview like this in seconds.',
+    petLabel: 'Pet photo',
+    outfitLabel: 'Outfit image',
+    resultLabel: 'Result preview',
+    ctaTitle: 'Try it now',
+    ctaBody: 'Create your pet outfit preview in seconds.',
+  };
+};
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -2847,7 +2935,18 @@ const removeAdSenseScript = (): void => {
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
 const DEFAULT_LANGUAGE: LanguageCode = 'en';
-const SITE_KEYWORDS = '가상피팅, 옷 입혀보기, 옷 미리 입어보기, 코디 추천, 패션 추천, 옷 조합, 스타일 추천, 옷 추천 사이트, 피팅 앱, 의류 추천, 함데바, 햄데바, 햄디바, HAMDEVA, virtual try on, clothes try on online, outfit generator, dress try on, virtual fitting room, outfit ideas, what to wear, clothing app, style generator, fashion outfit generator, hamdeva, バーチャル試着, 試着 シミュレーション, 服 試着 アプリ, コーディネート アプリ, ファッション コーデ, 服 組み合わせ, コーデ 作成, スタイリング アプリ, 服 合わせ, 洋服 試着, ハムデバ, ハンデバ, ハムディバ, 虚拟试衣, 在线试衣, 穿搭推荐, 服装搭配, 穿搭软件, 试衣软件, 服装试穿, 穿搭建议, 衣服搭配, 时尚穿搭, 哈姆德瓦, 汉德瓦, 哈姆迪瓦';
+const SITE_KEYWORDS = '반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 펫 의상 미리보기, 펫 코디, 펫 코스튬, 반려동물 코디, 강아지 옷 추천, 고양이 옷 추천, 펫 스타일 추천, pet outfit generator, dog outfit generator, cat outfit generator, pet costume generator, pet outfit preview, virtual pet try on, dress up your pet, dog costume ideas, cat costume ideas, HAMDEVA, hamdeva';
+const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
+  home: `${SITE_KEYWORDS}, 반려동물 ai 옷입혀보기, 강아지 ai 옷입혀보기, 고양이 ai 옷입혀보기, ai pet outfit, ai dog outfit, ai cat outfit`,
+  about: `${SITE_KEYWORDS}, 반려동물 옷입혀보기 사이트, 펫 피팅 서비스, pet fitting service`,
+  'how-it-works': `${SITE_KEYWORDS}, 반려동물 사진 업로드, 의상 이미지 업로드, 펫 피팅 사용법, pet photo upload, outfit image upload`,
+  'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,
+  'sample-friends': `${SITE_KEYWORDS}, 샘플 강아지, 샘플 고양이, 강아지 품종, 고양이 품종, dog breeds, cat breeds, pet sample photo`,
+  'fashion-technology': `${SITE_KEYWORDS}, 펫 스타일 가이드, 반려동물 의상 아이디어, dog outfit ideas, cat outfit ideas`,
+  'virtual-try-on-guide': `${SITE_KEYWORDS}, 반려동물 가상피팅 가이드, pet virtual try on guide`,
+  'outfit-photo-tips': `${SITE_KEYWORDS}, 반려동물 사진 팁, 의상 사진 팁, pet photo tips, outfit photo tips`,
+  'ai-fitting-faq': `${SITE_KEYWORDS}, 반려동물 옷입혀보기 faq, pet outfit faq, dog outfit faq, cat outfit faq`,
+};
 
 const isSupportedLanguageCode = (value: string | null): value is LanguageCode =>
   value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]);
@@ -2926,6 +3025,13 @@ const App: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCreditPlanModal, setShowCreditPlanModal] = useState(false);
+  const [showPurchaseNoticePopup, setShowPurchaseNoticePopup] = useState(() => {
+    try {
+      return localStorage.getItem(getPurchaseNoticeDismissKey()) !== 'hidden';
+    } catch {
+      return true;
+    }
+  });
   const [showMyPageModal, setShowMyPageModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
@@ -2947,6 +3053,8 @@ const App: React.FC = () => {
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
+  const purchasePauseCopy = getPurchasePauseCopy(lang);
+  const homeQuickCopy = getHomeQuickCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
   const petBreedGuideGroups = (['dog', 'cat'] as FaceCategory[]).map((category) => ({
     category,
@@ -2988,8 +3096,6 @@ const App: React.FC = () => {
   const currentDailyCredit = userProfile?.dailyCredit ?? 0;
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
-  const latestHistoryImage = historyItems.find((item) => Boolean(item.imageUrl))?.imageUrl ?? null;
-  const guideSampleDog = FACE_SAMPLES.dog[0];
   const guideSampleCat = FACE_SAMPLES.cat[0];
   const guideFixedPet = '/howto-fixed/step-1-pet.jpg';
   const guideFixedCloth = '/howto-fixed/step-2-outfit.jpg';
@@ -3159,16 +3265,6 @@ const App: React.FC = () => {
   const editorialUiCopy = getEditorialUiCopy(lang);
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
   const currentEditorialPage = getEditorialPage(currentPage);
-  const featuredEditorialPages = Array.from(new Set(FEATURED_EDITORIAL_PAGES.map((page) =>
-    page === 'countries' ? 'traditional-clothing' : page,
-  ))).filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== 'home');
-  const featuredEditorialCards = featuredEditorialPages.map((page) => ({
-    page,
-    title: currentPage === page && currentPageCopy?.title ? currentPageCopy.title : (contentLocale.nav[page] ?? getEditorialPageTitle(page)),
-    description: lang === 'en'
-      ? getEditorialPageSummary(page)
-      : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page)),
-  }));
   const relatedEditorialCards = currentEditorialPage
     ? Array.from(new Set(currentEditorialPage.relatedPages.map((page) => page === 'countries' ? 'traditional-clothing' : page)))
       .filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== currentPage)
@@ -3213,14 +3309,14 @@ const App: React.FC = () => {
           name: 'HAMDEVA',
           url: SITE_URL,
           logo: `${SITE_URL}/og-image.png`,
-          description: 'HAMDEVA is an AI virtual fitting platform for exploring digital fashion, sample outfits, and traditional clothing styles.',
+          description: 'HAMDEVA is an AI pet outfit preview platform for dog outfit ideas, cat outfit ideas, and dress-up your pet styling.',
           contactEmail: SUPPORT_EMAIL,
           contactType: 'customer support',
         }),
         createWebSiteSchema({
           name: 'HAMDEVA',
           url: SITE_URL,
-          description: 'HAMDEVA provides AI virtual fitting, sample outfit exploration, and educational content about digital fashion and traditional clothing.',
+          description: 'HAMDEVA provides pet outfit previews, dog and cat outfit generators, and sample outfit guides.',
         }),
       ]
     : [];
@@ -3653,6 +3749,7 @@ const App: React.FC = () => {
     const pageUrl = sharedResultRouteId
       ? buildSharedResultUrl(sharedResultRouteId)
       : `${SITE_URL}${PAGE_PATHS[currentPage]}`;
+    const pageKeywords = PAGE_KEYWORDS[currentPage] ?? SITE_KEYWORDS;
     const ogImage = sharedResultRecord?.resultImageUrl || `${SITE_URL}/og-image.png`;
     const robotsContent = isPreviewHost || !isIndexablePage
       ? 'noindex, nofollow, noarchive, nosnippet'
@@ -3686,7 +3783,7 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
     upsertMeta('meta[property="og:url"]', { property: 'og:url', content: pageUrl });
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
-    upsertMeta('meta[name="keywords"]', { name: 'keywords', content: SITE_KEYWORDS });
+    upsertMeta('meta[name="keywords"]', { name: 'keywords', content: pageKeywords });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: pageUrl });
     upsertMeta('meta[name="robots"]', { name: 'robots', content: robotsContent });
@@ -4046,28 +4143,25 @@ const App: React.FC = () => {
     setSubjectType(nextSubjectType);
     setSubjectTypeManualOverride(true);
   };
-  const handleStartCheckout = async (productId: CheckoutProductId) => {
+  const dismissPurchaseNoticeForToday = () => {
+    try {
+      localStorage.setItem(getPurchaseNoticeDismissKey(), 'hidden');
+    } catch {
+      // ignore storage failures
+    }
+    setShowPurchaseNoticePopup(false);
+  };
+  const closePurchaseNotice = () => {
+    setShowPurchaseNoticePopup(false);
+  };
+  const handleStartCheckout = async (_productId: CheckoutProductId) => {
     if (!currentUser || isStartingCheckout) {
       if (!currentUser) {
         openAuthModal('login');
       }
       return;
     }
-
-    setIsStartingCheckout(productId);
-    try {
-      const authToken = await currentUser.getIdToken();
-      const session = await callCreateCheckoutSession({ authToken, productId, uid: currentUser.uid });
-      if (!session.checkoutUrl) {
-        throw new Error('CHECKOUT_URL_MISSING');
-      }
-      window.location.href = session.checkoutUrl;
-    } catch (error) {
-      console.error('Failed to start checkout session:', error);
-      alert(getGenerateErrorMessage(error, t, generationErrorCopy));
-    } finally {
-      setIsStartingCheckout(null);
-    }
+    alert(purchasePauseCopy.attemptMessage);
   };
   const openCreditPlanModal = () => {
     if (!currentUser) {
@@ -4079,7 +4173,8 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
     setShowMyPageModal(false);
     setShowAdminModal(false);
-    setShowCreditPlanModal(true);
+    setShowCreditPlanModal(false);
+    alert(purchasePauseCopy.attemptMessage);
   };
   const openMyPageModal = () => {
     if (!currentUser) {
@@ -4798,13 +4893,11 @@ const App: React.FC = () => {
               </div>
             ) : (
               <button
-                className="outline-btn auth-nav-btn auth-disabled-btn"
-                disabled
+                className="outline-btn auth-nav-btn"
                 onClick={() => openAuthModal('login')}
-                title={loginComingSoonLabel}
                 type="button"
               >
-                {loginComingSoonLabel}
+                {t.login}
               </button>
             )}
             <LangDropdown lang={lang} onChange={handleLanguageChange} />
@@ -4813,9 +4906,8 @@ const App: React.FC = () => {
             </button>
           </div>
           <button
-            className={`mobile-account-button ${!currentUser ? 'auth-disabled-btn' : ''}`}
-            aria-label={currentUser ? t.myPage : loginComingSoonLabel}
-            disabled={!currentUser}
+            className="mobile-account-button"
+            aria-label={currentUser ? t.myPage : t.login}
             onClick={() => {
               if (currentUser) {
                 navigateToPage('mypage');
@@ -4824,7 +4916,7 @@ const App: React.FC = () => {
 
               openAuthModal('login');
             }}
-            title={!currentUser ? loginComingSoonLabel : undefined}
+            title={!currentUser ? t.login : undefined}
             type="button"
           >
             {currentUser ? '👤' : '↗'}
@@ -4924,15 +5016,14 @@ const App: React.FC = () => {
               )}
               {!currentUser && (
                 <button
-                  className="mobile-menu-link mobile-menu-action auth-disabled-btn"
-                  disabled
+                  className="mobile-menu-link mobile-menu-action"
                   onClick={() => {
                     openAuthModal('login');
                     setMobileMenuOpen(false);
                   }}
                   type="button"
                 >
-                  {loginComingSoonLabel}
+                  {t.login}
                 </button>
               )}
               {currentUser && (
@@ -4983,6 +5074,24 @@ const App: React.FC = () => {
             </>
           ) : currentPage === 'home' ? (
             <>
+              {showPurchaseNoticePopup ? (
+                <div className="home-credit-notice" role="dialog" aria-label={purchasePauseCopy.homeTitle}>
+                  <div className="home-credit-notice-badge">🐾</div>
+                  <div className="home-credit-notice-copy">
+                    <strong>{purchasePauseCopy.homeTitle}</strong>
+                    <p>{purchasePauseCopy.homeBody}</p>
+                    <span>{purchasePauseCopy.homeFootnote}</span>
+                  </div>
+                  <div className="home-credit-notice-actions">
+                    <button className="outline-btn auth-inline-btn" onClick={dismissPurchaseNoticeForToday} type="button">
+                      {purchasePauseCopy.closeToday}
+                    </button>
+                    <button className="generate-btn auth-inline-btn home-credit-notice-close" onClick={closePurchaseNotice} type="button">
+                      {purchasePauseCopy.close}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
               <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
               <p className="hero-sub">{landingContent.hero.subtitle}</p>
@@ -4990,6 +5099,9 @@ const App: React.FC = () => {
               <div className="hero-cta-group">
                 <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
                   {landingContent.hero.primaryButton}
+                </button>
+                <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('how-it-works')} type="button">
+                  {landingContent.hero.secondaryButton}
                 </button>
               </div>
             </>
@@ -5037,13 +5149,46 @@ const App: React.FC = () => {
       ) : currentPage === 'home' ? (
         <>
           <main className="landing-home-shell">
-            <section className="section landing-story-section">
+            <section className="section landing-preview-section">
               <div className="section-inner">
-                <div className="section-copy landing-copy">
-                  <h2>{landingContent.intro.title}</h2>
-                  {landingContent.intro.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
+                <div className="section-copy landing-copy landing-preview-copy">
+                  <span className="howto-visual-eyebrow">{homeQuickCopy.previewEyebrow}</span>
+                  <h2>{homeQuickCopy.previewTitle}</h2>
+                  <p>{homeQuickCopy.previewBody}</p>
+                </div>
+                <div className="howto-visual-flow landing-preview-flow">
+                  <article className="howto-visual-stage">
+                    <div className="howto-visual-stage-header">
+                      <span className="howto-stage-badge">1</span>
+                      <strong>{homeQuickCopy.petLabel}</strong>
+                    </div>
+                    <div className="howto-stage-image-card">
+                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.petLabel}</span>
+                      <img src={guideFixedPet} alt={homeQuickCopy.petLabel} loading="lazy" />
+                    </div>
+                  </article>
+                  <div className="howto-flow-arrow">→</div>
+                  <article className="howto-visual-stage">
+                    <div className="howto-visual-stage-header">
+                      <span className="howto-stage-badge">2</span>
+                      <strong>{homeQuickCopy.outfitLabel}</strong>
+                    </div>
+                    <div className="howto-stage-image-card">
+                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.outfitLabel}</span>
+                      <img src={guideFixedCloth} alt={homeQuickCopy.outfitLabel} loading="lazy" />
+                    </div>
+                  </article>
+                  <div className="howto-flow-arrow">→</div>
+                  <article className="howto-visual-stage">
+                    <div className="howto-visual-stage-header">
+                      <span className="howto-stage-badge">3</span>
+                      <strong>{homeQuickCopy.resultLabel}</strong>
+                    </div>
+                    <div className="howto-stage-image-card">
+                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.resultLabel}</span>
+                      <img src={guideFixedResult} alt={homeQuickCopy.resultLabel} loading="lazy" />
+                    </div>
+                  </article>
                 </div>
               </div>
             </section>
@@ -5097,7 +5242,7 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            <section className="section landing-sample-section">
+            <section className="section landing-sample-section landing-bottom-cta-section">
               <div className="section-inner">
                 <article className="page-article landing-sample-cta">
                   <div className="section-copy">
@@ -5105,39 +5250,16 @@ const App: React.FC = () => {
                     <p>{landingContent.sampleInfo.body}</p>
                   </div>
                   <div className="landing-inline-actions">
-                    <button className="generate-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
-                      {landingContent.sampleInfo.button}
-                    </button>
-                    <button className="outline-btn" onClick={handleHeroCta} type="button">
+                    <button className="generate-btn" onClick={handleHeroCta} type="button">
                       {landingContent.hero.primaryButton}
+                    </button>
+                    <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                      {landingContent.sampleInfo.button}
                     </button>
                   </div>
                 </article>
               </div>
             </section>
-
-            <FAQSection title={landingContent.faq.title} items={currentHomeFaqItems} />
-
-            <section className="section editorial-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{editorialUiCopy.homeTitle}</h2>
-                  <p>{editorialUiCopy.homeDescription}</p>
-                </div>
-                <div className="compact-card-grid">
-                  {featuredEditorialCards.map((card) => (
-                    <article key={`editorial-${card.page}`} className="compact-info-card">
-                      <h2>{card.title}</h2>
-                      <p>{card.description}</p>
-                      <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
-                        {editorialUiCopy.readMore}
-                      </button>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-            {renderSeoContent('home', contentLocale)}
           </main>
         </>
       ) : (
@@ -5273,8 +5395,8 @@ const App: React.FC = () => {
               <article className="page-article">
                 <h2>{t.siteManagementTitle}</h2>
                 <p>{t.authRequired}</p>
-                <button className="generate-btn auth-inline-btn auth-disabled-btn" disabled onClick={() => openAuthModal('login')} type="button">
-                  {loginComingSoonLabel}
+                <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                  {t.login}
                 </button>
               </article>
             )}
@@ -5780,16 +5902,15 @@ const App: React.FC = () => {
             signupTitle: t.signup,
             emailLabel: t.emailLabel,
             passwordLabel: t.passwordLabel,
-            loginButton: loginComingSoonLabel,
+            loginButton: t.login,
             signupButton: t.signup,
-            googleButton: googleLoginComingSoonLabel,
+            googleButton: t.googleLogin,
             switchToSignup: t.switchToSignup,
             switchToLogin: t.switchToLogin,
           }}
           email={authForm.email}
           error={authError}
           isSubmitting={authSubmitting}
-          loginDisabled
           mode={authMode}
           password={authForm.password}
           onClose={() => setShowAuthModal(false)}

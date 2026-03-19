@@ -8,7 +8,8 @@ const EmptyPreviewState: React.FC<{
   tips: string[];
   type: 'face' | 'cloth';
   badgeLabel: string;
-}> = ({ title, tips, type, badgeLabel }) => (
+  hint: string;
+}> = ({ title, tips, type, badgeLabel, hint }) => (
   <div className={`empty-preview empty-preview-${type}`}>
     <div className="empty-preview-badge">{badgeLabel}</div>
     <strong className="empty-preview-title">{title}</strong>
@@ -19,6 +20,7 @@ const EmptyPreviewState: React.FC<{
         </p>
       ))}
     </div>
+    <div className="empty-preview-hint">{hint}</div>
   </div>
 );
 
@@ -356,7 +358,18 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             />
           </div>
           <div
-            className={`preview-box ${activePersonImage ? 'has-image' : ''} ${personDragActive ? 'drag-active' : ''}`}
+            className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
+            onClick={() => {
+              if (!isGenerating && !activePersonImage) {
+                personInputRef.current?.click();
+              }
+            }}
+            onKeyDown={(event) => {
+              if (!isGenerating && !activePersonImage && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                personInputRef.current?.click();
+              }
+            }}
             onDragEnter={(event) => {
               handleDragOver(event);
               setPersonDragActive(true);
@@ -368,6 +381,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             }}
             onDragOver={handleDragOver}
             onDrop={(event) => { void handleDrop(event, 'person'); }}
+            role={!activePersonImage ? 'button' : undefined}
+            tabIndex={!activePersonImage ? 0 : -1}
           >
             {activePersonImage ? (
               <>
@@ -392,6 +407,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 tips={emptyFaceTips}
                 type="face"
                 badgeLabel={emptyPreviewCopy.faceBadge}
+                hint={copy.uploadMyPhoto}
               />
             )}
             {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
@@ -431,7 +447,18 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             />
           </div>
           <div
-            className={`preview-box ${activeClothImage ? 'has-image' : ''} ${clothDragActive ? 'drag-active' : ''}`}
+            className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
+            onClick={() => {
+              if (!isGenerating && !activeClothImage) {
+                clothInputRef.current?.click();
+              }
+            }}
+            onKeyDown={(event) => {
+              if (!isGenerating && !activeClothImage && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                clothInputRef.current?.click();
+              }
+            }}
             onDragEnter={(event) => {
               handleDragOver(event);
               setClothDragActive(true);
@@ -443,6 +470,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             }}
             onDragOver={handleDragOver}
             onDrop={(event) => { void handleDrop(event, 'cloth'); }}
+            role={!activeClothImage ? 'button' : undefined}
+            tabIndex={!activeClothImage ? 0 : -1}
           >
             {activeClothImage ? (
               <>
@@ -474,6 +503,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 tips={emptyClothTips}
                 type="cloth"
                 badgeLabel={emptyPreviewCopy.styleBadge}
+                hint={copy.uploadClothing}
               />
             )}
           </div>

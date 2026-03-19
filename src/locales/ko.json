@@ -18,8 +18,8 @@
     "mypage": "마이페이지"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI 펫 의상 미리보기",
-    "homeDescription": "반려동물 사진과 의상 이미지로 빠르게 펫 의상 미리보기를 만드는 HAMDEVA AI 서비스."
+    "homeTitle": "HAMDEVA | 반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기",
+    "homeDescription": "반려동물 사진 한 장과 의상 이미지로 강아지 옷입혀보기, 고양이 옷입혀보기, 펫 의상 미리보기를 빠르게 확인하세요."
   },
   "hero_click": "클릭클릭,",
   "hero_space": "가상의 피팅공간",
@@ -131,7 +131,7 @@
   "pages": {
     "traditional-clothing": {
       "title": "샘플 의상",
-      "description": "반려동물에게 어울리는 샘플 의상과 스타일 정보를 살펴볼 수 있는 페이지입니다.",
+      "description": "한복, 기모노, 치파오, 사리, 아오자이 등 나라별 샘플 의상을 보고 반려동물 옷입혀보기용 스타일을 고를 수 있는 페이지입니다.",
       "sections": [
         {
           "heading": "전통 의상",
@@ -172,7 +172,7 @@
     },
     "sample-friends": {
       "title": "샘플친구",
-      "description": "강아지와 고양이 샘플 이미지를 품종별로 살펴보고, 펫 피팅 시작용 기준 이미지를 고를 수 있는 페이지입니다.",
+      "description": "강아지와 고양이 샘플 이미지를 품종별로 살펴보고 반려동물 옷입혀보기 시작용 기준 이미지를 고를 수 있는 페이지입니다.",
       "sections": [
         {
           "heading": "샘플 품종 안내",
@@ -223,7 +223,7 @@
     },
     "how-it-works": {
       "title": "사용 방법",
-      "description": "반려동물 사진과 의상 이미지로 결과를 만드는 HAMDEVA 흐름을 확인하세요.",
+      "description": "반려동물 사진 업로드부터 의상 이미지 선택, 반려동물 옷입혀보기 결과 확인까지 HAMDEVA 사용 흐름을 확인하세요.",
       "sections": [
         {
           "heading": "1단계 – 반려동물 사진 업로드",
@@ -262,7 +262,7 @@
     },
     "fashion-technology": {
       "title": "펫 스타일 가이드",
-      "description": "AI 이미징이 반려동물 의상 아이디어와 스타일 비교를 어떻게 돕는지 살펴보세요.",
+      "description": "AI 이미징이 반려동물 의상 아이디어, 강아지 코디, 고양이 코디 비교를 어떻게 돕는지 살펴보세요.",
       "sections": [
         {
           "heading": "참조 이미지의 우선순위",
@@ -306,7 +306,7 @@
     },
     "about": {
       "title": "소개",
-      "description": "HAMDEVA가 왜 만들어졌는지와 AI 펫 피팅을 어떤 범위에서 쓰는지 확인하세요.",
+      "description": "HAMDEVA가 왜 만들어졌는지와 반려동물 옷입혀보기 AI 서비스를 어떤 범위에서 쓰는지 확인하세요.",
       "sections": [
         {
           "heading": "왜 HAMDEVA가 필요한가",
