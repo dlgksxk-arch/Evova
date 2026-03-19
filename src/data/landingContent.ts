@@ -224,11 +224,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     },
     sampleOutfits: {
       title: '샘플 의상',
-      description: '반려동물에게 어울릴 만한 샘플 품종과 의상 분위기를 함께 살펴보는 페이지입니다.',
-      introTitle: '이 페이지에서는 펫 피팅에 참고할 샘플 품종과 샘플 의상을 함께 확인할 수 있습니다.',
+      description: '반려동물에게 어울릴 만한 의상 분위기와 스타일 정보를 살펴보는 페이지입니다.',
+      introTitle: '이 페이지에서는 펫 피팅에 참고할 샘플 의상만 정리해서 확인할 수 있습니다.',
       introParagraphs: [
-        '왼쪽에서는 샘플 품종 이미지를 열어 얼굴 윤곽과 털 실루엣, 목 주변 장식이 어떻게 보일지 살펴볼 수 있습니다.',
-        '오른쪽에서는 의상 카드별 분위기와 특징을 확인한 뒤 바로 펫 피팅으로 연결할 수 있습니다.',
+        '각 카드에서는 의상 이름과 분위기, 시각적 특징을 먼저 읽은 뒤 펫 피팅으로 바로 연결할 수 있습니다.',
+        '전통풍 스타일, 행사 룩, 기념 촬영용 코스튬처럼 의상 자체의 분위기 비교에 집중하도록 구성했습니다.',
       ],
       breedTitle: '샘플 품종',
       breedBody: '샘플 품종 이미지는 펫 피팅을 시작하기 전에 얼굴 비율과 털 볼륨, 장식 배치를 미리 비교해 보는 기준점으로 활용할 수 있습니다.',
@@ -393,11 +393,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     },
     sampleOutfits: {
       title: 'Sample Outfits',
-      description: 'Browse sample breeds and outfit directions that can work as useful references for your dog or cat.',
-      introTitle: 'This page brings sample breeds and sample outfits together.',
+      description: 'Browse outfit directions and style references that can work well for your dog or cat.',
+      introTitle: 'This page focuses on sample outfits only.',
       introParagraphs: [
-        'Use the sample breed column to review face framing, coat shape, and accessory balance before you start a fitting flow.',
-        'Use the outfit cards to compare mood, costume structure, and visual direction before you generate.',
+        'Each card is meant to help you review outfit mood, costume structure, and styling direction before you generate.',
+        'Use this page when you want to compare outfit references first and keep the focus on garment information.',
       ],
       breedTitle: 'Sample Breeds',
       breedBody: 'Sample breed images help you compare face ratio, fur shape, and styling balance before you switch to your own pet photo.',
@@ -562,11 +562,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     },
     sampleOutfits: {
       title: 'サンプル衣装',
-      description: 'ペットに合うサンプル品種とサンプル衣装を一緒に見るためのページです。',
-      introTitle: 'このページではサンプル品種とサンプル衣装をまとめて確認できます。',
+      description: 'ペットに合う衣装の雰囲気とスタイル情報を見るためのページです。',
+      introTitle: 'このページではサンプル衣装だけをまとめて確認できます。',
       introParagraphs: [
-        '左側ではサンプル品種の顔まわりや毛並みの見え方を確認できます。',
-        '右側では衣装カードを開いて雰囲気と特徴を見ながら、試したい方向を決められます。',
+        '各カードでは衣装名や雰囲気、見た目の特徴を確認してから試したいルックを選べます。',
+        '伝統風スタイルやイベント用ルックなど、衣装そのものの比較に集中できるようにしています。',
       ],
       breedTitle: 'サンプル品種',
       breedBody: 'サンプル品種画像は、顔の比率や毛のボリューム、首まわり装飾の見え方を先に比べるための基準として使えます。',
@@ -731,11 +731,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     },
     sampleOutfits: {
       title: '示例服装',
-      description: '集中查看适合狗狗或猫咪参考的示例品种与示例服装。',
-      introTitle: '这个页面把示例品种和示例服装放在一起展示。',
+      description: '集中查看适合狗狗或猫咪参考的服装方向与风格信息。',
+      introTitle: '这个页面只整理示例服装内容。',
       introParagraphs: [
-        '左侧可以先看示例品种的脸部比例、毛量和饰品适配感。',
-        '右侧可以打开服装卡片，先看造型方向和细节，再决定是否进入生成。',
+        '每张卡片都会先介绍服装氛围、造型重点和视觉方向，再决定是否进入生成。',
+        '这里重点放在服装本身，方便你先比较不同服装参考。',
       ],
       breedTitle: '示例品种',
       breedBody: '示例品种图片适合先比较脸部比例、毛发轮廓和颈部装饰的摆放效果。',

@@ -1042,6 +1042,16 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
 }
 
+.sample-friend-thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.sample-friend-card {
+  height: 100%;
+}
+
 .sample-breed-card {
   display: flex;
   flex-direction: column;
@@ -3856,6 +3866,7 @@ a { color: inherit; text-decoration: none; }
   .landing-card-grid,
   .landing-step-grid,
   .sample-outfit-thumbnail-grid,
+  .sample-friend-thumbnail-grid,
   .sample-breed-grid,
   .country-card-grid,
   .history-grid,

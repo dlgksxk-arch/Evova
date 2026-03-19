@@ -2,6 +2,7 @@
   "nav": {
     "home": "Home",
     "traditional-clothing": "Sample Outfits",
+    "sample-friends": "Sample Friends",
     "countries": "Country Clothing",
     "how-it-works": "How It Works",
     "fashion-technology": "Pet Style Guide",
@@ -130,7 +131,7 @@
   "pages": {
     "traditional-clothing": {
       "title": "Sample Outfits",
-      "description": "Browse sample breeds and sample outfits that can work as useful pet fitting references.",
+      "description": "Browse sample outfits and style references that can work as useful pet fitting references.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -165,6 +166,26 @@
             "The best way to use the sample outfit page is to treat it as both a guide and a launch point. First review the garment categories, then look for images with a clear outline, visible detail, and a readable front view.",
             "After generating a result, compare whether the outfit mood, proportion, and decorative density still feel close to the sample reference. If they do not, try another reference with a stronger silhouette or less visual clutter.",
             "This process turns the page into more than a gallery. It becomes a practical worksheet for learning how AI virtual fitting behaves with different kinds of clothing."
+          ]
+        }
+      ]
+    },
+    "sample-friends": {
+      "title": "Sample Friends",
+      "description": "Browse dog and cat sample images by breed so you can choose a stable starting reference before you generate.",
+      "sections": [
+        {
+          "heading": "Breed sample overview",
+          "paragraphs": [
+            "This page organizes dog and cat sample images by breed name so you can compare face framing, ear shape, coat volume, and accessory balance.",
+            "It works as a starting reference page when you want to test outfit mood before switching to your own pet photo."
+          ]
+        },
+        {
+          "heading": "How to use it",
+          "paragraphs": [
+            "Choose a breed sample first, then open a sample outfit and compare the result.",
+            "After that, replace the sample with your own pet photo to see how coat texture, face ratio, and outfit scale change the final preview."
           ]
         }
       ]

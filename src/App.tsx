@@ -101,12 +101,13 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'fashion-technology', 'mypage'];
-const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'fashion-technology', 'mypage'];
+const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'mypage'];
+const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'mypage'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
+  'sample-friends',
   'fashion-technology',
   'virtual-try-on-guide',
   'outfit-photo-tips',
@@ -117,6 +118,7 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'about',
   'how-it-works',
   'traditional-clothing',
+  'sample-friends',
   'countries',
   'fashion-technology',
   'virtual-try-on-guide',
@@ -2674,6 +2676,7 @@ const PAGE_PATHS: Record<SitePage, string> = {
   about: '/about',
   'how-it-works': '/how-to-use',
   'traditional-clothing': '/sample-outfits',
+  'sample-friends': '/sample-friends',
   countries: '/countries',
   'fashion-technology': '/fashion-technology',
   'virtual-try-on-guide': '/virtual-try-on-guide',
@@ -2693,6 +2696,7 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'about',
   'how-it-works',
   'traditional-clothing',
+  'sample-friends',
   'fashion-technology',
   'virtual-try-on-guide',
   'outfit-photo-tips',
@@ -2987,7 +2991,10 @@ const App: React.FC = () => {
   const latestHistoryImage = historyItems.find((item) => Boolean(item.imageUrl))?.imageUrl ?? null;
   const guideSampleDog = FACE_SAMPLES.dog[0];
   const guideSampleCat = FACE_SAMPLES.cat[0];
-  const guideSampleCloth = clothSampleOptions.find((sample) => sample.category === 'animal')?.image ?? clothSampleOptions[0]?.image ?? '';
+  const guideFixedPet = '/howto-fixed/step-1-pet.jpg';
+  const guideFixedCloth = '/howto-fixed/step-2-outfit.jpg';
+  const guideFixedResult = '/howto-fixed/step-3-result.jpg';
+  const guideSampleCloth = guideFixedCloth;
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
   const preservedHistoryCount = historyItems.filter((item) => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
@@ -3056,15 +3063,13 @@ const App: React.FC = () => {
         outfitSampleLabel: '의상 샘플 이미지',
         inputFaceLabel: '반려동물 사진',
         inputClothLabel: '샘플 의상',
-        resultLabel: '내 최근 결과',
+        resultLabel: '예시 결과',
         stepChooseFace: '반려동물 사진 넣기',
         stepChooseCloth: '샘플 의상 선택',
         stepGenerate: '생성 후 결과 확인',
-        faceCaption: '강아지나 고양이 샘플 이미지를 먼저 써도 되고, 내 반려동물 사진을 바로 업로드해도 됩니다.',
+        faceCaption: '실제 히스토리에서 사용한 반려동물 입력 이미지를 예시로 고정해 두었습니다.',
         clothCaption: '의상 이미지는 직접 업로드하거나 외부 웹페이지에서 드래그해서 넣을 수 있습니다.',
-        resultCaption: latestHistoryImage
-          ? '마이페이지 히스토리에 저장된 최근 반려동물 결과 이미지를 사용합니다.'
-          : '로그인 후 이미지를 한 번 생성하면 이 위치에 내 히스토리 결과가 표시됩니다.',
+        resultCaption: '2026-03-19 23:03 기준 히스토리 결과 이미지를 예시로 고정해 두었습니다.',
         emptyResultTitle: '히스토리 결과가 아직 없습니다',
         emptyResultDescription: '로그인 후 강아지나 고양이 이미지를 한 번 생성하면 이 칸에 내 실제 결과가 표시됩니다.',
         dragGuideTitle: '다른 웹사이트 이미지도 바로 끌어다 넣을 수 있습니다',
@@ -3115,15 +3120,13 @@ const App: React.FC = () => {
         outfitSampleLabel: 'Outfit sample image',
         inputFaceLabel: 'Pet photo',
         inputClothLabel: 'Sample outfit',
-        resultLabel: 'My latest result',
+        resultLabel: 'Example result',
         stepChooseFace: 'Add pet photo',
         stepChooseCloth: 'Choose sample outfit',
         stepGenerate: 'Generate and review',
-        faceCaption: 'You can start with a dog or cat sample image, or upload your own pet photo right away.',
+        faceCaption: 'This stage uses a fixed pet input image from the saved history example.',
         clothCaption: 'The outfit image can be uploaded directly or dragged in from another web page.',
-        resultCaption: latestHistoryImage
-          ? 'The guide uses the latest pet fitting result saved in your My Page history.'
-          : 'After you sign in and generate an image, your saved pet fitting result will appear here.',
+        resultCaption: 'This stage uses the saved history result captured on 2026-03-19 23:03 as a fixed example.',
         emptyResultTitle: 'No history result yet',
         emptyResultDescription: 'Generate one pet fitting result after signing in and this guide will show your saved result here.',
         dragGuideTitle: 'You can drag images in from other websites',
@@ -5187,63 +5190,57 @@ const App: React.FC = () => {
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </article>
-                <div className="sample-reference-layout">
-                  <aside className="sample-reference-sidebar">
-                    <article className="page-article sample-reference-panel">
-                      <h2>{landingContent.sampleOutfits.breedTitle}</h2>
-                      <p>{landingContent.sampleOutfits.breedBody}</p>
-                      {petBreedGuideGroups.map((group) => (
-                        <section key={group.category} className="sample-breed-group">
-                          <div className="sample-reference-group-head">
-                            <span className="sample-outfit-country-pill">{group.label}</span>
-                          </div>
-                          <div className="sample-breed-grid">
-                            {group.guides.map((guide) => (
-                              <button
-                                key={guide.id}
-                                className="sample-breed-card"
-                                onClick={() => openBreedGuide(guide.id)}
-                                type="button"
-                              >
-                                <div className="sample-breed-card-image">
-                                  <img src={guide.url} alt={guide.breedLabel} loading="lazy" />
-                                </div>
-                                <div className="sample-breed-card-copy">
-                                  <strong>{guide.breedLabel}</strong>
-                                  <span>{guide.categoryLabel}</span>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </section>
-                      ))}
-                    </article>
-                  </aside>
-                  <div className="sample-reference-main">
-                    <article className="page-article">
-                      <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
-                      <p>{landingContent.sampleOutfits.catalogBody}</p>
-                    </article>
-                    <div className="sample-outfit-thumbnail-grid">
-                      {traditionalOutfitGuides.map((guide) => (
-                        <button
-                          key={guide.id}
-                          className="sample-outfit-thumbnail"
-                          onClick={() => openOutfitGuide(guide.id)}
-                          type="button"
-                        >
-                          <div className="sample-outfit-thumbnail-image">
-                            <img src={guide.image} alt={guide.outfitName} loading="lazy" />
-                          </div>
-                          <div className="sample-outfit-thumbnail-copy">
-                            <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
-                            <strong>{guide.outfitName}</strong>
-                            <p>{guide.summary}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <article className="page-article">
+                  <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
+                  <p>{landingContent.sampleOutfits.catalogBody}</p>
+                </article>
+                <div className="sample-outfit-thumbnail-grid">
+                  {traditionalOutfitGuides.map((guide) => (
+                    <button
+                      key={guide.id}
+                      className="sample-outfit-thumbnail"
+                      onClick={() => openOutfitGuide(guide.id)}
+                      type="button"
+                    >
+                      <div className="sample-outfit-thumbnail-image">
+                        <img src={guide.image} alt={guide.outfitName} loading="lazy" />
+                      </div>
+                      <div className="sample-outfit-thumbnail-copy">
+                        <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
+                        <strong>{guide.outfitName}</strong>
+                        <p>{guide.summary}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {currentPage === 'sample-friends' && (
+              <>
+                <article className="page-article">
+                  <h2>{landingContent.sampleOutfits.breedTitle}</h2>
+                  <p>{landingContent.sampleOutfits.breedBody}</p>
+                </article>
+                <div className="sample-friend-thumbnail-grid">
+                  {petBreedGuideGroups.flatMap((group) =>
+                    group.guides.map((guide) => (
+                      <button
+                        key={guide.id}
+                        className="sample-breed-card sample-friend-card"
+                        onClick={() => openBreedGuide(guide.id)}
+                        type="button"
+                      >
+                        <div className="sample-breed-card-image">
+                          <img src={guide.url} alt={guide.breedLabel} loading="lazy" />
+                        </div>
+                        <div className="sample-breed-card-copy">
+                          <span className="sample-outfit-country-pill">{group.label}</span>
+                          <strong>{guide.breedLabel}</strong>
+                        </div>
+                      </button>
+                    )),
+                  )}
                 </div>
               </>
             )}
@@ -5442,10 +5439,10 @@ const App: React.FC = () => {
             {currentPage === 'how-it-works' && (
               <HowItWorksVisualGuide
                 copy={howItWorksVisualCopy}
-                sampleDogSrc={guideSampleDog}
+                sampleDogSrc={guideFixedPet}
                 sampleCatSrc={guideSampleCat}
                 sampleClothSrc={guideSampleCloth}
-                resultImageSrc={latestHistoryImage}
+                resultImageSrc={guideFixedResult}
               />
             )}
             {relatedEditorialCards.length > 0 && currentPage !== 'traditional-clothing' && (

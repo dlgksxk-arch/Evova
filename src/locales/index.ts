@@ -18,6 +18,7 @@ export type SitePage =
   | 'home'
   | 'admin'
   | 'traditional-clothing'
+  | 'sample-friends'
   | 'countries'
   | 'how-it-works'
   | 'fashion-technology'
@@ -38,6 +39,7 @@ export const SITE_PAGES: SitePage[] = [
   'home',
   'admin',
   'traditional-clothing',
+  'sample-friends',
   'countries',
   'how-it-works',
   'fashion-technology',
@@ -60,6 +62,7 @@ export const NAV_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
+  'sample-friends',
   'countries',
   'fashion-technology',
 ];

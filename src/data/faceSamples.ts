@@ -45,17 +45,17 @@ export const dogSamples = createFaceSamples('dog', [
 ]);
 
 export const catSamples = createFaceSamples('cat', [
-  '1 Korean Jindo.png',
-  '2 Corgi.png',
-  '3 Dachshund.png',
-  '4 French Bulldog.png',
-  '5 Golden Retriever.png',
-  '6 Husky.png',
-  '7 Labrador Retriever.png',
-  '8 Pomeranian.png',
-  '9 Poodle.png',
-  '10 Shiba Inu.png',
-  '11 Chihuahua.png',
+  '1 Korean cat.png',
+  '2 Bengal.png',
+  '3 British Shorthair.png',
+  '4 Scottish Fold.png',
+  '5 Maine Coon.png',
+  '6 Persian.png',
+  '7 Ragdoll.png',
+  '8 Russian Blue.png',
+  '9 Siamese.png',
+  '10 Sphynx.png',
+  '11 American Shorthair.png',
 ]);
 
 export const FACE_SAMPLE_OPTIONS: Record<FaceCategory, FaceSampleOption[]> = {
