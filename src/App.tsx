@@ -52,6 +52,9 @@ type KakaoSdk = {
 declare global {
   interface Window {
     Kakao?: KakaoSdk;
+    adsbygoogle?: Array<Record<string, unknown>> & {
+      pauseAdRequests?: number;
+    };
   }
 }
 
@@ -80,6 +83,9 @@ const CREDIT_PRODUCTS = [
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
+const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
+const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
+const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
@@ -2625,6 +2631,17 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'contact',
   'board',
 ]);
+const ADSENSE_ELIGIBLE_PAGES = new Set<SitePage>([
+  'home',
+  'about',
+  'how-it-works',
+  'traditional-clothing',
+  'countries',
+  'fashion-technology',
+  'privacy',
+  'terms',
+  'contact',
+]);
 const LEGACY_PAGE_PATHS: Record<string, SitePage> = {
   '/how-it-works': 'how-it-works',
   '/traditional-clothing': 'traditional-clothing',
@@ -2664,6 +2681,39 @@ const getCanonicalPathFromLocation = (pathname: string, hash: string): string =>
   }
 
   return PAGE_PATHS.home;
+};
+const removeAutoAdsArtifacts = (): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document
+    .querySelectorAll('.google-auto-placed, ins.adsbygoogle[data-ad-status], ins.adsbygoogle[data-adsbygoogle-status]')
+    .forEach((node) => node.remove());
+};
+const setAdRequestsPaused = (paused: boolean): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.adsbygoogle = window.adsbygoogle || [];
+  window.adsbygoogle.pauseAdRequests = paused ? 1 : 0;
+};
+const ensureAdSenseScript = (): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (document.getElementById(ADSENSE_SCRIPT_ID)) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.id = ADSENSE_SCRIPT_ID;
+  script.async = true;
+  script.crossOrigin = 'anonymous';
+  script.src = ADSENSE_SCRIPT_SRC;
+  document.head.appendChild(script);
 };
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
@@ -3326,6 +3376,7 @@ const App: React.FC = () => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     const isPreviewHost = isPreviewRuntimeHost(hostname);
     const isIndexablePage = !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage);
+    const isAdSenseEligiblePage = !isPreviewHost && !sharedResultRouteId && ADSENSE_ELIGIBLE_PAGES.has(currentPage);
     const pageMeta = sharedResultRouteId
       ? {
           title: `${t.sharedResultTitle} | HAMDEVA`,
@@ -3392,6 +3443,14 @@ const App: React.FC = () => {
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: pageUrl });
     upsertMeta('meta[name="robots"]', { name: 'robots', content: robotsContent });
+
+    if (isAdSenseEligiblePage) {
+      setAdRequestsPaused(false);
+      ensureAdSenseScript();
+    } else {
+      setAdRequestsPaused(true);
+      removeAutoAdsArtifacts();
+    }
   }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {

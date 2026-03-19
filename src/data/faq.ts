@@ -34,6 +34,26 @@ export const homeFaqs: FAQItem[] = [
     answer:
       'Yes. HAMDEVA provides result handling actions such as downloading generated images and sharing links when available. Saved output should still be reviewed carefully because AI-generated results are previews, not exact product guarantees.',
   },
+  {
+    question: 'Who is HAMDEVA useful for?',
+    answer:
+      'HAMDEVA can be useful for shoppers comparing outfits online, travelers exploring traditional dress before a trip, students researching cultural garments, creators planning a concept shoot, and anyone who wants a quick visual preview before committing to a styling direction.',
+  },
+  {
+    question: 'Why does the homepage include educational content as well as a tool?',
+    answer:
+      'The site is intended to be more than a utility screen. The homepage explains what AI virtual fitting does, where it is helpful, how outfit references should be prepared, and why cultural clothing needs context. That extra content makes the experience more understandable for users and more valuable as a publisher page.',
+  },
+  {
+    question: 'What should I look at when comparing generated outfit previews?',
+    answer:
+      'Users should compare overall silhouette, sleeve shape, garment length, layering balance, neckline behavior, and how faithfully the result reflects the reference clothing image. HAMDEVA is most useful as a decision-support preview, so careful visual comparison matters more than treating one image as absolute truth.',
+  },
+  {
+    question: 'Does HAMDEVA only focus on traditional clothing?',
+    answer:
+      'No. Traditional clothing is one important content category because it benefits from explanation and side-by-side comparison, but the platform also supports broader outfit exploration. Sample collections can include classic, conceptual, and other visually distinct styles so users can test the fitting workflow in different ways.',
+  },
 ];
 
 export const aboutFaqs: FAQItem[] = [
@@ -51,6 +71,21 @@ export const aboutFaqs: FAQItem[] = [
     question: 'Does HAMDEVA claim to replace real garments or real fitting?',
     answer:
       'No. HAMDEVA is intended as a digital preview and exploration experience. It helps users compare looks and understand styling direction, but it does not replace physical craftsmanship, material feel, or exact body fitting.',
+  },
+  {
+    question: 'Why does HAMDEVA publish long-form information about garments and styling?',
+    answer:
+      'Many users want more than a button to press. They want to know what a garment is called, how it is usually worn, why a silhouette looks the way it does, and how to choose stronger reference images. Long-form content makes the platform more credible and more useful before the user starts generating images.',
+  },
+  {
+    question: 'How does HAMDEVA balance technology with cultural context?',
+    answer:
+      'The platform presents AI as a visual aid, not as a replacement for history, craft, or expertise. That is why cultural clothing pages include descriptive content about structure, use cases, and styling context alongside the fitting workflow. The goal is to support informed viewing, not shallow novelty alone.',
+  },
+  {
+    question: 'What makes HAMDEVA different from a generic image generator?',
+    answer:
+      'HAMDEVA is organized around a specific fashion task: using a person image and a clothing image to evaluate outfit direction. The surrounding content, curated samples, comparison-friendly output, and topic pages create a more focused publishing experience than a blank prompt-only tool.',
   },
 ];
 
@@ -75,6 +110,21 @@ export const howToUseFaqs: FAQItem[] = [
     answer:
       'AI generation is helpful for visual planning, but it can still interpret details rather than reproduce them exactly. Users should review the generated image as a guide for style direction, not as a guaranteed real-world outcome.',
   },
+  {
+    question: 'Why does HAMDEVA generate a 1x4 result sheet instead of one single image?',
+    answer:
+      'A multi-view sheet makes the result more useful for comparison. Many garments reveal important information in the side line, sleeve profile, waist balance, skirt volume, or back drape. One combined sheet lets users review those traits faster than isolated front-only images.',
+  },
+  {
+    question: 'What are common input mistakes that lower result quality?',
+    answer:
+      'Common problems include low-resolution face images, heavily cropped clothing references, cluttered backgrounds, garments folded so the silhouette is unclear, and photos where key details are hidden. Cleaner references usually produce stronger and more interpretable results.',
+  },
+  {
+    question: 'Should I use HAMDEVA before buying or renting clothing?',
+    answer:
+      'It can be a practical early-stage screening tool. HAMDEVA helps narrow down style direction, compare outfit mood, and decide whether a garment is worth deeper consideration. It should still be combined with real product information, measurements, and material checks before a final purchase decision.',
+  },
 ];
 
 export const sampleOutfitsFaqs: FAQItem[] = [
@@ -97,5 +147,20 @@ export const sampleOutfitsFaqs: FAQItem[] = [
     question: 'Do sample outfits work with both uploaded faces and sample faces?',
     answer:
       'Yes. In the current HAMDEVA flow, sample outfits can be paired with uploaded face images or with sample face images. This makes the sample collection useful for quick testing and visual experimentation.',
+  },
+  {
+    question: 'Why are sample outfits useful for new visitors?',
+    answer:
+      'Sample collections reduce friction. A new visitor does not need to prepare perfect clothing assets before understanding the product. They can browse curated references, see what kinds of silhouettes work well, and learn the generation flow before moving on to their own images.',
+  },
+  {
+    question: 'What kinds of comparisons can I make on the sample outfit pages?',
+    answer:
+      'Visitors can compare country-specific dress traditions, decorative density, sleeve and skirt volume, color harmony, and the difference between traditional, classic, and more conceptual looks. That makes the sample pages valuable as browsing content as well as a starting point for generation.',
+  },
+  {
+    question: 'Are sample pages only for entertainment?',
+    answer:
+      'No. They can also be useful for education, inspiration, styling research, and visual planning. A well-written sample page gives a visitor context about what they are looking at, while the linked fitting workflow turns that information into a practical experiment.',
   },
 ];
