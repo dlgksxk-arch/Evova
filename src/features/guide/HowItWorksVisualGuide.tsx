@@ -5,6 +5,15 @@ interface HowItWorksVisualGuideProps {
     eyebrow: string;
     title: string;
     description: string;
+    summaryCards: Array<{
+      title: string;
+      body: string;
+    }>;
+    sampleShowcaseTitle: string;
+    sampleShowcaseDescription: string;
+    dogSampleLabel: string;
+    catSampleLabel: string;
+    outfitSampleLabel: string;
     inputFaceLabel: string;
     inputClothLabel: string;
     resultLabel: string;
@@ -16,15 +25,27 @@ interface HowItWorksVisualGuideProps {
     resultCaption: string;
     emptyResultTitle: string;
     emptyResultDescription: string;
+    dragGuideTitle: string;
+    dragGuideDescription: string;
+    dragBrowserLabel: string;
+    dragDropzoneLabel: string;
+    dragDropzoneHint: string;
+    dragGuideSteps: string[];
+    checklistTitle: string;
+    checklistItems: string[];
+    resultTipsTitle: string;
+    resultTips: string[];
   };
-  sampleFaceSrc: string;
+  sampleDogSrc: string;
+  sampleCatSrc: string;
   sampleClothSrc: string;
   resultImageSrc: string | null;
 }
 
 const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
   copy,
-  sampleFaceSrc,
+  sampleDogSrc,
+  sampleCatSrc,
   sampleClothSrc,
   resultImageSrc,
 }) => (
@@ -36,6 +57,42 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
         <p>{copy.description}</p>
       </div>
 
+      <div className="howto-summary-grid">
+        {copy.summaryCards.map((card) => (
+          <article key={card.title} className="howto-summary-card">
+            <strong>{card.title}</strong>
+            <p>{card.body}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="howto-sample-showcase">
+        <div className="howto-section-copy">
+          <h3>{copy.sampleShowcaseTitle}</h3>
+          <p>{copy.sampleShowcaseDescription}</p>
+        </div>
+        <div className="howto-sample-grid">
+          <article className="howto-sample-card">
+            <div className="howto-sample-thumb">
+              <img src={sampleDogSrc} alt={copy.dogSampleLabel} loading="lazy" />
+            </div>
+            <strong>{copy.dogSampleLabel}</strong>
+          </article>
+          <article className="howto-sample-card">
+            <div className="howto-sample-thumb">
+              <img src={sampleCatSrc} alt={copy.catSampleLabel} loading="lazy" />
+            </div>
+            <strong>{copy.catSampleLabel}</strong>
+          </article>
+          <article className="howto-sample-card">
+            <div className="howto-sample-thumb">
+              <img src={sampleClothSrc} alt={copy.outfitSampleLabel} loading="lazy" />
+            </div>
+            <strong>{copy.outfitSampleLabel}</strong>
+          </article>
+        </div>
+      </div>
+
       <div className="howto-visual-flow">
         <div className="howto-visual-stage">
           <div className="howto-visual-stage-header">
@@ -44,7 +101,7 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
           </div>
           <div className="howto-stage-image-card">
             <span className="howto-stage-chip">{copy.inputFaceLabel}</span>
-            <img src={sampleFaceSrc} alt={copy.faceCaption} loading="lazy" />
+            <img src={sampleDogSrc} alt={copy.faceCaption} loading="lazy" />
           </div>
           <p>{copy.faceCaption}</p>
         </div>
@@ -83,6 +140,55 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
           </div>
           <p>{copy.resultCaption}</p>
         </div>
+      </div>
+
+      <div className="howto-guide-grid">
+        <article className="howto-guide-card">
+          <div className="howto-section-copy">
+            <h3>{copy.dragGuideTitle}</h3>
+            <p>{copy.dragGuideDescription}</p>
+          </div>
+          <div className="howto-drag-demo">
+            <div className="howto-browser-mock">
+              <span className="howto-browser-chip">{copy.dragBrowserLabel}</span>
+              <div className="howto-browser-image">
+                <img src={sampleClothSrc} alt={copy.outfitSampleLabel} loading="lazy" />
+              </div>
+            </div>
+            <div className="howto-drag-arrow" aria-hidden="true">→</div>
+            <div className="howto-dropzone-mock">
+              <span className="howto-stage-chip howto-stage-chip-static">{copy.dragDropzoneLabel}</span>
+              <strong>{copy.dragDropzoneHint}</strong>
+            </div>
+          </div>
+          <ol className="howto-guide-list">
+            {copy.dragGuideSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </article>
+
+        <article className="howto-guide-card">
+          <div className="howto-section-copy">
+            <h3>{copy.checklistTitle}</h3>
+          </div>
+          <ul className="howto-bullet-list">
+            {copy.checklistItems.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="howto-guide-card">
+          <div className="howto-section-copy">
+            <h3>{copy.resultTipsTitle}</h3>
+          </div>
+          <ul className="howto-bullet-list">
+            {copy.resultTips.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </article>
       </div>
     </article>
   </section>

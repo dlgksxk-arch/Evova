@@ -2972,8 +2972,9 @@ const App: React.FC = () => {
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = userProfile?.role === 'admin';
   const latestHistoryImage = historyItems.find((item) => Boolean(item.imageUrl))?.imageUrl ?? null;
-  const guideSampleFace = FACE_SAMPLES.female[0];
-  const guideSampleCloth = clothSampleOptions[0]?.image ?? '';
+  const guideSampleDog = FACE_SAMPLES.dog[0];
+  const guideSampleCat = FACE_SAMPLES.cat[0];
+  const guideSampleCloth = clothSampleOptions.find((sample) => sample.category === 'animal')?.image ?? clothSampleOptions[0]?.image ?? '';
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
   const preservedHistoryCount = historyItems.filter((item) => {
     const preservedUntil = getTimestampMillis(item.preservedUntil);
@@ -3018,40 +3019,122 @@ const App: React.FC = () => {
       };
   const howItWorksVisualCopy = lang === 'ko'
     ? {
-        eyebrow: '실제 화면 흐름',
-        title: '샘플 입력에서 내 결과까지 한 번에 확인',
-        description: '샘플 얼굴과 샘플 의상을 선택한 뒤 제작하면, 결과 이미지는 내 히스토리에 저장된 최근 생성물로 이어집니다.',
-        inputFaceLabel: '샘플 얼굴',
+        eyebrow: '실제 화면 기준 안내',
+        title: '강아지/고양이 이미지로 바로 따라하는 HAMDEVA 사용 방법',
+        description: '반려동물 사진 업로드, 다른 웹사이트 이미지 드래그 업로드, 생성 후 마이페이지에서 다시 확인하는 흐름을 한 화면에 정리했습니다.',
+        summaryCards: [
+          {
+            title: '1. 반려동물 사진 준비',
+            body: '정면에 가깝고 얼굴과 상체가 잘 보이는 강아지 또는 고양이 사진을 준비합니다.',
+          },
+          {
+            title: '2. 의상 이미지 넣기',
+            body: '직접 업로드해도 되고, 다른 웹사이트에서 의상 이미지를 바로 끌어와 업로드 박스에 놓아도 됩니다.',
+          },
+          {
+            title: '3. 결과 확인',
+            body: '생성이 끝나면 결과를 저장하고, 마이페이지 히스토리에서 다시 열어 비교할 수 있습니다.',
+          },
+        ],
+        sampleShowcaseTitle: '이런 이미지로 시작하면 이해가 빠릅니다',
+        sampleShowcaseDescription: '사용 방법 페이지에는 강아지/고양이 샘플과 의상 샘플을 함께 보여줘서 어떤 입력을 넣는지 바로 감이 오게 구성했습니다.',
+        dogSampleLabel: '강아지 샘플 사진',
+        catSampleLabel: '고양이 샘플 사진',
+        outfitSampleLabel: '의상 샘플 이미지',
+        inputFaceLabel: '반려동물 사진',
         inputClothLabel: '샘플 의상',
         resultLabel: '내 최근 결과',
-        stepChooseFace: '샘플 얼굴 선택',
+        stepChooseFace: '반려동물 사진 넣기',
         stepChooseCloth: '샘플 의상 선택',
-        stepGenerate: '제작 후 결과 확인',
-        faceCaption: '사용방법 예시에 쓰이는 샘플 얼굴 이미지입니다.',
-        clothCaption: '사용방법 예시에 쓰이는 샘플 의상 이미지입니다.',
+        stepGenerate: '생성 후 결과 확인',
+        faceCaption: '강아지나 고양이 샘플 이미지를 먼저 써도 되고, 내 반려동물 사진을 바로 업로드해도 됩니다.',
+        clothCaption: '의상 이미지는 직접 업로드하거나 외부 웹페이지에서 드래그해서 넣을 수 있습니다.',
         resultCaption: latestHistoryImage
-          ? '마이페이지 히스토리에 저장된 최근 결과 이미지를 사용합니다.'
-          : '로그인 후 이미지를 생성하면 이 위치에 내 히스토리 결과가 표시됩니다.',
+          ? '마이페이지 히스토리에 저장된 최근 반려동물 결과 이미지를 사용합니다.'
+          : '로그인 후 이미지를 한 번 생성하면 이 위치에 내 히스토리 결과가 표시됩니다.',
         emptyResultTitle: '히스토리 결과가 아직 없습니다',
-        emptyResultDescription: '로그인 후 이미지를 한 번 생성하면 사용 방법 예시의 결과 칸에 내 이미지가 표시됩니다.',
+        emptyResultDescription: '로그인 후 강아지나 고양이 이미지를 한 번 생성하면 이 칸에 내 실제 결과가 표시됩니다.',
+        dragGuideTitle: '다른 웹사이트 이미지도 바로 끌어다 넣을 수 있습니다',
+        dragGuideDescription: '의상 쇼핑몰, 블로그, 이미지 검색 페이지에서 마음에 드는 의상 사진을 찾았다면 저장하지 않고 바로 드래그해서 업로드 박스에 놓아도 됩니다.',
+        dragBrowserLabel: '웹페이지의 의상 이미지',
+        dragDropzoneLabel: '의상 업로드 박스',
+        dragDropzoneHint: '이미지를 끌어서 여기 놓기',
+        dragGuideSteps: [
+          '브라우저에서 의상 이미지를 찾습니다.',
+          '이미지를 클릭한 채로 HAMDEVA 업로드 박스로 끌어옵니다.',
+          '놓는 즉시 이미지가 업로드되어 미리보기에 반영됩니다.',
+        ],
+        checklistTitle: '업로드 전 체크하면 좋은 것',
+        checklistItems: [
+          '강아지나 고양이 얼굴이 너무 작거나 심하게 가려지지 않은 사진을 고릅니다.',
+          '의상은 전체 형태와 앞면 디테일이 보이는 이미지를 고르는 편이 안정적입니다.',
+          '배경이 단순하고 조명이 고른 이미지를 쓰면 결과가 더 깔끔합니다.',
+        ],
+        resultTipsTitle: '생성 후 이렇게 확인하세요',
+        resultTips: [
+          '마이페이지 히스토리에서 입력 이미지와 결과 이미지를 함께 비교할 수 있습니다.',
+          '마음에 드는 결과는 다운로드해서 저장하거나 다음 의상과 비교해 볼 수 있습니다.',
+          '의상만 바꿔 다시 생성하면 같은 반려동물로 여러 스타일을 빠르게 비교할 수 있습니다.',
+        ],
       }
     : {
-        eyebrow: 'Real flow preview',
-        title: 'See the flow from sample inputs to your saved result',
-        description: 'Pick a sample face and sample outfit, then compare them with the latest image saved in your own history.',
-        inputFaceLabel: 'Sample face',
+        eyebrow: 'Real on-screen flow',
+        title: 'How to use HAMDEVA with pet photos and outfit images',
+        description: 'This guide shows the full flow: upload a pet photo, drag an outfit image from another website if you want, then review the saved result in My Page.',
+        summaryCards: [
+          {
+            title: '1. Prepare a pet photo',
+            body: 'Use a clear dog or cat photo where the face and upper body are easy to read.',
+          },
+          {
+            title: '2. Add an outfit image',
+            body: 'You can upload a file directly or drag an outfit image from another website into the upload box.',
+          },
+          {
+            title: '3. Review the result',
+            body: 'After generation, save the result and open it again from your My Page history.',
+          },
+        ],
+        sampleShowcaseTitle: 'Quick visual examples',
+        sampleShowcaseDescription: 'The page shows dog, cat, and outfit sample images so the input structure is easy to understand at a glance.',
+        dogSampleLabel: 'Dog sample photo',
+        catSampleLabel: 'Cat sample photo',
+        outfitSampleLabel: 'Outfit sample image',
+        inputFaceLabel: 'Pet photo',
         inputClothLabel: 'Sample outfit',
         resultLabel: 'My latest result',
-        stepChooseFace: 'Choose sample face',
+        stepChooseFace: 'Add pet photo',
         stepChooseCloth: 'Choose sample outfit',
         stepGenerate: 'Generate and review',
-        faceCaption: 'Sample face image used in the guide.',
-        clothCaption: 'Sample outfit image used in the guide.',
+        faceCaption: 'You can start with a dog or cat sample image, or upload your own pet photo right away.',
+        clothCaption: 'The outfit image can be uploaded directly or dragged in from another web page.',
         resultCaption: latestHistoryImage
-          ? 'The guide uses the latest result image saved in your My Page history.'
-          : 'After you sign in and generate an image, your own history result will appear here.',
+          ? 'The guide uses the latest pet fitting result saved in your My Page history.'
+          : 'After you sign in and generate an image, your saved pet fitting result will appear here.',
         emptyResultTitle: 'No history result yet',
-        emptyResultDescription: 'Generate one image after signing in and this guide will show your own saved result here.',
+        emptyResultDescription: 'Generate one pet fitting result after signing in and this guide will show your saved result here.',
+        dragGuideTitle: 'You can drag images in from other websites',
+        dragGuideDescription: 'If you find an outfit image on a shopping page, blog, or image search result, you can drag it straight into HAMDEVA without saving it first.',
+        dragBrowserLabel: 'Outfit image on a web page',
+        dragDropzoneLabel: 'Outfit upload box',
+        dragDropzoneHint: 'Drag the image here to upload',
+        dragGuideSteps: [
+          'Open a web page that shows the outfit image you want to test.',
+          'Drag the image from the page into the HAMDEVA upload area.',
+          'Drop it and the preview will update right away.',
+        ],
+        checklistTitle: 'Before you upload',
+        checklistItems: [
+          'Choose a dog or cat photo with a visible face and stable pose.',
+          'Use an outfit image where the full shape and front details are easy to see.',
+          'Simple backgrounds and balanced lighting usually give cleaner results.',
+        ],
+        resultTipsTitle: 'After generation',
+        resultTips: [
+          'Open My Page history to compare the input images and the final result together.',
+          'Download the result you want to keep or compare it with another outfit.',
+          'Try the same pet photo with different outfits to review multiple looks quickly.',
+        ],
       };
   const paymentSessionId = (() => {
     const params = new URLSearchParams(routeSearch);
@@ -5063,7 +5146,7 @@ const App: React.FC = () => {
                 formatTimestampLabel={formatTimestampLabel}
               />
             )}
-            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPageCopy?.sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -5300,7 +5383,8 @@ const App: React.FC = () => {
             {currentPage === 'how-it-works' && (
               <HowItWorksVisualGuide
                 copy={howItWorksVisualCopy}
-                sampleFaceSrc={guideSampleFace}
+                sampleDogSrc={guideSampleDog}
+                sampleCatSrc={guideSampleCat}
                 sampleClothSrc={guideSampleCloth}
                 resultImageSrc={latestHistoryImage}
               />

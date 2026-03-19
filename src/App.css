@@ -2171,6 +2171,7 @@ a { color: inherit; text-decoration: none; }
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.35fr);
   gap: 16px;
   align-items: stretch;
+  margin-top: 24px;
 }
 
 .howto-visual-stage {
@@ -2258,6 +2259,185 @@ a { color: inherit; text-decoration: none; }
   color: var(--primary);
   font-size: 34px;
   font-weight: 900;
+}
+
+.howto-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.howto-summary-card,
+.howto-guide-card,
+.howto-sample-card {
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.howto-summary-card {
+  padding: 20px;
+}
+
+.howto-summary-card strong,
+.howto-sample-card strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.howto-summary-card p,
+.howto-guide-card p,
+.howto-sample-card p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.howto-sample-showcase {
+  margin-bottom: 24px;
+}
+
+.howto-section-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.howto-section-copy h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.howto-section-copy p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.howto-sample-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.howto-sample-card {
+  padding: 14px;
+}
+
+.howto-sample-thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: var(--bg-alt);
+}
+
+.howto-sample-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.howto-guide-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.howto-guide-card {
+  padding: 22px;
+}
+
+.howto-drag-demo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.howto-browser-mock,
+.howto-dropzone-mock {
+  position: relative;
+  min-height: 220px;
+  border-radius: 20px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 34%, var(--border));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-gold) 20%, transparent), transparent 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--bg-alt) 92%, transparent));
+  padding: 16px;
+}
+
+.howto-browser-chip {
+  display: inline-flex;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.howto-browser-image {
+  margin-top: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 154px;
+  background: var(--bg-alt);
+}
+
+.howto-browser-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.howto-dropzone-mock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.howto-dropzone-mock strong {
+  font-size: 18px;
+}
+
+.howto-stage-chip-static {
+  position: static;
+}
+
+.howto-drag-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.howto-guide-list,
+.howto-bullet-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-sub);
+  line-height: 1.8;
+}
+
+.howto-guide-list li + li,
+.howto-bullet-list li + li {
+  margin-top: 8px;
 }
 
 .country-card {
@@ -3587,6 +3767,16 @@ a { color: inherit; text-decoration: none; }
   }
   .howto-flow-arrow {
     min-height: 40px;
+    transform: rotate(90deg);
+  }
+  .howto-summary-grid,
+  .howto-sample-grid,
+  .howto-guide-grid,
+  .howto-drag-demo {
+    grid-template-columns: 1fr;
+  }
+  .howto-drag-arrow {
+    min-height: 32px;
     transform: rotate(90deg);
   }
   .sample-outfit-thumbnail-image {
