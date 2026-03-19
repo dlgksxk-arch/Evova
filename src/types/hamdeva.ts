@@ -186,6 +186,9 @@ export interface GenerationRecord {
   id: string;
   uid: string;
   imageUrl?: string | null;
+  subjectType?: SubjectType;
+  personInputLabel?: string | null;
+  garmentInputLabel?: string | null;
   requestId?: string;
   resultType?: 'image_generation' | 'video_generation';
   videoRequestId?: string | null;

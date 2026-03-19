@@ -12,6 +12,8 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
+const HISTORY_LIST_VISIBLE_ROWS = 20;
+const HISTORY_ROW_MIN_HEIGHT = 72;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -58,6 +60,34 @@ const inferFileExtension = (item: GenerationRecord): string => {
   const match = item.imageUrl?.match(/\.([a-z0-9]+)(?:\?|$)/i);
   return match?.[1] || 'png';
 };
+const getHistoryCopy = (locale: string) => {
+  if (locale.startsWith('ko')) {
+    return {
+      personLabel: '사용 인물',
+      garmentLabel: '사용 의상',
+      unknown: '기록 정보 없음',
+    };
+  }
+  if (locale.startsWith('ja')) {
+    return {
+      personLabel: '人物入力',
+      garmentLabel: '衣装入力',
+      unknown: '記録情報なし',
+    };
+  }
+  if (locale.startsWith('zh')) {
+    return {
+      personLabel: '使用人物',
+      garmentLabel: '使用服装',
+      unknown: '无记录信息',
+    };
+  }
+  return {
+    personLabel: 'Person used',
+    garmentLabel: 'Outfit used',
+    unknown: 'No saved input info',
+  };
+};
 
 const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   items,
@@ -77,6 +107,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(0.5);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const loadingStartedAtRef = useRef(0);
+  const historyCopy = getHistoryCopy(locale);
 
   useEffect(() => {
     const handleResize = () => {
@@ -189,7 +220,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
             display: 'grid',
             gridTemplateColumns: '1fr',
             gap: 8,
-            maxHeight: 304,
+            maxHeight: HISTORY_LIST_VISIBLE_ROWS * HISTORY_ROW_MIN_HEIGHT,
             overflowY: 'auto',
             paddingRight: 4,
           }}
@@ -205,8 +236,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 width: '100%',
                 justifyContent: 'flex-start',
                 textAlign: 'left',
-                padding: '14px 16px',
-                minHeight: 70,
+                padding: '12px 16px',
+                minHeight: HISTORY_ROW_MIN_HEIGHT,
                 background: hoveredItemId === item.id ? 'var(--upload-hover-bg)' : 'transparent',
                 transition: 'background-color 0.2s ease, opacity 0.2s ease',
                 opacity: hoveredItemId === item.id ? 1 : 0.96,
@@ -216,6 +247,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
             >
               <span style={{ display: 'grid', gap: 4 }}>
                 <strong>[{formatDateTime(item.createdAt, locale)}] IMAGE{isPreservedItem(item) ? ` (${copy.historyArchived})` : ''}</strong>
+                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                  {historyCopy.personLabel}: {item.personInputLabel || historyCopy.unknown}
+                </span>
+                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                  {historyCopy.garmentLabel}: {item.garmentInputLabel || historyCopy.unknown}
+                </span>
                 <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
                   {selectedItem?.id === item.id ? copy.historyPreviewClose : copy.historyPreviewOpen}
                 </span>
@@ -241,6 +278,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
             <div style={{ minWidth: 0 }}>
               <strong style={{ display: 'block' }}>{selectedHeaderText}</strong>
               <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
+              <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                {historyCopy.personLabel}: {selectedItem.personInputLabel || historyCopy.unknown}
+              </p>
+              <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                {historyCopy.garmentLabel}: {selectedItem.garmentInputLabel || historyCopy.unknown}
+              </p>
             </div>
             <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={resetExpandedPanel} type="button">{copy.close}</button>
           </div>

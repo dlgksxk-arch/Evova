@@ -1402,6 +1402,8 @@ const markGenerationCompleted = async (user, requestId, metadata, options) => {
             requestId,
             resultType: 'image_generation',
             subjectType: metadata.subjectType || 'human',
+            personInputLabel: options.personInputLabel || null,
+            garmentInputLabel: options.garmentInputLabel || null,
             usedCreditType: options.usedCreditType,
             usedCreditAmount: options.usedCreditAmount,
             watermarkApplied: options.watermarkApplied,
@@ -2518,7 +2520,7 @@ const handleTryOnRequest = async (req, res, label) => {
         res.status(500).json({ error: OPENAI_CONFIG_ERROR, message: OPENAI_CONFIG_MESSAGE });
         return;
     }
-    const { personImage, garmentImage, bodyProfile, requestId, subjectType } = req.body;
+    const { personImage, garmentImage, personInputLabel, garmentInputLabel, bodyProfile, requestId, subjectType } = req.body;
     if (!personImage || !garmentImage || !requestId) {
         res.status(400).json({ error: '필수 파라미터가 누락되었습니다.' });
         return;
@@ -2567,6 +2569,8 @@ const handleTryOnRequest = async (req, res, label) => {
             usedCreditType: chargeResult.usedCreditType,
             usedCreditAmount: chargeResult.chargedAmount,
             watermarkApplied,
+            personInputLabel,
+            garmentInputLabel,
         });
         const response = {
             success: true,

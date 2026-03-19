@@ -119,6 +119,9 @@ interface GenerationRecord {
   id: string;
   uid: string;
   imageUrl?: string | null;
+  subjectType?: SubjectType;
+  personInputLabel?: string | null;
+  garmentInputLabel?: string | null;
   requestId?: string;
   resultType?: 'image_generation' | 'video_generation';
   videoRequestId?: string | null;
@@ -2682,6 +2685,57 @@ const getCanonicalPathFromLocation = (pathname: string, hash: string): string =>
 
   return PAGE_PATHS.home;
 };
+const getFaceSampleCategoryName = (lang: LanguageCode, category: keyof typeof FACE_SAMPLES): string => {
+  const categoryNames = {
+    ko: { female: '여성', male: '남성', dog: '강아지', cat: '고양이' },
+    ja: { female: '女性', male: '男性', dog: '犬', cat: '猫' },
+    zh: { female: '女性', male: '男性', dog: '狗', cat: '猫' },
+    en: { female: 'Female', male: 'Male', dog: 'Dog', cat: 'Cat' },
+  } as const;
+  const normalizedLang = lang === 'ja' || lang === 'zh' || lang === 'ko' ? lang : 'en';
+  return categoryNames[normalizedLang][category];
+};
+const getFaceInputLabel = (
+  lang: LanguageCode,
+  sampleBadgeLabel: string,
+  selectedSampleUrl: string | null,
+  personFile: File | null,
+): string => {
+  if (selectedSampleUrl) {
+    const matchedEntry = (Object.entries(FACE_SAMPLES) as [keyof typeof FACE_SAMPLES, string[]][])
+      .find(([, samples]) => samples.includes(selectedSampleUrl));
+    if (matchedEntry) {
+      const [category, samples] = matchedEntry;
+      const sampleIndex = samples.indexOf(selectedSampleUrl);
+      return `${sampleBadgeLabel} ${getFaceSampleCategoryName(lang, category)} ${sampleIndex + 1}`;
+    }
+  }
+
+  if (personFile?.name?.trim()) {
+    return personFile.name.trim();
+  }
+
+  return lang === 'ko' ? '업로드한 인물 사진' : 'Uploaded person photo';
+};
+const getGarmentInputLabel = (
+  lang: LanguageCode,
+  sampleBadgeLabel: string,
+  selectedClothSampleUrl: string | null,
+  clothFile: File | null,
+): string => {
+  if (selectedClothSampleUrl) {
+    const matchedSample = clothSampleOptions.find((sample) => sample.image === selectedClothSampleUrl);
+    if (matchedSample) {
+      return `${sampleBadgeLabel} ${lang === 'en' ? matchedSample.countryLabelEn : matchedSample.label}`;
+    }
+  }
+
+  if (clothFile?.name?.trim()) {
+    return clothFile.name.trim();
+  }
+
+  return lang === 'ko' ? '업로드한 의상 사진' : 'Uploaded garment photo';
+};
 const removeAutoAdsArtifacts = (): void => {
   if (typeof document === 'undefined') {
     return;
@@ -4298,6 +4352,8 @@ const App: React.FC = () => {
       );
 
       const resolvedSubjectType = subjectType;
+      const personInputLabel = getFaceInputLabel(lang, sampleBadgeLabel, selectedSampleUrl, personFile);
+      const garmentInputLabel = getGarmentInputLabel(lang, sampleBadgeLabel, selectedClothSampleUrl, clothFile);
 
       const requestId = createRequestId();
       const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
@@ -4307,6 +4363,8 @@ const App: React.FC = () => {
           requestId,
           personImage: preparedPersonImage,
           garmentImage: preparedClothImage,
+          personInputLabel,
+          garmentInputLabel,
           subjectType: resolvedSubjectType,
           bodyProfile: { gender },
         }),

@@ -367,6 +367,8 @@ type PaymentSessionStatusResult = {
 type GenerationUsageMetadata = {
   type?: GenerationRequestType;
   subjectType?: SubjectType;
+  personInputLabel?: string;
+  garmentInputLabel?: string;
   model: string;
   quality: string;
   size: string;
@@ -1880,6 +1882,8 @@ const markGenerationCompleted = async (
     usedCreditType: CreditType;
     usedCreditAmount: number;
     watermarkApplied: boolean;
+    personInputLabel?: string;
+    garmentInputLabel?: string;
   },
 ): Promise<void> => {
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
@@ -1903,6 +1907,8 @@ const markGenerationCompleted = async (
       requestId,
       resultType: 'image_generation',
       subjectType: metadata.subjectType || 'human',
+      personInputLabel: options.personInputLabel || null,
+      garmentInputLabel: options.garmentInputLabel || null,
       usedCreditType: options.usedCreditType,
       usedCreditAmount: options.usedCreditAmount,
       watermarkApplied: options.watermarkApplied,
@@ -3273,9 +3279,11 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
     return;
   }
 
-  const { personImage, garmentImage, bodyProfile, requestId, subjectType } = req.body as {
+  const { personImage, garmentImage, personInputLabel, garmentInputLabel, bodyProfile, requestId, subjectType } = req.body as {
     personImage: string;
     garmentImage: string;
+    personInputLabel?: string;
+    garmentInputLabel?: string;
     bodyProfile?: BodyProfile;
     requestId?: string;
     subjectType?: SubjectType;
@@ -3331,6 +3339,8 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       usedCreditType: chargeResult.usedCreditType,
       usedCreditAmount: chargeResult.chargedAmount,
       watermarkApplied,
+      personInputLabel,
+      garmentInputLabel,
     });
     const response: TryOnSuccessResponse = {
       success: true,
