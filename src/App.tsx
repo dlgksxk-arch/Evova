@@ -4367,7 +4367,8 @@ const App: React.FC = () => {
       setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
-    if (!authForm.email || !authForm.password) {
+    const normalizedEmail = authForm.email.trim();
+    if (!normalizedEmail || !authForm.password) {
       setAuthError(t.authInvalid);
       return;
     }
@@ -4377,10 +4378,10 @@ const App: React.FC = () => {
     try {
       let signedInUser: User;
       if (authMode === 'login') {
-        const credential = await signInWithEmailAndPassword(auth, authForm.email, authForm.password);
+        const credential = await signInWithEmailAndPassword(auth, normalizedEmail, authForm.password);
         signedInUser = credential.user;
       } else {
-        const credential = await createUserWithEmailAndPassword(auth, authForm.email, authForm.password);
+        const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, authForm.password);
         signedInUser = credential.user;
       }
       setShowAuthModal(false);

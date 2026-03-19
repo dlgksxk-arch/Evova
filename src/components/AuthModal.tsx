@@ -69,12 +69,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        <div className="auth-modal-body">
+        <form
+          className="auth-modal-body"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
           <label className="auth-field">
             <span>{copy.emailLabel}</span>
             <input
               autoComplete="email"
               type="email"
+              required
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
             />
@@ -85,6 +92,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             <input
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               type="password"
+              required
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
             />
@@ -96,7 +104,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             className="generate-btn auth-submit-btn"
             disabled={mode === 'login' ? loginActionsDisabled : isSubmitting}
             onClick={onSubmit}
-            type="button"
+            type="submit"
           >
             {mode === 'login' ? copy.loginButton : copy.signupButton}
           </button>
@@ -118,7 +126,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           >
             {mode === 'login' ? copy.switchToSignup : copy.switchToLogin}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );
