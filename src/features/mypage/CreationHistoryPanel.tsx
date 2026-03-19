@@ -67,6 +67,12 @@ const getHistoryCopy = (locale: string) => {
       garmentLabel: '사용 의상',
       resultLabel: '생성 결과',
       unknown: '기록 정보 없음',
+      savedPerson: '저장된 인물 이미지',
+      savedGarment: '저장된 의상 이미지',
+      subjectHuman: '인물 기준 이미지',
+      subjectDog: '강아지 기준 이미지',
+      subjectCat: '고양이 기준 이미지',
+      resultPreview: '생성 결과 미리보기',
     };
   }
   if (locale.startsWith('ja')) {
@@ -75,6 +81,12 @@ const getHistoryCopy = (locale: string) => {
       garmentLabel: '衣装入力',
       resultLabel: '生成結果',
       unknown: '記録情報なし',
+      savedPerson: '保存された人物画像',
+      savedGarment: '保存された衣装画像',
+      subjectHuman: '人物参照画像',
+      subjectDog: '犬の参照画像',
+      subjectCat: '猫の参照画像',
+      resultPreview: '生成結果プレビュー',
     };
   }
   if (locale.startsWith('zh')) {
@@ -83,6 +95,12 @@ const getHistoryCopy = (locale: string) => {
       garmentLabel: '使用服装',
       resultLabel: '生成结果',
       unknown: '无记录信息',
+      savedPerson: '已保存的人物图片',
+      savedGarment: '已保存的服装图片',
+      subjectHuman: '人物参考图片',
+      subjectDog: '狗参考图片',
+      subjectCat: '猫参考图片',
+      resultPreview: '生成结果预览',
     };
   }
   return {
@@ -90,8 +108,34 @@ const getHistoryCopy = (locale: string) => {
     garmentLabel: 'Outfit used',
     resultLabel: 'Result image',
     unknown: 'No saved input info',
+    savedPerson: 'Saved person image',
+    savedGarment: 'Saved outfit image',
+    subjectHuman: 'Human reference image',
+    subjectDog: 'Dog reference image',
+    subjectCat: 'Cat reference image',
+    resultPreview: 'Generated result preview',
   };
 };
+
+const getSubjectFallbackLabel = (item: GenerationRecord, historyCopy: ReturnType<typeof getHistoryCopy>) => {
+  if (item.subjectType === 'dog') {
+    return historyCopy.subjectDog;
+  }
+  if (item.subjectType === 'cat') {
+    return historyCopy.subjectCat;
+  }
+  return historyCopy.subjectHuman;
+};
+
+const getResolvedPersonLabel = (item: GenerationRecord, historyCopy: ReturnType<typeof getHistoryCopy>): string =>
+  item.personInputLabel?.trim()
+    || (item.personPreviewUrl ? historyCopy.savedPerson : '')
+    || getSubjectFallbackLabel(item, historyCopy);
+
+const getResolvedGarmentLabel = (item: GenerationRecord, historyCopy: ReturnType<typeof getHistoryCopy>): string =>
+  item.garmentInputLabel?.trim()
+    || (item.garmentPreviewUrl ? historyCopy.savedGarment : '')
+    || historyCopy.savedGarment;
 
 const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   items,
@@ -112,19 +156,22 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const loadingStartedAtRef = useRef(0);
   const historyCopy = getHistoryCopy(locale);
+  const getPersonLabel = (item: GenerationRecord) => getResolvedPersonLabel(item, historyCopy);
+  const getGarmentLabel = (item: GenerationRecord) => getResolvedGarmentLabel(item, historyCopy);
   const previewCardStyle: React.CSSProperties = {
     border: '1px solid var(--border)',
-    borderRadius: 16,
-    background: 'rgba(255,255,255,0.55)',
-    padding: 12,
+    borderRadius: 18,
+    background: 'color-mix(in srgb, var(--surface) 94%, transparent)',
+    padding: 14,
     display: 'grid',
     gap: 10,
+    boxShadow: 'var(--shadow-sm)',
   };
   const previewThumbStyle: React.CSSProperties = {
     width: '100%',
     aspectRatio: '1 / 1',
     objectFit: 'cover',
-    borderRadius: 12,
+    borderRadius: 14,
     border: '1px solid var(--border)',
     background: 'rgba(255,255,255,0.7)',
   };
@@ -268,10 +315,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               <span style={{ display: 'grid', gap: 4 }}>
                 <strong>[{formatDateTime(item.createdAt, locale)}] IMAGE{isPreservedItem(item) ? ` (${copy.historyArchived})` : ''}</strong>
                 <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {historyCopy.personLabel}: {item.personInputLabel || historyCopy.unknown}
+                  {historyCopy.personLabel}: {getPersonLabel(item)}
                 </span>
                 <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {historyCopy.garmentLabel}: {item.garmentInputLabel || historyCopy.unknown}
+                  {historyCopy.garmentLabel}: {getGarmentLabel(item)}
                 </span>
                 <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
                   {selectedItem?.id === item.id ? copy.historyPreviewClose : copy.historyPreviewOpen}
@@ -299,10 +346,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               <strong style={{ display: 'block' }}>{selectedHeaderText}</strong>
               <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
               <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                {historyCopy.personLabel}: {selectedItem.personInputLabel || historyCopy.unknown}
+                {historyCopy.personLabel}: {getPersonLabel(selectedItem)}
               </p>
               <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                {historyCopy.garmentLabel}: {selectedItem.garmentInputLabel || historyCopy.unknown}
+                {historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}
               </p>
             </div>
             <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={resetExpandedPanel} type="button">{copy.close}</button>
@@ -356,103 +403,104 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, minmax(0, 1fr))',
-                gap: 12,
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(240px, 320px) minmax(0, 1fr)',
+                gap: 16,
                 marginBottom: 16,
+                alignItems: 'stretch',
               }}
             >
-              <div style={previewCardStyle}>
-                <strong>{historyCopy.personLabel}</strong>
-                {selectedItem.personPreviewUrl ? (
-                  <img
-                    src={selectedItem.personPreviewUrl}
-                    alt={historyCopy.personLabel}
-                    style={previewThumbStyle}
-                  />
-                ) : (
-                  <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                    {selectedItem.personInputLabel || historyCopy.unknown}
-                  </div>
-                )}
-                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {selectedItem.personInputLabel || historyCopy.unknown}
-                </span>
-              </div>
-              <div style={previewCardStyle}>
-                <strong>{historyCopy.garmentLabel}</strong>
-                {selectedItem.garmentPreviewUrl ? (
-                  <img
-                    src={selectedItem.garmentPreviewUrl}
-                    alt={historyCopy.garmentLabel}
-                    style={previewThumbStyle}
-                  />
-                ) : (
-                  <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                    {selectedItem.garmentInputLabel || historyCopy.unknown}
-                  </div>
-                )}
-                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {selectedItem.garmentInputLabel || historyCopy.unknown}
-                </span>
-              </div>
-              <div style={previewCardStyle}>
-                <strong>{historyCopy.resultLabel}</strong>
-                {selectedItem.imageUrl ? (
-                  <img
-                    src={selectedItem.imageUrl}
-                    alt={historyCopy.resultLabel}
-                    style={previewThumbStyle}
-                  />
-                ) : (
-                  <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                    {historyCopy.unknown}
-                  </div>
-                )}
-                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                  {selectedHeaderText || historyCopy.unknown}
-                </span>
-              </div>
-            </div>
-
-            {isImageLoading || !isImageReady ? (
-              <div style={{ minHeight: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
-                {copy.historyLoading}
-              </div>
-            ) : null}
-
-            <div
-              style={{
-                width: '100%',
-                overflowX: 'auto',
-                overflowY: 'visible',
-                border: '1px solid var(--border)',
-                borderRadius: 16,
-                padding: 16,
-                background: 'rgba(255,255,255,0.35)',
-              }}
-            >
-              <img
-                alt={copy.resultPreviewAlt}
-                onLoad={finishImageLoading}
-                draggable={false}
-                src={selectedItem.imageUrl || ''}
+              <div
                 style={{
-                  display: 'block',
-                  margin: '0 auto',
-                  width: `${zoom * 100}%`,
-                  maxWidth: '100%',
-                  height: 'auto',
-                  userSelect: 'none',
-                  visibility: isImageLoading ? 'hidden' : 'visible',
+                  display: 'grid',
+                  gap: 16,
+                  gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
                 }}
-              />
-            </div>
-
-            {!isImageLoading ? (
-              <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
-                {copy.historyZoomHint}
+              >
+                <div style={previewCardStyle}>
+                  <strong>{historyCopy.personLabel}</strong>
+                  {selectedItem.personPreviewUrl ? (
+                    <img
+                      src={selectedItem.personPreviewUrl}
+                      alt={historyCopy.personLabel}
+                      style={previewThumbStyle}
+                    />
+                  ) : (
+                    <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                      {getPersonLabel(selectedItem)}
+                    </div>
+                  )}
+                  <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                    {getPersonLabel(selectedItem)}
+                  </span>
+                </div>
+                <div style={previewCardStyle}>
+                  <strong>{historyCopy.garmentLabel}</strong>
+                  {selectedItem.garmentPreviewUrl ? (
+                    <img
+                      src={selectedItem.garmentPreviewUrl}
+                      alt={historyCopy.garmentLabel}
+                      style={previewThumbStyle}
+                    />
+                  ) : (
+                    <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                      {getGarmentLabel(selectedItem)}
+                    </div>
+                  )}
+                  <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                    {getGarmentLabel(selectedItem)}
+                  </span>
+                </div>
               </div>
-            ) : null}
+              <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
+                <strong>{historyCopy.resultLabel}</strong>
+                <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                  {historyCopy.resultPreview}
+                </span>
+                {isImageLoading || !isImageReady ? (
+                  <div style={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
+                    {copy.historyLoading}
+                  </div>
+                ) : null}
+                <div
+                  style={{
+                    width: '100%',
+                    overflowX: 'auto',
+                    overflowY: 'visible',
+                    border: '1px solid var(--border)',
+                    borderRadius: 16,
+                    padding: 16,
+                    background: 'rgba(255,255,255,0.35)',
+                    minHeight: isMobile ? 280 : 520,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <img
+                    alt={copy.resultPreviewAlt}
+                    onLoad={finishImageLoading}
+                    draggable={false}
+                    src={selectedItem.imageUrl || ''}
+                    style={{
+                      display: 'block',
+                      margin: '0 auto',
+                      width: `${zoom * 100}%`,
+                      maxWidth: '100%',
+                      maxHeight: isMobile ? '60vh' : '72vh',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      userSelect: 'none',
+                      visibility: isImageLoading ? 'hidden' : 'visible',
+                    }}
+                  />
+                </div>
+                {!isImageLoading ? (
+                  <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
+                    {copy.historyZoomHint}
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           <div
