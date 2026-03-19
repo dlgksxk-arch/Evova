@@ -43,7 +43,7 @@ import {
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
-import { clothSampleOptions } from './data/clothSamples';
+import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
 import { FACE_SAMPLES } from './data/faceSamples';
 import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
@@ -2904,6 +2904,7 @@ const App: React.FC = () => {
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
+  const [selectedOutfitGuideId, setSelectedOutfitGuideId] = useState<string | null>(null);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -2932,6 +2933,8 @@ const App: React.FC = () => {
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
   const contentLocale = getContentLocale(lang);
   const landingContent = getLandingContent(lang);
+  const traditionalOutfitGuides = getTraditionalOutfitGuides(lang);
+  const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const t = uiTranslations[lang];
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
@@ -4109,6 +4112,17 @@ const App: React.FC = () => {
   const handleHeroCta = () => {
     setShowTryOnModal(true);
   };
+  const openOutfitGuide = (guideId: string) => {
+    setSelectedOutfitGuideId(guideId);
+  };
+  const closeOutfitGuide = () => {
+    setSelectedOutfitGuideId(null);
+  };
+  const handleStartGuideTryOn = async (imageUrl: string) => {
+    closeOutfitGuide();
+    await loadClothSample(imageUrl);
+    setShowTryOnModal(true);
+  };
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
       setAuthMode(mode);
@@ -4428,6 +4442,10 @@ const App: React.FC = () => {
 
       const requestId = createRequestId();
       const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
+      const outfitPromptHints = getOutfitPromptHints({
+        garmentLabel: garmentInputLabel,
+        garmentImageUrl: selectedClothSampleUrl,
+      });
       const resultPayload = await withTimeout(
         callTryOn({
           authToken,
@@ -4439,7 +4457,13 @@ const App: React.FC = () => {
           personPreviewImage,
           garmentPreviewImage,
           subjectType: resolvedSubjectType,
-          bodyProfile: { gender },
+          bodyProfile: {
+            gender,
+            outfitName: outfitPromptHints?.outfitName,
+            outfitMood: outfitPromptHints?.mood,
+            poseHint: outfitPromptHints?.pose,
+            backgroundHint: outfitPromptHints?.background,
+          },
         }),
         GENERATION_REQUEST_TIMEOUT_MS,
         'GENERATION_TIMEOUT',
@@ -5060,63 +5084,23 @@ const App: React.FC = () => {
                   <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
                   <p>{landingContent.sampleOutfits.catalogBody}</p>
                 </article>
-                <div className="sample-outfit-guide-grid">
-                  {landingContent.sampleOutfits.outfits.map((outfit) => (
-                    <article key={outfit.id} className="page-article sample-outfit-guide-card">
-                      <div className="sample-outfit-guide-hero">
-                        <div className="sample-outfit-guide-thumb">
-                          <img src={outfit.image} alt={outfit.name} loading="lazy" />
-                        </div>
-                        <div className="sample-outfit-guide-copy">
-                          <span className="section-label">{landingContent.sampleOutfits.outfitLabel}</span>
-                          <h2>{outfit.name}</h2>
-                          <p>{outfit.overview[0]}</p>
-                          <div className="landing-inline-actions">
-                            <button className="generate-btn" onClick={handleHeroCta} type="button">
-                              {landingContent.sampleOutfits.startButton}
-                            </button>
-                          </div>
-                        </div>
+                <div className="sample-outfit-thumbnail-grid">
+                  {traditionalOutfitGuides.map((guide) => (
+                    <button
+                      key={guide.id}
+                      className="sample-outfit-thumbnail"
+                      onClick={() => openOutfitGuide(guide.id)}
+                      type="button"
+                    >
+                      <div className="sample-outfit-thumbnail-image">
+                        <img src={guide.image} alt={guide.outfitName} loading="lazy" />
                       </div>
-                      <div className="sample-outfit-guide-sections">
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.overview}</h3>
-                          {outfit.overview.map((paragraph) => (
-                            <p key={`${outfit.id}-overview-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.history}</h3>
-                          {outfit.history.map((paragraph) => (
-                            <p key={`${outfit.id}-history-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.culture}</h3>
-                          {outfit.culture.map((paragraph) => (
-                            <p key={`${outfit.id}-culture-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.design}</h3>
-                          {outfit.design.map((paragraph) => (
-                            <p key={`${outfit.id}-design-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.modernUse}</h3>
-                          {outfit.modernUse.map((paragraph) => (
-                            <p key={`${outfit.id}-modern-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
-                        <section>
-                          <h3>{landingContent.sampleOutfits.guideSections.fittingTips}</h3>
-                          {outfit.fittingTips.map((paragraph) => (
-                            <p key={`${outfit.id}-tips-${paragraph}`}>{paragraph}</p>
-                          ))}
-                        </section>
+                      <div className="sample-outfit-thumbnail-copy">
+                        <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
+                        <strong>{guide.outfitName}</strong>
+                        <p>{guide.summary}</p>
                       </div>
-                    </article>
+                    </button>
                   ))}
                 </div>
               </>
@@ -5499,6 +5483,73 @@ const App: React.FC = () => {
             layout="modal"
             modalCopy={landingContent.modal}
           />
+        </ShellModal>
+      )}
+
+      {selectedOutfitGuide && (
+        <ShellModal
+          title={selectedOutfitGuide.outfitName}
+          subtitle={selectedOutfitGuide.summary}
+          className="sample-outfit-detail-shell"
+          onClose={closeOutfitGuide}
+        >
+          <div className="sample-outfit-detail-layout">
+            <div className="sample-outfit-detail-hero">
+              <div className="sample-outfit-detail-image">
+                <img src={selectedOutfitGuide.image} alt={selectedOutfitGuide.outfitName} loading="lazy" />
+              </div>
+              <div className="sample-outfit-detail-copy">
+                <span className="sample-outfit-country-pill">{selectedOutfitGuide.countryLabel}</span>
+                <h2>{selectedOutfitGuide.outfitName}</h2>
+                <p>{selectedOutfitGuide.summary}</p>
+                <button
+                  className="generate-btn"
+                  onClick={() => { void handleStartGuideTryOn(selectedOutfitGuide.image); }}
+                  type="button"
+                >
+                  {landingContent.sampleOutfits.startButton}
+                </button>
+              </div>
+            </div>
+            <div className="sample-outfit-detail-sections">
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.overview}</h3>
+                {selectedOutfitGuide.overview.map((paragraph) => (
+                  <p key={`overview-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.history}</h3>
+                {selectedOutfitGuide.history.map((paragraph) => (
+                  <p key={`history-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.culture}</h3>
+                {selectedOutfitGuide.culture.map((paragraph) => (
+                  <p key={`culture-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.design}</h3>
+                {selectedOutfitGuide.design.map((paragraph) => (
+                  <p key={`design-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.modernUse}</h3>
+                {selectedOutfitGuide.modernUse.map((paragraph) => (
+                  <p key={`modern-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.guideSections.fittingTips}</h3>
+                {selectedOutfitGuide.fittingTips.map((paragraph) => (
+                  <p key={`tips-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+            </div>
+          </div>
         </ShellModal>
       )}
 

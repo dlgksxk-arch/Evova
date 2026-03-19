@@ -227,16 +227,14 @@
           "paragraphs": [
             "HAMDEVA requests one wide image that contains front, left 45-degree, right 45-degree, and back views.",
             "This single-call approach improves consistency and makes comparison easier.",
-            "A multi-view result is more helpful than a single front pose because many garments communicate their real character through side volume, back drape, sleeve profile, train length, or waist-to-skirt balance.",
-            "The output should still be treated as a visual planning aid rather than a guarantee of exact real-world fit."
+            "A multi-view result is more helpful than a single front pose because many garments communicate their real character through side volume, back drape, sleeve profile, train length, or waist-to-skirt balance."
           ]
         },
         {
           "heading": "How to evaluate the result",
           "paragraphs": [
             "After generation, compare the preview against the clothing reference rather than judging the image in isolation. Look at silhouette, trim placement, relative length, color distribution, and whether the overall mood still matches the original garment.",
-            "If the result feels too generic, the usual fix is not blind repetition. It is better input: a clearer portrait, a cleaner clothing reference, or a better sample selection.",
-            "HAMDEVA is most useful when users treat the workflow as an iterative comparison process."
+            "If the result feels too generic, the usual fix is not blind repetition. It is better input: a clearer portrait, a cleaner clothing reference, or a better sample selection."
           ]
         }
       ]
@@ -287,38 +285,27 @@
     },
     "about": {
       "title": "About HAMDEVA",
-      "description": "Learn what HAMDEVA does, why it exists, and how the platform combines AI fitting with rich cultural fashion content.",
+      "description": "Learn why HAMDEVA exists and what role the platform gives to AI fitting.",
       "sections": [
         {
-          "heading": "What HAMDEVA is building",
+          "heading": "Why HAMDEVA exists",
           "paragraphs": [
-            "HAMDEVA is an AI virtual fitting platform built to make outfit exploration faster, easier, and more visually convincing. The service is centered on one practical question: how will this clothing actually look on a person before purchase, rental, travel, or content production?",
-            "Rather than acting like a simple image toy, HAMDEVA combines fitting generation with structured content. Visitors can move from sample outfits, guides, and cultural references into an actual try-on flow without losing context.",
-            "That combination matters because many users arrive with uncertainty, not with a finished request. They need a place to learn, compare, and refine their choices before generation becomes useful."
+            "HAMDEVA was built for people who want a faster visual decision before purchase, rental, travel styling, or content production.",
+            "The goal is to reduce uncertainty early, not to replace the final decision that comes from real garments, measurements, and materials."
           ]
         },
         {
-          "heading": "Why the content layer matters",
+          "heading": "Why the site has informational pages",
           "paragraphs": [
-            "Many users do not just want a generated picture. They want to understand silhouette, styling mood, fabric impression, and the cultural meaning behind a garment. HAMDEVA is designed to support that deeper reading of fashion.",
-            "This matters even more for traditional dress, because users often need explanation alongside visualization. A stronger content layer helps people choose better references, interpret the result more accurately, and approach cultural garments with more respect.",
-            "For that reason, the public pages are written as informational content, not just interface filler. They are meant to stand on their own as useful reading even before the visitor uploads anything."
+            "The public pages explain brand intent, garment context, and workflow expectations in separate places instead of pushing everything into the generator.",
+            "That structure makes the site easier to understand and keeps each page focused on one job."
           ]
         },
         {
-          "heading": "How HAMDEVA uses AI fitting",
+          "heading": "How to understand the AI result",
           "paragraphs": [
-            "The platform takes a face image as the identity anchor and a clothing image as the outfit reference, then generates one coordinated 1x4 fitting sheet. That structure makes it easier to compare front, angled, and back views in one place.",
-            "The aim is not to replace real fitting or craftsmanship. The aim is to reduce uncertainty, increase visual confidence, and help users make better styling decisions before they commit time or money.",
-            "In practice, that means HAMDEVA is strongest at early evaluation, concept review, and side-by-side style comparison."
-          ]
-        },
-        {
-          "heading": "Where the platform is going",
-          "paragraphs": [
-            "HAMDEVA is being shaped as both a tool and a content destination. Over time, the goal is to make the service more useful for everyday outfit previews, sample look exploration, cultural fashion education, and community feedback.",
-            "In short, HAMDEVA is not only about generating an image. It is about helping people understand clothing more clearly and decide with more confidence.",
-            "A better long-term fashion platform is one where the informational pages, the interactive workflow, and the community response all reinforce each other."
+            "HAMDEVA treats AI output as a planning preview. It is useful for comparing silhouette, mood, and direction, but it does not claim to replace real fitting.",
+            "The strongest use case is early evaluation: deciding what is worth testing or considering further."
           ]
         }
       ]

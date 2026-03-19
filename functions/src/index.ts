@@ -178,7 +178,7 @@ Use realistic but flattering editorial body proportions with clean posture and b
 Make the overall silhouette look elegant and proportionate without changing the person's core build unrealistically.
 Keep the face clearly visible and not smaller than necessary.
 
-Use a simple realistic studio or plain fashion-photo background with clean realistic lighting.
+Use clean realistic lighting and a believable background that matches the garment mood, cultural context, and styling purpose.
 
 Strict negatives: no identity change, no different model, no age change, no ethnicity change, no beautification, no face reshaping, no exaggerated smile, no glamour retouching, no costume redesign, no cropped head, no missing hands or feet, no extra fingers, no distorted face.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
@@ -259,6 +259,10 @@ type BodyProfile = {
   subjectType?: SubjectType;
   heightCm?: number;
   weightKg?: number;
+  outfitName?: string;
+  outfitMood?: string;
+  poseHint?: string;
+  backgroundHint?: string;
 };
 type AuthenticatedUser = {
   uid: string;
@@ -716,8 +720,14 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
     bodyProfile?.heightCm ? `Reflect a natural body proportion using ${bodyProfile.heightCm} cm height as guidance.` : null,
     bodyProfile?.weightKg ? `Reflect a natural body volume using ${bodyProfile.weightKg} kg weight as guidance.` : null,
   ].filter(Boolean).join(' ');
+  const stylingGuide = [
+    bodyProfile?.outfitName ? `The garment should read clearly as ${bodyProfile.outfitName}.` : null,
+    bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that match the garment mood and purpose rather than using a generic studio-only result.',
+    bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a natural pose that fits the outfit mood, formality, and silhouette.',
+    bodyProfile?.backgroundHint ? `Use ${bodyProfile.backgroundHint} as the background direction.` : 'Use a realistic background that suits the outfit mood and cultural context.',
+  ].filter(Boolean).join(' ');
 
-  return [basePrompt, bodyGuide].filter(Boolean).join('\n\n');
+  return [basePrompt, bodyGuide, stylingGuide].filter(Boolean).join('\n\n');
 };
 
 const countVideoDialogueCharacters = (value: string): number => Array.from(value).length;
