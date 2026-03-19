@@ -1,10 +1,13 @@
 {
   "nav": {
     "home": "ホーム",
-    "traditional-clothing": "サンプル衣装情報",
-    "countries": "サンプル衣装情報",
+    "traditional-clothing": "伝統衣装ガイド",
+    "countries": "国別衣装",
     "how-it-works": "使い方",
-    "fashion-technology": "サンプル衣装情報",
+    "fashion-technology": "ファッションテクノロジー",
+    "virtual-try-on-guide": "試着ガイド",
+    "outfit-photo-tips": "写真のコツ",
+    "ai-fitting-faq": "AI 試着 FAQ",
     "about": "HAMDEVA について",
     "privacy": "プライバシーポリシー",
     "terms": "利用規約",
@@ -208,6 +211,18 @@
           ]
         }
       ]
+    },
+    "virtual-try-on-guide": {
+      "title": "バーチャル試着ガイド",
+      "description": "AI 試着を比較と判断のために使う考え方をまとめました。"
+    },
+    "outfit-photo-tips": {
+      "title": "衣装写真のコツ",
+      "description": "人物写真と衣装写真の質を上げて結果を改善する方法です。"
+    },
+    "ai-fitting-faq": {
+      "title": "AI 試着 FAQ",
+      "description": "リアリティ、プライバシー、品質に関するよくある質問を確認できます。"
     },
     "about": {
       "title": "HAMDEVA について",

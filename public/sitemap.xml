@@ -31,9 +31,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://hamdeva.com/board</loc>
+    <loc>https://hamdeva.com/virtual-try-on-guide</loc>
     <lastmod>2026-03-19</lastmod>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hamdeva.com/outfit-photo-tips</loc>
+    <lastmod>2026-03-19</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hamdeva.com/ai-fitting-faq</loc>
+    <lastmod>2026-03-19</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hamdeva.com/privacy</loc>
@@ -42,11 +52,6 @@
   </url>
   <url>
     <loc>https://hamdeva.com/terms</loc>
-    <lastmod>2026-03-19</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://hamdeva.com/contact</loc>
     <lastmod>2026-03-19</lastmod>
     <priority>0.6</priority>
   </url>

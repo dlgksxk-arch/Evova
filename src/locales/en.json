@@ -1,10 +1,13 @@
 {
   "nav": {
     "home": "Home",
-    "traditional-clothing": "Sample Outfit Info",
-    "countries": "Sample Outfit Info",
+    "traditional-clothing": "Traditional Outfits",
+    "countries": "Country Clothing",
     "how-it-works": "How It Works",
-    "fashion-technology": "Sample Outfit Info",
+    "fashion-technology": "Fashion Technology",
+    "virtual-try-on-guide": "Try-On Guide",
+    "outfit-photo-tips": "Photo Tips",
+    "ai-fitting-faq": "AI Fitting FAQ",
     "about": "About HAMDEVA",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
@@ -269,6 +272,18 @@
           ]
         }
       ]
+    },
+    "virtual-try-on-guide": {
+      "title": "Virtual Try-On Guide",
+      "description": "Learn how to approach AI fitting as a practical comparison workflow."
+    },
+    "outfit-photo-tips": {
+      "title": "Outfit Photo Tips",
+      "description": "Use better portraits and garment photos to improve fitting quality."
+    },
+    "ai-fitting-faq": {
+      "title": "AI Fitting FAQ",
+      "description": "Review the most common questions about realism, privacy, and output quality."
     },
     "about": {
       "title": "About HAMDEVA",

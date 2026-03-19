@@ -23,8 +23,17 @@ import {
   createBreadcrumbSchema,
   createFAQPageSchema,
   createOrganizationSchema,
+  createWebPageSchema,
   createWebSiteSchema,
 } from './lib/seo/schema';
+import {
+  FEATURED_EDITORIAL_PAGES,
+  getEditorialPage,
+  getEditorialPageSummary,
+  getEditorialPageTitle,
+  getEditorialUiCopy,
+  type EditorialFaqItem,
+} from './lib/editorial';
 import {
   callCreateCheckoutSession,
   callCreditBootstrap,
@@ -91,8 +100,29 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const HEADER_NAV_PAGES = NAV_PAGES.filter((page) => page !== 'terms');
-const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'board', 'privacy', 'contact'];
+const HEADER_NAV_PAGES = NAV_PAGES;
+const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'countries', 'fashion-technology'];
+const FOOTER_EDITORIAL_PAGES: SitePage[] = [
+  'about',
+  'how-it-works',
+  'traditional-clothing',
+  'countries',
+  'fashion-technology',
+  'virtual-try-on-guide',
+  'outfit-photo-tips',
+  'ai-fitting-faq',
+];
+const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'terms', 'contact'];
+const EDITORIAL_AD_PAGES = new Set<SitePage>([
+  'about',
+  'how-it-works',
+  'traditional-clothing',
+  'countries',
+  'fashion-technology',
+  'virtual-try-on-guide',
+  'outfit-photo-tips',
+  'ai-fitting-faq',
+]);
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -2492,32 +2522,32 @@ const getEstimatedGenerationDuration = (): number => {
 
 const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms / 1000))}s`;
 
-const getFaqTitle = (page: SitePage): string => {
+const getFaqTitle = (page: SitePage, pageTitle?: string): string => {
   switch (page) {
     case 'home':
       return 'HAMDEVA FAQ';
-    case 'about':
-      return 'About HAMDEVA FAQ';
-    case 'how-it-works':
-      return 'How to Use HAMDEVA FAQ';
-    case 'traditional-clothing':
-      return 'Sample Outfits FAQ';
     default:
-      return 'FAQ';
+      return pageTitle ? `${pageTitle} FAQ` : 'FAQ';
   }
 };
 
-const getFaqItemsForPage = (page: SitePage): FAQItem[] => {
+const getFaqItemsForPage = (page: SitePage, editorialFaq?: EditorialFaqItem[]): FAQItem[] => {
   switch (page) {
     case 'home':
       return homeFaqs;
-    case 'about':
-      return aboutFaqs;
-    case 'how-it-works':
-      return howToUseFaqs;
-    case 'traditional-clothing':
-      return sampleOutfitsFaqs;
     default:
+      if (editorialFaq && editorialFaq.length > 0) {
+        return editorialFaq;
+      }
+      if (page === 'about') {
+        return aboutFaqs;
+      }
+      if (page === 'how-it-works') {
+        return howToUseFaqs;
+      }
+      if (page === 'traditional-clothing') {
+        return sampleOutfitsFaqs;
+      }
       return [];
   }
 };
@@ -2539,6 +2569,37 @@ const renderSeoContent = (page: SitePage | 'contact-route', contentLocale?: Retu
       <p>{contentLocale.homeSeo.exploreBody}</p>
     </section>
   );
+};
+
+const getPageCopy = (
+  page: SitePage,
+  lang: LanguageCode,
+  contentLocale: ReturnType<typeof getContentLocale>,
+) => {
+  const editorialPage = getEditorialPage(page);
+  const localizedPage = contentLocale.pages[page as keyof typeof contentLocale.pages] as {
+    title?: string;
+    description?: string;
+    sections?: Array<{ heading: string; paragraphs: string[] }>;
+  } | undefined;
+
+  if (!editorialPage) {
+    return localizedPage ?? null;
+  }
+
+  if (lang === 'en') {
+    return editorialPage;
+  }
+
+  if (localizedPage?.sections && localizedPage.sections.length > 0) {
+    return localizedPage;
+  }
+
+  return {
+    ...editorialPage,
+    title: localizedPage?.title ?? editorialPage.title,
+    description: localizedPage?.description ?? editorialPage.description,
+  };
 };
 
 const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
@@ -2615,6 +2676,9 @@ const PAGE_PATHS: Record<SitePage, string> = {
   'traditional-clothing': '/sample-outfits',
   countries: '/countries',
   'fashion-technology': '/fashion-technology',
+  'virtual-try-on-guide': '/virtual-try-on-guide',
+  'outfit-photo-tips': '/outfit-photo-tips',
+  'ai-fitting-faq': '/ai-fitting-faq',
   privacy: '/privacy',
   terms: '/terms',
   contact: '/contact',
@@ -2631,22 +2695,13 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'traditional-clothing',
   'countries',
   'fashion-technology',
+  'virtual-try-on-guide',
+  'outfit-photo-tips',
+  'ai-fitting-faq',
   'privacy',
   'terms',
-  'contact',
-  'board',
 ]);
-const ADSENSE_ELIGIBLE_PAGES = new Set<SitePage>([
-  'home',
-  'about',
-  'how-it-works',
-  'traditional-clothing',
-  'countries',
-  'fashion-technology',
-  'privacy',
-  'terms',
-  'contact',
-]);
+const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
 const LEGACY_PAGE_PATHS: Record<string, SitePage> = {
   '/how-it-works': 'how-it-works',
   '/traditional-clothing': 'traditional-clothing',
@@ -2770,6 +2825,13 @@ const ensureAdSenseScript = (): void => {
   script.crossOrigin = 'anonymous';
   script.src = ADSENSE_SCRIPT_SRC;
   document.head.appendChild(script);
+};
+const removeAdSenseScript = (): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.getElementById(ADSENSE_SCRIPT_ID)?.remove();
 };
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
@@ -2988,6 +3050,25 @@ const App: React.FC = () => {
     const params = new URLSearchParams(routeSearch);
     return params.get('checkout_id') || params.get('session_id');
   })();
+  const editorialUiCopy = getEditorialUiCopy(lang);
+  const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
+  const currentEditorialPage = getEditorialPage(currentPage);
+  const featuredEditorialCards = FEATURED_EDITORIAL_PAGES.map((page) => ({
+    page,
+    title: currentPage === page && currentPageCopy?.title ? currentPageCopy.title : (contentLocale.nav[page] ?? getEditorialPageTitle(page)),
+    description: lang === 'en'
+      ? getEditorialPageSummary(page)
+      : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page)),
+  }));
+  const relatedEditorialCards = currentEditorialPage
+    ? currentEditorialPage.relatedPages.map((page) => ({
+        page,
+        title: contentLocale.nav[page] ?? getEditorialPageTitle(page),
+        description: lang === 'en'
+          ? getEditorialPageSummary(page)
+          : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page)),
+      }))
+    : [];
   const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
   const generationProgressRatio = isGenerating
     ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
@@ -3003,26 +3084,15 @@ const App: React.FC = () => {
     confirm: t.logoutConfirmAction,
   };
   const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
-  const isContactRoute = normalizedPathname === '/contact';
-  const currentFaqItems = getFaqItemsForPage(currentPage);
+  const currentFaqItems = getFaqItemsForPage(currentPage, currentEditorialPage?.faq);
   const breadcrumbItems = currentPage === 'home'
     ? [{ name: 'Home', url: `${SITE_URL}/` }]
-    : currentPage === 'about'
+    : currentPageCopy
       ? [
           { name: 'Home', url: `${SITE_URL}/` },
-          { name: 'About', url: `${SITE_URL}/about` },
+          { name: currentPageCopy.title, url: `${SITE_URL}${PAGE_PATHS[currentPage]}` },
         ]
-      : currentPage === 'how-it-works'
-        ? [
-            { name: 'Home', url: `${SITE_URL}/` },
-            { name: 'How to Use', url: `${SITE_URL}/how-to-use` },
-          ]
-        : currentPage === 'traditional-clothing'
-          ? [
-              { name: 'Home', url: `${SITE_URL}/` },
-              { name: 'Sample Outfits', url: `${SITE_URL}/sample-outfits` },
-            ]
-          : [];
+      : [];
   const homeStructuredData = currentPage === 'home' && !sharedResultRouteId
     ? [
         createFAQPageSchema(homeFaqs),
@@ -3042,10 +3112,16 @@ const App: React.FC = () => {
         }),
       ]
     : [];
-  const pageStructuredData = currentPage !== 'home' && !sharedResultRouteId && currentFaqItems.length > 0 && breadcrumbItems.length > 0
+  const pageStructuredData = currentPage !== 'home' && !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage) && currentPageCopy && breadcrumbItems.length > 0
     ? [
-        createFAQPageSchema(currentFaqItems),
+        createWebPageSchema({
+          title: currentPageCopy.title,
+          url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
+          description: currentPageCopy.description,
+          pageType: currentPage === 'about' ? 'AboutPage' : 'WebPage',
+        }),
         createBreadcrumbSchema(breadcrumbItems),
+        ...(currentFaqItems.length > 0 ? [createFAQPageSchema(currentFaqItems)] : []),
       ]
     : [];
   const {
@@ -3458,7 +3534,10 @@ const App: React.FC = () => {
             title: contentLocale.meta.homeTitle,
             description: contentLocale.meta.homeDescription,
           }
-        : contentLocale.pages[currentPage];
+        : currentPageCopy ?? {
+            title: 'HAMDEVA',
+            description: 'HAMDEVA content page',
+          };
     const pageUrl = sharedResultRouteId
       ? buildSharedResultUrl(sharedResultRouteId)
       : `${SITE_URL}${PAGE_PATHS[currentPage]}`;
@@ -3506,8 +3585,9 @@ const App: React.FC = () => {
     } else {
       setAdRequestsPaused(true);
       removeAutoAdsArtifacts();
+      removeAdSenseScript();
     }
-  }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
+  }, [contentLocale, currentPage, currentPageCopy, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {
     setSubjectDetectionStatus('detecting');
@@ -4702,8 +4782,8 @@ const App: React.FC = () => {
           ) : (
             <>
               <div className="hero-eyebrow">{contentLocale.hero.pageEyebrow}</div>
-              <h1 className="hero-title page-title">{contentLocale.pages[currentPage].title}</h1>
-              <p className="hero-sub">{contentLocale.pages[currentPage].description}</p>
+              <h1 className="hero-title page-title">{currentPageCopy?.title ?? 'HAMDEVA'}</h1>
+              <p className="hero-sub">{currentPageCopy?.description ?? ''}</p>
             </>
           )}
         </div>
@@ -4845,9 +4925,28 @@ const App: React.FC = () => {
             onOpenResultPreview={openResultPreviewModal}
             getSubjectTypeLabel={getSubjectTypeLabel}
             formatSecondsLabel={formatSecondsLabel}
-          />
+            />
           {renderSeoContent('home', contentLocale)}
           <FAQSection title={getFaqTitle('home')} items={homeFaqs} />
+          <section className="section editorial-section">
+            <div className="section-inner">
+              <div className="section-copy">
+                <h2>{editorialUiCopy.homeTitle}</h2>
+                <p>{editorialUiCopy.homeDescription}</p>
+              </div>
+              <div className="compact-card-grid">
+                {featuredEditorialCards.map((card) => (
+                  <article key={`editorial-${card.page}`} className="compact-info-card">
+                    <h2>{card.title}</h2>
+                    <p>{card.description}</p>
+                    <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                      {editorialUiCopy.readMore}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
           <section className="section editorial-section">
             <div className="section-inner">
               <div className="compact-card-grid">
@@ -4894,7 +4993,7 @@ const App: React.FC = () => {
                 formatTimestampLabel={formatTimestampLabel}
               />
             )}
-            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && contentLocale.pages[currentPage].sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -5036,7 +5135,7 @@ const App: React.FC = () => {
               />
             )}
 
-            {(currentPage === 'contact' || currentPage === 'terms') && (
+            {currentPage === 'contact' && (
               <>
                 <div className="contact-layout">
                   <article className="page-article">
@@ -5080,7 +5179,6 @@ const App: React.FC = () => {
                     <button className="generate-btn contact-submit" type="submit">{contentLocale.contact.send}</button>
                   </form>
                 </div>
-                {isContactRoute && renderSeoContent('contact-route')}
               </>
             )}
             {currentPage === 'mypage' && (
@@ -5110,7 +5208,6 @@ const App: React.FC = () => {
                 onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
               />
             )}
-            {currentPage === 'about' && renderSeoContent('about')}
             {currentPage === 'how-it-works' && (
               <HowItWorksVisualGuide
                 copy={howItWorksVisualCopy}
@@ -5119,10 +5216,27 @@ const App: React.FC = () => {
                 resultImageSrc={latestHistoryImage}
               />
             )}
-            {currentPage === 'how-it-works' && renderSeoContent('how-it-works')}
-            {currentPage === 'traditional-clothing' && renderSeoContent('traditional-clothing')}
+            {relatedEditorialCards.length > 0 && (
+              <section className="section editorial-section editorial-related-section">
+                <div className="section-copy">
+                  <h2>{editorialUiCopy.relatedTitle}</h2>
+                  <p>{editorialUiCopy.relatedDescription}</p>
+                </div>
+                <div className="compact-card-grid">
+                  {relatedEditorialCards.map((card) => (
+                    <article key={`related-${card.page}`} className="compact-info-card">
+                      <h2>{card.title}</h2>
+                      <p>{card.description}</p>
+                      <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                        {editorialUiCopy.readMore}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
             {currentFaqItems.length > 0 && currentPage !== 'home' && (
-              <FAQSection title={getFaqTitle(currentPage)} items={currentFaqItems} />
+              <FAQSection title={getFaqTitle(currentPage, currentPageCopy?.title)} items={currentFaqItems} />
             )}
           </div>
         </main>
@@ -5130,9 +5244,16 @@ const App: React.FC = () => {
 
       <footer className="site-footer">
         <p className="footer-copy">{t.footer}</p>
-        <div className="footer-links">
-          {NAV_PAGES.map((page) => (
+        <div className="footer-links footer-links-editorial">
+          {FOOTER_EDITORIAL_PAGES.map((page) => (
             <button key={page} className="footer-link-btn" onClick={() => navigateToPage(page)} type="button">
+              {contentLocale.nav[page]}
+            </button>
+          ))}
+        </div>
+        <div className="footer-links footer-links-utility">
+          {FOOTER_UTILITY_PAGES.map((page) => (
+            <button key={`utility-${page}`} className="footer-link-btn" onClick={() => navigateToPage(page)} type="button">
               {contentLocale.nav[page]}
             </button>
           ))}

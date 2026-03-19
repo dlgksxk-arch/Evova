@@ -21,6 +21,9 @@ export type SitePage =
   | 'countries'
   | 'how-it-works'
   | 'fashion-technology'
+  | 'virtual-try-on-guide'
+  | 'outfit-photo-tips'
+  | 'ai-fitting-faq'
   | 'about'
   | 'privacy'
   | 'terms'
@@ -38,6 +41,9 @@ export const SITE_PAGES: SitePage[] = [
   'countries',
   'how-it-works',
   'fashion-technology',
+  'virtual-try-on-guide',
+  'outfit-photo-tips',
+  'ai-fitting-faq',
   'about',
   'privacy',
   'terms',
@@ -54,8 +60,8 @@ export const NAV_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
-  'board',
-  'terms',
+  'countries',
+  'fashion-technology',
 ];
 
 const locales: Partial<Record<LanguageCode, DeepPartial<ContentLocale>>> = {

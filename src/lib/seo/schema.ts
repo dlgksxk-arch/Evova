@@ -22,6 +22,13 @@ export type WebSiteSchemaConfig = {
   searchUrlTemplate?: string;
 };
 
+export type WebPageSchemaConfig = {
+  title: string;
+  url: string;
+  description?: string;
+  pageType?: string;
+};
+
 export const createFAQPageSchema = (items: FAQItem[]) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -98,3 +105,16 @@ export const createWebSiteSchema = (config: WebSiteSchemaConfig) => {
 
   return schema;
 };
+
+export const createWebPageSchema = (config: WebPageSchemaConfig) => ({
+  '@context': 'https://schema.org',
+  '@type': config.pageType ?? 'WebPage',
+  name: config.title,
+  url: config.url,
+  description: config.description,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'HAMDEVA',
+    url: 'https://hamdeva.com',
+  },
+});

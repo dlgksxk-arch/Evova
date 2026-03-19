@@ -1,3 +1,44 @@
+const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
+const NON_INDEXABLE_PATHS = new Set([
+  '/board',
+  '/contact',
+  '/mypage',
+  '/admin',
+  '/site-management',
+  '/payment-success',
+  '/payment-failed',
+]);
+
+const normalizePathname = (pathname) => pathname.replace(/\/+$/, '') || '/';
+const isPreviewHost = (hostname) =>
+  PREVIEW_HOST_MARKERS.some((marker) => hostname.includes(marker)) && hostname !== 'hamdeva.com' && hostname !== 'www.hamdeva.com';
+const isNonIndexableRoute = (pathname) => {
+  const normalizedPath = normalizePathname(pathname);
+  return normalizedPath.startsWith('/result/') || NON_INDEXABLE_PATHS.has(normalizedPath);
+};
+const applyRobotsHeader = (request, response) => {
+  const contentType = response.headers.get('content-type') || '';
+  const shouldTag = contentType.includes('text/html');
+  if (!shouldTag) {
+    return response;
+  }
+
+  const url = new URL(request.url);
+  const previewHost = isPreviewHost(url.hostname);
+  const nonIndexableRoute = isNonIndexableRoute(url.pathname);
+  if (!previewHost && !nonIndexableRoute) {
+    return response;
+  }
+
+  const headers = new Headers(response.headers);
+  headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -30,13 +71,14 @@ export default {
     } else if (env.ASSETS) {
       const assetResponse = await env.ASSETS.fetch(request);
       if (assetResponse.status !== 404 || isStaticAssetRequest || !isNavigationRequest) {
-        return assetResponse;
+        return applyRobotsHeader(request, assetResponse);
       }
 
       const fallbackUrl = new URL(request.url);
       fallbackUrl.pathname = '/index.html';
       fallbackUrl.search = '';
-      return env.ASSETS.fetch(new Request(fallbackUrl.toString(), request));
+      const fallbackResponse = await env.ASSETS.fetch(new Request(fallbackUrl.toString(), request));
+      return applyRobotsHeader(request, fallbackResponse);
     } else {
       targetUrl.hostname = 'hamdeva.web.app';
       if (!isStaticAssetRequest && isNavigationRequest) {
@@ -60,6 +102,6 @@ export default {
       status: response.status,
     });
 
-    return response;
+    return applyRobotsHeader(request, response);
   },
 };

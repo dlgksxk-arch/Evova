@@ -1,10 +1,13 @@
 {
   "nav": {
     "home": "홈",
-    "traditional-clothing": "샘플 의상 정보",
-    "countries": "샘플 의상 정보",
+    "traditional-clothing": "전통 의상 가이드",
+    "countries": "국가별 의상",
     "how-it-works": "사용 방법",
-    "fashion-technology": "샘플 의상 정보",
+    "fashion-technology": "패션 테크놀로지",
+    "virtual-try-on-guide": "가상 피팅 가이드",
+    "outfit-photo-tips": "사진 입력 팁",
+    "ai-fitting-faq": "AI 피팅 FAQ",
     "about": "HAMDEVA 소개",
     "privacy": "개인정보처리방침",
     "terms": "이용약관",
@@ -269,6 +272,18 @@
           ]
         }
       ]
+    },
+    "virtual-try-on-guide": {
+      "title": "가상 피팅 가이드",
+      "description": "AI 피팅을 비교와 판단 도구로 활용하는 방법을 정리했습니다."
+    },
+    "outfit-photo-tips": {
+      "title": "사진 입력 팁",
+      "description": "더 나은 인물 사진과 의상 사진으로 결과 품질을 높이는 방법입니다."
+    },
+    "ai-fitting-faq": {
+      "title": "AI 피팅 FAQ",
+      "description": "현실성, 개인정보, 결과 품질에 대한 자주 묻는 질문을 확인하세요."
     },
     "about": {
       "title": "HAMDEVA 소개",

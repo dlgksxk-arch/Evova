@@ -1,10 +1,13 @@
 {
   "nav": {
     "home": "首页",
-    "traditional-clothing": "样本服饰信息",
-    "countries": "样本服饰信息",
+    "traditional-clothing": "传统服饰指南",
+    "countries": "国家服饰",
     "how-it-works": "使用方法",
-    "fashion-technology": "样本服饰信息",
+    "fashion-technology": "时尚科技",
+    "virtual-try-on-guide": "试穿指南",
+    "outfit-photo-tips": "照片技巧",
+    "ai-fitting-faq": "AI 试穿 FAQ",
     "about": "关于 HAMDEVA",
     "privacy": "隐私政策",
     "terms": "服务条款",
@@ -208,6 +211,18 @@
           ]
         }
       ]
+    },
+    "virtual-try-on-guide": {
+      "title": "虚拟试穿指南",
+      "description": "了解如何把 AI 试穿当作比较与决策工具来使用。"
+    },
+    "outfit-photo-tips": {
+      "title": "服装照片技巧",
+      "description": "通过更好的人物照与服装照提升试穿结果质量。"
+    },
+    "ai-fitting-faq": {
+      "title": "AI 试穿 FAQ",
+      "description": "查看关于真实性、隐私与结果质量的常见问题。"
     },
     "about": {
       "title": "关于 HAMDEVA",
