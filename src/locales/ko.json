@@ -509,8 +509,8 @@
       "옷이 잘리지 않고 배경이 단순한 이미지를 권장합니다.",
       "정면에 가깝고 주름이나 가림이 적은 사진일수록 결과가 좋습니다."
     ],
-    "faceCopyrightNotice": "권리가 없는 사진 대신 직접 촬영한 반려동물 사진을 사용해 주세요.",
-    "clothingSafetyNotice": "의상사진 등록 시 과도한 노출이나 선정적인 이미지는 업로드하지 마세요.",
+    "faceCopyrightNotice": "",
+    "clothingSafetyNotice": "",
     "resultPrivacyNotice": "본 이미지는 저장되지 않으며, 결과 확인과 다운로드 용도로만 일시적으로 처리됩니다."
   },
   "emptyPreview": {

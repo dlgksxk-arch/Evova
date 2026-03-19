@@ -415,7 +415,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <button className="clear-img-btn" disabled={isGenerating} onClick={onClearPerson} type="button">&times;</button>
             )}
           </div>
-          <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p>
+          {copy.faceCopyrightNotice ? <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p> : null}
         </div>
 
         <div className="try-column">
@@ -507,7 +507,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               />
             )}
           </div>
-          <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p>
+          {copy.clothingSafetyNotice ? <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p> : null}
         </div>
       </div>
 
@@ -519,7 +519,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <p className="modal-card-description">{modalCopy?.actionCardBody}</p>
           </div>
         ) : null}
-        <p className="real-generation-label">{copy.realGenerationCta}</p>
+        {copy.realGenerationCta ? <p className="real-generation-label">{copy.realGenerationCta}</p> : null}
         <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
         <p className="credit-balance-text">{copy.dailyCreditLabel}: {currentDailyCredit} · {copy.paidCreditLabel}: {currentPaidCredit}</p>
         <button
