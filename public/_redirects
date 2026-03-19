@@ -1,1 +1,15 @@
-/* /index.html 200
+/about /index.html 200
+/how-to-use /index.html 200
+/sample-outfits /index.html 200
+/countries /index.html 200
+/fashion-technology /index.html 200
+/privacy /index.html 200
+/terms /index.html 200
+/contact /index.html 200
+/board /index.html 200
+/admin /index.html 200
+/site-management /index.html 200
+/mypage /index.html 200
+/payment-success /index.html 200
+/payment-failed /index.html 200
+/result/* /index.html 200
