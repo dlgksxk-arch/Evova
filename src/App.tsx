@@ -34,6 +34,7 @@ import {
   getEditorialUiCopy,
   type EditorialFaqItem,
 } from './lib/editorial';
+import { getLandingContent } from './data/landingContent';
 import {
   callCreateCheckoutSession,
   callCreditBootstrap,
@@ -44,7 +45,7 @@ import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions } from './data/clothSamples';
 import { FACE_SAMPLES } from './data/faceSamples';
-import { getContentLocale, NAV_PAGES, SITE_PAGES, type ModalTab, type SitePage } from './locales';
+import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
@@ -100,13 +101,12 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const HEADER_NAV_PAGES = NAV_PAGES;
-const MOBILE_NAV_PAGES: SitePage[] = ['about', 'how-it-works', 'traditional-clothing', 'countries', 'fashion-technology'];
+const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'fashion-technology', 'mypage'];
+const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'fashion-technology', 'mypage'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
-  'countries',
   'fashion-technology',
   'virtual-try-on-guide',
   'outfit-photo-tips',
@@ -2693,7 +2693,6 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'about',
   'how-it-works',
   'traditional-clothing',
-  'countries',
   'fashion-technology',
   'virtual-try-on-guide',
   'outfit-photo-tips',
@@ -2705,6 +2704,7 @@ const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
 const LEGACY_PAGE_PATHS: Record<string, SitePage> = {
   '/how-it-works': 'how-it-works',
   '/traditional-clothing': 'traditional-clothing',
+  '/countries': 'traditional-clothing',
 };
 
 const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
@@ -2719,6 +2719,9 @@ const getPageFromHash = (hash: string): SitePage | null => {
 };
 const getPageFromPath = (pathname: string): SitePage | null => {
   const normalizedPath = normalizePathname(pathname);
+  if (normalizedPath === '/countries') {
+    return 'traditional-clothing';
+  }
   return PATH_TO_PAGE[normalizedPath] ?? LEGACY_PAGE_PATHS[normalizedPath] ?? null;
 };
 const getPageFromLocation = (pathname: string, hash: string): SitePage => {
@@ -2900,6 +2903,7 @@ const App: React.FC = () => {
   const [editingBbsPostId, setEditingBbsPostId] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
   const [showContentModal, setShowContentModal] = useState(false);
+  const [showTryOnModal, setShowTryOnModal] = useState(false);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -2927,12 +2931,12 @@ const App: React.FC = () => {
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
   const contentLocale = getContentLocale(lang);
+  const landingContent = getLandingContent(lang);
   const t = uiTranslations[lang];
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = translate('uploadGuides.faceTips', { returnObjects: true }) as string[];
   const emptyClothTips = translate('uploadGuides.clothTips', { returnObjects: true }) as string[];
-  const heroCtaLabel = translate('ui.heroCta');
   const firebaseConfigMissingLabel = translate('ui.firebaseConfigMissing');
   const firebaseDisabledBaseMessage = translate('ui.firebaseDisabledMessage');
   const emptyPreviewCopy = translate('emptyPreview', { returnObjects: true }) as {
@@ -3053,7 +3057,10 @@ const App: React.FC = () => {
   const editorialUiCopy = getEditorialUiCopy(lang);
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
   const currentEditorialPage = getEditorialPage(currentPage);
-  const featuredEditorialCards = FEATURED_EDITORIAL_PAGES.map((page) => ({
+  const featuredEditorialPages = Array.from(new Set(FEATURED_EDITORIAL_PAGES.map((page) =>
+    page === 'countries' ? 'traditional-clothing' : page,
+  ))).filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== 'home');
+  const featuredEditorialCards = featuredEditorialPages.map((page) => ({
     page,
     title: currentPage === page && currentPageCopy?.title ? currentPageCopy.title : (contentLocale.nav[page] ?? getEditorialPageTitle(page)),
     description: lang === 'en'
@@ -3061,7 +3068,9 @@ const App: React.FC = () => {
       : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page)),
   }));
   const relatedEditorialCards = currentEditorialPage
-    ? currentEditorialPage.relatedPages.map((page) => ({
+    ? Array.from(new Set(currentEditorialPage.relatedPages.map((page) => page === 'countries' ? 'traditional-clothing' : page)))
+      .filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== currentPage)
+      .map((page) => ({
         page,
         title: contentLocale.nav[page] ?? getEditorialPageTitle(page),
         description: lang === 'en'
@@ -3069,6 +3078,7 @@ const App: React.FC = () => {
           : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page)),
       }))
     : [];
+  const currentHomeFaqItems = landingContent.faq.items;
   const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
   const generationProgressRatio = isGenerating
     ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
@@ -3095,7 +3105,7 @@ const App: React.FC = () => {
       : [];
   const homeStructuredData = currentPage === 'home' && !sharedResultRouteId
     ? [
-        createFAQPageSchema(homeFaqs),
+        createFAQPageSchema(currentHomeFaqItems),
         createBreadcrumbSchema(breadcrumbItems),
         createOrganizationSchema({
           name: 'HAMDEVA',
@@ -3762,10 +3772,7 @@ const App: React.FC = () => {
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
     clearGeneratedResult();
     void loadClothSample(randomSample.image);
-    if (currentPage !== 'home' || sharedResultRouteId) {
-      navigateToPage('home');
-    }
-    scrollToTrySection();
+    setShowTryOnModal(true);
   };
   const handleTryAnotherOutfit = () => {
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
@@ -3775,10 +3782,7 @@ const App: React.FC = () => {
     setClothUploadMessage(null);
     setClothPreviewState('idle');
     clearGeneratedResult();
-    if (currentPage !== 'home' || sharedResultRouteId) {
-      navigateToPage('home');
-    }
-    scrollToTrySection();
+    setShowTryOnModal(true);
   };
   const handleDownloadResult = async (src: string) => {
     try {
@@ -4094,35 +4098,16 @@ const App: React.FC = () => {
     setShowLogoutConfirmModal(false);
   };
   const navigateToPage = (page: SitePage) => {
-    const nextUrl = PAGE_PATHS[page];
+    const resolvedPage = page === 'countries' ? 'traditional-clothing' : page;
+    const nextUrl = PAGE_PATHS[resolvedPage];
     window.history.pushState(null, '', nextUrl);
-    setCurrentPage(page);
+    setCurrentPage(resolvedPage);
     setSharedResultRouteId(null);
     setRouteSearch('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const openContentModal = (tab: ModalTab) => {
-    setActiveContentTab(tab);
-    setShowContentModal(true);
-  };
-  const scrollToTrySection = () => {
-    window.setTimeout(() => {
-      document.getElementById('try')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 120);
-  };
   const handleHeroCta = () => {
-    if (!currentUser) {
-      openAuthModal('login');
-      return;
-    }
-
-    if (currentPage !== 'home') {
-      navigateToPage('home');
-      scrollToTrySection();
-      return;
-    }
-
-    scrollToTrySection();
+    setShowTryOnModal(true);
   };
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
@@ -4505,6 +4490,123 @@ const App: React.FC = () => {
     }
   };
 
+  const tryOnStudioProps = {
+    currentUser,
+    isGenerating,
+    activePersonImage,
+    activeClothImage,
+    personImage,
+    clothImage,
+    selectedSampleUrl,
+    selectedClothSampleUrl,
+    personPreviewState,
+    clothPreviewState,
+    resultPreviewState,
+    personUploadMessage,
+    clothUploadMessage,
+    subjectType,
+    detectedSubjectType,
+    subjectDetectionStatus,
+    finalImageSrc,
+    creditNotice,
+    currentDailyCredit,
+    currentPaidCredit,
+    canAffordGeneration,
+    generationCost: GENERATION_COST,
+    generationStatusLabel,
+    generationRemainingMs,
+    generationElapsedMs,
+    generationEstimateMs,
+    generationProgressPercent,
+    resultWatermarkApplied,
+    shareResultLink,
+    shareStatus,
+    subjectUi,
+    lang,
+    subjectTypes: SUBJECT_TYPES,
+    emptyFaceTips,
+    emptyClothTips,
+    emptyPreviewCopy,
+    sampleBadgeLabel,
+    copy: {
+      ...t,
+      loginComingSoon: loginComingSoonLabel,
+      faceCopyrightNotice: translate('uploadGuides.faceCopyrightNotice'),
+      clothingSafetyNotice: translate('uploadGuides.clothingSafetyNotice'),
+      resultPrivacyNotice: translate('uploadGuides.resultPrivacyNotice'),
+      openAuthModal,
+      setPersonPreviewReady: () => {
+        setPersonPreviewState('ready');
+        setPersonUploadMessage(null);
+      },
+      setPersonPreviewError: () => {
+        setPersonUploadMessage(null);
+        setPersonPreviewState('error');
+      },
+      setClothPreviewReady: () => {
+        setClothPreviewState('ready');
+        setClothUploadMessage(null);
+      },
+      setClothPreviewError: () => {
+        setClothUploadMessage(null);
+        setClothPreviewState('error');
+      },
+      setResultPreviewReady: () => setResultPreviewState('ready'),
+      setResultPreviewError: () => setResultPreviewState('error'),
+    },
+    personInputRef,
+    clothInputRef,
+    onOpenPersonSampleModal: handleOpenPersonSampleModal,
+    onOpenClothSampleModal: handleOpenClothSampleModal,
+    onPersonFileChange: (file: File) => { void loadPersonUpload(file); },
+    onClothFileChange: (file: File) => { void loadClothUpload(file); },
+    onPersonExternalDrop: (source: File | string) => { void handlePersonExternalDrop(source); },
+    onClothExternalDrop: (source: File | string) => { void handleClothExternalDrop(source); },
+    onClearPerson: () => {
+      if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
+      setPersonImage(null);
+      setPersonFile(null);
+      setSelectedSampleUrl(null);
+      setSubjectType('human');
+      setDetectedSubjectType(null);
+      setSubjectDetectionStatus('idle');
+      setSubjectTypeManualOverride(false);
+      setPersonUploadMessage(null);
+      setPersonPreviewState('idle');
+    },
+    onClearCloth: () => {
+      if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
+      setClothImage(null);
+      setClothFile(null);
+      setSelectedClothSampleUrl(null);
+      setClothUploadMessage(null);
+      setClothPreviewState('idle');
+    },
+    onAutoDetectSubject: () => {
+      const source = personFile || activePersonImage;
+      if (source) {
+        setSubjectTypeManualOverride(false);
+        void detectSubjectTypeFromImage(source);
+      }
+    },
+    onSubjectTypeChange: (value: SubjectType) => handleSubjectTypeChange(normalizeSubjectType(value)),
+    onGenerate: () => { void handleGenerate(); },
+    onNavigateToMyPage: () => navigateToPage('mypage'),
+    onDownloadResult: (src: string) => { void handleDownloadResult(src); },
+    onShareLink: (link: string | null) => { void handleShareLink(link); },
+    onCopyLink: (link: string | null) => { void handleCopyLink(link); },
+    onShareOnKakao: (link: string | null) => { void handleShareOnKakao(link); },
+    onShareOnLine: handleShareOnLine,
+    onShareOnX: handleShareOnX,
+    onShareOnFacebook: handleShareOnFacebook,
+    onInstagramSave: (src: string | null) => { void handleInstagramSave(src); },
+    onTryAnotherOutfit: handleTryAnotherOutfit,
+    onRandomOutfit: handleRandomOutfit,
+    onOpenResultPreview: openResultPreviewModal,
+    getSubjectTypeLabel,
+    formatSecondsLabel,
+  };
+
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
@@ -4532,18 +4634,9 @@ const App: React.FC = () => {
                 onClick={() => navigateToPage(page)}
                 type="button"
               >
-                {contentLocale.nav[page]}
+                {page === 'mypage' ? t.myPage : contentLocale.nav[page]}
               </button>
             ))}
-            {currentUser && (
-              <button
-                className={`nav-link ${currentPage === 'mypage' ? 'active' : ''}`}
-                onClick={() => navigateToPage('mypage')}
-                type="button"
-              >
-                {t.myPage}
-              </button>
-            )}
           </div>
           <div className="nav-right desktop-header-actions">
             {currentUser && (
@@ -4638,7 +4731,7 @@ const App: React.FC = () => {
                   }}
                   type="button"
                 >
-                  {contentLocale.nav[page]}
+                  {page === 'mypage' ? t.myPage : contentLocale.nav[page]}
                 </button>
               ))}
             </div>
@@ -4756,16 +4849,18 @@ const App: React.FC = () => {
             </>
           ) : currentPage === 'home' ? (
             <>
-              <div className="hero-eyebrow">{contentLocale.hero.eyebrow}</div>
-              <h1 className="hero-title">
-                {contentLocale.hero.titleLine1 ?? contentLocale.hero.title}
-                <br />
-                {contentLocale.hero.titleLine2 ?? ''}
-              </h1>
-              <p className="hero-subtitle">{contentLocale.hero.subtitle}</p>
-              <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
-                {heroCtaLabel}
-              </button>
+              <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
+              <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
+              <p className="hero-sub">{landingContent.hero.subtitle}</p>
+              <p className="hero-detail">{landingContent.hero.body}</p>
+              <div className="hero-cta-group">
+                <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
+                  {landingContent.hero.primaryButton}
+                </button>
+                <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('how-it-works')} type="button">
+                  {landingContent.hero.secondaryButton}
+                </button>
+              </div>
             </>
           ) : currentPage === 'payment-success' ? (
             <>
@@ -4810,158 +4905,109 @@ const App: React.FC = () => {
         />
       ) : currentPage === 'home' ? (
         <>
-          <TryOnStudio
-            currentUser={currentUser}
-            isGenerating={isGenerating}
-            activePersonImage={activePersonImage}
-            activeClothImage={activeClothImage}
-            personImage={personImage}
-            clothImage={clothImage}
-            selectedSampleUrl={selectedSampleUrl}
-            selectedClothSampleUrl={selectedClothSampleUrl}
-            personPreviewState={personPreviewState}
-            clothPreviewState={clothPreviewState}
-            resultPreviewState={resultPreviewState}
-            personUploadMessage={personUploadMessage}
-            clothUploadMessage={clothUploadMessage}
-            subjectType={subjectType}
-            detectedSubjectType={detectedSubjectType}
-            subjectDetectionStatus={subjectDetectionStatus}
-            finalImageSrc={finalImageSrc}
-            creditNotice={creditNotice}
-            currentDailyCredit={currentDailyCredit}
-            currentPaidCredit={currentPaidCredit}
-            canAffordGeneration={canAffordGeneration}
-            generationCost={GENERATION_COST}
-            generationStatusLabel={generationStatusLabel}
-            generationRemainingMs={generationRemainingMs}
-            generationElapsedMs={generationElapsedMs}
-            generationEstimateMs={generationEstimateMs}
-            generationProgressPercent={generationProgressPercent}
-            resultWatermarkApplied={resultWatermarkApplied}
-            shareResultLink={shareResultLink}
-            shareStatus={shareStatus}
-            subjectUi={subjectUi}
-            lang={lang}
-            subjectTypes={SUBJECT_TYPES}
-            emptyFaceTips={emptyFaceTips}
-            emptyClothTips={emptyClothTips}
-            emptyPreviewCopy={emptyPreviewCopy}
-            sampleBadgeLabel={sampleBadgeLabel}
-            copy={{
-              ...t,
-              loginComingSoon: loginComingSoonLabel,
-              faceCopyrightNotice: translate('uploadGuides.faceCopyrightNotice'),
-              clothingSafetyNotice: translate('uploadGuides.clothingSafetyNotice'),
-              resultPrivacyNotice: translate('uploadGuides.resultPrivacyNotice'),
-              openAuthModal,
-              setPersonPreviewReady: () => {
-                setPersonPreviewState('ready');
-                setPersonUploadMessage(null);
-              },
-              setPersonPreviewError: () => {
-                setPersonUploadMessage(null);
-                setPersonPreviewState('error');
-              },
-              setClothPreviewReady: () => {
-                setClothPreviewState('ready');
-                setClothUploadMessage(null);
-              },
-              setClothPreviewError: () => {
-                setClothUploadMessage(null);
-                setClothPreviewState('error');
-              },
-              setResultPreviewReady: () => setResultPreviewState('ready'),
-              setResultPreviewError: () => setResultPreviewState('error'),
-            }}
-            personInputRef={personInputRef}
-            clothInputRef={clothInputRef}
-            onOpenPersonSampleModal={handleOpenPersonSampleModal}
-            onOpenClothSampleModal={handleOpenClothSampleModal}
-            onPersonFileChange={(file) => { void loadPersonUpload(file); }}
-            onClothFileChange={(file) => { void loadClothUpload(file); }}
-            onPersonExternalDrop={(source) => { void handlePersonExternalDrop(source); }}
-            onClothExternalDrop={(source) => { void handleClothExternalDrop(source); }}
-            onClearPerson={() => {
-              if (personImage?.startsWith('blob:')) URL.revokeObjectURL(personImage);
-              setPersonImage(null);
-              setPersonFile(null);
-              setSelectedSampleUrl(null);
-              setSubjectType('human');
-              setDetectedSubjectType(null);
-              setSubjectDetectionStatus('idle');
-              setSubjectTypeManualOverride(false);
-              setPersonUploadMessage(null);
-              setPersonPreviewState('idle');
-            }}
-            onClearCloth={() => {
-              if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
-              setClothImage(null);
-              setClothFile(null);
-              setSelectedClothSampleUrl(null);
-              setClothUploadMessage(null);
-              setClothPreviewState('idle');
-            }}
-            onAutoDetectSubject={() => {
-              const source = personFile || activePersonImage;
-              if (source) {
-                setSubjectTypeManualOverride(false);
-                void detectSubjectTypeFromImage(source);
-              }
-            }}
-            onSubjectTypeChange={(value) => handleSubjectTypeChange(normalizeSubjectType(value))}
-            onGenerate={() => { void handleGenerate(); }}
-            onNavigateToMyPage={() => navigateToPage('mypage')}
-            onDownloadResult={(src) => { void handleDownloadResult(src); }}
-            onShareLink={(link) => { void handleShareLink(link); }}
-            onCopyLink={(link) => { void handleCopyLink(link); }}
-            onShareOnKakao={(link) => { void handleShareOnKakao(link); }}
-            onShareOnLine={handleShareOnLine}
-            onShareOnX={handleShareOnX}
-            onShareOnFacebook={handleShareOnFacebook}
-            onInstagramSave={(src) => { void handleInstagramSave(src); }}
-            onTryAnotherOutfit={handleTryAnotherOutfit}
-            onRandomOutfit={handleRandomOutfit}
-            onOpenResultPreview={openResultPreviewModal}
-            getSubjectTypeLabel={getSubjectTypeLabel}
-            formatSecondsLabel={formatSecondsLabel}
-            />
-          {renderSeoContent('home', contentLocale)}
-          <FAQSection title={getFaqTitle('home')} items={homeFaqs} />
-          <section className="section editorial-section">
-            <div className="section-inner">
-              <div className="section-copy">
-                <h2>{editorialUiCopy.homeTitle}</h2>
-                <p>{editorialUiCopy.homeDescription}</p>
+          <main className="landing-home-shell">
+            <section className="section landing-story-section">
+              <div className="section-inner">
+                <div className="section-copy landing-copy">
+                  <h2>{landingContent.intro.title}</h2>
+                  {landingContent.intro.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
               </div>
-              <div className="compact-card-grid">
-                {featuredEditorialCards.map((card) => (
-                  <article key={`editorial-${card.page}`} className="compact-info-card">
-                    <h2>{card.title}</h2>
-                    <p>{card.description}</p>
-                    <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
-                      {editorialUiCopy.readMore}
+            </section>
+
+            <section className="section landing-feature-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{landingContent.features.title}</h2>
+                </div>
+                <div className="landing-card-grid">
+                  {landingContent.features.items.map((item) => (
+                    <article key={item.title} className="compact-info-card landing-feature-card">
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-step-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{landingContent.steps.title}</h2>
+                </div>
+                <div className="landing-step-grid">
+                  {landingContent.steps.items.map((item) => (
+                    <article key={item.step} className="page-article landing-step-card">
+                      <span className="landing-step-badge">{item.step}</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-example-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{landingContent.examples.title}</h2>
+                </div>
+                <div className="landing-card-grid">
+                  {landingContent.examples.items.map((item) => (
+                    <article key={item.title} className="compact-info-card landing-example-card">
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-sample-section">
+              <div className="section-inner">
+                <article className="page-article landing-sample-cta">
+                  <div className="section-copy">
+                    <h2>{landingContent.sampleInfo.title}</h2>
+                    <p>{landingContent.sampleInfo.body}</p>
+                  </div>
+                  <div className="landing-inline-actions">
+                    <button className="generate-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                      {landingContent.sampleInfo.button}
                     </button>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
-          <section className="section editorial-section">
-            <div className="section-inner">
-              <div className="compact-card-grid">
-                {contentLocale.home.cards.map((card) => (
-                  <article key={card.id} className="compact-info-card">
-                    <h2>{card.title}</h2>
-                    <p>{card.description}</p>
-                    <button className="text-link-btn" onClick={() => openContentModal(card.id as ModalTab)} type="button">
-                      {card.button}
+                    <button className="outline-btn" onClick={handleHeroCta} type="button">
+                      {landingContent.hero.primaryButton}
                     </button>
-                  </article>
-                ))}
+                  </div>
+                </article>
               </div>
-            </div>
-          </section>
+            </section>
+
+            <FAQSection title={landingContent.faq.title} items={currentHomeFaqItems} />
+
+            <section className="section editorial-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{editorialUiCopy.homeTitle}</h2>
+                  <p>{editorialUiCopy.homeDescription}</p>
+                </div>
+                <div className="compact-card-grid">
+                  {featuredEditorialCards.map((card) => (
+                    <article key={`editorial-${card.page}`} className="compact-info-card">
+                      <h2>{card.title}</h2>
+                      <p>{card.description}</p>
+                      <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                        {editorialUiCopy.readMore}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+            {renderSeoContent('home', contentLocale)}
+          </main>
         </>
       ) : (
         <main className="section page-shell">
@@ -4993,7 +5039,7 @@ const App: React.FC = () => {
                 formatTimestampLabel={formatTimestampLabel}
               />
             )}
-            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPageCopy?.sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -5002,19 +5048,90 @@ const App: React.FC = () => {
               </article>
             ))}
 
-            {(currentPage === 'traditional-clothing' || currentPage === 'countries') && (
-              <div className="country-card-grid page-country-grid">
-                {countryShowcaseCards.map((item) => (
-                  <article key={`${item.code}-${item.clothing}`} className="country-card country-card-visual">
-                    <div className="country-card-thumb">
-                      <img src={item.image} alt={`${item.country} ${item.clothing}`} loading="lazy" />
-                    </div>
-                    <span className="country-card-name">{item.country}</span>
-                    <h4>{item.clothing}</h4>
-                    <p>{item.description}</p>
-                  </article>
-                ))}
-              </div>
+            {currentPage === 'traditional-clothing' && (
+              <>
+                <article className="page-article">
+                  <h2>{landingContent.sampleOutfits.introTitle}</h2>
+                  {landingContent.sampleOutfits.introParagraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </article>
+                <article className="page-article">
+                  <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
+                  <p>{landingContent.sampleOutfits.catalogBody}</p>
+                </article>
+                <div className="sample-outfit-guide-grid">
+                  {landingContent.sampleOutfits.outfits.map((outfit) => (
+                    <article key={outfit.id} className="page-article sample-outfit-guide-card">
+                      <div className="sample-outfit-guide-hero">
+                        <div className="sample-outfit-guide-thumb">
+                          <img src={outfit.image} alt={outfit.name} loading="lazy" />
+                        </div>
+                        <div className="sample-outfit-guide-copy">
+                          <span className="section-label">{landingContent.sampleOutfits.outfitLabel}</span>
+                          <h2>{outfit.name}</h2>
+                          <p>{outfit.overview[0]}</p>
+                          <div className="landing-inline-actions">
+                            <button className="generate-btn" onClick={handleHeroCta} type="button">
+                              {landingContent.sampleOutfits.startButton}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="sample-outfit-guide-sections">
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.overview}</h3>
+                          {outfit.overview.map((paragraph) => (
+                            <p key={`${outfit.id}-overview-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.history}</h3>
+                          {outfit.history.map((paragraph) => (
+                            <p key={`${outfit.id}-history-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.culture}</h3>
+                          {outfit.culture.map((paragraph) => (
+                            <p key={`${outfit.id}-culture-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.design}</h3>
+                          {outfit.design.map((paragraph) => (
+                            <p key={`${outfit.id}-design-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.modernUse}</h3>
+                          {outfit.modernUse.map((paragraph) => (
+                            <p key={`${outfit.id}-modern-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                        <section>
+                          <h3>{landingContent.sampleOutfits.guideSections.fittingTips}</h3>
+                          {outfit.fittingTips.map((paragraph) => (
+                            <p key={`${outfit.id}-tips-${paragraph}`}>{paragraph}</p>
+                          ))}
+                        </section>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <div className="country-card-grid page-country-grid">
+                  {countryShowcaseCards.map((item) => (
+                    <article key={`${item.code}-${item.clothing}`} className="country-card country-card-visual">
+                      <div className="country-card-thumb">
+                        <img src={item.image} alt={`${item.country} ${item.clothing}`} loading="lazy" />
+                      </div>
+                      <span className="country-card-name">{item.country}</span>
+                      <h4>{item.clothing}</h4>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </>
             )}
 
             {currentPage === 'board' && (
@@ -5380,6 +5497,21 @@ const App: React.FC = () => {
           onClose={() => setShowContentModal(false)}
           onTabChange={setActiveContentTab}
         />
+      )}
+
+      {showTryOnModal && (
+        <ShellModal
+          title={landingContent.modal.title}
+          subtitle={landingContent.modal.description}
+          className="tryon-modal-shell"
+          onClose={() => setShowTryOnModal(false)}
+        >
+          <TryOnStudio
+            {...tryOnStudioProps}
+            layout="modal"
+            modalCopy={landingContent.modal}
+          />
+        </ShellModal>
       )}
 
       {showSampleModal && (

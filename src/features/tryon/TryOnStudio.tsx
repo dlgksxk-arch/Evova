@@ -57,7 +57,26 @@ const getDroppedImageSource = (dataTransfer: DataTransfer): File | string | null
   return null;
 };
 
+type TryOnModalCopy = {
+  notice: string;
+  personCardTitle: string;
+  personCardBody: string;
+  garmentCardTitle: string;
+  garmentCardBody: string;
+  actionCardTitle: string;
+  actionCardBody: string;
+  actionFootnote: string;
+  tipsTitle: string;
+  tips: string[];
+  progressTitle: string;
+  progressItems: string[];
+  usageTitle: string;
+  usageItems: string[];
+  resultTitle: string;
+};
+
 interface TryOnStudioProps {
+  layout?: 'page' | 'modal';
   currentUser: unknown;
   isGenerating: boolean;
   activePersonImage: string | null;
@@ -132,9 +151,11 @@ interface TryOnStudioProps {
   onOpenResultPreview: (src: string) => void;
   getSubjectTypeLabel: (lang: LanguageCode, subjectType: SubjectType) => string;
   formatSecondsLabel: (ms: number) => string;
+  modalCopy?: TryOnModalCopy;
 }
 
 const TryOnStudio: React.FC<TryOnStudioProps> = ({
+  layout = 'page',
   currentUser,
   isGenerating,
   activePersonImage,
@@ -162,7 +183,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   resultWatermarkApplied,
   shareResultLink,
   shareStatus,
-  subjectUi,
   emptyFaceTips,
   emptyClothTips,
   emptyPreviewCopy,
@@ -192,19 +212,20 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onRandomOutfit,
   onOpenResultPreview,
   formatSecondsLabel,
+  modalCopy,
 }) => {
   const [personDragActive, setPersonDragActive] = useState(false);
   const [clothDragActive, setClothDragActive] = useState(false);
+  const isModalLayout = layout === 'modal';
+  const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
+  const progressIndex = finalImageSrc ? 3 : isGenerating ? 2 : isReadyToGenerate ? 1 : 0;
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
   };
 
-  const handleDrop = async (
-    event: React.DragEvent<HTMLDivElement>,
-    target: 'person' | 'cloth',
-  ) => {
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>, target: 'person' | 'cloth') => {
     event.preventDefault();
     setPersonDragActive(false);
     setClothDragActive(false);
@@ -226,9 +247,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     await onClothExternalDrop(droppedSource);
   };
 
-  return (
-  <section id="try" className="section try-section">
-    <div className="section-inner">
+  const accountStatusNode = (
+    <>
       <div className="usage-bar">
         {currentUser ? `${copy.dailyCreditLabel}: ${currentDailyCredit} / ${copy.paidCreditLabel}: ${currentPaidCredit}` : copy.loginForFree}
       </div>
@@ -248,12 +268,70 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </div>
         </div>
       )}
+    </>
+  );
 
-      <div className="try-layout">
+  const resultNode = finalImageSrc ? (
+    <div id="result-area" className={`results-section ${isModalLayout ? 'results-section-modal' : ''}`}>
+      <h2 className="section-heading">{isModalLayout ? modalCopy?.resultTitle ?? copy.resultTitle : copy.resultTitle}</h2>
+      <div className="composite-result">
+        {resultPreviewState === 'loading' && (
+          <div className="preview-overlay result-overlay">
+            <span className="spinner"></span>
+            <span>{copy.renderingResult}</span>
+          </div>
+        )}
+        {resultPreviewState === 'error' ? (
+          <div className="img-error-msg">{copy.resultDisplayError}</div>
+        ) : (
+          <img
+            src={finalImageSrc}
+            alt="Result"
+            className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
+            onLoad={() => copy.setResultPreviewReady()}
+            onError={() => copy.setResultPreviewError()}
+            onClick={() => {
+              if (resultPreviewState === 'ready') {
+                onOpenResultPreview(finalImageSrc);
+              }
+            }}
+          />
+        )}
+      </div>
+      <ResultActionsPanel
+        imageSrc={finalImageSrc}
+        link={shareResultLink}
+        disableDownload={resultPreviewState !== 'ready'}
+        shareStatus={shareStatus}
+        copy={copy}
+        onDownload={onDownloadResult}
+        onShareLink={onShareLink}
+        onCopyLink={onCopyLink}
+        onShareOnKakao={onShareOnKakao}
+        onShareOnLine={onShareOnLine}
+        onShareOnX={onShareOnX}
+        onShareOnFacebook={onShareOnFacebook}
+        onInstagramSave={onInstagramSave}
+        onTryAnotherOutfit={onTryAnotherOutfit}
+        onRandomOutfit={onRandomOutfit}
+      />
+      {resultWatermarkApplied && (
+        <div className="credit-result-notice page-article">
+          <strong>{copy.freeResultNoticeTitle}</strong>
+          <p>{copy.freeResultNoticeBody}</p>
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  const studioMainNode = (
+    <>
+      <div className={`try-layout ${isModalLayout ? 'try-layout-modal' : ''}`}>
         <div className="try-column">
           <div className="card-header">
             <span className="section-label">{copy.step1Label}</span>
-            <h3 className="card-title">{copy.step1Title}</h3>
+            <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
+            {isModalLayout ? <p className="modal-card-description">{modalCopy?.personCardBody}</p> : null}
           </div>
           <div className="try-actions">
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
@@ -277,7 +355,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
-
           <div
             className={`preview-box ${activePersonImage ? 'has-image' : ''} ${personDragActive ? 'drag-active' : ''}`}
             onDragEnter={(event) => {
@@ -328,7 +405,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         <div className="try-column">
           <div className="card-header">
             <span className="section-label">{copy.step2Label}</span>
-            <h3 className="card-title">{copy.step2Title}</h3>
+            <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
+            {isModalLayout ? <p className="modal-card-description">{modalCopy?.garmentCardBody}</p> : null}
           </div>
           <div className="try-actions">
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
@@ -403,7 +481,14 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         </div>
       </div>
 
-      <div className="action-section">
+      <div className={`action-section ${isModalLayout ? 'action-section-card' : ''}`}>
+        {isModalLayout ? (
+          <div className="card-header modal-action-header">
+            <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
+            <h3 className="card-title">{modalCopy?.actionCardTitle}</h3>
+            <p className="modal-card-description">{modalCopy?.actionCardBody}</p>
+          </div>
+        ) : null}
         <p className="real-generation-label">{copy.realGenerationCta}</p>
         <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
         <p className="credit-balance-text">{copy.dailyCreditLabel}: {currentDailyCredit} · {copy.paidCreditLabel}: {currentPaidCredit}</p>
@@ -452,67 +537,68 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 <span>{formatSecondsLabel(generationEstimateMs)}</span>
               </div>
             </div>
-            <p className="generation-estimate-notice">{copy.generationEstimateNotice}</p>
           </>
         )}
+        <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
       </div>
+      {resultNode}
+    </>
+  );
 
-      {finalImageSrc && (
-        <div id="result-area" className="results-section">
-          <h2 className="section-heading">{copy.resultTitle}</h2>
-          <div className="composite-result">
-            {resultPreviewState === 'loading' && (
-              <div className="preview-overlay result-overlay">
-                <span className="spinner"></span>
-                <span>{copy.renderingResult}</span>
-              </div>
-            )}
-            {resultPreviewState === 'error' ? (
-              <div className="img-error-msg">{copy.resultDisplayError}</div>
-            ) : (
-              <img
-                src={finalImageSrc}
-                alt="Result"
-                className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
-                onLoad={() => copy.setResultPreviewReady()}
-                onError={() => copy.setResultPreviewError()}
-                onClick={() => {
-                  if (resultPreviewState === 'ready') {
-                    onOpenResultPreview(finalImageSrc);
-                  }
-                }}
-              />
-            )}
+  if (isModalLayout) {
+    return (
+      <section className="section try-section try-section-modal">
+        <div className="section-inner try-modal-inner">
+          {modalCopy?.notice ? <div className="try-modal-notice">{modalCopy.notice}</div> : null}
+          {accountStatusNode}
+          <div className="try-modal-layout">
+            <div className="try-modal-main">{studioMainNode}</div>
+            <aside className="try-modal-side">
+              <article className="try-modal-side-card">
+                <h3>{modalCopy?.tipsTitle}</h3>
+                <ul className="try-modal-list">
+                  {modalCopy?.tips.map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </article>
+              <article className="try-modal-side-card">
+                <h3>{modalCopy?.progressTitle}</h3>
+                <ol className="try-modal-progress-list">
+                  {modalCopy?.progressItems.map((item, index) => (
+                    <li
+                      key={item}
+                      className={`try-modal-progress-item ${index < progressIndex ? 'completed' : ''} ${index === progressIndex ? 'active' : ''}`}
+                    >
+                      <span className="try-modal-progress-index">{index + 1}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </article>
+              <article className="try-modal-side-card">
+                <h3>{modalCopy?.usageTitle}</h3>
+                <ul className="try-modal-list">
+                  {modalCopy?.usageItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            </aside>
           </div>
-            <ResultActionsPanel
-              imageSrc={finalImageSrc}
-              link={shareResultLink}
-              disableDownload={resultPreviewState !== 'ready'}
-              shareStatus={shareStatus}
-              copy={copy}
-              onDownload={onDownloadResult}
-              onShareLink={onShareLink}
-              onCopyLink={onCopyLink}
-            onShareOnKakao={onShareOnKakao}
-            onShareOnLine={onShareOnLine}
-            onShareOnX={onShareOnX}
-              onShareOnFacebook={onShareOnFacebook}
-              onInstagramSave={onInstagramSave}
-              onTryAnotherOutfit={onTryAnotherOutfit}
-              onRandomOutfit={onRandomOutfit}
-            />
-          {resultWatermarkApplied && (
-            <div className="credit-result-notice page-article">
-              <strong>{copy.freeResultNoticeTitle}</strong>
-              <p>{copy.freeResultNoticeBody}</p>
-            </div>
-          )}
         </div>
-      )}
+      </section>
+    );
+  }
 
-    </div>
-  </section>
-);
+  return (
+    <section id="try" className="section try-section">
+      <div className="section-inner">
+        {accountStatusNode}
+        {studioMainNode}
+      </div>
+    </section>
+  );
 };
 
 export default TryOnStudio;
