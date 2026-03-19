@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LanguageCode } from '../constants/languages';
-import { FACE_SAMPLES, type FaceCategory } from '../data/faceSamples';
+import { FACE_SAMPLE_OPTIONS, FACE_SAMPLES, type FaceCategory } from '../data/faceSamples';
 
-const FACE_CATEGORIES: FaceCategory[] = ['female', 'male', 'dog', 'cat'];
+const FACE_CATEGORIES: FaceCategory[] = ['dog', 'cat'];
 
 const findCategoryByUrl = (url: string | null): FaceCategory => {
   if (!url) {
-    return 'female';
+    return 'dog';
   }
 
-  return FACE_CATEGORIES.find((category) => FACE_SAMPLES[category].includes(url)) ?? 'female';
+  return FACE_CATEGORIES.find((category) => FACE_SAMPLES[category].includes(url)) ?? 'dog';
 };
 
 interface SampleModalProps {
@@ -41,7 +41,7 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang: _lang, onCl
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  const samples = useMemo(() => FACE_SAMPLES[category], [category]);
+  const samples = useMemo(() => FACE_SAMPLE_OPTIONS[category], [category]);
   const labels = t('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
   const copy = t('sampleModal', { returnObjects: true }) as {
     title: string;
@@ -84,43 +84,47 @@ const SampleModal: React.FC<SampleModalProps> = ({ currentUrl, lang: _lang, onCl
           </div>
 
           <div className="sample-grid">
-            {samples.map((url, index) => (
+            {samples.map((sample, index) => (
               <button
-                key={url}
-                className={`sample-card ${currentUrl === url ? 'selected' : ''} ${erroredUrls[url] ? 'error' : ''}`}
+                key={sample.url}
+                className={`sample-card ${currentUrl === sample.url ? 'selected' : ''} ${erroredUrls[sample.url] ? 'error' : ''}`}
                 onMouseEnter={updateHoverPreviewPosition}
                 onMouseMove={updateHoverPreviewPosition}
                 onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
                 onClick={() => {
-                  onSelect(url, category);
+                  onSelect(sample.url, category);
                   onClose();
                 }}
                 type="button"
               >
                 <div className="sample-card-thumb">
-                  {!loadedUrls[url] && !erroredUrls[url] && (
+                  {!loadedUrls[sample.url] && !erroredUrls[sample.url] && (
                     <div className="sample-card-overlay">
                       <span className="spinner sample-spinner"></span>
                     </div>
                   )}
                   <img
-                    src={url}
-                    alt={`${labels[category]} sample ${index + 1}`}
-                    className={loadedUrls[url] ? 'is-visible' : ''}
+                    src={sample.url}
+                    alt={`${labels[category]} ${sample.breedLabel}`}
+                    className={loadedUrls[sample.url] ? 'is-visible' : ''}
                     loading="eager"
                     onError={() => {
-                      console.error('[HAMDEVA] face sample thumbnail failed', url);
-                      setErroredUrls((prev) => ({ ...prev, [url]: true }));
+                      console.error('[HAMDEVA] face sample thumbnail failed', sample.url);
+                      setErroredUrls((prev) => ({ ...prev, [sample.url]: true }));
                     }}
-                    onLoad={() => setLoadedUrls((prev) => ({ ...prev, [url]: true }))}
+                    onLoad={() => setLoadedUrls((prev) => ({ ...prev, [sample.url]: true }))}
                   />
                   <div className="error-placeholder">{copy.error}</div>
                 </div>
+                <div className="sample-card-meta">
+                  <strong>{sample.breedLabel}</strong>
+                  <span>{labels[category]}</span>
+                </div>
                 <div className="sample-hover-preview" aria-hidden="true">
                   <img
-                    src={url}
+                    src={sample.url}
                     alt=""
-                    className={loadedUrls[url] ? 'is-visible' : ''}
+                    className={loadedUrls[sample.url] ? 'is-visible' : ''}
                     loading="lazy"
                   />
                 </div>

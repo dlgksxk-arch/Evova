@@ -748,6 +748,7 @@ a { color: inherit; text-decoration: none; }
   max-width: 620px;
   text-wrap: pretty;
   white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .page-title {
@@ -787,6 +788,8 @@ a { color: inherit; text-decoration: none; }
   font-size: 16px;
   line-height: 1.9;
   color: var(--text-sub);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }
 
 .content-grid {
@@ -824,6 +827,8 @@ a { color: inherit; text-decoration: none; }
   font-size: 15px;
   line-height: 1.65;
   color: var(--text-sub);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }
 
 .compact-tool-card {
@@ -1004,14 +1009,106 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
 }
 
+.sample-reference-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.sample-reference-sidebar,
+.sample-reference-main {
+  min-width: 0;
+}
+
+.sample-reference-panel,
+.sample-reference-main > .page-article {
+  height: 100%;
+}
+
+.sample-reference-group-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sample-breed-group + .sample-breed-group {
+  margin-top: 22px;
+}
+
+.sample-breed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sample-breed-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.sample-breed-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+}
+
+.sample-breed-card-image {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--surface-alt);
+  aspect-ratio: 1;
+}
+
+.sample-breed-card-image img,
+.sample-breed-detail-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sample-breed-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sample-breed-card-copy strong {
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.sample-breed-card-copy span {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
 .sample-outfit-thumbnail-grid,
-.sample-outfit-detail-sections {
+.sample-outfit-detail-sections,
+.sample-breed-detail-sections {
   display: grid;
   gap: 18px 20px;
 }
 
 .sample-outfit-thumbnail-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sample-reference-main .sample-outfit-thumbnail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .sample-outfit-thumbnail {
@@ -1079,7 +1176,32 @@ a { color: inherit; text-decoration: none; }
   max-width: min(1080px, calc(100vw - 24px)) !important;
 }
 
+.sample-breed-detail-shell {
+  max-width: min(1040px, calc(100vw - 24px)) !important;
+}
+
+.sample-outfit-detail-shell,
+.sample-breed-detail-shell {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sample-outfit-detail-shell .account-modal-body,
+.sample-breed-detail-shell .account-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(90vh - 110px);
+  overflow-y: auto;
+}
+
 .sample-outfit-detail-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sample-breed-detail-layout {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -1092,6 +1214,13 @@ a { color: inherit; text-decoration: none; }
   align-items: start;
 }
 
+.sample-breed-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
 .sample-outfit-detail-image {
   overflow: hidden;
   border-radius: 24px;
@@ -1100,7 +1229,21 @@ a { color: inherit; text-decoration: none; }
   aspect-ratio: 0.82;
 }
 
+.sample-breed-detail-image {
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  aspect-ratio: 1;
+}
+
 .sample-outfit-detail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sample-breed-detail-copy {
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1112,18 +1255,30 @@ a { color: inherit; text-decoration: none; }
   color: var(--text);
 }
 
+.sample-breed-detail-copy h2 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 38px);
+  color: var(--text);
+}
+
 .sample-outfit-detail-sections {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.sample-outfit-detail-sections section {
+.sample-breed-detail-sections {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sample-outfit-detail-sections section,
+.sample-breed-detail-sections section {
   padding: 18px 20px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: color-mix(in srgb, var(--surface-alt) 84%, transparent);
 }
 
-.sample-outfit-detail-sections p + p {
+.sample-outfit-detail-sections p + p,
+.sample-breed-detail-sections p + p {
   margin-top: 10px;
 }
 
@@ -3460,6 +3615,8 @@ a { color: inherit; text-decoration: none; }
   margin-top: 6px;
   font-size: 13px;
   color: var(--text-sub);
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 .close-btn { background: none; border: none; font-size: 32px; color: var(--text-muted); cursor: pointer; }
 
@@ -3477,24 +3634,47 @@ a { color: inherit; text-decoration: none; }
 .sample-category-tabs::-webkit-scrollbar { display: none; }
 
 .sample-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
-  gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 12px;
 }
 
 .sample-card {
-  aspect-ratio: 3/4; border-radius: 10px; overflow: visible;
+  border-radius: 16px; overflow: visible;
   cursor: pointer; border: 3px solid transparent; transition: all 0.2s;
   background: var(--bg-alt); position: relative;
   padding: 0;
   --sample-hover-x: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .sample-card-thumb {
   position: relative;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: inherit;
   background: var(--bg-alt);
+}
+.sample-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px 4px;
+  text-align: left;
+}
+.sample-card-meta strong {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.sample-card-meta span {
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 700;
+  text-wrap: pretty;
 }
 .sample-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
 .sample-card img {
@@ -3662,8 +3842,11 @@ a { color: inherit; text-decoration: none; }
   }
   .try-layout { grid-template-columns: 1fr; }
   .try-modal-layout,
+  .sample-reference-layout,
   .sample-outfit-detail-hero,
-  .sample-outfit-detail-sections {
+  .sample-breed-detail-hero,
+  .sample-outfit-detail-sections,
+  .sample-breed-detail-sections {
     grid-template-columns: 1fr;
   }
   .content-grid,
@@ -3673,6 +3856,7 @@ a { color: inherit; text-decoration: none; }
   .landing-card-grid,
   .landing-step-grid,
   .sample-outfit-thumbnail-grid,
+  .sample-breed-grid,
   .country-card-grid,
   .history-grid,
   .management-grid,
@@ -3797,7 +3981,7 @@ a { color: inherit; text-decoration: none; }
   }
   .hero-title {
     font-size: clamp(34px, 9vw, 56px);
-    line-height: 1.02;
+    line-height: 1.06;
   }
   .hero-subtitle {
     font-size: clamp(42px, 13vw, 72px);
@@ -3812,8 +3996,32 @@ a { color: inherit; text-decoration: none; }
   }
   .hero-sub {
     font-size: 15px;
-    line-height: 1.55;
+    line-height: 1.65;
     margin-bottom: 18px;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hero-cta-group .generate-btn,
+  .hero-cta-group .outline-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .section-copy h2,
+  .page-article h2,
+  .compact-info-card h2,
+  .page-article h3,
+  .howto-section-copy h3 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+  .section-copy p,
+  .page-article p,
+  .compact-info-card p,
+  .howto-section-copy p {
+    font-size: 15px;
+    line-height: 1.75;
   }
   .section {
     padding: 32px 0;
@@ -3943,6 +4151,10 @@ a { color: inherit; text-decoration: none; }
     padding: 16px;
     border-radius: 18px;
   }
+  .sample-breed-detail-sections section {
+    padding: 16px;
+    border-radius: 18px;
+  }
   .modal-backdrop {
     padding: 10px;
   }
@@ -3956,7 +4168,18 @@ a { color: inherit; text-decoration: none; }
     padding-right: 0;
   }
   .modal-header {
+    align-items: flex-start;
     margin-bottom: 14px;
+  }
+  .sample-breed-card {
+    border-radius: 16px;
+  }
+  .sample-breed-card-copy strong {
+    font-size: 13px;
+  }
+  .sample-reference-panel,
+  .sample-reference-main > .page-article {
+    padding: 20px;
   }
   .modal-header h3 {
     font-size: 18px;
@@ -3983,13 +4206,18 @@ a { color: inherit; text-decoration: none; }
     font-size: 11px;
   }
   .sample-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 4px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .sample-card {
-    aspect-ratio: 3 / 4;
     border-width: 2px;
-    border-radius: 8px;
+    border-radius: 12px;
+  }
+  .sample-card-meta strong {
+    font-size: 12px;
+  }
+  .sample-card-meta span {
+    font-size: 10px;
   }
   .sample-hover-preview {
     display: none;

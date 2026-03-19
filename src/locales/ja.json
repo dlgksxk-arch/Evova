@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "ホーム",
-    "traditional-clothing": "ペット衣装アイデア",
+    "traditional-clothing": "サンプル衣装",
     "countries": "国別衣装",
     "how-it-works": "使い方",
     "fashion-technology": "ペットスタイルガイド",
@@ -126,8 +126,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "ペット衣装アイデア",
-      "description": "犬や猫向けの衣装ムードを確認できるサンプル衣装コレクションです。\n\nペット写真と衣装画像を選び、かわいいペット衣装プレビューを作成できます。",
+      "title": "サンプル衣装",
+      "description": "ペットに合うサンプル品種とサンプル衣装をまとめて確認できるページです。",
       "sections": [
         {
           "heading": "伝統衣装サンプル",
@@ -386,13 +386,12 @@
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {
-    "title": "サンプルを選択",
-    "subtitle": "プレビューに使うサンプル画像を選んでください。",
+    "title": "ペットサンプルを選択",
+    "subtitle": "犬または猫のサンプル画像から始められます。",
     "error": "画像エラー",
     "disclaimer": "すべての画像は AI により生成されています。",
+    "breedPrefix": "品種",
     "categories": {
-      "female": "女性",
-      "male": "男性",
       "dog": "犬",
       "cat": "猫"
     }

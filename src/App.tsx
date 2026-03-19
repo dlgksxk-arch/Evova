@@ -44,7 +44,7 @@ import {
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
-import { FACE_SAMPLES } from './data/faceSamples';
+import { FACE_SAMPLES, getFaceSampleBreed, getPetBreedGuides, type FaceCategory } from './data/faceSamples';
 import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
@@ -192,20 +192,20 @@ interface BoardNoticeRecord {
 const translations = {
   ko: {
     navFeatures: '기능 소개', navHowto: '사용 방법', navFaq: 'FAQ',
-    heroEyebrow: 'AI 기반 가상 피팅 서비스',
+    heroEyebrow: 'AI 기반 펫 피팅 서비스',
     heroTitle: '우리 집 반려동물의\n귀여운 스타일 미리보기',
-    heroSub: '단 한 장의 반려동물 사진으로\nHAMDEVA AI가\n어울리는 의상 분위기를\n빠르게 미리 보여드립니다',
+    heroSub: '단 한 장의 반려동물 사진으로\n어울리는 의상 분위기를\n빠르게 미리 보여드립니다',
     heroCta: '펫 피팅 시작하기',
     featuresTitle: '왜 HAMDEVA인가요?', featuresSub: '빠르고, 정확하고, 누구나 쉽게 사용할 수 있습니다.',
     f1Title: 'AI 펫 피팅', f1Desc: 'HAMDEVA AI가 반려동물 사진과 의상을 분석하여 자연스러운 펫 의상 미리보기를 생성합니다.',
-    f2Title: '즉시 결과 확인', f2Desc: '별도의 회원가입 없이 사진 두 장만 업로드하면 수 초 내에 결과 이미지를 확인할 수 있습니다.',
+    f2Title: '즉시 결과 확인', f2Desc: '반려동물 사진과 의상 이미지를 올리면 수 초 안에 결과를 확인할 수 있습니다.',
     f3Title: '프라이버시 보호', f3Desc: '모든 이미지 처리는 브라우저에서 이루어지며, 사진이 별도로 저장되거나 공유되지 않습니다.',
     f4Title: '모바일 완벽 지원', f4Desc: '스마트폰, 태블릿, PC 어디서든 동일한 품질로 이용할 수 있습니다.',
-    howTitle: '이렇게 사용하세요', howSub: '단 3단계로 나만의 가상 피팅을 경험하세요.',
+    howTitle: '이렇게 사용하세요', howSub: '단 3단계로 반려동물 피팅을 시작할 수 있습니다.',
     h1Step: 'Step 01', h1Title: '반려동물 사진 업로드', h1Desc: '강아지나 고양이가 잘 보이는 사진을 업로드하세요. 배경이 단순하고 자세가 분명하면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 체험해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
+    tryTitle: '지금 바로 시작해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
     step1Label: 'Step 1', step1Title: '반려동물 사진 등록', step1Desc: '정면에 가깝고 반려동물이 잘 보이는 사진을 드래그하거나 클릭하여 업로드하세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입어보고 싶은 옷 사진을 드래그하거나 클릭하여 업로드하세요',
     faceCopyrightNotice: '반려동물 사진에는 권리가 없는 이미지나 타인의 사진을 사용하지 마세요.',
@@ -224,7 +224,7 @@ const translations = {
     renderingResult: '결과 이미지 렌더링 중...',
     resultDisplayError: '결과 이미지를 표시할 수 없습니다.',
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
-    generate: 'AI 피팅 시작하기', generating: 'AI 분석 중...',
+    generate: '펫 피팅 시작하기', generating: 'AI 분석 중...',
     loadingDetail: 'HAMDEVA AI가 반려동물 사진과 의상을 분석하고 있습니다...',
     generationEstimateNotice: '인터넷 상태와 업로드 이미지 크기에 따라 실제 완료 시간은 달라질 수 있습니다.',
     alertBoth: '반려동물 사진과 의상 사진을 모두 업로드해주세요!', alertError: '이미지 생성에 실패했습니다. 다시 시도해주세요.', generationConfigError: '이미지 생성 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
@@ -504,20 +504,20 @@ const translations = {
   },
   en: {
     navFeatures: 'Features', navHowto: 'How It Works', navFaq: 'FAQ',
-    heroEyebrow: 'AI-Powered Virtual Try-On',
+    heroEyebrow: 'AI-Powered Pet Fitting',
     heroTitle: 'Cute Pet Looks\nBefore You Dress Up',
-    heroSub: "All you need is one pet photo. HAMDEVA's AI creates a playful pet outfit preview instantly.",
+    heroSub: "All you need is one pet photo. HAMDEVA creates a playful outfit preview in seconds.",
     heroCta: 'Start Pet Fitting',
     featuresTitle: 'Why HAMDEVA?', featuresSub: 'Fast, accurate, and easy to use for everyone.',
     f1Title: 'AI Pet Fitting', f1Desc: 'HAMDEVA AI analyzes your pet photo and outfit image to generate a natural-looking pet outfit preview.',
-    f2Title: 'Instant Results', f2Desc: 'No sign-up needed. Upload two photos and get your result in seconds.',
+    f2Title: 'Instant Results', f2Desc: 'Upload a pet photo and an outfit image, then review the result in seconds.',
     f3Title: 'Privacy First', f3Desc: 'Your photos are not stored or shared beyond what is needed to generate your result.',
     f4Title: 'Works Everywhere', f4Desc: 'Fully optimized for smartphones, tablets, and desktop browsers.',
-    howTitle: 'How It Works', howSub: 'Three simple steps to your virtual try-on.',
+    howTitle: 'How It Works', howSub: 'Start your pet fitting flow in three simple steps.',
     h1Step: 'Step 01', h1Title: 'Upload Your Pet Photo', h1Desc: 'Upload a clear photo of your dog or cat. A simple background and visible pose improve result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Try It Now', trySub: 'Get 300 credits on sign-up and 100 more credits every day you log in.',
+    tryTitle: 'Start Now', trySub: 'Get 300 credits on sign-up and 100 more credits every day you log in.',
     step1Label: 'Step 1', step1Title: 'Upload Pet Photo', step1Desc: 'Drag or click to upload a clear photo of your dog or cat',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     faceCopyrightNotice: 'Do not upload pet photos or images you do not have permission to use.',
@@ -536,7 +536,7 @@ const translations = {
     renderingResult: 'Rendering result...',
     resultDisplayError: 'Unable to display the result.',
     clothingSamplesPending: 'Clothing samples are being prepared.',
-    generate: 'Generate AI Fitting', generating: 'AI Processing...',
+    generate: 'Start Pet Fitting', generating: 'AI Processing...',
     loadingDetail: 'HAMDEVA AI is analyzing your pet photo and outfit image...',
     generationEstimateNotice: 'Actual completion time may vary depending on network conditions and image size.',
     alertBoth: 'Please upload both a pet photo and a clothing photo!', alertError: 'Image generation failed. Please try again.', generationConfigError: 'Image generation is not configured yet. Please try again later.',
@@ -2747,10 +2747,10 @@ const getCanonicalPathFromLocation = (pathname: string, hash: string): string =>
 };
 const getFaceSampleCategoryName = (lang: LanguageCode, category: keyof typeof FACE_SAMPLES): string => {
   const categoryNames = {
-    ko: { female: '여성', male: '남성', dog: '강아지', cat: '고양이' },
-    ja: { female: '女性', male: '男性', dog: '犬', cat: '猫' },
-    zh: { female: '女性', male: '男性', dog: '狗', cat: '猫' },
-    en: { female: 'Female', male: 'Male', dog: 'Dog', cat: 'Cat' },
+    ko: { dog: '강아지', cat: '고양이' },
+    ja: { dog: '犬', cat: '猫' },
+    zh: { dog: '狗', cat: '猫' },
+    en: { dog: 'Dog', cat: 'Cat' },
   } as const;
   const normalizedLang = lang === 'ja' || lang === 'zh' || lang === 'ko' ? lang : 'en';
   return categoryNames[normalizedLang][category];
@@ -2767,6 +2767,10 @@ const getFaceInputLabel = (
     if (matchedEntry) {
       const [category, samples] = matchedEntry;
       const sampleIndex = samples.indexOf(selectedSampleUrl);
+      const breedLabel = getFaceSampleBreed(selectedSampleUrl);
+      if (breedLabel) {
+        return `${sampleBadgeLabel} ${getFaceSampleCategoryName(lang, category)} ${breedLabel}`;
+      }
       return `${sampleBadgeLabel} ${getFaceSampleCategoryName(lang, category)} ${sampleIndex + 1}`;
     }
   }
@@ -2775,7 +2779,7 @@ const getFaceInputLabel = (
     return personFile.name.trim();
   }
 
-  return lang === 'ko' ? '업로드한 인물 사진' : 'Uploaded person photo';
+  return lang === 'ko' ? '업로드한 반려동물 사진' : 'Uploaded pet photo';
 };
 const getGarmentInputLabel = (
   lang: LanguageCode,
@@ -2905,6 +2909,7 @@ const App: React.FC = () => {
   const [showContentModal, setShowContentModal] = useState(false);
   const [showTryOnModal, setShowTryOnModal] = useState(false);
   const [selectedOutfitGuideId, setSelectedOutfitGuideId] = useState<string | null>(null);
+  const [selectedBreedGuideId, setSelectedBreedGuideId] = useState<string | null>(null);
   const [activeContentTab, setActiveContentTab] = useState<ModalTab>('overview');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -2934,8 +2939,16 @@ const App: React.FC = () => {
   const contentLocale = getContentLocale(lang);
   const landingContent = getLandingContent(lang);
   const traditionalOutfitGuides = getTraditionalOutfitGuides(lang);
+  const petBreedGuides = getPetBreedGuides(lang);
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
+  const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
+  const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
+  const petBreedGuideGroups = (['dog', 'cat'] as FaceCategory[]).map((category) => ({
+    category,
+    label: sampleCategoryLabels[category],
+    guides: petBreedGuides.filter((guide) => guide.category === category),
+  }));
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = translate('uploadGuides.faceTips', { returnObjects: true }) as string[];
@@ -3760,7 +3773,7 @@ const App: React.FC = () => {
     }
   };
 
-  const loadPersonSample = async (url: string, category: 'female' | 'male' | 'dog' | 'cat') => {
+  const loadPersonSample = async (url: string, category: FaceCategory) => {
     if (isGenerating) {
       return;
     }
@@ -4201,9 +4214,20 @@ const App: React.FC = () => {
   const closeOutfitGuide = () => {
     setSelectedOutfitGuideId(null);
   };
+  const openBreedGuide = (guideId: string) => {
+    setSelectedBreedGuideId(guideId);
+  };
+  const closeBreedGuide = () => {
+    setSelectedBreedGuideId(null);
+  };
   const handleStartGuideTryOn = async (imageUrl: string) => {
     closeOutfitGuide();
     await loadClothSample(imageUrl);
+    setShowTryOnModal(true);
+  };
+  const handleStartBreedTryOn = async (imageUrl: string, category: FaceCategory) => {
+    closeBreedGuide();
+    await loadPersonSample(imageUrl, category);
     setShowTryOnModal(true);
   };
   const openAuthModal = (mode: AuthMode) => {
@@ -5163,28 +5187,63 @@ const App: React.FC = () => {
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </article>
-                <article className="page-article">
-                  <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
-                  <p>{landingContent.sampleOutfits.catalogBody}</p>
-                </article>
-                <div className="sample-outfit-thumbnail-grid">
-                  {traditionalOutfitGuides.map((guide) => (
-                    <button
-                      key={guide.id}
-                      className="sample-outfit-thumbnail"
-                      onClick={() => openOutfitGuide(guide.id)}
-                      type="button"
-                    >
-                      <div className="sample-outfit-thumbnail-image">
-                        <img src={guide.image} alt={guide.outfitName} loading="lazy" />
-                      </div>
-                      <div className="sample-outfit-thumbnail-copy">
-                        <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
-                        <strong>{guide.outfitName}</strong>
-                        <p>{guide.summary}</p>
-                      </div>
-                    </button>
-                  ))}
+                <div className="sample-reference-layout">
+                  <aside className="sample-reference-sidebar">
+                    <article className="page-article sample-reference-panel">
+                      <h2>{landingContent.sampleOutfits.breedTitle}</h2>
+                      <p>{landingContent.sampleOutfits.breedBody}</p>
+                      {petBreedGuideGroups.map((group) => (
+                        <section key={group.category} className="sample-breed-group">
+                          <div className="sample-reference-group-head">
+                            <span className="sample-outfit-country-pill">{group.label}</span>
+                          </div>
+                          <div className="sample-breed-grid">
+                            {group.guides.map((guide) => (
+                              <button
+                                key={guide.id}
+                                className="sample-breed-card"
+                                onClick={() => openBreedGuide(guide.id)}
+                                type="button"
+                              >
+                                <div className="sample-breed-card-image">
+                                  <img src={guide.url} alt={guide.breedLabel} loading="lazy" />
+                                </div>
+                                <div className="sample-breed-card-copy">
+                                  <strong>{guide.breedLabel}</strong>
+                                  <span>{guide.categoryLabel}</span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                    </article>
+                  </aside>
+                  <div className="sample-reference-main">
+                    <article className="page-article">
+                      <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
+                      <p>{landingContent.sampleOutfits.catalogBody}</p>
+                    </article>
+                    <div className="sample-outfit-thumbnail-grid">
+                      {traditionalOutfitGuides.map((guide) => (
+                        <button
+                          key={guide.id}
+                          className="sample-outfit-thumbnail"
+                          onClick={() => openOutfitGuide(guide.id)}
+                          type="button"
+                        >
+                          <div className="sample-outfit-thumbnail-image">
+                            <img src={guide.image} alt={guide.outfitName} loading="lazy" />
+                          </div>
+                          <div className="sample-outfit-thumbnail-copy">
+                            <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
+                            <strong>{guide.outfitName}</strong>
+                            <p>{guide.summary}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -5630,6 +5689,67 @@ const App: React.FC = () => {
                 <h3>{landingContent.sampleOutfits.guideSections.fittingTips}</h3>
                 {selectedOutfitGuide.fittingTips.map((paragraph) => (
                   <p key={`tips-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+            </div>
+          </div>
+        </ShellModal>
+      )}
+
+      {selectedBreedGuide && (
+        <ShellModal
+          title={selectedBreedGuide.breedLabel}
+          subtitle={selectedBreedGuide.summary}
+          className="sample-breed-detail-shell"
+          onClose={closeBreedGuide}
+        >
+          <div className="sample-breed-detail-layout">
+            <div className="sample-breed-detail-hero">
+              <div className="sample-breed-detail-image">
+                <img src={selectedBreedGuide.url} alt={selectedBreedGuide.breedLabel} loading="lazy" />
+              </div>
+              <div className="sample-breed-detail-copy">
+                <span className="sample-outfit-country-pill">{selectedBreedGuide.categoryLabel}</span>
+                <h2>{selectedBreedGuide.breedLabel}</h2>
+                <p>{selectedBreedGuide.summary}</p>
+                <button
+                  className="generate-btn"
+                  onClick={() => { void handleStartBreedTryOn(selectedBreedGuide.url, selectedBreedGuide.category); }}
+                  type="button"
+                >
+                  {landingContent.sampleOutfits.breedStartButton}
+                </button>
+              </div>
+            </div>
+            <div className="sample-breed-detail-sections">
+              <section>
+                <h3>{landingContent.sampleOutfits.breedSections.overview}</h3>
+                {selectedBreedGuide.overview.map((paragraph) => (
+                  <p key={`breed-overview-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.breedSections.appearance}</h3>
+                {selectedBreedGuide.appearance.map((paragraph) => (
+                  <p key={`breed-appearance-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.breedSections.styling}</h3>
+                {selectedBreedGuide.styling.map((paragraph) => (
+                  <p key={`breed-styling-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.breedSections.photoTips}</h3>
+                {selectedBreedGuide.photoTips.map((paragraph) => (
+                  <p key={`breed-photo-${paragraph}`}>{paragraph}</p>
+                ))}
+              </section>
+              <section>
+                <h3>{landingContent.sampleOutfits.breedSections.fittingTips}</h3>
+                {selectedBreedGuide.fittingTips.map((paragraph) => (
+                  <p key={`breed-tips-${paragraph}`}>{paragraph}</p>
                 ))}
               </section>
             </div>

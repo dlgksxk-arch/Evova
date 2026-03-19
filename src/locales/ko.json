@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "홈",
-    "traditional-clothing": "펫 의상 아이디어",
+    "traditional-clothing": "샘플 의상",
     "countries": "국가별 의상",
     "how-it-works": "사용 방법",
     "fashion-technology": "펫 스타일 가이드",
@@ -129,8 +129,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "펫 의상 아이디어",
-      "description": "반려동물에게 어울리는 스타일과 코스튬 분위기를 살펴볼 수 있는 페이지입니다.",
+      "title": "샘플 의상",
+      "description": "반려동물에게 어울리는 샘플 품종과 샘플 의상을 함께 살펴볼 수 있는 페이지입니다.",
       "sections": [
         {
           "heading": "전통 의상",
@@ -497,13 +497,12 @@
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {
-    "title": "샘플 선택",
-    "subtitle": "미리보기에 사용할 샘플 이미지를 선택하세요.",
+    "title": "펫 샘플 선택",
+    "subtitle": "강아지 또는 고양이 샘플을 골라 바로 시작하세요.",
     "error": "이미지 오류",
     "disclaimer": "모든 이미지는 AI로 생성되었습니다.",
+    "breedPrefix": "품종",
     "categories": {
-      "female": "여성",
-      "male": "남성",
       "dog": "강아지",
       "cat": "고양이"
     }

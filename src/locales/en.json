@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Home",
-    "traditional-clothing": "Pet Outfit Ideas",
+    "traditional-clothing": "Sample Outfits",
     "countries": "Country Clothing",
     "how-it-works": "How It Works",
     "fashion-technology": "Pet Style Guide",
@@ -129,8 +129,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "Pet Outfit Ideas",
-      "description": "Browse outfit ideas and themed looks that can work as fun pet fitting references.",
+      "title": "Sample Outfits",
+      "description": "Browse sample breeds and sample outfits that can work as useful pet fitting references.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -497,13 +497,12 @@
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {
-    "title": "Choose Sample",
-    "subtitle": "Select a sample image for the preview.",
+    "title": "Choose Pet Sample",
+    "subtitle": "Start with a dog or cat sample image.",
     "error": "Image error",
     "disclaimer": "All images were generated with AI.",
+    "breedPrefix": "Breed",
     "categories": {
-      "female": "Women",
-      "male": "Men",
       "dog": "Dog",
       "cat": "Cat"
     }

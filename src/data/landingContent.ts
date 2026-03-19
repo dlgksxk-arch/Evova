@@ -94,10 +94,20 @@ export type LandingContent = {
     description: string;
     introTitle: string;
     introParagraphs: string[];
+    breedTitle: string;
+    breedBody: string;
     catalogTitle: string;
     catalogBody: string;
     startButton: string;
+    breedStartButton: string;
     outfitLabel: string;
+    breedSections: {
+      overview: string;
+      appearance: string;
+      styling: string;
+      photoTips: string;
+      fittingTips: string;
+    };
     guideSections: {
       overview: string;
       history: string;
@@ -127,7 +137,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       body:
         '강아지나 고양이 사진과 의상 이미지를 올리면 AI가 귀엽고 자연스러운 펫 의상 미리보기를 생성합니다. 테마 의상, 기념일 룩, 특별한 날 스타일을 빠르게 비교해 보세요.',
       primaryButton: '펫 피팅 시작',
-      secondaryButton: '펫 의상 아이디어 보기',
+      secondaryButton: '샘플 의상 보기',
     },
     intro: {
       title: 'HAMDEVA는 반려동물 사진으로 다양한 의상 분위기를 빠르게 비교해볼 수 있는 AI 서비스입니다.',
@@ -177,9 +187,9 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       ],
     },
     sampleInfo: {
-      title: '펫에게 어울리는 의상 아이디어를 먼저 살펴볼 수 있습니다.',
+      title: '반려동물에게 어울릴 샘플 의상을 먼저 살펴볼 수 있습니다.',
       body: '테마별 스타일과 의상 분위기를 본 뒤, 내 반려동물에게 어떤 룩이 잘 맞을지 정하고 바로 피팅을 시작해 보세요.',
-      button: '펫 의상 아이디어 보기',
+      button: '샘플 의상 보기',
     },
     faq: {
       title: '자주 묻는 질문',
@@ -189,7 +199,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
         { question: '생성 시간은 얼마나 걸리나요?', answer: '서버 상태와 이미지 크기에 따라 다르지만, 일반적으로 수십 초 안팎에서 결과를 받게 됩니다.' },
         { question: '결과 이미지는 저장할 수 있나요?', answer: '생성이 끝난 뒤 다운로드 버튼을 통해 결과 이미지를 저장할 수 있습니다.' },
         { question: '의상 배경은 단순해야 하나요?', answer: '가능하면 단순한 배경이 좋습니다. 의상 외곽과 디테일이 잘 보여야 AI가 더 안정적으로 읽습니다.' },
-        { question: '정면 얼굴만 가능한가요?', answer: '정면에 가까운 사진이 가장 좋지만, 약간의 각도가 있는 사진도 사용할 수 있습니다. 다만 얼굴 가림과 왜곡은 적을수록 좋습니다.' },
+        { question: '정면 사진만 가능한가요?', answer: '정면에 가까운 사진이 가장 좋지만, 약간의 각도가 있는 사진도 사용할 수 있습니다. 다만 얼굴 가림과 왜곡은 적을수록 좋습니다.' },
       ],
     },
     modal: {
@@ -213,17 +223,27 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       retryButton: '다시 생성하기',
     },
     sampleOutfits: {
-      title: '펫 의상 아이디어',
-      description: '반려동물에게 어울릴 만한 스타일 분위기와 의상 아이디어를 살펴보는 페이지입니다.',
-      introTitle: '이 페이지에서는 펫 피팅에 참고할 스타일 아이디어를 확인할 수 있습니다.',
+      title: '샘플 의상',
+      description: '반려동물에게 어울릴 만한 샘플 품종과 의상 분위기를 함께 살펴보는 페이지입니다.',
+      introTitle: '이 페이지에서는 펫 피팅에 참고할 샘플 품종과 샘플 의상을 함께 확인할 수 있습니다.',
       introParagraphs: [
-        '각 카드에서는 의상 이름과 특징, 분위기, 시각적 포인트를 확인한 뒤 펫 피팅에 바로 연결할 수 있습니다.',
-        '귀여운 코스튬, 전통풍 스타일, 특별한 날 룩처럼 반려동물에게 어울릴 만한 의상 방향을 고르는 데 초점을 맞췄습니다.',
+        '왼쪽에서는 샘플 품종 이미지를 열어 얼굴 윤곽과 털 실루엣, 목 주변 장식이 어떻게 보일지 살펴볼 수 있습니다.',
+        '오른쪽에서는 의상 카드별 분위기와 특징을 확인한 뒤 바로 펫 피팅으로 연결할 수 있습니다.',
       ],
-      catalogTitle: '대표 펫 스타일 아이디어',
-      catalogBody: '아래 카드에서 원하는 스타일 분위기를 살펴본 뒤 상세 내용을 열어보세요.',
+      breedTitle: '샘플 품종',
+      breedBody: '샘플 품종 이미지는 펫 피팅을 시작하기 전에 얼굴 비율과 털 볼륨, 장식 배치를 미리 비교해 보는 기준점으로 활용할 수 있습니다.',
+      catalogTitle: '샘플 의상',
+      catalogBody: '아래 카드에서 원하는 의상 분위기를 살펴본 뒤 상세 내용을 열어보세요.',
       startButton: '이 스타일로 펫 피팅 시작',
-      outfitLabel: '펫 스타일',
+      breedStartButton: '이 품종 샘플로 시작',
+      outfitLabel: '샘플 의상',
+      breedSections: {
+        overview: '개요',
+        appearance: '외형 포인트',
+        styling: '스타일링 포인트',
+        photoTips: '사진 선택 팁',
+        fittingTips: '가상피팅 활용 포인트',
+      },
       guideSections: {
         overview: '개요',
         history: '기원과 역사',
@@ -298,14 +318,14 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       subtitle: 'Dress your pet in seconds',
       body: 'Upload a photo of your dog or cat and try different outfits instantly. Preview cute styles, themed costumes, and special occasion looks with AI.',
       primaryButton: 'Start Pet Fitting',
-      secondaryButton: 'Explore Pet Outfit Ideas',
+      secondaryButton: 'Browse Sample Outfits',
     },
     intro: {
       title: 'HAMDEVA helps you preview cute outfits on your dog or cat before you pick a final look.',
       paragraphs: [
         'Use a pet photo and an outfit image to create a playful fitting preview before you shop, plan a costume, or prepare a themed photo.',
         'It works well for dogs and cats when you want to compare mood, cuteness, and overall styling direction quickly.',
-        'Check How It Works for the simple flow and Pet Outfit Ideas for more style inspiration.',
+        'Check How It Works for the simple flow and Sample Outfits for more style inspiration.',
       ],
     },
     features: {
@@ -336,9 +356,9 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       ],
     },
     sampleInfo: {
-      title: 'Browse pet outfit ideas before you start generating.',
+      title: 'Browse sample outfits before you start generating.',
       body: 'Look through outfit moods and costume directions first, then decide which look you want to try on your pet.',
-      button: 'Open Pet Outfit Ideas',
+      button: 'Open Sample Outfits',
     },
     faq: {
       title: 'Frequently Asked Questions',
@@ -372,17 +392,27 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       retryButton: 'Generate Again',
     },
     sampleOutfits: {
-      title: 'Pet Outfit Ideas',
-      description: 'Browse outfit moods and style directions that can work as fun references for your dog or cat.',
-      introTitle: 'This page is for pet outfit inspiration.',
+      title: 'Sample Outfits',
+      description: 'Browse sample breeds and outfit directions that can work as useful references for your dog or cat.',
+      introTitle: 'This page brings sample breeds and sample outfits together.',
       introParagraphs: [
-        'Each outfit card can act as a visual idea for a cute pet costume, themed look, or special-day outfit.',
-        'Use this page when you want to choose a mood first and generate later.',
+        'Use the sample breed column to review face framing, coat shape, and accessory balance before you start a fitting flow.',
+        'Use the outfit cards to compare mood, costume structure, and visual direction before you generate.',
       ],
-      catalogTitle: 'Pet Style Ideas',
-      catalogBody: 'Open a card to read the style details and then decide whether to try that look on your pet.',
+      breedTitle: 'Sample Breeds',
+      breedBody: 'Sample breed images help you compare face ratio, fur shape, and styling balance before you switch to your own pet photo.',
+      catalogTitle: 'Sample Outfits',
+      catalogBody: 'Open a card to read the outfit details and decide whether to try that look on your pet.',
       startButton: 'Start pet fitting with this style',
-      outfitLabel: 'Pet Outfit Idea',
+      breedStartButton: 'Start with this breed sample',
+      outfitLabel: 'Sample Outfit',
+      breedSections: {
+        overview: 'Overview',
+        appearance: 'Appearance Points',
+        styling: 'Styling Notes',
+        photoTips: 'Photo Tips',
+        fittingTips: 'Virtual Fitting Tips',
+      },
       guideSections: {
         overview: 'Overview',
         history: 'Origin and History',
@@ -457,14 +487,14 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       subtitle: 'ペットの衣装をすぐに試せます。',
       body: '犬や猫の写真と衣装画像をアップロードすると、AI がかわいいペット衣装プレビューを生成します。イベント用、テーマ用、記念日用のスタイルをすばやく比べられます。',
       primaryButton: 'ペットフィッティングを始める',
-      secondaryButton: 'ペット衣装アイデアを見る',
+      secondaryButton: 'サンプル衣装を見る',
     },
     intro: {
       title: 'HAMDEVA は愛犬や愛猫の衣装イメージをすばやく試せる AI サービスです。',
       paragraphs: [
         '犬や猫の写真と衣装画像を組み合わせて、購入前や撮影前にかわいい見た目を先に確認できます。',
         '季節イベント、誕生日、記念撮影、SNS 投稿用のコスチューム比較に向いています。',
-        '使い方は使い方ページで、衣装の雰囲気探しはペット衣装アイデアページで確認できます。',
+        '使い方は使い方ページで、衣装の雰囲気探しはサンプル衣装ページで確認できます。',
       ],
     },
     features: {
@@ -497,7 +527,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     sampleInfo: {
       title: 'ペットに似合いそうな衣装アイデアを先に見られます。',
       body: 'かわいいコスチュームやテーマスタイルの雰囲気を見てから、試したいルックを選べます。',
-      button: 'ペット衣装アイデアを見る',
+      button: 'サンプル衣装を見る',
     },
     faq: {
       title: 'よくある質問',
@@ -531,17 +561,27 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       retryButton: 'もう一度生成',
     },
     sampleOutfits: {
-      title: 'ペット衣装アイデア',
-      description: '犬や猫に似合う衣装の雰囲気を探すためのページです。',
-      introTitle: 'このページはペット向けスタイルのヒントを見るためのページです。',
+      title: 'サンプル衣装',
+      description: 'ペットに合うサンプル品種とサンプル衣装を一緒に見るためのページです。',
+      introTitle: 'このページではサンプル品種とサンプル衣装をまとめて確認できます。',
       introParagraphs: [
-        '各カードでは、衣装の名前や雰囲気、見た目の特徴を見ながら、ペットに合いそうな方向を探せます。',
-        'かわいいコスチュームやテーマルックの参考を選ぶことを優先しています。',
+        '左側ではサンプル品種の顔まわりや毛並みの見え方を確認できます。',
+        '右側では衣装カードを開いて雰囲気と特徴を見ながら、試したい方向を決められます。',
       ],
-      catalogTitle: 'ペットスタイルのアイデア',
-      catalogBody: 'カードを開いてスタイルの詳細を確認し、気になるルックだけを試してみてください。',
+      breedTitle: 'サンプル品種',
+      breedBody: 'サンプル品種画像は、顔の比率や毛のボリューム、首まわり装飾の見え方を先に比べるための基準として使えます。',
+      catalogTitle: 'サンプル衣装',
+      catalogBody: 'カードを開いて衣装の詳細を確認し、気になるルックだけを試してください。',
       startButton: 'このスタイルでペット試着を始める',
-      outfitLabel: 'ペット衣装アイデア',
+      breedStartButton: 'この品種サンプルで始める',
+      outfitLabel: 'サンプル衣装',
+      breedSections: {
+        overview: '概要',
+        appearance: '見た目のポイント',
+        styling: 'スタイリングポイント',
+        photoTips: '写真選びのコツ',
+        fittingTips: '試着活用ポイント',
+      },
       guideSections: {
         overview: '概要',
         history: '起源と歴史',
@@ -616,14 +656,14 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       subtitle: '几秒内给你的宠物换上不同造型',
       body: '上传狗狗或猫咪的照片和服装图片后，AI 会生成可爱的宠物穿搭预览。你可以先比较节日造型、主题服装和特别场合风格。',
       primaryButton: '开始宠物试衣',
-      secondaryButton: '查看宠物穿搭灵感',
+      secondaryButton: '查看示例服装',
     },
     intro: {
       title: 'HAMDEVA 是一个让你快速预览宠物穿搭效果的 AI 服务。',
       paragraphs: [
         '把狗狗或猫咪的照片与服装图片结合起来，就能在购买、拍摄或活动准备前先看宠物造型效果。',
         '它适合用来比较可爱度、节日感、主题风格和整体氛围，而不必一开始就做最终决定。',
-        '具体操作请看使用方法页面，更多风格灵感请看宠物穿搭灵感页面。',
+        '具体操作请看使用方法页面，更多风格灵感请看示例服装页面。',
       ],
     },
     features: {
@@ -654,9 +694,9 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       ],
     },
     sampleInfo: {
-      title: '先看看宠物穿搭灵感，再决定想试哪种风格。',
+      title: '先看看示例服装，再决定想试哪种风格。',
       body: '先浏览不同服装氛围和造型方向，再决定哪一种更适合你的狗狗或猫咪。',
-      button: '查看宠物穿搭灵感',
+      button: '查看示例服装',
     },
     faq: {
       title: '常见问题',
@@ -690,17 +730,27 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       retryButton: '重新生成',
     },
     sampleOutfits: {
-      title: '宠物穿搭灵感',
-      description: '集中查看适合狗狗或猫咪参考的服装风格与造型方向。',
-      introTitle: '这个页面专门用来找宠物穿搭灵感。',
+      title: '示例服装',
+      description: '集中查看适合狗狗或猫咪参考的示例品种与示例服装。',
+      introTitle: '这个页面把示例品种和示例服装放在一起展示。',
       introParagraphs: [
-        '每张卡片都可以作为宠物穿搭参考，帮助你先决定风格方向再进入生成。',
-        '如果你想先挑选可爱、节日感或主题感更强的造型，这里就是入口。',
+        '左侧可以先看示例品种的脸部比例、毛量和饰品适配感。',
+        '右侧可以打开服装卡片，先看造型方向和细节，再决定是否进入生成。',
       ],
-      catalogTitle: '宠物风格灵感',
-      catalogBody: '先打开卡片看风格细节，再决定是否进入宠物试衣流程。',
+      breedTitle: '示例品种',
+      breedBody: '示例品种图片适合先比较脸部比例、毛发轮廓和颈部装饰的摆放效果。',
+      catalogTitle: '示例服装',
+      catalogBody: '先打开卡片看服装细节，再决定是否进入宠物试衣流程。',
       startButton: '用这种风格开始宠物试衣',
-      outfitLabel: '宠物穿搭灵感',
+      breedStartButton: '用这个品种示例开始',
+      outfitLabel: '示例服装',
+      breedSections: {
+        overview: '概述',
+        appearance: '外观重点',
+        styling: '造型重点',
+        photoTips: '选图提示',
+        fittingTips: '虚拟试衣要点',
+      },
       guideSections: {
         overview: '概述',
         history: '起源与历史',

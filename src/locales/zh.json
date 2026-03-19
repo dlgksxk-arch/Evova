@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "首页",
-    "traditional-clothing": "宠物穿搭灵感",
+    "traditional-clothing": "示例服装",
     "countries": "国家服饰",
     "how-it-works": "使用方法",
     "fashion-technology": "宠物风格指南",
@@ -126,8 +126,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "宠物穿搭灵感",
-      "description": "这里整理了适合狗狗和猫咪的样本穿搭灵感。\n\n选择宠物照片与服装图片后，AI 会生成可爱的宠物穿搭预览。",
+      "title": "示例服装",
+      "description": "这里集中展示适合狗狗和猫咪参考的示例品种与示例服装。",
       "sections": [
         {
           "heading": "传统服饰",
@@ -379,13 +379,12 @@
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {
-    "title": "选择示例",
-    "subtitle": "请选择用于预览的示例图片。",
+    "title": "选择宠物示例",
+    "subtitle": "可以先从狗狗或猫咪示例图片开始。",
     "error": "图片错误",
     "disclaimer": "所有图片均由 AI 生成。",
+    "breedPrefix": "品种",
     "categories": {
-      "female": "女性",
-      "male": "男性",
       "dog": "狗",
       "cat": "猫"
     }
