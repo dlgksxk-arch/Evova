@@ -1863,13 +1863,6 @@ const getSharedResultIdFromPath = (pathname: string): string | null => {
 
 const buildSharedResultUrl = (resultId: string): string =>
   `https://hamdeva.com/result/${encodeURIComponent(resultId)}`;
-const getRuntimeSiteUrl = (): string => {
-  if (typeof window === 'undefined') {
-    return SITE_URL;
-  }
-
-  return window.location.origin.replace(/\/+$/, '');
-};
 const isPreviewRuntimeHost = (hostname: string): boolean =>
   PREVIEW_HOST_MARKERS.some((marker) => hostname.includes(marker)) && hostname !== 'hamdeva.com' && hostname !== 'www.hamdeva.com';
 const getFirebaseDisabledMessage = (message: string): string => message;
@@ -2620,21 +2613,57 @@ const PAGE_PATHS: Record<SitePage, string> = {
   'payment-success': '/payment-success',
   'payment-failed': '/payment-failed',
 };
+const INDEXABLE_PAGES = new Set<SitePage>([
+  'home',
+  'about',
+  'how-it-works',
+  'traditional-clothing',
+  'countries',
+  'fashion-technology',
+  'privacy',
+  'terms',
+  'contact',
+  'board',
+]);
+const LEGACY_PAGE_PATHS: Record<string, SitePage> = {
+  '/how-it-works': 'how-it-works',
+  '/traditional-clothing': 'traditional-clothing',
+};
 
 const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
   acc[path] = page as SitePage;
   return acc;
 }, {});
 
+const normalizePathname = (pathname: string): string => pathname.replace(/\/+$/, '') || '/';
+const getPageFromHash = (hash: string): SitePage | null => {
+  const normalizedHash = hash.replace(/^#/, '');
+  return SITE_PAGES.includes(normalizedHash as SitePage) ? normalizedHash as SitePage : null;
+};
+const getPageFromPath = (pathname: string): SitePage | null => {
+  const normalizedPath = normalizePathname(pathname);
+  return PATH_TO_PAGE[normalizedPath] ?? LEGACY_PAGE_PATHS[normalizedPath] ?? null;
+};
 const getPageFromLocation = (pathname: string, hash: string): SitePage => {
-  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
-  const pageFromPath = PATH_TO_PAGE[normalizedPath];
+  const pageFromPath = getPageFromPath(pathname);
   if (pageFromPath) {
-    return pageFromPath === 'privacy' || pageFromPath === 'contact' ? 'terms' : pageFromPath;
+    return pageFromPath;
   }
 
-  const normalizedHash = hash.replace(/^#/, '');
-  return SITE_PAGES.includes(normalizedHash as SitePage) ? normalizedHash as SitePage : 'home';
+  return getPageFromHash(hash) ?? 'home';
+};
+const getCanonicalPathFromLocation = (pathname: string, hash: string): string => {
+  const pageFromPath = getPageFromPath(pathname);
+  if (pageFromPath) {
+    return PAGE_PATHS[pageFromPath];
+  }
+
+  const pageFromHash = getPageFromHash(hash);
+  if (pageFromHash) {
+    return PAGE_PATHS[pageFromHash];
+  }
+
+  return PAGE_PATHS.home;
 };
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
@@ -2993,11 +3022,25 @@ const App: React.FC = () => {
   }, []);
   useEffect(() => {
     const syncRoute = () => {
+      const pathname = window.location.pathname;
+      const hash = window.location.hash;
+      const search = window.location.search;
+      const sharedResultId = getSharedResultIdFromPath(pathname);
+
+      if (!sharedResultId) {
+        const normalizedPath = normalizePathname(pathname);
+        const canonicalPath = getCanonicalPathFromLocation(pathname, hash);
+        if (normalizedPath !== canonicalPath || hash) {
+          window.history.replaceState(null, '', `${canonicalPath}${search}`);
+        }
+      }
+
       setCurrentPage(getPageFromLocation(window.location.pathname, window.location.hash));
       setSharedResultRouteId(getSharedResultIdFromPath(window.location.pathname));
       setRouteSearch(window.location.search);
     };
 
+    syncRoute();
     window.addEventListener('hashchange', syncRoute);
     window.addEventListener('popstate', syncRoute);
     return () => {
@@ -3280,9 +3323,9 @@ const App: React.FC = () => {
     if (clothImage?.startsWith('blob:')) URL.revokeObjectURL(clothImage);
   }, []);
   useEffect(() => {
-    const runtimeSiteUrl = getRuntimeSiteUrl();
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     const isPreviewHost = isPreviewRuntimeHost(hostname);
+    const isIndexablePage = !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage);
     const pageMeta = sharedResultRouteId
       ? {
           title: `${t.sharedResultTitle} | HAMDEVA`,
@@ -3309,10 +3352,13 @@ const App: React.FC = () => {
             description: contentLocale.meta.homeDescription,
           }
         : contentLocale.pages[currentPage];
-    const canonicalUrl = sharedResultRouteId
-      ? `${runtimeSiteUrl}${RESULT_ROUTE_PREFIX}${encodeURIComponent(sharedResultRouteId)}`
-      : `${runtimeSiteUrl}${PAGE_PATHS[currentPage]}`;
-    const ogImage = sharedResultRecord?.resultImageUrl || `${runtimeSiteUrl}/og-image.png`;
+    const pageUrl = sharedResultRouteId
+      ? buildSharedResultUrl(sharedResultRouteId)
+      : `${SITE_URL}${PAGE_PATHS[currentPage]}`;
+    const ogImage = sharedResultRecord?.resultImageUrl || `${SITE_URL}/og-image.png`;
+    const robotsContent = isPreviewHost || !isIndexablePage
+      ? 'noindex, nofollow, noarchive, nosnippet'
+      : 'index, follow';
 
     document.title = pageMeta.title;
 
@@ -3340,17 +3386,12 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:title"]', { property: 'og:title', content: pageMeta.title });
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: pageMeta.description });
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
-    upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
+    upsertMeta('meta[property="og:url"]', { property: 'og:url', content: pageUrl });
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="keywords"]', { name: 'keywords', content: SITE_KEYWORDS });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
-    upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: canonicalUrl });
-    if (isPreviewHost) {
-      upsertMeta('meta[name="robots"]', { name: 'robots', content: 'noindex, nofollow, noarchive, nosnippet' });
-    } else {
-      const robotsMeta = document.head.querySelector('meta[name="robots"]');
-      robotsMeta?.remove();
-    }
+    upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: pageUrl });
+    upsertMeta('meta[name="robots"]', { name: 'robots', content: robotsContent });
   }, [contentLocale, currentPage, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {
