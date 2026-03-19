@@ -40,6 +40,10 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
         <p>{copy.shareHelperText}</p>
       </div>
       <div className="result-action-grid share-grid-primary">
+        <button aria-label={copy.share} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => onShareLink(link)} type="button">
+          <span aria-hidden="true" className="share-platform-icon">↗</span>
+          <span>{copy.share}</span>
+        </button>
         <button aria-label={copy.downloadImage} className="download-btn result-action-btn share-platform-btn utility" disabled={disableDownload} onClick={() => onDownload(imageSrc)} type="button">
           <span aria-hidden="true" className="share-platform-icon icon-download">↓</span>
           <span>{copy.downloadImage}</span>

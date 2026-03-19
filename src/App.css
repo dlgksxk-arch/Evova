@@ -4821,20 +4821,20 @@ a { color: inherit; text-decoration: none; }
   --accent-blue: #64c8ff;
   --accent-gold: #ffd85c;
   --accent-green: #34c786;
-  --bg: #fff8fd;
-  --bg-alt: #f6f1ff;
-  --surface: rgba(255, 255, 255, 0.88);
-  --surface-alt: #fff4fc;
-  --nav-bg: rgba(255, 248, 253, 0.82);
-  --nav-border: rgba(112, 87, 201, 0.14);
+  --bg: #f7f8fc;
+  --bg-alt: #edf1f8;
+  --surface: rgba(255, 255, 255, 0.96);
+  --surface-alt: #f5f7fc;
+  --nav-bg: rgba(255, 255, 255, 0.94);
+  --nav-border: rgba(78, 92, 139, 0.16);
   --hero-bg: #fff7ff;
   --hero-overlay: radial-gradient(circle at top left, rgba(255, 95, 184, 0.16), transparent 40%), linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1));
-  --text: #1c2140;
-  --text-sub: #575d82;
-  --text-muted: #8f90b3;
-  --border: rgba(110, 96, 176, 0.14);
-  --upload-bg: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,243,252,0.98));
-  --upload-hover-bg: #fff1fb;
+  --text: #182033;
+  --text-sub: #4f5974;
+  --text-muted: #6d7895;
+  --border: rgba(88, 102, 145, 0.18);
+  --upload-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,247,252,0.98));
+  --upload-hover-bg: #ebf1fb;
   --shadow-sm: 0 10px 24px rgba(104, 85, 188, 0.08);
   --shadow-md: 0 22px 44px rgba(104, 85, 188, 0.12);
   --shadow-lg: 0 30px 70px rgba(104, 85, 188, 0.16);
@@ -4924,8 +4924,9 @@ body {
 .mobile-language-button,
 .outline-btn {
   border-radius: 999px;
-  border-color: rgba(111, 95, 185, 0.16);
-  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(88, 102, 145, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
   box-shadow: none;
 }
 
@@ -4935,9 +4936,93 @@ body {
 .mobile-menu-link:hover,
 .mobile-language-button:hover,
 .outline-btn:hover {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.98);
   transform: translateY(-1px);
   box-shadow: 0 12px 26px rgba(108, 89, 190, 0.12);
+}
+
+[data-theme='light'] .hero-secondary-btn,
+:root .hero-secondary-btn {
+  border-color: rgba(88, 102, 145, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+[data-theme='light'] .hero-secondary-btn:hover,
+:root .hero-secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(255, 77, 184, 0.32);
+  color: var(--primary);
+}
+
+[data-theme='light'] .landing-nav,
+[data-theme='light'] .page-article,
+[data-theme='light'] .compact-info-card,
+[data-theme='light'] .credit-product-card,
+[data-theme='light'] .credit-plan-card,
+[data-theme='light'] .content-modal,
+[data-theme='light'] .auth-modal,
+[data-theme='light'] .account-modal,
+[data-theme='light'] .mobile-nav-panel,
+[data-theme='light'] .preview-box,
+[data-theme='light'] .share-section,
+[data-theme='light'] .country-card,
+[data-theme='light'] .contact-form,
+[data-theme='light'] .admin-table,
+[data-theme='light'] .admin-user-list-panel,
+[data-theme='light'] .admin-user-detail-panel,
+[data-theme='light'] .home-credit-notice,
+[data-theme='light'] .try-modal-side-card,
+[data-theme='light'] .sample-card,
+[data-theme='light'] .sample-grid-item,
+[data-theme='light'] .sample-outfit-card,
+[data-theme='light'] .sample-breed-card {
+  color: var(--text);
+}
+
+[data-theme='light'] .account-modal-header,
+[data-theme='light'] .modal-header,
+[data-theme='light'] .content-modal-article,
+[data-theme='light'] .content-modal-intro,
+[data-theme='light'] .modal-card-description,
+[data-theme='light'] .try-modal-notice,
+[data-theme='light'] .preview-label,
+[data-theme='light'] .placeholder,
+[data-theme='light'] .auth-field,
+[data-theme='light'] .auth-field input,
+[data-theme='light'] .contact-form input,
+[data-theme='light'] .contact-form textarea {
+  color: var(--text);
+}
+
+[data-theme='light'] .content-modal-intro,
+[data-theme='light'] .modal-card-description,
+[data-theme='light'] .placeholder,
+[data-theme='light'] .seo-faq-answer,
+[data-theme='light'] .try-modal-list li,
+[data-theme='light'] .try-modal-progress-item,
+[data-theme='light'] .contact-form input::placeholder,
+[data-theme='light'] .contact-form textarea::placeholder,
+[data-theme='light'] .auth-field input::placeholder {
+  color: var(--text-sub);
+}
+
+[data-theme='light'] .preview-box,
+[data-theme='light'] .content-modal,
+[data-theme='light'] .auth-modal,
+[data-theme='light'] .account-modal,
+[data-theme='light'] .contact-form,
+[data-theme='light'] .country-card,
+[data-theme='light'] .sample-grid-item,
+[data-theme='light'] .sample-outfit-card,
+[data-theme='light'] .sample-breed-card {
+  border-color: rgba(88, 102, 145, 0.18);
+  background: rgba(255, 255, 255, 0.97);
+}
+
+[data-theme='light'] .preview-overlay {
+  background: rgba(24, 32, 51, 0.62);
+  color: #fff;
 }
 
 .hero-section {

@@ -2191,12 +2191,15 @@ const buildAuthErrorMessage = (
     unauthorizedDomain: string;
     unauthorizedDomainWithHost: string;
     invalidApiKey: string;
+    googlePolicyBlocked: string;
     tooManyRequests: string;
   },
 ): string => {
   const errorCode = typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code?: string }).code)
     : '';
+  const rawMessage = error instanceof Error ? error.message || '' : '';
+  const normalizedError = `${errorCode} ${rawMessage}`.toLowerCase();
 
   if (!(error instanceof Error) && !errorCode) {
     return fallbackMessage;
@@ -2220,11 +2223,20 @@ const buildAuthErrorMessage = (
   if (errorCode.includes('auth/invalid-api-key') || errorCode.includes('auth/api-key-not-valid')) {
     return messages.invalidApiKey;
   }
+  if (
+    normalizedError.includes('access_blocked')
+    || normalizedError.includes('google policy')
+    || normalizedError.includes('google 정책')
+    || normalizedError.includes('oauth')
+    || normalizedError.includes('auth/operation-not-allowed')
+  ) {
+    return messages.googlePolicyBlocked;
+  }
   if (errorCode.includes('auth/too-many-requests')) {
     return messages.tooManyRequests;
   }
 
-  return error instanceof Error ? error.message || fallbackMessage : fallbackMessage;
+  return error instanceof Error ? rawMessage || fallbackMessage : fallbackMessage;
 };
 
 const isFirestorePermissionError = (error: unknown): boolean => {
@@ -2563,6 +2575,22 @@ const downloadImageFile = async (src: string, filename = 'hamdeva-ai-fitting.png
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   }
+};
+
+const createShareImageFile = async (src: string, filename = 'hamdeva-share-image.png'): Promise<File> => {
+  const response = await fetch(src);
+  if (!response.ok) {
+    throw new Error('SHARE_IMAGE_FETCH_FAILED');
+  }
+
+  const blob = await response.blob();
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('SHARE_IMAGE_INVALID');
+  }
+
+  const extension = blob.type.split('/')[1] || 'png';
+  const resolvedName = filename.includes('.') ? filename : `${filename}.${extension}`;
+  return new File([blob], resolvedName, { type: blob.type });
 };
 
 const downloadBlobUrl = (src: string, filename: string): void => {
@@ -3085,6 +3113,7 @@ const App: React.FC = () => {
     unauthorizedDomain: string;
     unauthorizedDomainWithHost: string;
     invalidApiKey: string;
+    googlePolicyBlocked: string;
     tooManyRequests: string;
   };
   const shareResultLink = latestSharedResultId ? buildSharedResultUrl(latestSharedResultId) : null;
@@ -4045,13 +4074,32 @@ const App: React.FC = () => {
       return;
     }
 
+    const shareImageSrc = finalImageSrc || sharedResultRecord?.resultImageUrl || null;
+
     if (navigator.share) {
       try {
-        await navigator.share({
+        const sharePayload = {
           title: 'HAMDEVA - AI Virtual Fitting Playground',
           text: t.shareDefaultText,
           url: resolvedLink,
-        });
+        };
+
+        if (shareImageSrc) {
+          try {
+            const shareFile = await createShareImageFile(shareImageSrc);
+            if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [shareFile] })) {
+              await navigator.share({
+                ...sharePayload,
+                files: [shareFile],
+              });
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to attach image to share payload:', error);
+          }
+        }
+
+        await navigator.share(sharePayload);
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -4068,6 +4116,10 @@ const App: React.FC = () => {
       return;
     }
 
+    const shareImageSrc = [finalImageSrc, sharedResultRecord?.resultImageUrl]
+      .find((value): value is string => typeof value === 'string' && /^https?:\/\//.test(value))
+      ?? 'https://hamdeva.com/og-image.png';
+
     try {
       const kakao = await loadKakaoSdk();
       if (!kakao?.Share?.sendDefault) {
@@ -4080,7 +4132,7 @@ const App: React.FC = () => {
         content: {
           title: 'HAMDEVA - AI Virtual Fitting Playground',
           description: 'Try AI virtual fitting online with HAMDEVA.',
-          imageUrl: 'https://hamdeva.com/og-image.png',
+          imageUrl: shareImageSrc,
           link: {
             mobileWebUrl: resolvedLink,
             webUrl: resolvedLink,

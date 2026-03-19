@@ -450,6 +450,7 @@
       "unauthorizedDomain": "現在のドメインは Firebase Auth の許可ドメインに登録されていません。管理者に確認してください。",
       "unauthorizedDomainWithHost": "現在のドメイン ({{hostname}}) は Firebase Auth の許可ドメインに登録されていません。管理者に確認してください。",
       "invalidApiKey": "Firebase 設定がまだ完了していません。管理者にお問い合わせください。",
+      "googlePolicyBlocked": "Google ログインは OAuth ポリシー設定のため現在利用できません。しばらくはメールログインをご利用ください。",
       "tooManyRequests": "しばらくしてからもう一度お試しください。",
       "firebaseAuthNotConfigured": "Firebase Auth が設定されていません。",
       "googleSignInNotConfigured": "Google ログインが設定されていません。",
