@@ -84,6 +84,8 @@ export const callTryOn = async (payload: {
   garmentImage: string;
   personInputLabel?: string;
   garmentInputLabel?: string;
+  personPreviewImage?: string;
+  garmentPreviewImage?: string;
   requestId: string;
   subjectType: SubjectType;
   bodyProfile?: unknown;

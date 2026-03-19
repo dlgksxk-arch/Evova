@@ -1884,6 +1884,8 @@ const markGenerationCompleted = async (
     watermarkApplied: boolean;
     personInputLabel?: string;
     garmentInputLabel?: string;
+    personPreviewImage?: string;
+    garmentPreviewImage?: string;
   },
 ): Promise<void> => {
   const requestRef = db.collection('generationRequests').doc(buildGenerationRequestDocId(user.uid, requestId));
@@ -1909,6 +1911,8 @@ const markGenerationCompleted = async (
       subjectType: metadata.subjectType || 'human',
       personInputLabel: options.personInputLabel || null,
       garmentInputLabel: options.garmentInputLabel || null,
+      personPreviewUrl: options.personPreviewImage || null,
+      garmentPreviewUrl: options.garmentPreviewImage || null,
       usedCreditType: options.usedCreditType,
       usedCreditAmount: options.usedCreditAmount,
       watermarkApplied: options.watermarkApplied,
@@ -3279,11 +3283,13 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
     return;
   }
 
-  const { personImage, garmentImage, personInputLabel, garmentInputLabel, bodyProfile, requestId, subjectType } = req.body as {
+  const { personImage, garmentImage, personInputLabel, garmentInputLabel, personPreviewImage, garmentPreviewImage, bodyProfile, requestId, subjectType } = req.body as {
     personImage: string;
     garmentImage: string;
     personInputLabel?: string;
     garmentInputLabel?: string;
+    personPreviewImage?: string;
+    garmentPreviewImage?: string;
     bodyProfile?: BodyProfile;
     requestId?: string;
     subjectType?: SubjectType;
@@ -3341,6 +3347,8 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       watermarkApplied,
       personInputLabel,
       garmentInputLabel,
+      personPreviewImage,
+      garmentPreviewImage,
     });
     const response: TryOnSuccessResponse = {
       success: true,

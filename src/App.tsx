@@ -122,6 +122,8 @@ interface GenerationRecord {
   subjectType?: SubjectType;
   personInputLabel?: string | null;
   garmentInputLabel?: string | null;
+  personPreviewUrl?: string | null;
+  garmentPreviewUrl?: string | null;
   requestId?: string;
   resultType?: 'image_generation' | 'video_generation';
   videoRequestId?: string | null;
@@ -4354,6 +4356,10 @@ const App: React.FC = () => {
       const resolvedSubjectType = subjectType;
       const personInputLabel = getFaceInputLabel(lang, sampleBadgeLabel, selectedSampleUrl, personFile);
       const garmentInputLabel = getGarmentInputLabel(lang, sampleBadgeLabel, selectedClothSampleUrl, clothFile);
+      const [personPreviewImage, garmentPreviewImage] = await Promise.all([
+        createHistoryPreview(preparedPersonImage, 240),
+        createHistoryPreview(preparedClothImage, 240),
+      ]);
 
       const requestId = createRequestId();
       const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
@@ -4365,6 +4371,8 @@ const App: React.FC = () => {
           garmentImage: preparedClothImage,
           personInputLabel,
           garmentInputLabel,
+          personPreviewImage,
+          garmentPreviewImage,
           subjectType: resolvedSubjectType,
           bodyProfile: { gender },
         }),
