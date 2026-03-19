@@ -166,7 +166,7 @@ Preserve the same face shape, forehead, eyebrows, eyes, eye distance, nose, nost
 Keep the same apparent age, ethnicity, bone structure, and overall facial geometry.
 Do not beautify, idealize, rejuvenate, feminize, masculinize, stylize, retouch, or reinterpret the face.
 Allow only soft polished Korean idol-style makeup: light skin-evening, subtle eyeliner, delicate lash definition, soft gradient lips, and natural blush.
-Keep a neutral natural expression.
+Show a bright, open, joyful smile that feels lively and immediately readable while fully preserving the same identity.
 The face must remain immediately recognizable as the same person.
 
 Preserve the clothing exactly: same design, color, fabric feel, embroidery, print, silhouette, sleeve shape, neckline, hem, fit, and accessories if present.
@@ -180,7 +180,7 @@ Keep the face clearly visible and not smaller than necessary.
 
 Use clean realistic lighting and a believable background that matches the garment mood, cultural context, and styling purpose.
 
-Strict negatives: no identity change, no different model, no age change, no ethnicity change, no beautification, no face reshaping, no exaggerated smile, no glamour retouching, no costume redesign, no cropped head, no missing hands or feet, no extra fingers, no distorted face.`;
+Strict negatives: no identity change, no different model, no age change, no ethnicity change, no beautification, no face reshaping, no glamour retouching, no costume redesign, no cropped head, no missing hands or feet, no extra fingers, no distorted face.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
