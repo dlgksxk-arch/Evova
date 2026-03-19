@@ -4099,64 +4099,94 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 768px) {
   .hero-section {
-    min-height: 24vh;
-    padding: 74px 14px 14px;
+    min-height: 20vh;
+    padding: 70px 14px 12px;
   }
   .hero-eyebrow {
     min-height: 32px;
     padding: 0 12px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     font-size: 11px;
   }
   .hero-title {
-    font-size: clamp(34px, 9vw, 56px);
-    line-height: 1.06;
+    font-size: clamp(32px, 8.6vw, 48px);
+    line-height: 1.02;
   }
   .hero-subtitle {
-    font-size: clamp(42px, 13vw, 72px);
-    margin-top: 6px;
+    font-size: clamp(28px, 7vw, 42px);
+    margin-top: 4px;
+    line-height: 1.18;
   }
   .hero-detail {
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.55;
+    margin-top: 12px;
   }
   .sample-outfit-thumbnail-copy strong {
     font-size: 18px;
   }
   .hero-sub {
-    font-size: 15px;
-    line-height: 1.65;
-    margin-bottom: 18px;
+    font-size: 14px;
+    line-height: 1.45;
+    margin-bottom: 12px;
   }
   .hero-cta-group {
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
+    gap: 8px;
+    margin-top: 16px;
   }
   .hero-cta-group .generate-btn,
   .hero-cta-group .outline-btn {
     width: 100%;
     justify-content: center;
+    min-height: 48px;
+    font-size: 14px;
   }
   .section-copy h2,
   .page-article h2,
   .compact-info-card h2,
   .page-article h3,
   .howto-section-copy h3 {
-    font-size: 24px;
-    line-height: 1.3;
+    font-size: 21px;
+    line-height: 1.24;
   }
   .section-copy p,
   .page-article p,
   .compact-info-card p,
   .howto-section-copy p {
-    font-size: 15px;
-    line-height: 1.75;
+    font-size: 14px;
+    line-height: 1.6;
   }
   .section {
-    padding: 32px 0;
+    padding: 22px 0;
   }
   .section-inner {
-    padding: 0 14px;
+    padding: 0 12px;
+  }
+  .page-shell {
+    padding-top: 12px;
+  }
+  .page-layout,
+  .landing-home-shell,
+  .mypage-layout,
+  .blog-article-stack,
+  .bbs-post-list,
+  .board-notice-section {
+    gap: 14px;
+  }
+  .page-article,
+  .compact-info-card,
+  .content-card,
+  .contact-form,
+  .country-card,
+  .seo-content,
+  .seo-faq-inner,
+  .credit-product-card,
+  .credit-plan-card {
+    padding: 18px;
+    border-radius: 20px;
   }
   .usage-bar {
     width: 100%;
@@ -4178,17 +4208,34 @@ a { color: inherit; text-decoration: none; }
     margin-top: 2px;
     gap: 8px;
   }
+  .credit-product-grid,
+  .credit-plan-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .credit-product-card,
+  .credit-plan-card {
+    gap: 12px;
+  }
+  .credit-plan-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .credit-plan-price-row,
+  .credit-plan-savings {
+    flex-wrap: wrap;
+  }
   .try-layout {
-    gap: 14px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 14px;
   }
   .try-modal-layout {
-    gap: 14px;
+    gap: 12px;
   }
   .try-column {
-    padding: 18px;
-    gap: 12px;
-    border-radius: 22px;
+    padding: 14px;
+    gap: 10px;
+    border-radius: 18px;
   }
   .card-header {
     margin-bottom: 2px;
@@ -4204,22 +4251,22 @@ a { color: inherit; text-decoration: none; }
   .try-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
   }
   .outline-btn {
-    min-height: 44px;
-    padding: 10px 12px;
-    font-size: 13px;
+    min-height: 42px;
+    padding: 9px 10px;
+    font-size: 12px;
   }
   .preview-box {
-    min-height: 180px;
-    padding: 10px;
-    border-radius: 20px;
+    min-height: 150px;
+    padding: 8px;
+    border-radius: 18px;
   }
   .empty-preview {
     gap: 8px;
-    padding: 16px;
-    border-radius: 18px;
+    padding: 14px;
+    border-radius: 16px;
     box-shadow: 0 10px 20px rgba(44,24,16,0.05);
   }
   .empty-preview-badge {
@@ -4248,9 +4295,9 @@ a { color: inherit; text-decoration: none; }
   }
   .upload-guidance-text,
   .result-disclaimer-text {
-    margin-top: 8px;
-    font-size: 12px;
-    line-height: 1.45;
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.4;
   }
   .subject-type-panel {
     margin-bottom: 12px;
@@ -4263,18 +4310,132 @@ a { color: inherit; text-decoration: none; }
     font-size: 16px;
   }
   .generate-btn {
-    padding: 14px 28px;
-    font-size: 16px;
+    padding: 12px 20px;
+    font-size: 15px;
+    min-height: 48px;
   }
   .landing-feature-card,
   .landing-example-card,
   .landing-step-card {
     min-height: 0;
   }
+  .landing-step-badge {
+    margin-bottom: 10px;
+  }
   .action-section-card,
   .try-modal-side-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  .landing-preview-section .section-inner,
+  .landing-bottom-cta-section .section-inner {
+    gap: 14px;
+  }
+  .landing-inline-actions {
+    width: 100%;
+    gap: 8px;
+  }
+  .landing-inline-actions .generate-btn,
+  .landing-inline-actions .outline-btn {
+    width: 100%;
+  }
+  .home-credit-notice {
+    margin-bottom: 14px;
+    padding: 14px;
+    border-radius: 18px;
+    gap: 10px;
+  }
+  .home-credit-notice-copy strong {
+    font-size: 18px;
+  }
+  .home-credit-notice-copy p,
+  .home-credit-notice-copy span {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .home-credit-notice-actions {
+    gap: 8px;
+  }
+  .home-credit-notice-actions .outline-btn,
+  .home-credit-notice-actions .generate-btn {
+    flex-basis: 100%;
+    min-height: 42px;
+  }
+  .contact-layout {
+    gap: 14px;
+  }
+  .contact-form {
+    gap: 12px;
+  }
+  .contact-form h2 {
+    font-size: 22px;
+  }
+  .contact-form input,
+  .contact-form textarea,
+  .auth-field input,
+  .admin-gift-form input,
+  .admin-gift-form textarea,
+  .admin-user-search-label input {
+    min-height: 44px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .contact-submit {
+    align-self: stretch;
+  }
+  .auth-modal {
+    max-width: calc(100vw - 16px) !important;
     padding: 18px;
     border-radius: 20px;
+  }
+  .auth-modal-body {
+    gap: 10px;
+  }
+  .account-modal {
+    max-width: calc(100vw - 12px) !important;
+    max-height: 94vh;
+    padding: 16px;
+    border-radius: 20px;
+  }
+  .account-modal-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+  .account-modal-body,
+  .credit-plan-modal .account-modal-body,
+  .mypage-modal-shell .account-modal-body,
+  .tryon-modal-shell .account-modal-body,
+  .admin-modal-shell .account-modal-body {
+    max-height: calc(94vh - 82px);
+    padding-right: 0;
+  }
+  .result-preview-shell .account-modal-body {
+    padding-right: 0;
+  }
+  .sample-outfit-detail-shell,
+  .sample-breed-detail-shell {
+    max-width: calc(100vw - 12px) !important;
+  }
+  .sample-outfit-detail-shell .account-modal-body,
+  .sample-breed-detail-shell .account-modal-body {
+    max-height: calc(94vh - 82px);
+  }
+  .sample-outfit-detail-layout,
+  .sample-breed-detail-layout {
+    gap: 14px;
+  }
+  .sample-outfit-detail-hero,
+  .sample-breed-detail-hero {
+    gap: 14px;
+  }
+  .sample-outfit-detail-image,
+  .sample-breed-detail-image {
+    min-height: 0;
+    aspect-ratio: 1;
+  }
+  .sample-outfit-detail-copy h2,
+  .sample-breed-detail-copy h2 {
+    font-size: 20px;
   }
   .sample-outfit-detail-sections section {
     padding: 16px;
@@ -4289,7 +4450,7 @@ a { color: inherit; text-decoration: none; }
   }
   .modal-content.sample-modal {
     max-width: calc(100vw - 12px);
-    max-height: 90vh;
+    max-height: 94vh;
     padding: 18px 16px;
     border-radius: 22px;
   }
@@ -4365,7 +4526,7 @@ a { color: inherit; text-decoration: none; }
   }
   .content-modal {
     max-width: calc(100vw - 20px) !important;
-    max-height: 88vh;
+    max-height: 94vh;
     padding: 16px 14px !important;
     border-radius: 22px !important;
   }
@@ -4393,7 +4554,7 @@ a { color: inherit; text-decoration: none; }
     line-height: 1.55;
   }
   .content-modal .country-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 10px;
   }
   .content-modal .country-card {
@@ -4415,79 +4576,227 @@ a { color: inherit; text-decoration: none; }
     font-size: 12px;
     line-height: 1.45;
   }
+  .mypage-summary,
+  .history-guide-copy {
+    font-size: 13px;
+  }
+  .credit-balance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .bbs-post-header,
+  .bbs-post-actions,
+  .bbs-post-meta,
+  .board-notice-header,
+  .confirm-modal-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .confirm-modal-actions .outline-btn,
+  .confirm-modal-actions .generate-btn {
+    width: 100%;
+  }
+  .admin-user-search-sticky,
+  .admin-user-detail-panel,
+  .admin-user-list-table {
+    padding: 14px;
+  }
+  .admin-table-row,
+  .admin-user-list-row,
+  .board-notice-card {
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 13px;
+  }
+  .admin-table-head,
+  .admin-user-list-head {
+    display: none;
+  }
+  .site-footer {
+    margin-top: 40px;
+    padding: 36px 16px;
+  }
+  .footer-link-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
   .hero-section {
-    min-height: 34vh;
-    padding: 82px 10px 16px;
+    min-height: 18vh;
+    padding: 66px 8px 10px;
   }
   .section-inner {
-    padding: 0 10px;
+    padding: 0 8px;
+  }
+  .section {
+    padding: 18px 0;
+  }
+  .hero-title {
+    font-size: clamp(28px, 11vw, 36px);
+  }
+  .hero-subtitle {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+  .hero-detail,
+  .hero-sub {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .hero-cta-group {
+    margin-top: 12px;
+  }
+  .home-credit-notice {
+    padding: 12px;
+    border-radius: 16px;
+  }
+  .home-credit-notice-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
   }
   .try-column {
-    padding: 14px;
-    gap: 10px;
+    padding: 12px;
+    gap: 8px;
   }
   .card-title {
-    font-size: 17px;
+    font-size: 16px;
   }
   .preview-box {
-    min-height: 155px;
+    min-height: 132px;
     padding: 8px;
   }
   .empty-preview {
-    padding: 12px;
+    padding: 10px;
     gap: 6px;
   }
   .empty-preview-title {
-    font-size: 16px;
+    font-size: 15px;
   }
   .empty-preview-tip {
-    font-size: 11px;
+    font-size: 10px;
   }
   .upload-guidance-text,
   .result-disclaimer-text {
-    font-size: 11px;
+    font-size: 10px;
   }
   .modal-backdrop {
-    padding: 8px;
+    padding: 6px;
   }
+  .auth-modal,
   .modal-content.sample-modal,
   .content-modal {
-    max-width: calc(100vw - 12px) !important;
-    padding: 14px 12px !important;
+    max-width: calc(100vw - 8px) !important;
+    padding: 12px 10px !important;
+    border-radius: 16px !important;
+  }
+  .account-modal {
+    max-width: calc(100vw - 8px) !important;
+    padding: 12px;
+    border-radius: 16px;
+  }
+  .account-modal-body,
+  .credit-plan-modal .account-modal-body,
+  .mypage-modal-shell .account-modal-body,
+  .tryon-modal-shell .account-modal-body,
+  .admin-modal-shell .account-modal-body,
+  .sample-outfit-detail-shell .account-modal-body,
+  .sample-breed-detail-shell .account-modal-body {
+    max-height: calc(96vh - 74px);
   }
   .result-preview-shell {
-    max-width: calc(100vw - 12px);
+    max-width: calc(100vw - 8px);
   }
   .result-preview-toolbar {
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
   }
   .result-preview-zoom-btn {
-    min-width: 64px;
-    padding: 7px 10px;
+    min-width: 54px;
+    padding: 6px 8px;
+    font-size: 12px;
   }
   .result-preview-scroll {
-    max-height: 72vh;
+    max-height: 78vh;
   }
   .result-preview-modal-image {
     border-radius: 14px;
-    min-width: 260px;
+    min-width: 220px;
   }
   .sample-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 3px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
   .sample-card {
     border-radius: 8px;
+  }
+  .sample-card-meta {
+    gap: 2px;
+  }
+  .sample-card-meta strong {
+    font-size: 11px;
+  }
+  .sample-card-meta span {
+    font-size: 9px;
+  }
+  .sample-reference-panel,
+  .sample-reference-main > .page-article,
+  .sample-outfit-detail-sections section,
+  .sample-breed-detail-sections section,
+  .page-article,
+  .compact-info-card,
+  .contact-form,
+  .credit-product-card,
+  .credit-plan-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .sample-outfit-thumbnail,
+  .sample-breed-card {
+    padding: 10px;
+    gap: 8px;
+  }
+  .sample-outfit-thumbnail-copy strong,
+  .sample-breed-card-copy strong {
+    font-size: 13px;
+  }
+  .sample-outfit-thumbnail-copy p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .credit-balance-grid {
+    grid-template-columns: 1fr;
+  }
+  .contact-form h2,
+  .page-article h2,
+  .compact-info-card h2,
+  .page-article h3 {
+    font-size: 18px;
+  }
+  .page-article p,
+  .compact-info-card p,
+  .contact-form label,
+  .footer-copy {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .generate-btn,
+  .outline-btn,
+  .auth-inline-btn,
+  .contact-submit {
+    min-height: 42px;
+    font-size: 13px;
   }
   .content-modal .country-card-grid {
     gap: 8px;
   }
   .content-modal .country-card {
     padding: 12px;
+  }
+  .site-footer {
+    padding: 28px 12px;
   }
 }
 
@@ -4758,12 +5067,12 @@ body {
 
 @media (max-width: 768px) {
   .hero-content {
-    padding: 132px 20px 76px;
+    padding: 88px 14px 26px;
   }
 
   .hero-title {
     max-width: 100%;
-    font-size: clamp(2.55rem, 12vw, 3.6rem);
+    font-size: clamp(2.2rem, 11vw, 3.3rem);
   }
 
   .page-article,
