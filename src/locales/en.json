@@ -1,14 +1,14 @@
 {
   "nav": {
     "home": "Home",
-    "traditional-clothing": "Sample Outfit Info",
+    "traditional-clothing": "Pet Outfit Ideas",
     "countries": "Country Clothing",
     "how-it-works": "How It Works",
-    "fashion-technology": "Fashion Technology",
+    "fashion-technology": "Pet Style Guide",
     "virtual-try-on-guide": "Try-On Guide",
     "outfit-photo-tips": "Photo Tips",
     "ai-fitting-faq": "AI Fitting FAQ",
-    "about": "About HAMDEVA",
+    "about": "About",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "contact": "Contact",
@@ -17,8 +17,8 @@
     "mypage": "My Page"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Virtual Fitting Platform",
-    "homeDescription": "Preview outfits in seconds with HAMDEVA AI using one face photo and one clothing image."
+    "homeTitle": "HAMDEVA | AI Pet Outfit Preview",
+    "homeDescription": "Preview pet outfits in seconds with HAMDEVA AI using one pet photo and one outfit image."
   },
   "hero_click": "Click Click,",
   "hero_space": "Virtual Fitting Space",
@@ -129,8 +129,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "Sample Outfit Info",
-      "description": "A sample outfit collection for trying HAMDEVA AI fitting.\n\nChoose a face photo and a clothing image to generate multi-angle fitting results.",
+      "title": "Pet Outfit Ideas",
+      "description": "Browse outfit ideas and themed looks that can work as fun pet fitting references.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -202,15 +202,15 @@
     },
     "how-it-works": {
       "title": "How It Works",
-      "description": "See how HAMDEVA turns a portrait and clothing reference into one coordinated try-on result.",
+      "description": "See how HAMDEVA turns a pet photo and outfit reference into one coordinated preview.",
       "sections": [
         {
-          "heading": "Step 1 – Upload a face photo",
+          "heading": "Step 1 – Upload a pet photo",
           "paragraphs": [
-            "Choose a clear portrait with visible facial features and balanced lighting.",
-            "The system uses this image to keep the same identity across the final result.",
-            "A near-front view is usually the safest choice because it gives the model a stable facial anchor to preserve while the clothing changes around it.",
-            "If the face is heavily covered, blurred, or pushed into extreme perspective, the final preview may become less reliable."
+            "Choose a clear dog or cat photo with visible facial features and balanced lighting.",
+            "The system uses this image to keep the same pet identity across the final result.",
+            "A near-front view is usually the safest choice because it gives the model a stable anchor while the outfit changes around it.",
+            "If the pet face is heavily covered, blurred, or pushed into extreme perspective, the final preview may become less reliable."
           ]
         },
         {
@@ -240,16 +240,16 @@
       ]
     },
     "fashion-technology": {
-      "title": "Fashion Technology",
-      "description": "Understand how AI imaging supports cultural fashion discovery and visual decision-making.",
+      "title": "Pet Style Guide",
+      "description": "Understand how AI imaging helps preview playful pet looks and costume ideas.",
       "sections": [
         {
           "heading": "Technology with reference discipline",
           "paragraphs": [
-            "Good virtual try-on depends on clear input hierarchy: the person image guides identity and the garment image guides clothing fidelity.",
+            "Good pet fitting depends on clear input hierarchy: the pet image guides identity and the garment image guides outfit fidelity.",
             "Without that discipline, generated fashion quickly becomes inconsistent or generic.",
             "This matters because fashion images are dense with competing signals. Hair, pose, background, accessories, camera angle, fabric texture, and lighting can all confuse a model when the reference hierarchy is weak.",
-            "HAMDEVA tries to make the task more interpretable by centering the workflow around a portrait image and an outfit image instead of a vague prompt-only request."
+            "HAMDEVA tries to make the task more interpretable by centering the workflow around a pet photo and an outfit image instead of a vague prompt-only request."
           ]
         },
         {
@@ -284,14 +284,14 @@
       "description": "Review the most common questions about realism, privacy, and output quality."
     },
     "about": {
-      "title": "About HAMDEVA",
-      "description": "Learn why HAMDEVA exists and what role the platform gives to AI fitting.",
+      "title": "About",
+      "description": "Learn why HAMDEVA exists and how it frames AI pet outfit previews.",
       "sections": [
         {
           "heading": "Why HAMDEVA exists",
           "paragraphs": [
-            "HAMDEVA was built for people who want a faster visual decision before purchase, rental, travel styling, or content production.",
-            "The goal is to reduce uncertainty early, not to replace the final decision that comes from real garments, measurements, and materials."
+            "HAMDEVA was built for people who want a faster visual decision before buying or planning an outfit for their dog or cat.",
+            "The goal is to reduce uncertainty early and make pet styling more fun, not to replace how a real outfit fits in person."
           ]
         },
         {
@@ -304,8 +304,8 @@
         {
           "heading": "How to understand the AI result",
           "paragraphs": [
-            "HAMDEVA treats AI output as a planning preview. It is useful for comparing silhouette, mood, and direction, but it does not claim to replace real fitting.",
-            "The strongest use case is early evaluation: deciding what is worth testing or considering further."
+            "HAMDEVA treats AI output as a playful planning preview. It is useful for comparing pet outfit mood, cuteness, and direction, but it does not replace real fitting.",
+            "The strongest use case is early evaluation: deciding what is worth trying or sharing next."
           ]
         }
       ]
@@ -469,7 +469,7 @@
     "send": "Send Email"
   },
   "ui": {
-    "heroCta": "Start AI Fitting",
+    "heroCta": "Start Pet Fitting",
     "sampleBadge": "SAMPLE",
     "firebaseConfigMissing": "Firebase configuration missing",
     "firebaseDisabledMessage": "Firebase is not configured, so login is unavailable. Check the administrator settings or verify the .env values.",
@@ -478,22 +478,22 @@
   },
   "uploadGuides": {
     "faceTips": [
-      "A clear photo close to the front view works best.",
-      "Use a photo where the face is not blocked by hair, hands, masks, glasses, or props.",
+      "A clear dog or cat photo close to the front view works best.",
+      "Use a photo where the pet face is not blocked by hands, toys, costumes, or props.",
       "Bright lighting and a simple background improve recognition.",
-      "Upper-body or face-focused photos work best."
+      "Photos that clearly show the pet face and upper body work best."
     ],
     "clothTips": [
       "A photo that clearly shows the full clothing shape works best.",
       "Use an image where the outfit is not cropped and the background is simple.",
       "Front-facing clothing photos with fewer wrinkles or obstructions produce better results."
     ],
-    "faceCopyrightNotice": "Do not use celebrity photos without permission or rights.",
+    "faceCopyrightNotice": "Only upload pet photos you have the right to use.",
     "clothingSafetyNotice": "Do not upload overly revealing or sexually explicit clothing images.",
     "resultPrivacyNotice": "This image is not stored and is processed temporarily only for preview and download."
   },
   "emptyPreview": {
-    "faceBadge": "FACE GUIDE",
+    "faceBadge": "PET GUIDE",
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {

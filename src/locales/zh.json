@@ -1,14 +1,14 @@
 {
   "nav": {
     "home": "首页",
-    "traditional-clothing": "示例服装信息",
+    "traditional-clothing": "宠物穿搭灵感",
     "countries": "国家服饰",
     "how-it-works": "使用方法",
-    "fashion-technology": "时尚科技",
+    "fashion-technology": "宠物风格指南",
     "virtual-try-on-guide": "试穿指南",
     "outfit-photo-tips": "照片技巧",
     "ai-fitting-faq": "AI 试穿 FAQ",
-    "about": "关于 HAMDEVA",
+    "about": "介绍",
     "privacy": "隐私政策",
     "terms": "服务条款",
     "contact": "联系",
@@ -17,8 +17,8 @@
     "mypage": "我的页面"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI 虚拟试穿平台",
-    "homeDescription": "用一张脸部照片和一张服装图片，几秒内预览 HAMDEVA AI 试穿结果。"
+    "homeTitle": "HAMDEVA | AI 宠物穿搭平台",
+    "homeDescription": "用一张宠物照片和一张服装图片，几秒内预览 HAMDEVA AI 宠物穿搭结果。"
   },
   "hero_click": "点击点击，",
   "hero_space": "虚拟试衣空间",
@@ -126,8 +126,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "样本服饰信息",
-      "description": "这是用于体验 HAMDEVA AI 试穿的样本服饰集合。\n\n选择脸部照片与服装图片后，AI 会生成多角度试穿结果。",
+      "title": "宠物穿搭灵感",
+      "description": "这里整理了适合狗狗和猫咪的样本穿搭灵感。\n\n选择宠物照片与服装图片后，AI 会生成可爱的宠物穿搭预览。",
       "sections": [
         {
           "heading": "传统服饰",
@@ -167,13 +167,13 @@
     },
     "how-it-works": {
       "title": "使用方法",
-      "description": "了解人物图像与服饰图像如何被组合成一张统一的试穿结果。",
+      "description": "了解宠物照片与服饰图像如何被组合成一张统一的宠物穿搭结果。",
       "sections": [
         {
-          "heading": "步骤 1 – 上传人物照片",
+          "heading": "步骤 1 – 上传宠物照片",
           "paragraphs": [
-            "选择脸部清晰、光线均衡的照片，有助于保持人物身份一致。",
-            "遮挡越少，试穿结果越稳定。"
+            "选择狗狗或猫咪主体清晰、光线均衡的照片，有助于保持宠物形象一致。",
+            "遮挡越少，穿搭结果越稳定。"
           ]
         },
         {
@@ -193,14 +193,14 @@
       ]
     },
     "fashion-technology": {
-      "title": "时尚科技",
-      "description": "看看 AI 成像如何帮助传统服饰的视觉探索与理解。",
+      "title": "宠物风格指南",
+      "description": "看看 AI 成像如何帮助比较宠物造型并挑选更合适的服饰风格。",
       "sections": [
         {
           "heading": "参考图优先级",
           "paragraphs": [
-            "虚拟试穿最重要的是明确人物图与服饰图各自承担的角色。",
-            "人物图保持身份，服饰图保持服装设计，这样结果才不会漂移。"
+            "宠物试穿最重要的是明确宠物图与服饰图各自承担的角色。",
+            "宠物图保持形象一致，服饰图保持服装设计，这样结果才不会漂移。"
           ]
         },
         {
@@ -225,14 +225,14 @@
       "description": "查看关于真实性、隐私与结果质量的常见问题。"
     },
     "about": {
-      "title": "关于 HAMDEVA",
-      "description": "了解 HAMDEVA 为什么存在，以及 AI 试穿应该被如何理解。",
+      "title": "HAMDEVA 介绍",
+      "description": "了解 HAMDEVA 为什么存在，以及它如何帮助你为宠物预览不同造型。",
       "sections": [
         {
           "heading": "为什么需要 HAMDEVA",
           "paragraphs": [
-            "HAMDEVA 面向那些希望在购买、租赁、旅行造型或拍摄前，先快速判断服装方向的用户。",
-            "它的目标是降低前期判断的不确定性，而不是替代真实试衣、尺寸确认或面料判断。"
+            "HAMDEVA 面向那些想在节日、生日、旅行或拍照前，先为爱宠预览不同造型的用户。",
+            "它的目标是让你更轻松地制作可爱造型预览和分享图片。"
           ]
         },
         {
@@ -351,7 +351,7 @@
     "send": "发送邮件"
   },
   "ui": {
-    "heroCta": "开始 AI 试穿",
+    "heroCta": "开始宠物试穿",
     "sampleBadge": "SAMPLE",
     "firebaseConfigMissing": "Firebase 配置缺失",
     "firebaseDisabledMessage": "由于 Firebase 未配置，当前无法登录。请检查管理员设置或确认 .env 配置。",
@@ -360,7 +360,7 @@
   },
   "uploadGuides": {
     "faceTips": [
-      "接近正面的清晰照片效果最好。",
+      "狗狗或猫咪正面较清晰的照片效果最好。",
       "建议使用没有被头发、手、口罩、眼镜或道具遮挡脸部的照片。",
       "光线越明亮、背景越简单，识别效果越好。",
       "半身照或以脸部为中心的照片最合适。"
@@ -370,12 +370,12 @@
       "建议使用服装未被裁切、背景简单的图片。",
       "越接近正面、褶皱和遮挡越少，效果越好。"
     ],
-    "faceCopyrightNotice": "人物照片请勿在未获授权的情况下使用名人照片。",
+    "faceCopyrightNotice": "请勿上传无权使用的宠物照片或他人的图片。",
     "clothingSafetyNotice": "上传服装图片时，请勿使用过度暴露或带有明显色情性质的图片。",
     "resultPrivacyNotice": "本图片不会被保存，仅会为结果预览和下载进行临时处理。"
   },
   "emptyPreview": {
-    "faceBadge": "FACE GUIDE",
+    "faceBadge": "PET GUIDE",
     "styleBadge": "STYLE GUIDE"
   },
   "sampleModal": {

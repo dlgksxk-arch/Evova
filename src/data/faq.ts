@@ -5,9 +5,9 @@ export type FAQItem = {
 
 export const homeFaqs: FAQItem[] = [
   {
-    question: 'Do I need my own face photo?',
+    question: 'Do I need my own pet photo?',
     answer:
-      'No. You can start with sample faces and sample outfits if you want to test the flow first.',
+      'No. You can start with sample images first if you want to test the flow before uploading your dog or cat.',
   },
   {
     question: 'Do I need an account to generate images?',
@@ -22,7 +22,7 @@ export const homeFaqs: FAQItem[] = [
   {
     question: 'What should I compare in the result?',
     answer:
-      'Check silhouette, garment length, trim placement, layering balance, and whether the output still matches the original clothing reference.',
+      'Check whether the pet pose, outfit shape, color balance, and overall mood still match the clothing reference you selected.',
     },
 ];
 
@@ -30,7 +30,7 @@ export const aboutFaqs: FAQItem[] = [
   {
     question: 'Why was HAMDEVA built?',
     answer:
-      'It was built to reduce uncertainty before purchase, rental, travel styling, or visual planning by giving users a fast outfit preview.',
+      'It was built to make it easier to preview cute pet outfits before shopping, planning a costume, or preparing a themed photo.',
   },
   {
     question: 'Why does the site include informational pages?',
@@ -40,15 +40,15 @@ export const aboutFaqs: FAQItem[] = [
   {
     question: 'Does HAMDEVA replace real fitting?',
     answer:
-      'No. It is a visual planning tool for early comparison, not a replacement for real measurements, tailoring, or fabric handling.',
+      'No. It is a visual preview tool for early comparison, not a replacement for how a real pet outfit fits in person.',
     },
 ];
 
 export const howToUseFaqs: FAQItem[] = [
   {
-    question: 'What kind of face image works best for HAMDEVA?',
+    question: 'What kind of pet photo works best for HAMDEVA?',
     answer:
-      'A clear, front-facing or near front-facing image usually works best. Good lighting, visible facial features, and a clean subject image help the AI preserve identity more consistently in the final result.',
+      'A clear dog or cat photo that is front-facing or near front-facing usually works best. Good lighting and a visible face help the AI preserve your pet’s look more consistently.',
   },
   {
     question: 'What kind of outfit image should I use?',
@@ -63,7 +63,7 @@ export const howToUseFaqs: FAQItem[] = [
   {
     question: 'What common input mistakes lower quality?',
     answer:
-      'Blurry portraits, cropped garments, cluttered backgrounds, and hidden clothing details are the most common reasons a result looks weaker than expected.',
+      'Blurry pet photos, heavily cropped outfit images, cluttered backgrounds, and hidden clothing details are the most common reasons a result looks weaker than expected.',
   },
   {
     question: 'Why does HAMDEVA generate a 1x4 result sheet instead of one single image?',
@@ -73,7 +73,7 @@ export const howToUseFaqs: FAQItem[] = [
   {
     question: 'Should I use HAMDEVA before buying or renting clothing?',
     answer:
-      'It can be a practical early-stage screening tool. HAMDEVA helps narrow down style direction, compare outfit mood, and decide whether a garment is worth deeper consideration. It should still be combined with real product information, measurements, and material checks before a final purchase decision.',
+      'Yes. It can be a practical early-stage tool for narrowing down a pet outfit direction before you buy or prepare the real costume.',
   },
 ];
 
@@ -81,21 +81,21 @@ export const sampleOutfitsFaqs: FAQItem[] = [
   {
     question: 'What are sample outfits on HAMDEVA?',
     answer:
-      'Sample outfits are curated clothing reference images provided inside the service so users can test virtual fitting quickly. They allow visitors to explore style categories without needing to upload their own outfit image first.',
+      'Sample outfits are clothing reference images that help users test pet fitting quickly. They let you explore different costume moods without preparing your own outfit image first.',
   },
   {
     question: 'Are sample outfit results the same as buying or wearing the real garment?',
     answer:
-      'No. Sample outfit results are AI-generated visual previews based on reference images. They are useful for comparison and inspiration, but they are not a guarantee of fabric behavior, exact fit, or final real-world appearance.',
+      'No. They are AI-generated previews for inspiration and comparison, not a guarantee of exact fit or final real-world appearance.',
   },
   {
-    question: 'Do sample outfits work with both uploaded faces and sample faces?',
+    question: 'Do sample outfits work with both uploaded pet photos and sample images?',
     answer:
-      'Yes. In the current HAMDEVA flow, sample outfits can be paired with uploaded face images or with sample face images. This makes the sample collection useful for quick testing and visual experimentation.',
+      'Yes. In the current HAMDEVA flow, sample outfits can be paired with uploaded pet photos or with sample images for quick testing.',
   },
   {
     question: 'What kinds of comparisons can I make on the sample outfit pages?',
     answer:
-      'Visitors can compare country-specific dress traditions, decorative density, sleeve and skirt volume, color harmony, and the difference between traditional, classic, and more conceptual looks. That makes the sample pages valuable as browsing content as well as a starting point for generation.',
+      'You can compare cute costume moods, decorative detail, silhouette, color balance, and how different outfit ideas might look on your pet before generating.',
   },
 ];
