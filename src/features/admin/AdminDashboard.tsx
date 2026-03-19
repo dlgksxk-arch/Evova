@@ -5,6 +5,7 @@ import { useAdminGiftCredit, useAdminUserDetail, useAdminUserList } from '../../
 import type {
   ActivityLogRecord,
   AdminUserDetail,
+  AdminUserListItem,
   BbsPostRecord,
   BoardNoticeRecord,
   CreditLogRecord,
@@ -84,6 +85,146 @@ const renderDetailValue = (
   </div>
 );
 
+interface AdminUserListTableProps {
+  copy: Record<string, any>;
+  query: string;
+  onQueryChange: (value: string) => void;
+  hint: string;
+  error: string | null;
+  loading: boolean;
+  loadingMore: boolean;
+  debouncedQuery: string;
+  users: AdminUserListItem[];
+  selectedUserId: string | null;
+  hasMore: boolean;
+  formatTimestampLabel: (value?: any) => string;
+  onSelectUser: (uid: string) => void;
+  onShowDetails: (uid: string) => void;
+  onGiftUser: (user: AdminUserListItem) => void;
+  onLoadMore: () => void;
+}
+
+const AdminUserListTable: React.FC<AdminUserListTableProps> = ({
+  copy,
+  query,
+  onQueryChange,
+  hint,
+  error,
+  loading,
+  loadingMore,
+  debouncedQuery,
+  users,
+  selectedUserId,
+  hasMore,
+  formatTimestampLabel,
+  onSelectUser,
+  onShowDetails,
+  onGiftUser,
+  onLoadMore,
+}) => (
+  <>
+    <div className="admin-user-search-sticky">
+      <label className="admin-user-search-label">
+        <span>{copy.adminUserSearchLabel ?? '사용자 검색'}</span>
+        <input
+          className="auth-input"
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder={copy.adminUserSearchPlaceholder ?? 'uid / email / displayName'}
+          type="text"
+          value={query}
+        />
+      </label>
+      <p className="admin-search-hint">{hint}</p>
+    </div>
+
+    {error ? <p className="admin-error-banner">{error}</p> : null}
+    {loading ? <p className="admin-loading-banner">{copy.adminUserListLoading ?? '사용자 목록을 불러오는 중입니다...'}</p> : null}
+
+    <div className="admin-user-list-table">
+      <div className="admin-user-list-head">
+        <span>uid</span>
+        <span>{copy.emailLabel}</span>
+        <span>{copy.adminDisplayName ?? '닉네임 / 이름'}</span>
+        <span>{copy.adminJoinedAt}</span>
+        <span>{copy.adminLastLoginAt ?? '최근 로그인'}</span>
+        <span>{copy.adminCreditsColumn}</span>
+        <span>{copy.adminDailyCredit ?? 'dailyCredit'}</span>
+        <span>{copy.adminPaidCredit ?? 'paidCredit'}</span>
+        <span>{copy.adminSubscribed ?? '구독'}</span>
+        <span>{copy.subscriptionPlanLabel}</span>
+        <span>{copy.adminTotalGenerated ?? '총 생성 수'}</span>
+        <span>{copy.adminRole}</span>
+        <span>{copy.adminActions ?? '작업'}</span>
+      </div>
+
+      {!loading && users.length === 0 ? (
+        <p className="admin-empty-state">
+          {debouncedQuery ? (copy.adminUserSearchEmpty ?? '검색 결과가 없습니다.') : (copy.adminNoData ?? '표시할 데이터가 없습니다.')}
+        </p>
+      ) : null}
+
+      {users.map((item) => (
+        <div
+          key={item.uid}
+          className={`admin-user-list-row ${selectedUserId === item.uid ? 'active' : ''}`}
+          onClick={() => onSelectUser(item.uid)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onSelectUser(item.uid);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          <span>{item.uid}</span>
+          <span>{item.email || '-'}</span>
+          <span>{getUserDisplayName(item)}</span>
+          <span>{formatTimestampLabel(item.createdAt)}</span>
+          <span>{formatTimestampLabel(item.lastLoginAt)}</span>
+          <span>{item.credits ?? 0}</span>
+          <span>{item.dailyCredit ?? 0}</span>
+          <span>{item.paidCredit ?? 0}</span>
+          <span>{item.isSubscribed ? (copy.adminSubscribedYes ?? 'Y') : (copy.adminSubscribedNo ?? 'N')}</span>
+          <span>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
+          <span>{item.totalGenerated ?? 0}</span>
+          <span>{item.role || 'user'}</span>
+          <span className="admin-user-actions">
+            <button
+              className="outline-btn admin-table-action-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                onShowDetails(item.uid);
+              }}
+              type="button"
+            >
+              {copy.adminDetailButton ?? '상세보기'}
+            </button>
+            <button
+              className="generate-btn admin-table-action-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                onGiftUser(item);
+              }}
+              type="button"
+            >
+              {copy.adminGiftButton ?? '선물하기'}
+            </button>
+          </span>
+        </div>
+      ))}
+    </div>
+
+    {hasMore && !debouncedQuery ? (
+      <div className="admin-user-list-footer">
+        <button className="outline-btn auth-inline-btn" disabled={loadingMore} onClick={onLoadMore} type="button">
+          {loadingMore ? (copy.adminUserListLoadingMore ?? '불러오는 중...') : (copy.adminLoadMore ?? '더 보기')}
+        </button>
+      </div>
+    ) : null}
+  </>
+);
+
 const LOG_TABS: Array<{ key: AdminLogType; label: string }> = [
   { key: 'generations', label: 'Generation Logs' },
   { key: 'credits', label: 'Credit Logs' },
@@ -132,6 +273,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     currentUser,
     enabled: isAdminUser,
     isOpen: isUserModalOpen,
+  });
+  const {
+    query: pageUserQuery,
+    setQuery: setPageUserQuery,
+    users: pageUsers,
+    loading: pageUserListLoading,
+    loadingMore: pageUserLoadingMore,
+    error: pageUserListError,
+    hasMore: pageUserHasMore,
+    debouncedQuery: pageDebouncedQuery,
+    loadMore: loadMorePageUsers,
+    updateUser: updatePageUser,
+  } = useAdminUserList({
+    currentUser,
+    enabled: isAdminUser,
+    isOpen: isAdminUser,
   });
   const {
     userDetail,
@@ -233,6 +390,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setSelectedUserId(uid);
   };
 
+  const handleOpenUserDetailModal = (uid: string) => {
+    setSelectedUserId(uid);
+    openUserModal();
+  };
+
   const handleOpenGift = (user: AdminUserDetail | null) => {
     if (!user) {
       return;
@@ -257,6 +419,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const updatedUser = await submitGift(giftTarget.uid);
       updateUser(updatedUser);
+      updatePageUser(updatedUser);
       if (selectedUserId === updatedUser.uid) {
         setUserDetail(updatedUser);
       }
@@ -468,6 +631,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </article>
         <article className="page-article">
+          <div className="admin-section-header">
+            <div>
+              <h3>{copy.adminMemberListSection ?? '회원 리스트'}</h3>
+              <p className="admin-section-helper">{copy.adminMemberListHelper ?? '최근 사용자와 같은 형식으로 바로 조회할 수 있는 회원 리스트입니다.'}</p>
+            </div>
+            <button className="outline-btn auth-inline-btn" onClick={openUserModal} type="button">
+              {copy.adminOpenUserList ?? '사용자 검색 / 선물'}
+            </button>
+          </div>
+          <AdminUserListTable
+            copy={copy}
+            query={pageUserQuery}
+            onQueryChange={setPageUserQuery}
+            hint={copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
+            error={pageUserListError}
+            loading={pageUserListLoading}
+            loadingMore={pageUserLoadingMore}
+            debouncedQuery={pageDebouncedQuery}
+            users={pageUsers}
+            selectedUserId={selectedUserId}
+            hasMore={pageUserHasMore}
+            formatTimestampLabel={formatTimestampLabel}
+            onSelectUser={handleSelectUser}
+            onShowDetails={handleOpenUserDetailModal}
+            onGiftUser={(user) => handleOpenGift({
+              ...user,
+              updatedAt: null,
+            } as AdminUserDetail)}
+            onLoadMore={() => { void loadMorePageUsers(); }}
+          />
+        </article>
+        <article className="page-article">
           <h3>{copy.adminBoardSection}</h3>
           <div className="admin-table">
             <div className="admin-table-head admin-board-head">
@@ -520,111 +715,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         >
           <div className="admin-user-modal-layout">
             <section className="admin-user-list-panel">
-              <div className="admin-user-search-sticky">
-                <label className="admin-user-search-label">
-                  <span>{copy.adminUserSearchLabel ?? '사용자 검색'}</span>
-                  <input
-                    className="auth-input"
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder={copy.adminUserSearchPlaceholder ?? 'uid / email / displayName'}
-                    type="text"
-                    value={query}
-                  />
-                </label>
-                <p className="admin-search-hint">
-                  {copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
-                </p>
-              </div>
-
-              {userListError ? <p className="admin-error-banner">{userListError}</p> : null}
-              {userListLoading ? <p className="admin-loading-banner">{copy.adminUserListLoading ?? '사용자 목록을 불러오는 중입니다...'}</p> : null}
-
-              <div className="admin-user-list-table">
-                <div className="admin-user-list-head">
-                  <span>uid</span>
-                  <span>{copy.emailLabel}</span>
-                  <span>{copy.adminDisplayName ?? '닉네임 / 이름'}</span>
-                  <span>{copy.adminJoinedAt}</span>
-                  <span>{copy.adminLastLoginAt ?? '최근 로그인'}</span>
-                  <span>{copy.adminCreditsColumn}</span>
-                  <span>{copy.adminDailyCredit ?? 'dailyCredit'}</span>
-                  <span>{copy.adminPaidCredit ?? 'paidCredit'}</span>
-                  <span>{copy.adminSubscribed ?? '구독'}</span>
-                  <span>{copy.subscriptionPlanLabel}</span>
-                  <span>{copy.adminTotalGenerated ?? '총 생성 수'}</span>
-                  <span>{copy.adminRole}</span>
-                  <span>{copy.adminActions ?? '작업'}</span>
-                </div>
-
-                {!userListLoading && users.length === 0 ? (
-                  <p className="admin-empty-state">
-                    {debouncedQuery ? (copy.adminUserSearchEmpty ?? '검색 결과가 없습니다.') : (copy.adminNoData ?? '표시할 데이터가 없습니다.')}
-                  </p>
-                ) : null}
-
-                {users.map((item) => (
-                  <div
-                    key={item.uid}
-                    className={`admin-user-list-row ${selectedUserId === item.uid ? 'active' : ''}`}
-                    onClick={() => handleSelectUser(item.uid)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        handleSelectUser(item.uid);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <span>{item.uid}</span>
-                    <span>{item.email || '-'}</span>
-                    <span>{getUserDisplayName(item)}</span>
-                    <span>{formatTimestampLabel(item.createdAt)}</span>
-                    <span>{formatTimestampLabel(item.lastLoginAt)}</span>
-                    <span>{item.credits ?? 0}</span>
-                    <span>{item.dailyCredit ?? 0}</span>
-                    <span>{item.paidCredit ?? 0}</span>
-                    <span>{item.isSubscribed ? (copy.adminSubscribedYes ?? 'Y') : (copy.adminSubscribedNo ?? 'N')}</span>
-                    <span>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
-                    <span>{item.totalGenerated ?? 0}</span>
-                    <span>{item.role || 'user'}</span>
-                    <span className="admin-user-actions">
-                      <button
-                        className="outline-btn admin-table-action-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleSelectUser(item.uid);
-                        }}
-                        type="button"
-                      >
-                        {copy.adminDetailButton ?? '상세보기'}
-                      </button>
-                      <button
-                        className="generate-btn admin-table-action-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleSelectUser(item.uid);
-                          handleOpenGift((userDetail && userDetail.uid === item.uid ? userDetail : {
-                            ...item,
-                            updatedAt: null,
-                          }) as AdminUserDetail);
-                        }}
-                        type="button"
-                      >
-                        {copy.adminGiftButton ?? '선물하기'}
-                      </button>
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {hasMore && !debouncedQuery ? (
-                <div className="admin-user-list-footer">
-                  <button className="outline-btn auth-inline-btn" disabled={loadingMore} onClick={() => { void loadMore(); }} type="button">
-                    {loadingMore ? (copy.adminUserListLoadingMore ?? '불러오는 중...') : (copy.adminLoadMore ?? '더 보기')}
-                  </button>
-                </div>
-              ) : null}
+              <AdminUserListTable
+                copy={copy}
+                query={query}
+                onQueryChange={setQuery}
+                hint={copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
+                error={userListError}
+                loading={userListLoading}
+                loadingMore={loadingMore}
+                debouncedQuery={debouncedQuery}
+                users={users}
+                selectedUserId={selectedUserId}
+                hasMore={hasMore}
+                formatTimestampLabel={formatTimestampLabel}
+                onSelectUser={handleSelectUser}
+                onShowDetails={handleSelectUser}
+                onGiftUser={(user) => handleOpenGift((userDetail && userDetail.uid === user.uid ? userDetail : {
+                  ...user,
+                  updatedAt: null,
+                }) as AdminUserDetail)}
+                onLoadMore={() => { void loadMore(); }}
+              />
             </section>
 
             <aside className="admin-user-detail-panel">
