@@ -4991,9 +4991,6 @@ const App: React.FC = () => {
                 <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
                   {landingContent.hero.primaryButton}
                 </button>
-                <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('how-it-works')} type="button">
-                  {landingContent.hero.secondaryButton}
-                </button>
               </div>
             </>
           ) : currentPage === 'payment-success' ? (

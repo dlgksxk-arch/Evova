@@ -189,7 +189,7 @@ Requirements:
 - preserve the exact dog identity, breed appearance, fur pattern, and face
 - preserve the clothing color, silhouette, and design as closely as possible
 - adapt the outfit naturally to a dog body
-- use a fashion pose and cinematic background that match the outfit concept
+- use a more expressive fashion pose and cinematic background that strongly match the outfit concept
 - keep balanced body proportions
 - place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
 - keep the head proportion about 10% smaller than before relative to the overall body in the composition
@@ -206,7 +206,7 @@ Requirements:
 - preserve the exact cat identity, fur markings, and face
 - preserve the clothing color, silhouette, and design as closely as possible
 - adapt the outfit naturally to a cat body
-- use a fashion pose and cinematic background that match the outfit concept
+- use a more expressive fashion pose and cinematic background that strongly match the outfit concept
 - keep balanced body proportions
 - place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
 - keep the head proportion about 10% smaller than before relative to the overall body in the composition
@@ -722,8 +722,9 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
   ].filter(Boolean).join(' ');
   const stylingGuide = [
     bodyProfile?.outfitName ? `The garment should read clearly as ${bodyProfile.outfitName}.` : null,
-    bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that match the garment mood and purpose rather than using a generic studio-only result.',
-    bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a natural pose that fits the outfit mood, formality, and silhouette.',
+    bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that strongly match the garment mood and purpose rather than using a generic studio-only result.',
+    'Make the pose more dramatic, visually confident, and editorial so the outfit mood reads clearly at a glance, while still keeping anatomy believable and the garment undistorted.',
+    bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a bold expressive pose that fits the outfit mood, formality, and silhouette while keeping the full garment readable.',
     bodyProfile?.backgroundHint ? `Use ${bodyProfile.backgroundHint} as the background direction.` : 'Use a realistic background that suits the outfit mood and cultural context.',
   ].filter(Boolean).join(' ');
 
