@@ -2994,7 +2994,12 @@ const getUserContextFromEmail = async (email: string): Promise<{ uid: string } |
 
   const matchedDoc = snapshot.docs[0];
   if (!matchedDoc) {
-    return null;
+    try {
+      const authUser = await admin.auth().getUserByEmail(normalizedEmail);
+      return authUser?.uid ? { uid: authUser.uid } : null;
+    } catch {
+      return null;
+    }
   }
 
   return { uid: matchedDoc.id };
@@ -3081,7 +3086,11 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
     firstOrderItemProduct.id,
   );
   const eventType = getWebhookEventName(event, headers, data, attributes);
-  const isCompletedEvent = eventType === 'order_created' || eventType === 'subscription_created';
+  const isCompletedEvent = eventType === 'order_created'
+    || eventType === 'subscription_created'
+    || eventType === 'subscription_payment_success'
+    || eventType === 'subscription_payment_recovered'
+    || eventType === 'order_paid';
   const isFailedEvent = eventType === 'subscription_payment_failed';
   const isCanceledEvent = eventType === 'subscription_cancelled' || eventType === 'subscription_expired';
 
