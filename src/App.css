@@ -4469,6 +4469,9 @@ a { color: inherit; text-decoration: none; }
   .app-version {
     display: none;
   }
+  .nav-inline-actions {
+    display: none;
+  }
   .nav-quick-scroll {
     gap: 6px;
     padding: 6px 8px;

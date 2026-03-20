@@ -553,10 +553,9 @@
     "categories": {
       "female": "女性",
       "male": "男性",
-      "animal": "动物",
-      "fashin": "时尚",
       "future": "未来",
-      "classic": "经典"
+      "classic": "经典",
+      "special": "特别"
     }
   },
   "login": {

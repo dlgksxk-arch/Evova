@@ -1,4 +1,4 @@
-export type ClothSampleCategory = 'female' | 'male' | 'animal' | 'future' | 'classic';
+export type ClothSampleCategory = 'female' | 'male' | 'future' | 'classic' | 'special';
 
 export interface ClothSampleOption {
   id: string;
@@ -126,19 +126,6 @@ const maleSamples = createSamples('male', [
   { id: 'spain-men-trad-1', label: '남성 스페인 전통의상 2', file: '2026-03-13-13-49-17-spain-men-trad-1.png', country: 'spain', countryLabelKo: '스페인', countryLabelEn: 'Spain' },
 ]);
 
-const animalSamples = createSamples('animal', [
-  { id: 'dog-costume-1', label: '강아지 의상 1', file: 'dog_costume_1_retriever.png', country: 'dog', countryLabelKo: '강아지', countryLabelEn: 'Dog' },
-  { id: 'dog-costume-2', label: '강아지 의상 2', file: 'dog_costume_4_shiba.png', country: 'dog', countryLabelKo: '강아지', countryLabelEn: 'Dog' },
-  { id: 'dog-isolated-1', label: '강아지 의상 3', file: 'isolated_dog_1_retriever.png', country: 'dog', countryLabelKo: '강아지', countryLabelEn: 'Dog' },
-  { id: 'dog-isolated-2', label: '강아지 의상 4', file: 'isolated_dog_4_dalmatian.png', country: 'dog', countryLabelKo: '강아지', countryLabelEn: 'Dog' },
-  { id: 'dog-isolated-3', label: '강아지 의상 5', file: 'isolated_dog_5_pug.png', country: 'dog', countryLabelKo: '강아지', countryLabelEn: 'Dog' },
-  { id: 'cat-costume-1', label: '고양이 의상 1', file: 'cat_costume_4_tabby.png', country: 'cat', countryLabelKo: '고양이', countryLabelEn: 'Cat' },
-  { id: 'cat-isolated-1', label: '고양이 의상 2', file: 'isolated_cat_1_fluffy.png', country: 'cat', countryLabelKo: '고양이', countryLabelEn: 'Cat' },
-  { id: 'cat-isolated-2', label: '고양이 의상 3', file: 'isolated_cat_2_orange.png', country: 'cat', countryLabelKo: '고양이', countryLabelEn: 'Cat' },
-  { id: 'cat-isolated-3', label: '고양이 의상 4', file: 'isolated_cat_4_calico.png', country: 'cat', countryLabelKo: '고양이', countryLabelEn: 'Cat' },
-  { id: 'cat-isolated-4', label: '고양이 의상 5', file: 'isolated_cat_5_pink.png', country: 'cat', countryLabelKo: '고양이', countryLabelEn: 'Cat' },
-]);
-
 const futureSamples = createSamples('future', [
   { id: 'future-cybersuit-0', label: '미래 의상 1', file: '2026-03-13-14-07-37-cybersuit.png', country: 'cybersuit', countryLabelKo: '미래', countryLabelEn: 'Future' },
   { id: 'future-cybersuit-1', label: '미래 의상 2', file: '2026-03-13-14-08-22-cybersuit.png', country: 'cybersuit', countryLabelKo: '미래', countryLabelEn: 'Future' },
@@ -151,12 +138,27 @@ const classicSamples = createSamples('classic', [
   { id: 'classic-uk80s-1', label: '80년대 스타일 수트 2', file: '2026-03-13-14-11-17-uk80s.png', country: 'uk80s', countryLabelKo: '80년대 스타일 수트', countryLabelEn: '80s Style Suit' },
 ]);
 
+const specialSamples = createSamples('special', [
+  { id: 'special-birthday-0', label: '생일 룩 1', file: '01-birthday-golden-retriever.png', country: 'birthday', countryLabelKo: '생일', countryLabelEn: 'Birthday' },
+  { id: 'special-halloween-0', label: '할로윈 룩 1', file: '02-halloween-black-cat.png', country: 'halloween', countryLabelKo: '할로윈', countryLabelEn: 'Halloween' },
+  { id: 'special-christmas-0', label: '크리스마스 룩 1', file: '03-christmas-corgi.png', country: 'christmas', countryLabelKo: '크리스마스', countryLabelEn: 'Christmas' },
+  { id: 'special-lunarnewyear-0', label: '설날 룩 1', file: '04-lunarnewyear-jindo.png', country: 'lunarnewyear', countryLabelKo: '설날', countryLabelEn: 'Lunar New Year' },
+  { id: 'special-valentine-0', label: '발렌타인 룩 1', file: '05-valentine-pomeranian.png', country: 'valentine', countryLabelKo: '발렌타인', countryLabelEn: 'Valentine' },
+  { id: 'special-wedding-0', label: '웨딩 룩 1', file: '06-wedding-siamese.png', country: 'wedding', countryLabelKo: '웨딩', countryLabelEn: 'Wedding' },
+  { id: 'special-graduation-0', label: '졸업식 룩 1', file: '07-graduation-husky.png', country: 'graduation', countryLabelKo: '졸업식', countryLabelEn: 'Graduation' },
+  { id: 'special-beach-0', label: '비치 룩 1', file: '08-beach-chihuahua.png', country: 'beach', countryLabelKo: '바캉스', countryLabelEn: 'Beach' },
+  { id: 'special-sportsday-0', label: '운동회 룩 1', file: '09-sportsday-shiba.png', country: 'sportsday', countryLabelKo: '운동회', countryLabelEn: 'Sports Day' },
+  { id: 'special-rainyday-0', label: '장마 룩 1', file: '10-rainyday-british-shorthair.png', country: 'rainyday', countryLabelKo: '비 오는 날', countryLabelEn: 'Rainy Day' },
+  { id: 'special-snowfestival-0', label: '겨울 축제 룩 1', file: '11-snowfestival-samoyed.png', country: 'snowfestival', countryLabelKo: '겨울 축제', countryLabelEn: 'Snow Festival' },
+  { id: 'special-fireworks-0', label: '불꽃놀이 룩 1', file: '12-fireworks-bengal.png', country: 'fireworks', countryLabelKo: '불꽃놀이', countryLabelEn: 'Fireworks' },
+]);
+
 export const clothSampleOptions: ClothSampleOption[] = [
   ...femaleSamples,
   ...maleSamples,
-  ...animalSamples,
   ...futureSamples,
   ...classicSamples,
+  ...specialSamples,
 ];
 
 const TRADITIONAL_COUNTRY_ORDER: TraditionalOutfitCountry[] = [

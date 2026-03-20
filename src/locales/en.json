@@ -686,10 +686,9 @@
     "categories": {
       "female": "Women",
       "male": "Men",
-      "animal": "Animal",
-      "fashin": "Fashion",
       "future": "Future",
-      "classic": "Classic"
+      "classic": "Classic",
+      "special": "Special"
     }
   },
   "login": {

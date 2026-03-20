@@ -686,10 +686,9 @@
     "categories": {
       "female": "여성",
       "male": "남성",
-      "animal": "동물",
-      "fashin": "패션",
       "future": "미래",
-      "classic": "클래식"
+      "classic": "클래식",
+      "special": "스페셜"
     }
   },
   "login": {
