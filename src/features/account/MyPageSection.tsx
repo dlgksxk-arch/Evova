@@ -23,6 +23,7 @@ interface MyPageSectionProps {
     kind: 'subscription' | 'extra_credit';
     label: string;
     salePriceUsd: number;
+    comparePriceUsd?: number;
     paidCredit: number;
     description: string;
     badge?: string;
@@ -66,7 +67,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDeleteHistoryItem,
 }) => {
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
-  const formatProductPrice = (price: number): string => `${price.toLocaleString('ko-KR')}원`;
+  const formatProductPrice = (product: { salePriceUsd: number; kind: 'subscription' | 'extra_credit' }) =>
+    `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
 
   return (
     <div className="mypage-layout">
@@ -144,7 +146,12 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                       ) : null}
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
-                      <p className="credit-plan-sale-price">{formatProductPrice(product.salePriceUsd)}</p>
+                      <div className="credit-plan-price-row">
+                        {typeof product.comparePriceUsd === 'number' ? (
+                          <span className="credit-plan-compare-price">${product.comparePriceUsd.toFixed(2)}/month</span>
+                        ) : null}
+                        <p className="credit-plan-sale-price">{formatProductPrice(product)}</p>
+                      </div>
                       <p>{copy.pricingUi.descriptionById[product.id]}</p>
                     </div>
                     <button
@@ -170,7 +177,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                     <div className="credit-plan-copy">
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
-                      <p className="credit-plan-sale-price">{formatProductPrice(product.salePriceUsd)}</p>
+                      <p className="credit-plan-sale-price">{formatProductPrice(product)}</p>
                       <p>{copy.pricingUi.descriptionById[product.id]}</p>
                     </div>
                     <button

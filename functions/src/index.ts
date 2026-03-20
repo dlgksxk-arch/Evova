@@ -58,7 +58,7 @@ const HISTORY_RETENTION_DAYS = 15;
 const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
 const MAX_ARCHIVED_CREATIONS = 5;
 const LEMON_PROVIDER = 'lemon';
-const PAYMENT_CURRENCY = 'krw';
+const PAYMENT_CURRENCY = 'usd';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
 const DEFAULT_ADMIN_GIFT_SENDER_NAME = 'EVOVA 운영팀';
@@ -77,48 +77,48 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
   starter: {
     id: 'starter',
-    amountCents: 990000,
-    amountUsd: 9900,
+    amountCents: 699,
+    amountUsd: 6.99,
     currency: PAYMENT_CURRENCY,
     paidCredit: 1000,
     name: 'HAMDEVA Starter Credits',
   },
   popular: {
     id: 'popular',
-    amountCents: 2990000,
-    amountUsd: 29900,
+    amountCents: 1290,
+    amountUsd: 12.9,
     currency: PAYMENT_CURRENCY,
     paidCredit: 5000,
     name: 'HAMDEVA Popular Credits',
   },
   pro: {
     id: 'pro',
-    amountCents: 4990000,
-    amountUsd: 49900,
+    amountCents: 4990,
+    amountUsd: 49.9,
     currency: PAYMENT_CURRENCY,
     paidCredit: 10000,
     name: 'HAMDEVA Pro Credits',
   },
   small_pack: {
     id: 'small_pack',
-    amountCents: 1290000,
-    amountUsd: 12900,
+    amountCents: 1290,
+    amountUsd: 12.9,
     currency: PAYMENT_CURRENCY,
     paidCredit: 1000,
     name: 'HAMDEVA Small Credit Pack',
   },
   medium_pack: {
     id: 'medium_pack',
-    amountCents: 5900000,
-    amountUsd: 59000,
+    amountCents: 5900,
+    amountUsd: 59,
     currency: PAYMENT_CURRENCY,
     paidCredit: 5000,
     name: 'HAMDEVA Medium Credit Pack',
   },
   large_pack: {
     id: 'large_pack',
-    amountCents: 9990000,
-    amountUsd: 99900,
+    amountCents: 9990,
+    amountUsd: 99.9,
     currency: PAYMENT_CURRENCY,
     paidCredit: 10000,
     name: 'HAMDEVA Large Credit Pack',
@@ -199,8 +199,15 @@ const DOG_PROMPT = `Use the first input image as the animal identity reference a
 
 Create one realistic, high-quality, full-body pet fashion portrait of the same dog wearing an adapted version of the referenced outfit.
 
+Top priorities, in order:
+1) exact same dog face and identity
+2) exact same outfit look and visible design details
+3) natural, believable full-body composition
+
 Core identity rules:
 - preserve the exact same dog identity, breed appearance, fur pattern, face shape, muzzle, ears, nose, eyes, and body proportions
+- preserve the exact same facial impression at first glance; the dog face should be immediately recognizable as the same dog from the reference
+- keep the same eye shape, muzzle length, nose shape, ear shape, forehead area, fur colors, fur markings, and overall head silhouette
 - the result must stay fully canine from head to toe, never human or humanoid
 - show only real dog facial anatomy and real dog limbs
 - keep dog front paws and hind paws clearly dog-like and consistent with the same dog identity
@@ -208,7 +215,11 @@ Core identity rules:
 
 Outfit rules:
 - preserve the outfit color, silhouette, design language, trim, accessories, and overall styling concept as closely as possible
+- preserve clearly visible design details from the outfit reference, including neckline, sleeves, hem, closures, bows, trim, embroidery, prints, and accessories when present
+- keep the outfit visually as close as possible to the reference in one glance
 - adapt the outfit naturally and believably to a dog body without changing the core design concept
+- do not simplify the outfit into a generic pet costume
+- do not replace the outfit with a different garment concept
 - keep the full outfit readable in one glance
 
 Action and mood rules:
@@ -231,6 +242,11 @@ Scene rules:
 - keep the scene bright, polished, and suitable for a premium pet fashion preview
 
 Strict negatives:
+- no identity drift
+- no different dog face
+- no wrong fur markings
+- no costume redesign
+- no generic pet clothes
 - no human face
 - no humanoid body
 - no human hands or feet
@@ -245,8 +261,15 @@ const CAT_PROMPT = `Use the first input image as the animal identity reference a
 
 Create one realistic, high-quality, full-body pet fashion portrait of the same cat wearing an adapted version of the referenced outfit.
 
+Top priorities, in order:
+1) exact same cat face and identity
+2) exact same outfit look and visible design details
+3) natural, believable full-body composition
+
 Core identity rules:
 - preserve the exact same cat identity, fur markings, face shape, ears, nose, eyes, whisker area, and body proportions
+- preserve the exact same facial impression at first glance; the cat face should be immediately recognizable as the same cat from the reference
+- keep the same eye shape, nose shape, muzzle area, ear shape, whisker pad, fur colors, fur markings, and overall head silhouette
 - the result must stay fully feline from head to toe, never human or humanoid
 - show only real cat facial anatomy and real cat limbs
 - keep cat front paws and hind paws clearly cat-like and consistent with the same cat identity
@@ -254,7 +277,11 @@ Core identity rules:
 
 Outfit rules:
 - preserve the outfit color, silhouette, design language, trim, accessories, and overall styling concept as closely as possible
+- preserve clearly visible design details from the outfit reference, including neckline, sleeves, hem, closures, bows, trim, embroidery, prints, and accessories when present
+- keep the outfit visually as close as possible to the reference in one glance
 - adapt the outfit naturally and believably to a cat body without changing the core design concept
+- do not simplify the outfit into a generic pet costume
+- do not replace the outfit with a different garment concept
 - keep the full outfit readable in one glance
 
 Action and mood rules:
@@ -277,6 +304,11 @@ Scene rules:
 - keep the scene bright, polished, and suitable for a premium pet fashion preview
 
 Strict negatives:
+- no identity drift
+- no different cat face
+- no wrong fur markings
+- no costume redesign
+- no generic pet clothes
 - no human face
 - no humanoid body
 - no human hands or feet
@@ -812,6 +844,8 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
   const stylingGuide = [
     bodyProfile?.outfitName ? `The garment should read clearly as ${bodyProfile.outfitName}.` : null,
     bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that strongly match the garment mood and purpose rather than using a generic studio-only result.',
+    subjectType === 'dog' || subjectType === 'cat' ? 'Face accuracy and outfit accuracy are the two most important goals. The pet face must match the reference animal as closely as possible, and the outfit must match the reference garment as closely as possible.' : null,
+    subjectType === 'dog' || subjectType === 'cat' ? 'Do not invent a different pet face, different fur pattern, different ear shape, or a generic substitute outfit.' : null,
     'Make the pose readable at a glance so the outfit mood feels clear immediately, while still keeping anatomy believable and the garment undistorted.',
     subjectType === 'dog' || subjectType === 'cat' ? 'Prioritize a cute, lively pet action over a stiff fashion pose. The image should feel like a charming split-second moment with energy, joy, and personality while keeping the outfit clearly visible.' : null,
     bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a bold expressive pose that fits the outfit mood, formality, and silhouette while keeping the full garment readable.',
