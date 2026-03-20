@@ -26,7 +26,7 @@
   "hero_click": "Click Click,",
   "hero_space": "Virtual Fitting Space",
   "hero": {
-    "eyebrow": "AI Virtual Fitting Platform",
+    "eyebrow": "AI Pet Fitting Platform",
     "titleLine1": "Click Click,",
     "titleLine2": "Virtual Fitting Space",
     "title": "Click Click, Virtual Fitting Space",
@@ -38,19 +38,19 @@
       {
         "id": "overview",
         "title": "What Is HAMDEVA",
-        "description": "HAMDEVA is an AI virtual fitting platform built to preview outfits fast. Traditional clothing is one sample category inside a broader fitting experience.",
+        "description": "HAMDEVA is a digital pet fitting service for dogs and cats. Upload a pet photo, add an outfit image, and preview cute pet looks in seconds.",
         "button": "Learn more →"
       },
       {
         "id": "technology",
-        "title": "How AI Virtual Try-On Works",
-        "description": "A face photo keeps identity stable, and an outfit image drives the styling result. HAMDEVA returns a clean fitting preview in seconds.",
+        "title": "How Pet Fitting Works",
+        "description": "A pet photo keeps breed and coat identity stable, and an outfit image guides the final styling result. HAMDEVA returns a clear pet outfit preview in seconds.",
         "button": "Learn more →"
       },
       {
         "id": "cultural",
         "title": "How Sample Outfits Work",
-        "description": "Traditional outfits, country looks, and other sample styles are ready to test inside the AI fitting flow. Pick a look and see it instantly on a face image.",
+        "description": "Sample outfits help you compare pet costume moods, traditional looks, and themed styles before deciding what to try next.",
         "button": "Learn more →"
       }
     ],
@@ -64,13 +64,13 @@
     ]
   },
   "homeSeo": {
-    "title": "AI Virtual Fitting with HAMDEVA",
+    "title": "AI Pet Fitting with HAMDEVA",
     "introParagraphs": [
-      "HAMDEVA is a digital fashion platform built around AI virtual fitting technology so users can explore many kinds of outfits online. After uploading a face photo or choosing a sample image, users can combine it with a clothing image and generate a result that shows the style naturally from multiple angles. The service is not limited to simple image generation. It connects fashion discovery, cultural outfit exploration, traditional style comparison, and digital styling experiments in one experience. In online shopping and content creation environments, people often cannot try clothing on in person, so virtual fitting gives them stronger visual confidence before making a decision.",
-      "Users can upload their own face photo or choose a sample image, apply different outfit styles, and quickly compare the generated results. The flow is designed so people do not need to learn complicated editing tools before they can experiment. It also makes it easier to explore categories that are hard to compare in one place in a typical shopping environment, such as traditional clothing, representative outfits from different countries, modern fashion, and concept looks. That makes the experience useful not only for entertainment, but also for understanding which mood, silhouette, and styling direction fits the user best.",
-      "The homepage is intended to work as a real publisher page, not just a loading screen before the tool. It explains what virtual fitting is, who it helps, how garment references affect quality, why traditional clothing benefits from more context, and what users should keep in mind when reading AI-generated previews. That extra explanation matters for people who are encountering the category for the first time and want practical guidance before they start clicking buttons.",
-      "HAMDEVA also approaches outfit exploration as a comparison problem. People often do not need a final answer immediately. They need to narrow options, compare silhouettes, assess whether a look matches a mood or event, and decide if a garment deserves more serious consideration. AI fitting becomes more valuable when it is paired with descriptive content, sample pages, FAQs, and clear expectations about what the result can and cannot guarantee.",
-      "For cultural and traditional garments, explanation is especially important. A visitor may arrive with limited background knowledge about Hanbok, Kimono, Qipao, Saree, Ao Dai, or other dress traditions. By combining a visual tool with readable page content, HAMDEVA aims to provide a more informative experience that supports discovery, respect, and better visual judgment rather than presenting clothing only as decoration."
+      "HAMDEVA is a digital pet fitting service for dogs and cats. Users upload a pet photo, add an outfit image, and generate a pet outfit preview to compare style ideas before saving, sharing, or buying anything in the real world.",
+      "The service is built for playful planning, themed shoots, holiday costumes, social media images, and quick visual comparison. It does not sell physical clothing on the site itself. Instead, it sells digital credits that can be used to create pet fitting previews.",
+      "HAMDEVA works best as an early decision tool. A user may want to know whether a holiday costume feels too busy, whether a traditional look suits the pet's fur color, or whether a softer style reads better on camera. The preview helps narrow that decision fast.",
+      "The site also includes pages for sample outfits, pet style guidance, and practical fitting tips so visitors can understand what the service does before they open the generator. That makes the homepage useful as an introduction page, not just a blank tool entry point.",
+      "The result should be read as a synthetic pet outfit preview, not as a guarantee of exact real-world fit. The strongest use case is visual comparison: deciding what look, mood, or styling direction is worth trying next."
     ],
     "whyTitle": "Why Virtual Fitting?",
     "whyBody": "Virtual fitting technology is becoming an important tool in online fashion environments. Users can evaluate styles without physically wearing the clothes and can explore a broader range of fashion and cultural outfits. It also helps brands, content creators, and educational platforms publish more explanatory content, which strengthens SEO. A user may search for a specific clothing style or cultural garment, arrive at HAMDEVA through that content, and then continue directly into an interactive fitting experience. That combination of search-friendly information and hands-on functionality is one of the core values of the service.",
@@ -329,7 +329,7 @@
     },
     "pricing": {
       "title": "Pricing",
-      "description": "Compare HAMDEVA credit packs, pricing, and estimated generation counts in one place.",
+      "description": "Compare HAMDEVA credit packs, pricing, estimated generation counts, and the key billing information for this digital pet fitting service.",
       "sections": [
         {
           "heading": "How credits work",
@@ -339,10 +339,24 @@
           ]
         },
         {
+          "heading": "What you are buying",
+          "paragraphs": [
+            "HAMDEVA sells digital credit packs for pet outfit preview generation. These credits are used inside the service to create AI-generated pet fitting results.",
+            "HAMDEVA does not use this page to sell physical garments, shipping services, or offline fitting appointments. The product on this page is a digital credit balance for online pet fitting previews."
+          ]
+        },
+        {
           "heading": "Why this page exists",
           "paragraphs": [
             "This page is a lightweight pricing guide for users who want to compare pack size, sale price, and estimated generation count without opening a full checkout screen.",
             "It is meant to help you scan the options fast and then continue into My Page or the credit purchase flow when needed."
+          ]
+        },
+        {
+          "heading": "Billing and support",
+          "paragraphs": [
+            "For payment questions, billing review, or technical issues related to credit delivery, contact HAMDEVA support at dlgksxk@gmail.com.",
+            "For card transactions, Paddle may appear as the merchant of record and billing contact on the payment record."
           ]
         },
         {
@@ -460,7 +474,7 @@
           "heading": "Payment review cases",
           "paragraphs": [
             "If a payment was completed by mistake, charged more than once, or affected by a technical issue, users should contact support with the account email, payment time, and a short description of the issue.",
-            "Support review is required before any exception can be considered."
+            "Support review is required before any exception can be considered. For billing-related reviews, users can contact dlgksxk@gmail.com."
           ]
         },
         {
@@ -504,6 +518,7 @@
           "heading": "Support and contact",
           "paragraphs": [
             "For support, partnership questions, or content feedback, users can contact HAMDEVA through the support form and the published support email on this page.",
+            "The main support contact for HAMDEVA is dlgksxk@gmail.com.",
             "When reporting a problem, include the action you attempted and the message shown on screen. Clear details make technical support and quality review much faster.",
             "Well-written support requests help the platform improve both technical stability and content quality over time."
           ]
@@ -511,9 +526,16 @@
         {
           "heading": "Service scope",
           "paragraphs": [
-            "HAMDEVA is offered as a digital fashion and content service. Features, sample collections, informational pages, and generation workflows may evolve over time as the site grows.",
-            "The presence of a garment sample, article, or visual example on the site does not automatically mean a physical product is sold, stocked, or guaranteed by HAMDEVA itself.",
+            "HAMDEVA is offered as a digital pet fitting and content service. Features, sample collections, informational pages, and generation workflows may evolve over time as the site grows.",
+            "The presence of a garment sample, article, or visual example on the site does not automatically mean a physical product is sold, stocked, or guaranteed by HAMDEVA itself. The service primarily provides digital previews and digital credit-based generation.",
             "Users should interpret the public pages as guidance and exploration resources unless a specific commercial relationship is explicitly stated."
+          ]
+        },
+        {
+          "heading": "Business and billing identity",
+          "paragraphs": [
+            "HAMDEVA operates this website as a digital service brand focused on AI pet outfit previews for dogs and cats.",
+            "For some payment transactions, Paddle may act as the merchant of record and process the payment on behalf of the service."
           ]
         },
         {
@@ -534,6 +556,7 @@
           "heading": "Support",
           "paragraphs": [
             "Use the contact form or direct email for product issues, article feedback, or partnership discussions.",
+            "The main support email for HAMDEVA is dlgksxk@gmail.com.",
             "We review messages related to AI quality, cultural content, and platform support.",
             "The contact page is intended to help visitors understand what kinds of inquiries are appropriate and how to write a message that can be reviewed efficiently."
           ]
