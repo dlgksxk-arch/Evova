@@ -59,6 +59,22 @@ const inferFileExtension = (item: GenerationRecord): string => {
   const match = item.imageUrl?.match(/\.([a-z0-9]+)(?:\?|$)/i);
   return match?.[1] || 'png';
 };
+
+const createShareImageFile = async (url: string, item: GenerationRecord): Promise<File> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('SHARE_IMAGE_FETCH_FAILED');
+  }
+
+  const blob = await response.blob();
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('SHARE_IMAGE_INVALID');
+  }
+
+  const extension = inferFileExtension(item);
+  return new File([blob], `hamdeva-history-${item.id}.${extension}`, { type: blob.type });
+};
+
 const getHistoryCopy = (locale: string) => {
   if (locale.startsWith('ko')) {
     return {
@@ -153,6 +169,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [isImageReady, setIsImageReady] = useState(false);
   const [zoom, setZoom] = useState(0.5);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -273,6 +290,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageLoading(false);
     setIsImageReady(false);
     setZoom(0.5);
+    setShareStatus(null);
   };
 
   const startImageLoading = () => {
@@ -344,7 +362,53 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
     setSelectedItem(item);
     setZoom(0.5);
+    setShareStatus(null);
     startImageLoading();
+  };
+
+  const handleShareSelected = async () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    try {
+      if (navigator.share) {
+        const sharePayload = {
+          title: 'HAMDEVA | Pet Fitting Result',
+          text: copy.shareDefaultText || copy.share,
+          url: selectedItem.imageUrl,
+        };
+
+        try {
+          const shareFile = await createShareImageFile(selectedItem.imageUrl, selectedItem);
+          if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [shareFile] })) {
+            await navigator.share({
+              ...sharePayload,
+              files: [shareFile],
+            });
+            setShareStatus(null);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to attach history image to share payload:', error);
+        }
+
+        await navigator.share(sharePayload);
+        setShareStatus(null);
+        return;
+      }
+
+      await navigator.clipboard.writeText(selectedItem.imageUrl);
+      setShareStatus(copy.linkCopied);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      console.error('Failed to share history image:', error);
+      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
+    }
   };
 
   useEffect(() => {
@@ -554,7 +618,17 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         </div>
                       </div>
                       <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
-                        <strong>{historyCopy.resultLabel}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                          <strong>{historyCopy.resultLabel}</strong>
+                          <button
+                            className="outline-btn auth-inline-btn"
+                            disabled={!selectedItem.imageUrl}
+                            onClick={() => { void handleShareSelected(); }}
+                            type="button"
+                          >
+                            {copy.share}
+                          </button>
+                        </div>
                         <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
                           {historyCopy.resultPreview}
                         </span>
@@ -599,6 +673,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         {!isImageLoading ? (
                           <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
                             {copy.historyZoomHint}
+                          </div>
+                        ) : null}
+                        {shareStatus ? (
+                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
+                            {shareStatus}
                           </div>
                         ) : null}
                       </div>
