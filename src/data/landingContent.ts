@@ -133,7 +133,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
       title: 'HAMDEVA',
-      subtitle: '반려동물 옷입혀보기를 몇 초 안에 시작해보세요.',
+      subtitle: '',
       body:
         '강아지나 고양이 사진과 의상 이미지로 귀여운 펫 피팅 미리보기를 바로 만들 수 있어요.',
       primaryButton: '펫 피팅 시작',

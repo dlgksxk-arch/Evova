@@ -348,11 +348,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-quick-primary {
-  min-width: 118px;
+  min-width: auto;
   background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 92%, white 8%), var(--primary-hover));
   border: 1px solid color-mix(in srgb, var(--primary-hover) 72%, white 28%);
   color: #fff;
-  box-shadow: 0 6px 16px rgba(255, 77, 184, 0.22);
+  box-shadow: 0 4px 12px rgba(255, 77, 184, 0.18);
 }
 
 .nav-credit-btn {
@@ -374,16 +374,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-quick-buy-btn {
-  min-width: 88px;
-  border-color: color-mix(in srgb, var(--accent-blue) 18%, var(--border));
-  background: color-mix(in srgb, var(--surface) 90%, var(--accent-blue) 10%);
-  color: #15537d;
-  box-shadow: 0 4px 12px rgba(100, 200, 255, 0.1);
+  min-width: auto;
+  padding: 0 12px;
+  border-color: color-mix(in srgb, var(--accent-gold) 22%, var(--border));
+  background: linear-gradient(180deg, #fff4b5 0%, #ffd86a 100%);
+  color: #6a3e00;
+  box-shadow: 0 6px 14px rgba(255, 216, 92, 0.22);
+  font-weight: 800;
 }
 
 .nav-quick-buy-btn:hover {
-  border-color: color-mix(in srgb, var(--accent-blue) 28%, var(--border));
-  background: color-mix(in srgb, var(--surface) 82%, var(--accent-blue) 18%);
+  border-color: color-mix(in srgb, #ffb300 32%, var(--border));
+  background: linear-gradient(180deg, #fff0a1 0%, #ffcf4a 100%);
+  color: #5a3400;
 }
 
 .nav-logo-button {
@@ -4653,12 +4656,16 @@ a { color: inherit; text-decoration: none; }
     padding: 98px 14px 12px;
   }
   .nav-content {
-    min-height: 56px;
-    padding: 0 12px;
-    gap: 8px;
+    min-height: 42px;
+    padding: 0 8px;
+    gap: 4px;
   }
   .nav-brand {
-    gap: 6px;
+    gap: 4px;
+  }
+  .nav-logo {
+    font-size: 15px;
+    letter-spacing: -0.04em;
   }
   .app-version {
     display: none;
@@ -4675,36 +4682,46 @@ a { color: inherit; text-decoration: none; }
   .nav-quick-btn,
   .nav-quick-buy-btn,
   .nav-quick-primary {
-    min-height: 32px;
-    height: 32px;
-    padding: 0 10px;
-    font-size: 11px;
+    min-height: 26px;
+    height: 26px;
+    padding: 0 7px;
+    font-size: 10px;
   }
   .nav-quick-primary {
-    min-width: 104px;
+    min-width: 84px;
   }
   .nav-credit-btn {
-    max-width: 118px;
+    max-width: 92px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .nav-mobile-tools {
-    gap: 6px;
+    gap: 4px;
   }
   .icon-toggle-btn,
   .mobile-menu-toggle {
-    width: 38px;
-    height: 38px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    border-radius: 10px;
   }
   .header-account-trigger {
-    min-height: 32px;
-    height: 32px;
-    padding: 0 10px;
-    font-size: 11px;
+    min-height: 26px;
+    height: 26px;
+    padding: 0 8px;
+    font-size: 10px;
   }
   .header-account-dropdown {
     right: 0;
     min-width: 132px;
+  }
+  .hamburger-icon {
+    width: 12px;
+    height: 10px;
+  }
+  .hamburger-icon span {
+    height: 1.5px;
   }
   .hero-eyebrow {
     min-height: 32px;
@@ -4732,21 +4749,22 @@ a { color: inherit; text-decoration: none; }
   .hero-sub {
     font-size: 14px;
     line-height: 1.45;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
   .hero-cta-group {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
-    gap: 8px;
-    margin-top: 16px;
+    gap: 6px;
+    margin-top: 8px;
   }
   .hero-cta-group .generate-btn,
   .hero-cta-group .outline-btn {
     width: 100%;
     justify-content: center;
-    min-height: 48px;
-    font-size: 14px;
+    min-height: 38px;
+    font-size: 12px;
+    padding: 0 12px;
   }
   .section-copy h2,
   .page-article h2,
@@ -5441,6 +5459,41 @@ a { color: inherit; text-decoration: none; }
 @media (min-width: 1025px) {
   .mobile-menu-toggle {
     display: inline-flex;
+  }
+}
+
+@media (max-width: 560px) {
+  .nav-content {
+    min-height: 36px;
+    padding: 0 6px;
+    gap: 3px;
+  }
+  .nav-logo {
+    font-size: 13px;
+  }
+  .nav-mobile-tools {
+    gap: 3px;
+  }
+  .icon-toggle-btn,
+  .mobile-menu-toggle {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 8px;
+  }
+  .header-account-trigger {
+    min-height: 24px;
+    height: 24px;
+    padding: 0 7px;
+    font-size: 9px;
+  }
+  .hamburger-icon {
+    width: 10px;
+    height: 8px;
+  }
+  .hamburger-icon span {
+    height: 1px;
   }
 }
 
