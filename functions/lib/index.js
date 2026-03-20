@@ -1985,10 +1985,11 @@ const getCheckoutSessionStatus = async (user, sessionId) => {
             return candidateUpdatedAtMillis >= pendingCreatedAtMillis || candidateCreatedAtMillis >= pendingCreatedAtMillis;
         });
         if (matchedPaidDoc) {
+            const refreshedUserSnapshot = await db.collection('users').doc(user.uid).get();
             paymentSnapshot = matchedPaidDoc;
             paymentData = matchedPaidDoc.data() ?? {};
             normalizedStatus = 'success';
-            account = normalizeUserAccount(user.email, userSnapshot.data());
+            account = normalizeUserAccount(user.email, refreshedUserSnapshot.data());
         }
     }
     return {

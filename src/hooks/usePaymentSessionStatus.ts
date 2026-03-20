@@ -33,6 +33,38 @@ export const usePaymentSessionStatus = ({
 
     let cancelled = false;
     let timer: number | null = null;
+    let reloadTimer: number | null = null;
+    const reloadKey = `HAMDEVA-payment-refresh:${paymentSessionId || 'latest'}`;
+
+    const scheduleOneTimeReload = () => {
+      try {
+        if (window.sessionStorage.getItem(reloadKey) === 'done') {
+          return;
+        }
+      } catch {
+        return;
+      }
+
+      if (reloadTimer !== null) {
+        return;
+      }
+
+      reloadTimer = window.setTimeout(() => {
+        try {
+          window.sessionStorage.setItem(reloadKey, 'done');
+        } catch {
+          // Ignore sessionStorage failures and skip the forced reload guard.
+        }
+        window.location.reload();
+      }, 4000);
+    };
+
+    const clearScheduledReload = () => {
+      if (reloadTimer !== null) {
+        window.clearTimeout(reloadTimer);
+        reloadTimer = null;
+      }
+    };
 
     const poll = async () => {
       try {
@@ -64,6 +96,7 @@ export const usePaymentSessionStatus = ({
         }
 
         if (response.status === 'success') {
+          clearScheduledReload();
           try {
             const bootstrapResponse = await callCreditBootstrap(currentUser);
 
@@ -85,11 +118,13 @@ export const usePaymentSessionStatus = ({
         }
 
         if (response.status === 'failed') {
+          clearScheduledReload();
           setPaymentStatusMessage(statusMessages.failed);
           return;
         }
 
         setPaymentStatusMessage(statusMessages.verifying);
+        scheduleOneTimeReload();
         timer = window.setTimeout(() => {
           void poll();
         }, 2500);
@@ -106,6 +141,7 @@ export const usePaymentSessionStatus = ({
 
     return () => {
       cancelled = true;
+      clearScheduledReload();
       if (timer !== null) {
         window.clearTimeout(timer);
       }
