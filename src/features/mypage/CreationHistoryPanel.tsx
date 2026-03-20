@@ -378,22 +378,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
     try {
       if (navigator.share) {
-        const sharePayload = {
-          title: 'HAMDEVA | Pet Fitting Result',
-          text: copy.shareDefaultText || copy.share,
-          url: selectedItem.imageUrl,
-        };
-
         if (preparedShareFile && (!navigator.canShare || navigator.canShare({ files: [preparedShareFile] }))) {
-          await navigator.share({
-            ...sharePayload,
-            files: [preparedShareFile],
-          });
+          await navigator.share({ files: [preparedShareFile] });
           setShareStatus(null);
           return;
         }
 
-        await navigator.share(sharePayload);
+        await navigator.share({ url: selectedItem.imageUrl });
         setShareStatus(null);
         return;
       }

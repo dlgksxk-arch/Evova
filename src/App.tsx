@@ -4517,20 +4517,11 @@ const App: React.FC = () => {
 
     if (navigator.share) {
       try {
-        const sharePayload = {
-          title: 'HAMDEVA | AI Pet Outfit Generator',
-          text: t.shareDefaultText,
-          url: resolvedTargetUrl,
-        };
-
         if (shareImageSrc) {
           try {
             const shareFile = await createShareImageFile(shareImageSrc);
             if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [shareFile] })) {
-              await navigator.share({
-                ...sharePayload,
-                files: [shareFile],
-              });
+              await navigator.share({ files: [shareFile] });
               return;
             }
           } catch (error) {
@@ -4538,7 +4529,7 @@ const App: React.FC = () => {
           }
         }
 
-        await navigator.share(sharePayload);
+        await navigator.share({ url: resolvedTargetUrl });
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -4567,23 +4558,12 @@ const App: React.FC = () => {
       kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
-          title: 'HAMDEVA | AI Pet Outfit Generator',
-          description: 'Upload your pet photo and outfit image to generate an AI pet fitting preview in seconds.',
           imageUrl: shareImageSrc,
           link: {
             mobileWebUrl: resolvedTargetUrl,
             webUrl: resolvedTargetUrl,
           },
         },
-        buttons: [
-          {
-            title: 'Open Image',
-            link: {
-              mobileWebUrl: resolvedTargetUrl,
-              webUrl: resolvedTargetUrl,
-            },
-          },
-        ],
       });
     } catch (error) {
       console.error('Failed to share on Kakao:', error);
