@@ -278,6 +278,70 @@ const getAboutVisualCopy = (lang: LanguageCode) => {
     ],
   };
 };
+const getStyleGuideVisualCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      eyebrow: 'PET STYLE GUIDE',
+      title: '반려동물 의상을 고를 때 먼저 보면 좋은 기준',
+      body: '펫 스타일 가이드는 어떤 의상이 사진에서 잘 보이는지, 언제 코트가 필요한지, 어떤 룩이 과해지기 쉬운지를 빠르게 훑어보게 도와주는 페이지입니다.',
+      petLabel: '펫 기준 사진',
+      outfitLabel: '의상 기준 이미지',
+      resultLabel: '비교용 결과',
+      cards: [
+        { title: '계절과 체온', body: '짧은 털, 작은 체구, 젖은 산책 환경에서는 보온 의상이 더 필요할 수 있고, 더운 날씨에는 장식보다 통기성과 과열 방지가 우선입니다.' },
+        { title: '핏과 움직임', body: '움직임을 막거나 목, 가슴, 다리 주변을 과하게 조이는 옷은 사진상으로도 답답해 보이기 쉽습니다. 눈으로 보기만 예쁜지, 움직이기에도 편해 보이는지 함께 봐야 합니다.' },
+        { title: '강아지와 고양이 차이', body: '강아지는 산책·야외 상황을 먼저 고려하는 경우가 많고, 고양이는 실내 적응과 거부감 여부를 더 먼저 보는 편이 좋습니다.' },
+        { title: '사진에서 잘 보이는 룩', body: '얼굴 주변이 너무 복잡하지 않고, 몸통 실루엣과 장식 위치가 분명한 의상일수록 결과 비교가 쉽고 공유 이미지로도 보기 좋습니다.' },
+      ],
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      eyebrow: 'PET STYLE GUIDE',
+      title: 'ペット衣装を選ぶ前に見ておきたい基準',
+      body: 'このページは、どんな衣装が写真で見やすいか、どんな時に防寒が必要か、どこから過剰になりやすいかを先に整理するためのガイドです。',
+      petLabel: 'ペット基準写真',
+      outfitLabel: '衣装基準画像',
+      resultLabel: '比較用結果',
+      cards: [
+        { title: '季節と体温', body: '短毛、小型、寒い日や濡れた散歩では保温が役立つ場合があり、暑い日は見た目より通気性と熱のこもりに注意が必要です。' },
+        { title: 'フィットと動き', body: '首、胸、脚まわりを締めすぎる服は、見た目だけでなく動きやすさの面でも不利です。' },
+        { title: '犬と猫の違い', body: '犬は屋外や散歩条件、猫は室内適応とストレスの少なさを先に考えると判断しやすくなります。' },
+        { title: '写真で見やすいルック', body: '顔まわりが重すぎず、輪郭と装飾位置が読みやすい服ほど比較しやすくなります。' },
+      ],
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      eyebrow: 'PET STYLE GUIDE',
+      title: '给宠物选衣服前先看这些标准',
+      body: '这页会先帮你整理：什么衣服在照片里更好看、什么时候更需要保暖、什么造型容易看起来过重。',
+      petLabel: '宠物参考照片',
+      outfitLabel: '服装参考图片',
+      resultLabel: '对比结果',
+      cards: [
+        { title: '季节与体温', body: '短毛、小体型、寒冷或潮湿环境下更可能需要保暖；天气热时则应优先避免闷热和过热。' },
+        { title: '版型与活动', body: '过紧或限制颈部、胸口、腿部活动的衣服，不只不舒服，照片里也容易显得别扭。' },
+        { title: '狗和猫的差异', body: '狗更常先考虑散步与户外环境，猫则更需要优先考虑室内适应和抗拒程度。' },
+        { title: '更适合拍照的造型', body: '脸部周围不过于复杂、身体轮廓清楚、装饰位置明确的服装，更适合做预览和分享。' },
+      ],
+    };
+  }
+  return {
+    eyebrow: 'PET STYLE GUIDE',
+    title: 'Practical filters for better pet outfit ideas',
+    body: 'This page helps you judge which outfits are easier to read in photos, when warmth matters, and which styling choices look cute without becoming too much.',
+    petLabel: 'Pet reference',
+    outfitLabel: 'Outfit reference',
+    resultLabel: 'Preview result',
+    cards: [
+      { title: 'Season and temperature', body: 'Short-haired or smaller pets may need more warmth in cold conditions, while hot weather makes breathability and overheating risk more important than decoration.' },
+      { title: 'Fit and movement', body: 'Outfits that squeeze the neck, chest, or legs can look awkward in photos and feel restrictive in real use. Style works best when it still looks easy to move in.' },
+      { title: 'Dog vs. cat context', body: 'Dogs are often evaluated around walks and weather, while cats usually need more emphasis on indoor comfort and tolerance.' },
+      { title: 'What reads well on camera', body: 'Cleaner face framing, visible body shape, and readable trim placement usually create stronger previews and better shareable images.' },
+    ],
+  };
+};
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -360,7 +424,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: '반려동물 사진 업로드', h1Desc: '강아지나 고양이가 잘 보이는 사진을 업로드하세요. 배경이 단순하고 자세가 분명하면 결과 품질이 높아집니다.',
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
-    tryTitle: '지금 바로 시작해보세요', trySub: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
+    tryTitle: '지금 바로 시작해보세요', trySub: '회원가입 시 300 크레딧이 한 번 지급됩니다.',
     step1Label: 'Step 1', step1Title: '반려동물 사진 등록', step1Desc: '반려동물이 잘 보이는 사진을 선택하거나 샘플을 불러오세요',
     step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입혀보고 싶은 의상 사진을 선택하거나 샘플 의상을 골라보세요',
     faceCopyrightNotice: '',
@@ -429,23 +493,23 @@ const translations = {
     switchToSignup: '계정이 없나요? 회원가입',
     switchToLogin: '이미 계정이 있나요? 로그인',
     authRequired: '생성을 계속하려면 로그인해 주세요.',
-    loginForFree: '회원가입 시 300 크레딧, 매일 로그인 시 100 크레딧이 지급됩니다.',
+    loginForFree: '회원가입 시 300 크레딧이 한 번 지급됩니다.',
     credits: '크레딧',
     currentCredits: (n: number) => `현재 보유 크레딧: ${n}`,
-    dailyCreditLabel: '오늘 무료 크레딧',
+    dailyCreditLabel: '무료 크레딧',
     paidCreditLabel: '유료 크레딧',
     totalCreditLabel: '총 크레딧',
     generationCost: '1회 생성 = 100 크레딧',
     generationCostDetailed: (n: number) => `1회 생성 = ${n} 크레딧`,
     signUpGetCredits: '회원가입하고 300 크레딧 받기',
-    dailyLoginCredits: '매일 로그인하면 100 크레딧 지급',
-    subscriptionCreditBonus: '구독 시 매일 추가 크레딧 지급',
+    dailyLoginCredits: '매일 로그인 크레딧 없음',
+    subscriptionCreditBonus: '구독 추가 크레딧은 준비 중',
     notEnoughCredits: '크레딧이 부족합니다.',
     refundedAfterFailure: '이미지 생성에 실패하여 100 크레딧이 환불되었습니다.',
     paymentConfigError: '결제 설정이 아직 완료되지 않았습니다. 잠시 후 다시 시도해 주세요.',
     duplicateRequestBlocked: '이미 생성 요청이 처리 중입니다. 잠시 후 다시 시도해 주세요.',
-    todayDailyRewardGranted: '오늘의 100 크레딧이 지급되었습니다.',
-    todayDailyRewardAlreadyClaimed: '오늘은 이미 일일 크레딧을 받았습니다.',
+    todayDailyRewardGranted: '',
+    todayDailyRewardAlreadyClaimed: '',
     subscriptionBonusGranted: (n: number) => `구독 보너스 ${n} 크레딧이 추가 지급되었습니다.`,
     signupBonusGranted: (n: number) => `회원가입 보너스 ${n} 크레딧이 지급되었습니다.`,
     viewSubscription: '구독 보기',
@@ -519,6 +583,7 @@ const translations = {
     adminUserSearchLabel: '사용자 검색',
     adminUserSearchPlaceholder: 'uid / email / displayName',
     adminUserSearchHint: 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.',
+    adminMemberListSearchHint: '회원 리스트에서는 이메일이 등록된 실제 회원만 검색 결과에 표시합니다.',
     adminUserListLoading: '사용자 목록을 불러오는 중입니다...',
     adminUserListLoadingMore: '불러오는 중...',
     adminUserSearchEmpty: '검색 결과가 없습니다.',
@@ -601,7 +666,7 @@ const translations = {
     noHistory: '아직 생성된 결과가 없습니다.',
     faqTitle: '자주 묻는 질문', faqSub: 'HAMDEVA 사용에 대한 궁금증을 해결해 드립니다.',
     faqs: [
-      { q: '크레딧은 어떻게 지급되나요?', a: '회원가입 시 300 크레딧이 지급되고, 이후에는 매일 로그인 시 100 크레딧이 추가됩니다. 구독자는 플랜에 따라 추가 일일 크레딧을 받을 수 있습니다.' },
+      { q: '크레딧은 어떻게 지급되나요?', a: '회원가입 시 300 크레딧이 한 번 지급됩니다. 현재는 매일 로그인 보너스는 제공하지 않습니다.' },
       { q: '어떤 사진을 올려야 가장 좋은 결과가 나오나요?', a: '반려동물 사진은 배경이 단순하고 얼굴과 상반신이 잘 보이는 정면 사진을 권장합니다. 의상 사진은 제품 단독 컷이나 착용 예시 이미지가 적합합니다.' },
       { q: '합성 결과가 마음에 들지 않으면 어떻게 하나요?', a: '다른 사진으로 다시 시도해보세요. 반려동물 사진의 배경이 단순할수록, 의상 사진이 선명할수록 더 좋은 결과가 나옵니다.' },
       { q: '모바일에서도 사용할 수 있나요?', a: '네. HAMDEVA는 모바일 퍼스트로 설계되어 스마트폰과 태블릿에서도 최적화된 환경을 제공합니다.' },
@@ -674,7 +739,7 @@ const translations = {
     h1Step: 'Step 01', h1Title: 'Upload Your Pet Photo', h1Desc: 'Upload a clear photo of your dog or cat. A simple background and visible pose improve result quality.',
     h2Step: 'Step 02', h2Title: 'Upload Clothing', h2Desc: 'Upload the outfit you want to try on. Product shots or model photos both work well.',
     h3Step: 'Step 03', h3Title: 'Generate & Save', h3Desc: 'Hit the Generate button and the result is ready in seconds. Download it right away.',
-    tryTitle: 'Start Now', trySub: 'Get 300 credits on sign-up and 100 more credits every day you log in.',
+    tryTitle: 'Start Now', trySub: 'Get 300 credits once when you sign up.',
     step1Label: 'Step 1', step1Title: 'Upload Pet Photo', step1Desc: 'Drag or click to upload a clear photo of your dog or cat',
     step2Label: 'Step 2', step2Title: 'Upload Clothing Photo', step2Desc: 'Drag or click to upload the outfit you want to try on',
     faceCopyrightNotice: 'Do not upload pet photos or images you do not have permission to use.',
@@ -743,23 +808,23 @@ const translations = {
     switchToSignup: "Don't have an account? Sign up",
     switchToLogin: 'Already have an account? Log in',
     authRequired: 'Please log in to continue generation.',
-    loginForFree: 'Get 300 credits on sign-up and 100 daily credits when you log in.',
+    loginForFree: 'Get 300 credits once when you sign up.',
     credits: 'Credits',
     currentCredits: (n: number) => `Current credits: ${n}`,
-    dailyCreditLabel: 'Free today',
+    dailyCreditLabel: 'Free credits',
     paidCreditLabel: 'Paid credits',
     totalCreditLabel: 'Total credits',
     generationCost: '1 generation = 100 credits',
     generationCostDetailed: (n: number) => `1 generation = ${n} credits`,
     signUpGetCredits: 'Sign up and get 300 credits',
-    dailyLoginCredits: 'Get 100 daily credits',
-    subscriptionCreditBonus: 'Subscribers can get extra daily credits',
+    dailyLoginCredits: 'No daily login credits',
+    subscriptionCreditBonus: 'Extra subscription credits are coming soon',
     notEnoughCredits: 'Not enough credits.',
     refundedAfterFailure: '100 credits refunded due to generation failure.',
     paymentConfigError: 'Payments are not configured yet. Please try again later.',
     duplicateRequestBlocked: 'A generation request is already being processed. Please try again shortly.',
-    todayDailyRewardGranted: 'Today’s 100 credits have been added.',
-    todayDailyRewardAlreadyClaimed: 'Today’s daily credits were already claimed.',
+    todayDailyRewardGranted: '',
+    todayDailyRewardAlreadyClaimed: '',
     subscriptionBonusGranted: (n: number) => `${n} subscription bonus credits were added.`,
     signupBonusGranted: (n: number) => `${n} sign-up bonus credits were added.`,
     viewSubscription: 'View subscription',
@@ -770,7 +835,7 @@ const translations = {
     siteCreditCostLabel: 'Generation cost',
     authSignupCreditsHint: 'Sign up and get 300 credits',
     chargeCredits: 'Buy credits',
-    chargeDescription: 'Daily free credits are used first. Paid credits are used only when the free balance is insufficient.',
+    chargeDescription: 'Free credits are used first. Paid credits are used only when the free balance is insufficient.',
     purchaseNow: 'Purchase',
     paymentRedirecting: 'Opening checkout...',
     paymentSuccessTitle: 'Payment completed',
@@ -833,6 +898,7 @@ const translations = {
     adminUserSearchLabel: 'User search',
     adminUserSearchPlaceholder: 'uid / email / displayName',
     adminUserSearchHint: 'Supports uid, email, nickname, or displayName prefix search. Without a query, it loads the latest 20 users.',
+    adminMemberListSearchHint: 'The member list only shows registered users with an email account.',
     adminUserListLoading: 'Loading user list...',
     adminUserListLoadingMore: 'Loading...',
     adminUserSearchEmpty: 'No matching users found.',
@@ -915,7 +981,7 @@ const translations = {
     noHistory: 'No saved generations yet.',
     faqTitle: 'FAQ', faqSub: 'Everything you need to know about HAMDEVA.',
     faqs: [
-      { q: 'How do credits work?', a: 'You get 300 credits when you sign up and 100 more credits each day you log in. Subscribers can receive additional daily credits based on their plan.' },
+      { q: 'How do credits work?', a: 'You get 300 credits once when you sign up. Daily login bonus credits are not currently provided.' },
       { q: 'What kind of photos work best?', a: 'For pet photos, use a front-facing shot with a simple background where your dog or cat is easy to see. For outfits, solo product shots work best.' },
       { q: "What if I don't like the result?", a: "Try again with different photos. Simpler backgrounds and clearer clothing images produce better results." },
       { q: 'Can I use it on mobile?', a: 'Yes. HAMDEVA is mobile-first and fully optimized for smartphones and tablets.' },
@@ -1064,20 +1130,20 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '分享宠物试穿结果',
     sharedResultDescription: '查看 HAMDEVA 生成结果，下载图片，或再次尝试其他服装。',
     loadingSharedResult: '正在加载分享结果...',
-    loginForFree: '注册可获得 300 积分，每日登录再获得 100 积分。',
+    loginForFree: '注册时一次性获得 300 积分。',
     credits: '积分',
     currentCredits: (n: number) => `当前积分：${n}`,
     totalCreditLabel: '总积分',
     generationCost: '1 次生成 = 100 积分',
     generationCostDetailed: (n: number) => `1 次生成 = ${n} 积分`,
     signUpGetCredits: '注册并领取 300 积分',
-    dailyLoginCredits: '每日登录可获得 100 积分',
-    subscriptionCreditBonus: '订阅后可获得额外每日积分',
+    dailyLoginCredits: '目前没有每日登录积分',
+    subscriptionCreditBonus: '订阅额外积分即将开放',
     notEnoughCredits: '积分不足。',
     refundedAfterFailure: '由于生成失败，100 积分已退回。',
     duplicateRequestBlocked: '生成请求正在处理中，请稍后再试。',
-    todayDailyRewardGranted: '今天的 100 积分已发放。',
-    todayDailyRewardAlreadyClaimed: '今天的每日积分已领取。',
+    todayDailyRewardGranted: '',
+    todayDailyRewardAlreadyClaimed: '',
     subscriptionBonusGranted: (n: number) => `已额外发放 ${n} 订阅奖励积分。`,
     signupBonusGranted: (n: number) => `已发放 ${n} 注册奖励积分。`,
     viewSubscription: '查看订阅',
@@ -1117,8 +1183,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminModel: '模型',
     adminNoData: '暂无可显示的数据。',
     adminDeletePost: '删除帖子',
-    freeLeft: (n: number) => `今日剩余免费次数：${n}`,
-    freeExhausted: '你今天的 3 次免费试穿已全部用完。',
+    freeLeft: (n: number) => `当前积分：${n}`,
+    freeExhausted: '积分不足。',
     renderingResult: '正在渲染结果图...',
     resultDisplayError: '无法显示结果图。',
     clothingSamplesPending: '示例服装数据正在准备中。',
@@ -1228,20 +1294,20 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     sharedResultTitle: '共有されたペット試着結果',
     sharedResultDescription: 'HAMDEVA の生成結果を表示し、保存したり別の衣装を試したりできます。',
     loadingSharedResult: '共有結果を読み込み中...',
-    loginForFree: '新規登録で 300 クレジット、毎日ログインで 100 クレジットを受け取れます。',
+    loginForFree: '新規登録時に 300 クレジットを一度だけ受け取れます。',
     credits: 'クレジット',
     currentCredits: (n: number) => `現在のクレジット: ${n}`,
     totalCreditLabel: '合計クレジット',
     generationCost: '1 回の生成 = 100 クレジット',
     generationCostDetailed: (n: number) => `1 回の生成 = ${n} クレジット`,
     signUpGetCredits: '登録して 300 クレジットを受け取る',
-    dailyLoginCredits: '毎日ログインで 100 クレジット',
-    subscriptionCreditBonus: '購読すると毎日追加クレジット',
+    dailyLoginCredits: '毎日ログインクレジットはありません',
+    subscriptionCreditBonus: '購読追加クレジットは準備中です',
     notEnoughCredits: 'クレジットが不足しています。',
     refundedAfterFailure: '生成に失敗したため 100 クレジットが返金されました。',
     duplicateRequestBlocked: '生成リクエストはすでに処理中です。少し待ってから再試行してください。',
-    todayDailyRewardGranted: '本日の 100 クレジットが付与されました。',
-    todayDailyRewardAlreadyClaimed: '本日のデイリークレジットはすでに受け取り済みです。',
+    todayDailyRewardGranted: '',
+    todayDailyRewardAlreadyClaimed: '',
     subscriptionBonusGranted: (n: number) => `購読ボーナス ${n} クレジットが追加されました。`,
     signupBonusGranted: (n: number) => `登録ボーナス ${n} クレジットが付与されました。`,
     viewSubscription: '購読を見る',
@@ -1281,8 +1347,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     adminModel: 'モデル',
     adminNoData: '表示できるデータがありません。',
     adminDeletePost: '投稿を削除',
-    freeLeft: (n: number) => `本日の無料利用残り回数: ${n}`,
-    freeExhausted: '本日の無料 3 回分をすべて使いました。',
+    freeLeft: (n: number) => `現在のクレジット: ${n}`,
+    freeExhausted: 'クレジットが不足しています。',
     renderingResult: '結果画像を描画中...',
     resultDisplayError: '結果画像を表示できません。',
     clothingSamplesPending: '服サンプルは準備中です。',
@@ -3155,6 +3221,7 @@ const App: React.FC = () => {
   const purchasePauseCopy = getPurchasePauseCopy(lang);
   const homeQuickCopy = getHomeQuickCopy(lang);
   const aboutVisualCopy = getAboutVisualCopy(lang);
+  const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
   const petBreedGuideGroups = (['dog', 'cat'] as FaceCategory[]).map((category) => ({
     category,
@@ -5452,6 +5519,60 @@ const App: React.FC = () => {
                   </div>
                   <div className="about-story-card-grid">
                     {aboutVisualCopy.cards.map((card) => (
+                      <article key={card.title} className="compact-info-card about-story-card">
+                        <h3>{card.title}</h3>
+                        <p>{card.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            )}
+
+            {currentPage === 'fashion-technology' && (
+              <article className="page-article about-visual-article">
+                <div className="howto-visual-header">
+                  <span className="howto-visual-eyebrow">{styleGuideVisualCopy.eyebrow}</span>
+                  <h2>{styleGuideVisualCopy.title}</h2>
+                  <p>{styleGuideVisualCopy.body}</p>
+                </div>
+                <div className="about-visual-grid">
+                  <div className="howto-visual-flow about-visual-flow">
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">1</span>
+                        <strong>{styleGuideVisualCopy.petLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.petLabel}</span>
+                        <img src={guideFixedPet} alt={styleGuideVisualCopy.petLabel} loading="lazy" />
+                      </div>
+                    </article>
+                    <div className="howto-flow-arrow">→</div>
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">2</span>
+                        <strong>{styleGuideVisualCopy.outfitLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.outfitLabel}</span>
+                        <img src={guideFixedCloth} alt={styleGuideVisualCopy.outfitLabel} loading="lazy" />
+                      </div>
+                    </article>
+                    <div className="howto-flow-arrow">→</div>
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">3</span>
+                        <strong>{styleGuideVisualCopy.resultLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.resultLabel}</span>
+                        <img src={guideFixedResult} alt={styleGuideVisualCopy.resultLabel} loading="lazy" />
+                      </div>
+                    </article>
+                  </div>
+                  <div className="about-story-card-grid">
+                    {styleGuideVisualCopy.cards.map((card) => (
                       <article key={card.title} className="compact-info-card about-story-card">
                         <h3>{card.title}</h3>
                         <p>{card.body}</p>

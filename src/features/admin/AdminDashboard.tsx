@@ -355,6 +355,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [statusMessage]);
 
   const selectedUserSummary = users.find((item) => item.uid === selectedUserId) ?? null;
+  const pageMemberUsers = pageUsers.filter((item) => typeof item.email === 'string' && item.email.trim().length > 0);
   const activeDetailUser = userDetail ?? selectedUserSummary ?? giftTarget;
   const activeLogState = activeLogTab === 'generations'
     ? generationLogsState
@@ -644,12 +645,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             copy={copy}
             query={pageUserQuery}
             onQueryChange={setPageUserQuery}
-            hint={copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
+            hint={copy.adminMemberListSearchHint ?? copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
             error={pageUserListError}
             loading={pageUserListLoading}
             loadingMore={pageUserLoadingMore}
             debouncedQuery={pageDebouncedQuery}
-            users={pageUsers}
+            users={pageMemberUsers}
             selectedUserId={selectedUserId}
             hasMore={pageUserHasMore}
             formatTimestampLabel={formatTimestampLabel}

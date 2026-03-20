@@ -38,7 +38,6 @@ const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION
 const MAX_VIDEO_FAILURES_PER_DAY = 3;
 const VIDEO_DIALOGUE_MAX_CHARACTERS = 30;
 const VIDEO_DIALOGUE_ALLOWED_PUNCTUATION = '!?.,';
-const DAILY_CREDIT_AMOUNT = 100;
 const SIGNUP_BONUS_CREDIT_AMOUNT = 300;
 const SEOUL_TIME_ZONE = 'Asia/Seoul';
 const OPENAI_IMAGE_MODEL = process.env['OPENAI_IMAGE_MODEL'] ?? 'gpt-image-1.5';
@@ -494,14 +493,6 @@ const formatSeoulDateKey = (date: Date): string => {
 };
 
 const getTodayKeyInSeoul = (): string => formatSeoulDateKey(new Date());
-
-const timestampToSeoulDateKey = (value: unknown): string | null => {
-  if (value instanceof admin.firestore.Timestamp) {
-    return formatSeoulDateKey(value.toDate());
-  }
-
-  return null;
-};
 
 const normalizeSubscriptionPlan = (value: unknown): SubscriptionPlan => {
   if (value === 'free' || value === 'basic' || value === 'pro') {
@@ -1221,36 +1212,10 @@ const applyDailyResetIfNeeded = (
   user: AuthenticatedUser,
   account: UserAccount,
 ): { account: UserAccount; dailyRewardGranted: number; dailyResetApplied: boolean } => {
-  const todayKey = getTodayKeyInSeoul();
-  const lastDailyResetKey = timestampToSeoulDateKey(account.lastDailyResetAt);
-  if (lastDailyResetKey === todayKey) {
-    return {
-      account,
-      dailyRewardGranted: 0,
-      dailyResetApplied: false,
-    };
-  }
-
-  const nextAccount: UserAccount = {
-    ...account,
-    dailyCredit: DAILY_CREDIT_AMOUNT,
-    credits: DAILY_CREDIT_AMOUNT + account.paidCredit,
-  };
-
-  writeCreditTransaction(transaction, {
-    uid: user.uid,
-    email: user.email || account.email,
-    type: 'daily_reset',
-    amount: DAILY_CREDIT_AMOUNT,
-    balanceDailyAfter: nextAccount.dailyCredit,
-    balancePaidAfter: nextAccount.paidCredit,
-    memo: `daily credit reset ${todayKey}`,
-  });
-
   return {
-    account: nextAccount,
-    dailyRewardGranted: DAILY_CREDIT_AMOUNT,
-    dailyResetApplied: true,
+    account,
+    dailyRewardGranted: 0,
+    dailyResetApplied: false,
   };
 };
 
@@ -2058,25 +2023,52 @@ const refundChargedRequest = async (
 const refundGenerationCharge = async (user: AuthenticatedUser, requestId: string, errorMessage: string): Promise<RefundResult> =>
   refundChargedRequest(user, requestId, errorMessage, 'generationLocks');
 
-const buildWatermarkSvg = (width: number, height: number): Buffer => Buffer.from(`
+const buildWatermarkSvg = (width: number, height: number): Buffer => {
+  const paddingX = 18;
+  const paddingY = 12;
+  const fontSize = Math.max(22, Math.round(width * 0.018));
+  const label = 'hamdeva.com';
+  const estimatedTextWidth = Math.round(label.length * fontSize * 0.58);
+  const badgeWidth = estimatedTextWidth + paddingX * 2;
+  const badgeHeight = fontSize + paddingY * 2;
+  const radius = Math.round(badgeHeight / 2);
+  const x = Math.max(20, width - badgeWidth - 28);
+  const y = Math.max(20, height - badgeHeight - 28);
+  const textX = x + badgeWidth / 2;
+  const textY = y + badgeHeight / 2 + fontSize * 0.34;
+
+  return Buffer.from(`
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="rgba(0,0,0,0.35)"/>
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="rgba(0,0,0,0.28)"/>
     </filter>
   </defs>
   <g filter="url(#shadow)">
+    <rect
+      x="${x}"
+      y="${y}"
+      width="${badgeWidth}"
+      height="${badgeHeight}"
+      rx="${radius}"
+      ry="${radius}"
+      fill="rgba(255,255,255,0.42)"
+      stroke="rgba(255,255,255,0.62)"
+      stroke-width="1.2"
+    />
     <text
-      x="${Math.max(16, width - 150)}"
-      y="${Math.max(16, height - 50)}"
-      font-size="24"
+      x="${textX}"
+      y="${textY}"
+      font-size="${fontSize}"
       font-family="Arial, Helvetica, sans-serif"
       font-weight="700"
+      letter-spacing="0.4"
       text-anchor="middle"
-      fill="#8f361a"
-    >HAMDEVA AI</text>
+      fill="rgba(33,33,33,0.92)"
+    >${label}</text>
   </g>
 </svg>`.trim());
+};
 
 const applyWatermarkToImageBuffer = async (imageBuffer: Buffer): Promise<Buffer> => {
   const image = sharp(imageBuffer);
