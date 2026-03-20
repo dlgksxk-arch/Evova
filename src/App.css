@@ -5618,7 +5618,9 @@ body {
 .nav-quick-buy-btn {
   min-height: 30px;
   height: 30px;
-  padding: 0 10px;
+  min-width: 0;
+  width: auto;
+  padding: 0 9px;
   font-size: 12px;
   font-weight: 800;
   background: linear-gradient(135deg, #ffd65a, #ffb938);
