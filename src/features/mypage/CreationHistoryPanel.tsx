@@ -1,6 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { GenerationRecord } from '../../types/hamdeva';
 
+type KakaoSdk = {
+  isInitialized?: () => boolean;
+  init?: (key: string) => void;
+  Share?: {
+    sendDefault: (payload: Record<string, unknown>) => void;
+  };
+};
+
+declare global {
+  interface Window {
+    Kakao?: KakaoSdk;
+  }
+}
+
 interface CreationHistoryPanelProps {
   items: GenerationRecord[];
   preservedCount: number;
@@ -13,6 +27,8 @@ interface CreationHistoryPanelProps {
 
 const IMAGE_LOAD_MIN_MS = 400;
 const HISTORY_VISIBLE_ROWS = 7;
+const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
+const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -60,19 +76,42 @@ const inferFileExtension = (item: GenerationRecord): string => {
   return match?.[1] || 'png';
 };
 
-const createShareImageFile = async (url: string, item: GenerationRecord): Promise<File> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('SHARE_IMAGE_FETCH_FAILED');
+const openShareWindow = (url: string) => {
+  window.open(url, '_blank', 'noopener,noreferrer');
+};
+
+const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
+  if (!KAKAO_JS_KEY) {
+    return null;
   }
 
-  const blob = await response.blob();
-  if (!blob.type.startsWith('image/')) {
-    throw new Error('SHARE_IMAGE_INVALID');
+  if (!window.Kakao) {
+    await new Promise<void>((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${KAKAO_SDK_URL}"]`);
+      if (existingScript) {
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('KAKAO_SDK_LOAD_FAILED')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = KAKAO_SDK_URL;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('KAKAO_SDK_LOAD_FAILED'));
+      document.head.appendChild(script);
+    });
   }
 
-  const extension = inferFileExtension(item);
-  return new File([blob], `hamdeva-history-${item.id}.${extension}`, { type: blob.type });
+  if (!window.Kakao) {
+    return null;
+  }
+
+  if (typeof window.Kakao.isInitialized === 'function' && !window.Kakao.isInitialized() && typeof window.Kakao.init === 'function') {
+    window.Kakao.init(KAKAO_JS_KEY);
+  }
+
+  return window.Kakao;
 };
 
 const getHistoryCopy = (locale: string) => {
@@ -170,8 +209,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(0.5);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const [preparedShareFile, setPreparedShareFile] = useState<File | null>(null);
-  const [isPreparingShareFile, setIsPreparingShareFile] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -293,8 +330,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(0.5);
     setShareStatus(null);
-    setPreparedShareFile(null);
-    setIsPreparingShareFile(false);
   };
 
   const startImageLoading = () => {
@@ -370,34 +405,75 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     startImageLoading();
   };
 
-  const handleShareSelected = async () => {
+  const handleShareOnKakao = async () => {
     if (!selectedItem?.imageUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
     try {
-      if (navigator.share) {
-        if (preparedShareFile && (!navigator.canShare || navigator.canShare({ files: [preparedShareFile] }))) {
-          await navigator.share({ files: [preparedShareFile] });
-          setShareStatus(null);
-          return;
-        }
-
-        await navigator.share({ url: selectedItem.imageUrl });
-        setShareStatus(null);
+      const kakao = await loadKakaoSdk();
+      if (!kakao?.Share?.sendDefault) {
+        openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(selectedItem.imageUrl)}`);
         return;
       }
 
-      await navigator.clipboard.writeText(selectedItem.imageUrl);
-      setShareStatus(copy.linkCopied);
+      kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          imageUrl: selectedItem.imageUrl,
+          link: {
+            mobileWebUrl: selectedItem.imageUrl,
+            webUrl: selectedItem.imageUrl,
+          },
+        },
+      });
+      setShareStatus(null);
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return;
-      }
+      console.error('Failed to share history image on Kakao:', error);
+      setShareStatus(copy.imageNotReady);
+    }
+  };
 
-      console.error('Failed to share history image:', error);
-      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
+  const handleShareOnX = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(selectedItem.imageUrl)}`);
+  };
+
+  const handleShareOnFacebook = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(selectedItem.imageUrl)}`);
+  };
+
+  const handleShareOnLine = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(selectedItem.imageUrl)}`);
+  };
+
+  const handleInstagramSave = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    try {
+      downloadFile(selectedItem.imageUrl, `hamdeva-instagram-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+      setShareStatus(copy.instagramHelperText || null);
+    } catch (error) {
+      console.error('Failed to save history image for Instagram:', error);
+      setShareStatus(copy.imageNotReady);
     }
   };
 
@@ -415,41 +491,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!selectedItem?.imageUrl) {
-      setPreparedShareFile(null);
-      setIsPreparingShareFile(false);
-      return;
-    }
-
-    setIsPreparingShareFile(true);
-    setPreparedShareFile(null);
-
-    createShareImageFile(selectedItem.imageUrl, selectedItem)
-      .then((file) => {
-        if (!cancelled) {
-          setPreparedShareFile(file);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to prepare history share file:', error);
-          setPreparedShareFile(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsPreparingShareFile(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedItem]);
 
   useEffect(() => {
     if (!pendingArchiveSelectionId || !scrollContainerRef.current) {
@@ -711,17 +752,49 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                           <div
                             style={{
                               display: 'grid',
-                              gap: 10,
+                              gap: 8,
                               alignContent: 'start',
                             }}
                           >
                             <button
                               className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl || isPreparingShareFile}
-                              onClick={() => { void handleShareSelected(); }}
+                              disabled={!selectedItem.imageUrl}
+                              onClick={() => { void handleShareOnKakao(); }}
                               type="button"
                             >
-                              {copy.share}
+                              {copy.shareKakao}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={handleShareOnX}
+                              type="button"
+                            >
+                              {copy.shareXShort}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={handleShareOnFacebook}
+                              type="button"
+                            >
+                              {copy.shareFacebookShort}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={handleShareOnLine}
+                              type="button"
+                            >
+                              {copy.shareLine}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={handleInstagramSave}
+                              type="button"
+                            >
+                              {copy.saveForInstagram}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
