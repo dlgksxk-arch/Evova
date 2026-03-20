@@ -209,9 +209,16 @@ Generate a single realistic full-body fashion image of the same dog wearing an a
 
 Requirements:
 - preserve the exact dog identity, breed appearance, fur pattern, and face
+- the result must remain fully canine, never human or humanoid
+- the face must be a real dog face only, with dog muzzle, dog nose, dog mouth, dog ears, and dog eyes
+- do not generate any human face, human skin, human nose, human lips, human teeth styling, or human facial structure
 - preserve the clothing color, silhouette, and design as closely as possible
 - adapt the outfit naturally to a dog body
+- keep the visible limbs fully dog-like with dog front paws and dog hind paws that match the same dog identity
+- do not generate human hands, human feet, human fingers, human toes, or mixed human-animal limbs
 - use a more expressive fashion pose and cinematic background that strongly match the outfit concept
+- add a lively, cute, upbeat pet action such as a playful step, happy bounce, slight hop, tail-up stance, paw lift, or curious head tilt when it fits the outfit mood
+- make the overall mood cheerful, charming, and instantly lovable while staying realistic
 - keep balanced body proportions
 - place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
 - keep the head proportion about 10% smaller than before relative to the overall body in the composition
@@ -219,16 +226,24 @@ Requirements:
 - single subject only
 - full body shot
 - one image only
-- no collage, no duplicate subject, no cartoon styling`;
+- no collage, no duplicate subject, no cartoon styling
+- strict negatives: no human face, no humanoid face, no human hands, no human feet, no fingers, no toes, no mixed anatomy, no missing paws`;
 const CAT_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
 Generate a single realistic full-body fashion image of the same cat wearing an adapted version of the referenced outfit.
 
 Requirements:
 - preserve the exact cat identity, fur markings, and face
+- the result must remain fully feline, never human or humanoid
+- the face must be a real cat face only, with cat muzzle, cat nose, cat mouth, cat ears, and cat eyes
+- do not generate any human face, human skin, human nose, human lips, human teeth styling, or human facial structure
 - preserve the clothing color, silhouette, and design as closely as possible
 - adapt the outfit naturally to a cat body
+- keep the visible limbs fully cat-like with cat front paws and cat hind paws that match the same cat identity
+- do not generate human hands, human feet, human fingers, human toes, or mixed human-animal limbs
 - use a more expressive fashion pose and cinematic background that strongly match the outfit concept
+- add a lively, cute, upbeat pet action such as a graceful paw step, playful stretch, small hop, tail-up stance, curious head tilt, or alert pose when it fits the outfit mood
+- make the overall mood cheerful, charming, and instantly lovable while staying realistic
 - keep balanced body proportions
 - place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
 - keep the head proportion about 10% smaller than before relative to the overall body in the composition
@@ -236,7 +251,8 @@ Requirements:
 - single subject only
 - full body shot
 - one image only
-- no collage, no duplicate subject, no cartoon styling`;
+- no collage, no duplicate subject, no cartoon styling
+- strict negatives: no human face, no humanoid face, no human hands, no human feet, no fingers, no toes, no mixed anatomy, no missing paws`;
 const VIDEO_PROMPT_TEMPLATE = `Use the generated outfit image as the identity and outfit reference.
 
 Create a short cinematic fashion showcase video of the exact same subject wearing the exact same outfit.
@@ -738,8 +754,11 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
     bodyProfile?.outfitName ? `The garment should read clearly as ${bodyProfile.outfitName}.` : null,
     bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that strongly match the garment mood and purpose rather than using a generic studio-only result.',
     'Make the pose more dramatic, visually confident, and editorial so the outfit mood reads clearly at a glance, while still keeping anatomy believable and the garment undistorted.',
+    subjectType === 'dog' || subjectType === 'cat' ? 'Add a cute, playful action that makes the pet look more lively and joyful at a glance, such as a paw lift, happy bounce, light step, tail-up pose, or curious head tilt, while keeping the full outfit readable.' : null,
     bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a bold expressive pose that fits the outfit mood, formality, and silhouette while keeping the full garment readable.',
     bodyProfile?.backgroundHint ? `Use ${bodyProfile.backgroundHint} as the background direction.` : 'Use a realistic background that suits the outfit mood and cultural context.',
+    subjectType === 'dog' ? 'The final result must show only a dog face and dog paws, with no human or humanoid facial or limb features anywhere in the image.' : null,
+    subjectType === 'cat' ? 'The final result must show only a cat face and cat paws, with no human or humanoid facial or limb features anywhere in the image.' : null,
   ].filter(Boolean).join(' ');
 
   return [basePrompt, bodyGuide, stylingGuide].filter(Boolean).join('\n\n');
