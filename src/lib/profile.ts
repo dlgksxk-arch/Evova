@@ -11,7 +11,13 @@ export const normalizeUserProfile = (email: string, data?: Partial<UserProfile>)
     : (typeof data?.dailyCredit === 'number' ? data.dailyCredit : 0) + (typeof data?.paidCredit === 'number' ? data.paidCredit : 0),
   totalGenerated: typeof data?.totalGenerated === 'number' ? data.totalGenerated : 0,
   isSubscribed: data?.isSubscribed === true,
-  subscriptionPlan: data?.subscriptionPlan === 'basic' || data?.subscriptionPlan === 'pro' ? data.subscriptionPlan : 'free',
+  subscriptionPlan: data?.subscriptionPlan === 'starter'
+    || data?.subscriptionPlan === 'popular'
+    || data?.subscriptionPlan === 'pro'
+    ? data.subscriptionPlan
+    : data?.subscriptionPlan === 'basic'
+      ? 'popular'
+      : 'free',
   role: data?.role === 'admin' || ADMIN_EMAILS.has((data?.email || email).toLowerCase()) ? 'admin' : 'user',
   createdAt: data?.createdAt ?? null,
   lastDailyResetAt: data?.lastDailyResetAt ?? null,

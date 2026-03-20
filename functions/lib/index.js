@@ -119,51 +119,59 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
     starter: {
         id: 'starter',
-        amountCents: 699,
-        amountUsd: 6.99,
+        amountCents: 690,
+        amountUsd: 6.9,
         currency: PAYMENT_CURRENCY,
         paidCredit: 1000,
-        name: 'HAMDEVA Starter Credits',
+        name: 'HAMDEVA SB Starter',
     },
     popular: {
         id: 'popular',
-        amountCents: 1290,
-        amountUsd: 12.9,
+        amountCents: 2090,
+        amountUsd: 20.9,
         currency: PAYMENT_CURRENCY,
-        paidCredit: 5000,
-        name: 'HAMDEVA Popular Credits',
+        paidCredit: 3500,
+        name: 'HAMDEVA SB Popular',
     },
     pro: {
         id: 'pro',
-        amountCents: 4990,
-        amountUsd: 49.9,
+        amountCents: 3990,
+        amountUsd: 39.9,
         currency: PAYMENT_CURRENCY,
-        paidCredit: 10000,
-        name: 'HAMDEVA Pro Credits',
+        paidCredit: 7000,
+        name: 'HAMDEVA SB Pro',
     },
     small_pack: {
         id: 'small_pack',
-        amountCents: 1290,
-        amountUsd: 12.9,
+        amountCents: 790,
+        amountUsd: 7.9,
         currency: PAYMENT_CURRENCY,
         paidCredit: 1000,
-        name: 'HAMDEVA Small Credit Pack',
+        name: 'HAMDEVA SP Small Pack',
+    },
+    basic_pack: {
+        id: 'basic_pack',
+        amountCents: 1090,
+        amountUsd: 10.9,
+        currency: PAYMENT_CURRENCY,
+        paidCredit: 1500,
+        name: 'HAMDEVA SP Basic Pack',
     },
     medium_pack: {
         id: 'medium_pack',
-        amountCents: 5900,
-        amountUsd: 59,
+        amountCents: 1990,
+        amountUsd: 19.9,
         currency: PAYMENT_CURRENCY,
-        paidCredit: 5000,
-        name: 'HAMDEVA Medium Credit Pack',
+        paidCredit: 3000,
+        name: 'HAMDEVA SP Medium Pack',
     },
     large_pack: {
         id: 'large_pack',
-        amountCents: 9990,
-        amountUsd: 99.9,
+        amountCents: 3590,
+        amountUsd: 35.9,
         currency: PAYMENT_CURRENCY,
-        paidCredit: 10000,
-        name: 'HAMDEVA Large Credit Pack',
+        paidCredit: 6000,
+        name: 'HAMDEVA SP Large Pack',
     },
 };
 const OPENAI_IMAGE_TOKEN_PRICING = {
@@ -393,8 +401,11 @@ const formatSeoulDateKey = (date) => {
 };
 const getTodayKeyInSeoul = () => formatSeoulDateKey(new Date());
 const normalizeSubscriptionPlan = (value) => {
-    if (value === 'free' || value === 'basic' || value === 'pro') {
+    if (value === 'free' || value === 'starter' || value === 'popular' || value === 'pro') {
         return value;
+    }
+    if (value === 'basic') {
+        return 'popular';
     }
     return 'free';
 };
@@ -468,6 +479,7 @@ const LEMON_VARIANT_IDS = {
     popular: '1425372',
     pro: '1425382',
     small_pack: '1425386',
+    basic_pack: (process.env['LEMON_VARIANT_ID_BASIC_PACK'] ?? '').trim(),
     medium_pack: '1425388',
     large_pack: '1425391',
 };
@@ -1750,8 +1762,11 @@ const getSubscriptionPlanForProduct = (productId) => {
     if (productId === 'pro') {
         return 'pro';
     }
-    if (productId === 'starter' || productId === 'popular') {
-        return 'basic';
+    if (productId === 'popular') {
+        return 'popular';
+    }
+    if (productId === 'starter') {
+        return 'starter';
     }
     return 'free';
 };

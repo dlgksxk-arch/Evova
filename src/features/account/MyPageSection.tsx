@@ -19,7 +19,10 @@ const getSubscriptionProductRank = (productId: CheckoutProductId): number => {
 };
 
 const getCurrentSubscriptionRank = (plan?: UserProfile['subscriptionPlan']): number => {
-  if (plan === 'basic') {
+  if (plan === 'starter') {
+    return 0;
+  }
+  if (plan === 'popular') {
     return 1;
   }
   if (plan === 'pro') {
@@ -27,6 +30,11 @@ const getCurrentSubscriptionRank = (plan?: UserProfile['subscriptionPlan']): num
   }
   return -1;
 };
+
+const isCurrentSubscriptionProduct = (plan: UserProfile['subscriptionPlan'] | undefined, productId: CheckoutProductId): boolean =>
+  productId === 'starter' || productId === 'popular' || productId === 'pro'
+    ? plan === productId
+    : false;
 
 interface MyPageSectionProps {
   currentUser: User | null;
@@ -162,6 +170,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               <div className="credit-product-grid">
                 {products.filter((product) => product.kind === 'subscription').map((product) => {
                   const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
+                  const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                   return (
                   <article key={product.id} className={`credit-product-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                     <div className="credit-plan-copy">
@@ -182,12 +191,12 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                     </div>
                     <button
                       className="generate-btn auth-inline-btn"
-                      disabled={isStartingCheckout === product.id || isLowerTierDisabled}
+                      disabled={isStartingCheckout === product.id || isLowerTierDisabled || isCurrentPlan}
                       onClick={() => onStartCheckout(product.id)}
                       type="button"
-                      title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
+                      title={isCurrentPlan ? copy.pricingUi.currentPlanCta : isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                     >
-                      {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.pricingUi.subscribeCta}
+                      {isCurrentPlan ? copy.pricingUi.currentPlanCta : isStartingCheckout === product.id ? copy.paymentRedirecting : copy.pricingUi.subscribeCta}
                     </button>
                   </article>
                 );

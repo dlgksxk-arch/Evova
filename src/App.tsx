@@ -92,12 +92,13 @@ type CreditProduct = {
   bonusEligible?: boolean;
 };
 const CREDIT_PRODUCTS = [
-  { id: 'starter', kind: 'subscription', label: 'Starter', paidCredit: 1000, salePriceUsd: 6.99, comparePriceUsd: 9.99, description: 'Ideal for light use', bonusEligible: true },
-  { id: 'popular', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 12.90, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
-  { id: 'pro', kind: 'subscription', label: 'Pro', paidCredit: 10000, salePriceUsd: 49.90, description: 'For heavy and frequent use', bonusEligible: true },
-  { id: 'small_pack', kind: 'extra_credit', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 12.90, description: 'Instant extra credits when you need a quick refill' },
-  { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59.00, description: 'A larger refill for ongoing pet fitting sessions' },
-  { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99.90, description: 'Best when you need a big extra credit top-up right away' },
+  { id: 'starter', kind: 'subscription', label: 'SB Starter', paidCredit: 1000, salePriceUsd: 6.9, description: 'Ideal for light use', bonusEligible: true },
+  { id: 'popular', kind: 'subscription', label: 'SB Popular', paidCredit: 3500, salePriceUsd: 20.9, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
+  { id: 'pro', kind: 'subscription', label: 'SB Pro', paidCredit: 7000, salePriceUsd: 39.9, description: 'For heavy and frequent use', bonusEligible: true },
+  { id: 'small_pack', kind: 'extra_credit', label: 'SP Small Pack', paidCredit: 1000, salePriceUsd: 7.9, description: 'Instant extra credits when you need a quick refill' },
+  { id: 'basic_pack', kind: 'extra_credit', label: 'SP Basic Pack', paidCredit: 1500, salePriceUsd: 10.9, description: 'A balanced one-time pack for a little more room' },
+  { id: 'medium_pack', kind: 'extra_credit', label: 'SP Medium Pack', paidCredit: 3000, salePriceUsd: 19.9, description: 'A larger refill for ongoing pet fitting sessions' },
+  { id: 'large_pack', kind: 'extra_credit', label: 'SP Large Pack', paidCredit: 6000, salePriceUsd: 35.9, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
@@ -326,16 +327,18 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       subscriptionSubtitle: '구독 플랜을 선택하고 매달 반려동물 피팅 크레딧을 받아보세요.',
       extraCreditsTitle: 'Need More Credits?',
       extraCreditsSubtitle: '구독 보너스 없이 필요한 만큼 추가 크레딧을 바로 구매할 수 있습니다.',
-      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      firstPurchaseBonus: '구독 상품은 매달 같은 크레딧이 지급됩니다.',
       subscribeCta: 'Subscribe',
+      currentPlanCta: '현재 사용 중인 플랜',
       buyCreditsCta: 'Buy Credits',
-      subscriptionIntro: '구독 플랜은 첫 결제 1회에 한해 20% 추가 크레딧이 적용됩니다.',
-      extraCreditsIntro: '추가 크레딧은 구독과 별개로 즉시 충전되며 첫 결제 보너스는 적용되지 않습니다.',
+      subscriptionIntro: '구독 플랜은 매월 정해진 크레딧이 지급되는 월간 상품입니다.',
+      extraCreditsIntro: '싱글 팩은 구독과 별개로 1회 결제 후 즉시 충전되는 상품입니다.',
       descriptionById: {
         starter: '가볍게 시작하기 좋은 플랜',
         popular: '가장 많은 사용자가 선택하는 플랜',
         pro: '자주 생성하는 사용자를 위한 플랜',
         small_pack: '빠르게 부족한 크레딧을 채우는 소형 팩',
+        basic_pack: '소형보다 여유 있게 충전하는 베이직 팩',
         medium_pack: '추가 생성이 필요한 순간에 바로 쓰는 중형 팩',
         large_pack: '대량 생성 전에 한 번에 보충하는 대형 팩',
       } as Record<CheckoutProductId, string>,
@@ -347,16 +350,18 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       subscriptionSubtitle: '毎月の利用量に合わせてサブスクリプションを選べます。',
       extraCreditsTitle: 'Need More Credits?',
       extraCreditsSubtitle: 'サブスクリプション特典なしで追加クレジットをすぐ購入できます。',
-      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      firstPurchaseBonus: 'サブスクリプションは毎月同じクレジット数が付与されます。',
       subscribeCta: 'Subscribe',
+      currentPlanCta: '現在利用中のプラン',
       buyCreditsCta: 'Buy Credits',
-      subscriptionIntro: 'サブスクリプションは初回決済時のみ 20% 追加クレジットの対象です。',
-      extraCreditsIntro: '追加クレジットは即時購入用で、初回購入ボーナスは適用されません。',
+      subscriptionIntro: 'サブスクリプションは毎月定額のクレジットが付与される月額商品です。',
+      extraCreditsIntro: 'シングルパックはサブスクリプションとは別の1回購入商品です。',
       descriptionById: {
         starter: '軽い利用に向いたプラン',
         popular: '多くのユーザーに最適なプラン',
         pro: '高頻度で使う方向けのプラン',
         small_pack: '少量をすぐ補充したい時の追加パック',
+        basic_pack: '少し余裕を持って補充できるベーシックパック',
         medium_pack: '継続利用向けの追加クレジット',
         large_pack: '多めにまとめて補充したい時の追加クレジット',
       } as Record<CheckoutProductId, string>,
@@ -368,16 +373,18 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       subscriptionSubtitle: '选择适合你使用频率的订阅方案。',
       extraCreditsTitle: 'Need More Credits?',
       extraCreditsSubtitle: '无需订阅奖励，也可以立即购买额外积分。',
-      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      firstPurchaseBonus: '订阅商品每月发放固定积分。',
       subscribeCta: 'Subscribe',
+      currentPlanCta: '当前使用中的方案',
       buyCreditsCta: 'Buy Credits',
-      subscriptionIntro: '订阅方案仅在首次付款时享受一次性 20% 额外积分。',
-      extraCreditsIntro: '额外积分可立即购买，不适用首次购买奖励。',
+      subscriptionIntro: '订阅方案是每月固定发放积分的月度商品。',
+      extraCreditsIntro: '单次积分包为一次性购买，支付后立即到账。',
       descriptionById: {
         starter: '适合轻度使用',
         popular: '最适合大多数用户',
         pro: '适合高频和重度使用',
         small_pack: '适合临时补充少量积分',
+        basic_pack: '比小包更从容的基础补充包',
         medium_pack: '适合继续生成时快速补充',
         large_pack: '适合一次性补充大量积分',
       } as Record<CheckoutProductId, string>,
@@ -388,16 +395,18 @@ const getPricingUiCopy = (lang: LanguageCode) => {
     subscriptionSubtitle: 'Pick a subscription that matches how often you create pet fitting previews.',
     extraCreditsTitle: 'Need More Credits?',
     extraCreditsSubtitle: 'Purchase additional credits instantly without a subscription bonus.',
-    firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+    firstPurchaseBonus: 'Subscription plans deliver the same credits every month.',
     subscribeCta: 'Subscribe',
+    currentPlanCta: 'Current Plan',
     buyCreditsCta: 'Buy Credits',
-    subscriptionIntro: 'Subscription plans include a one-time +20% extra credits message for the first purchase only.',
-    extraCreditsIntro: 'Extra credits are separate one-time purchases and do not include the first purchase bonus.',
+    subscriptionIntro: 'Subscription plans are monthly products with fixed credit amounts.',
+    extraCreditsIntro: 'Single packs are one-time purchases that top up credits immediately.',
     descriptionById: {
       starter: 'Ideal for light use',
       popular: 'Best for most users',
       pro: 'For heavy and frequent use',
       small_pack: 'Instant extra credits for quick top-ups',
+      basic_pack: 'A balanced one-time pack for a little more room',
       medium_pack: 'More credits when you need continued usage',
       large_pack: 'A larger refill for heavy extra demand',
     } as Record<CheckoutProductId, string>,
@@ -407,7 +416,7 @@ type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
 type AuthMode = 'login' | 'signup';
-type SubscriptionPlan = 'free' | 'basic' | 'pro';
+type SubscriptionPlan = 'free' | 'starter' | 'popular' | 'pro';
 type UserRole = 'user' | 'admin';
 
 const getSubscriptionProductRank = (productId: CheckoutProductId): number => {
@@ -424,7 +433,10 @@ const getSubscriptionProductRank = (productId: CheckoutProductId): number => {
 };
 
 const getCurrentSubscriptionRank = (plan?: SubscriptionPlan): number => {
-  if (plan === 'basic') {
+  if (plan === 'starter') {
+    return 0;
+  }
+  if (plan === 'popular') {
     return 1;
   }
   if (plan === 'pro') {
@@ -432,6 +444,11 @@ const getCurrentSubscriptionRank = (plan?: SubscriptionPlan): number => {
   }
   return -1;
 };
+
+const isCurrentSubscriptionProduct = (plan: SubscriptionPlan | undefined, productId: CheckoutProductId): boolean =>
+  productId === 'starter' || productId === 'popular' || productId === 'pro'
+    ? plan === productId
+    : false;
 
 interface UserProfile {
   email: string;
@@ -599,7 +616,7 @@ const translations = {
     viewSubscription: '구독 보기',
     creditCheck: '크레딧 확인',
     subscriptionPlanLabel: '구독 플랜',
-    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
     siteCreditsLabel: '현재 크레딧',
     siteCreditCostLabel: '생성 비용',
     authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
@@ -914,7 +931,7 @@ const translations = {
     viewSubscription: 'View subscription',
     creditCheck: 'Check credits',
     subscriptionPlanLabel: 'Subscription plan',
-    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
     siteCreditsLabel: 'Current credits',
     siteCreditCostLabel: 'Generation cost',
     authSignupCreditsHint: 'Sign up and get 300 credits',
@@ -1233,7 +1250,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     viewSubscription: '查看订阅',
     creditCheck: '查看积分',
     subscriptionPlanLabel: '订阅方案',
-    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
     adminNav: '管理',
     adminTitle: '管理员页面',
     adminSubtitle: '在一个页面中查看核心运营指标与最近活动。',
@@ -1397,7 +1414,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     viewSubscription: '購読を見る',
     creditCheck: 'クレジット確認',
     subscriptionPlanLabel: '購読プラン',
-    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'basic' ? 'BASIC' : 'FREE',
+    subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
     adminNav: '管理',
     adminTitle: '管理者ページ',
     adminSubtitle: '運営指標と最近の活動を一画面で確認できます。',
@@ -5750,6 +5767,7 @@ const App: React.FC = () => {
                 <div className="credit-plan-grid">
                   {subscriptionProducts.map((product) => {
                     const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
+                    const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                     return (
                       <article key={`pricing-${product.id}`} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                         <div className="credit-plan-copy">
@@ -5771,11 +5789,11 @@ const App: React.FC = () => {
                         <button
                           className="generate-btn auth-inline-btn"
                           onClick={() => { void handleStartCheckout(product.id); }}
-                          disabled={isStartingCheckout === product.id || isLowerTierDisabled}
+                          disabled={isStartingCheckout === product.id || isLowerTierDisabled || isCurrentPlan}
                           type="button"
-                          title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
+                          title={isCurrentPlan ? pricingUiCopy.currentPlanCta : isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                         >
-                          {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
+                          {isCurrentPlan ? pricingUiCopy.currentPlanCta : isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
                         </button>
                       </article>
                     );
@@ -6073,6 +6091,7 @@ const App: React.FC = () => {
               <div className="credit-plan-grid">
                 {subscriptionProducts.map((product) => {
                   const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
+                  const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                   return (
                   <article key={product.id} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                     <div className="credit-plan-copy">
@@ -6093,12 +6112,12 @@ const App: React.FC = () => {
                     </div>
                     <button
                       className="generate-btn auth-inline-btn"
-                      disabled={isStartingCheckout === product.id || isLowerTierDisabled}
+                      disabled={isStartingCheckout === product.id || isLowerTierDisabled || isCurrentPlan}
                       onClick={() => { void handleStartCheckout(product.id); }}
                       type="button"
-                      title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
+                      title={isCurrentPlan ? pricingUiCopy.currentPlanCta : isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                     >
-                      {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
+                      {isCurrentPlan ? pricingUiCopy.currentPlanCta : isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
                     </button>
                   </article>
                 );

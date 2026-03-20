@@ -1,11 +1,11 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
-export type SubscriptionPlan = 'free' | 'basic' | 'pro';
+export type SubscriptionPlan = 'free' | 'starter' | 'popular' | 'pro';
 export type UserRole = 'user' | 'admin';
 export type CreditKind = 'daily' | 'paid';
 export type SubjectType = 'human' | 'dog' | 'cat';
-export type CheckoutProductId = 'starter' | 'popular' | 'pro' | 'small_pack' | 'medium_pack' | 'large_pack';
+export type CheckoutProductId = 'starter' | 'popular' | 'pro' | 'small_pack' | 'basic_pack' | 'medium_pack' | 'large_pack';
 export interface ApiBonusFields {
   dailyRewardGranted?: number;
   signupBonusGranted?: number;
