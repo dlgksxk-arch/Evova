@@ -170,6 +170,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(0.5);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [preparedShareFile, setPreparedShareFile] = useState<File | null>(null);
+  const [isPreparingShareFile, setIsPreparingShareFile] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -291,6 +293,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(0.5);
     setShareStatus(null);
+    setPreparedShareFile(null);
+    setIsPreparingShareFile(false);
   };
 
   const startImageLoading = () => {
@@ -380,18 +384,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
           url: selectedItem.imageUrl,
         };
 
-        try {
-          const shareFile = await createShareImageFile(selectedItem.imageUrl, selectedItem);
-          if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [shareFile] })) {
-            await navigator.share({
-              ...sharePayload,
-              files: [shareFile],
-            });
-            setShareStatus(null);
-            return;
-          }
-        } catch (error) {
-          console.error('Failed to attach history image to share payload:', error);
+        if (preparedShareFile && (!navigator.canShare || navigator.canShare({ files: [preparedShareFile] }))) {
+          await navigator.share({
+            ...sharePayload,
+            files: [preparedShareFile],
+          });
+          setShareStatus(null);
+          return;
         }
 
         await navigator.share(sharePayload);
@@ -410,6 +409,41 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedItem?.imageUrl) {
+      setPreparedShareFile(null);
+      setIsPreparingShareFile(false);
+      return;
+    }
+
+    setIsPreparingShareFile(true);
+    setPreparedShareFile(null);
+
+    createShareImageFile(selectedItem.imageUrl, selectedItem)
+      .then((file) => {
+        if (!cancelled) {
+          setPreparedShareFile(file);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to prepare history share file:', error);
+          setPreparedShareFile(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsPreparingShareFile(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItem]);
 
   useEffect(() => {
     if (!pendingArchiveSelectionId || !scrollContainerRef.current) {
@@ -622,7 +656,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                           <strong>{historyCopy.resultLabel}</strong>
                           <button
                             className="outline-btn auth-inline-btn"
-                            disabled={!selectedItem.imageUrl}
+                            disabled={!selectedItem.imageUrl || isPreparingShareFile}
                             onClick={() => { void handleShareSelected(); }}
                             type="button"
                           >
