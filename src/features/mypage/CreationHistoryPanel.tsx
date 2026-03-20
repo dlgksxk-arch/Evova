@@ -80,6 +80,73 @@ const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
+const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' | 'instagram' | 'link' | 'download') => {
+  const commonProps = {
+    width: 18,
+    height: 18,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    xmlns: 'http://www.w3.org/2000/svg',
+    'aria-hidden': true,
+  } as const;
+
+  switch (kind) {
+    case 'kakao':
+      return (
+        <svg {...commonProps}>
+          <path d="M12 4C7.03 4 3 7.13 3 11c0 2.45 1.62 4.61 4.07 5.86L6 20l3.83-2.1c.7.13 1.42.2 2.17.2 4.97 0 9-3.13 9-7s-4.03-7-9-7Z" fill="#FEE500" stroke="#3B1E1E" strokeWidth="1.3" strokeLinejoin="round"/>
+          <path d="M9 9.2v4.6M9 11.5l3.8-2.3M12.8 11.5 9 13.8M15.2 9.2v4.6" stroke="#3B1E1E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    case 'x':
+      return (
+        <svg {...commonProps}>
+          <path d="M5 4.5h3.2l4.1 5.5 4.8-5.5H20l-6.4 7.2L20 20h-3.2l-4.5-6-5.2 6H4l6.9-7.8L5 4.5Z" fill="currentColor"/>
+        </svg>
+      );
+    case 'facebook':
+      return (
+        <svg {...commonProps}>
+          <path d="M13.3 20v-6.7h2.2l.4-2.6h-2.6V9.1c0-.75.2-1.27 1.28-1.27H16V5.5c-.24-.03-1.07-.1-2.02-.1-2 0-3.38 1.22-3.38 3.47v1.93H8.4v2.6h2.2V20h2.7Z" fill="currentColor"/>
+        </svg>
+      );
+    case 'line':
+      return (
+        <svg {...commonProps}>
+          <path d="M20.5 10.9c0-4-3.83-7.2-8.5-7.2s-8.5 3.2-8.5 7.2c0 3.58 3.04 6.58 7.15 7.13L9.8 21l3.2-2.9h.01c4.22-.45 7.49-3.49 7.49-7.2Z" fill="#06C755"/>
+          <path d="M8 12.2V9.4M9.9 12.2H8M12.1 12.2V9.4m0 2.8h1.9M16.1 12.2V9.4m0 2.8 1.9-2.8m0 2.8V9.4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    case 'tiktok':
+      return (
+        <svg {...commonProps}>
+          <path d="M14.9 4c.5 1.6 1.8 3 3.5 3.8v2.4a6.76 6.76 0 0 1-3.4-1v5.5a4.7 4.7 0 1 1-4.7-4.7c.32 0 .63.03.93.1v2.5a2.16 2.16 0 1 0 1.54 2.07V4h2.23Z" fill="currentColor"/>
+          <path d="M12.4 4v10.67a2.16 2.16 0 1 1-1.54-2.07V10.1a4.7 4.7 0 1 0 4.7 4.57V9.17a6.76 6.76 0 0 0 3.4 1V7.8A5.92 5.92 0 0 1 15.5 4h-3.1Z" fill="#25F4EE" fillOpacity=".55"/>
+        </svg>
+      );
+    case 'instagram':
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="1.8"/>
+          <circle cx="12" cy="12" r="3.6" stroke="currentColor" strokeWidth="1.8"/>
+          <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/>
+        </svg>
+      );
+    case 'link':
+      return (
+        <svg {...commonProps}>
+          <path d="M10.6 13.4 13.4 10.6M8.4 15.6l-1.6 1.6a3.1 3.1 0 1 1-4.4-4.4L6 9.2a3.1 3.1 0 0 1 4.4 0M15.6 8.4l1.6-1.6a3.1 3.1 0 1 1 4.4 4.4L18 14.8a3.1 3.1 0 0 1-4.4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    case 'download':
+      return (
+        <svg {...commonProps}>
+          <path d="M12 4.5v9.3M8.6 10.9 12 14.3l3.4-3.4M5 18.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+  }
+};
+
 const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
   if (!KAKAO_JS_KEY) {
     return null;
@@ -206,7 +273,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isImageReady, setIsImageReady] = useState(false);
-  const [zoom, setZoom] = useState(0.5);
+  const [zoom, setZoom] = useState(1);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -328,7 +395,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSelectedItem(null);
     setIsImageLoading(false);
     setIsImageReady(false);
-    setZoom(0.5);
+    setZoom(1);
     setShareStatus(null);
   };
 
@@ -400,7 +467,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
 
     setSelectedItem(item);
-    setZoom(0.5);
+    setZoom(1);
     setShareStatus(null);
     startImageLoading();
   };
@@ -473,6 +540,22 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       setShareStatus(copy.instagramHelperText || null);
     } catch (error) {
       console.error('Failed to save history image for Instagram:', error);
+      setShareStatus(copy.imageNotReady);
+    }
+  };
+
+  const handleShareOnTikTok = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    try {
+      downloadFile(selectedItem.imageUrl, `hamdeva-tiktok-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+      openShareWindow('https://www.tiktok.com/upload');
+      setShareStatus(copy.instagramHelperText || null);
+    } catch (error) {
+      console.error('Failed to prepare history image for TikTok:', error);
       setShareStatus(copy.imageNotReady);
     }
   };
@@ -613,24 +696,24 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                   >
                     <button
                       className="outline-btn auth-inline-btn"
-                      disabled={zoom <= 0.5}
-                      onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
+                      disabled={zoom <= 0.75}
+                      onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
                       type="button"
                     >
                       {copy.historyZoomOut}
                     </button>
                     <button
                       className="outline-btn auth-inline-btn"
-                      disabled={zoom === 0.5}
-                      onClick={() => setZoom(0.5)}
+                      disabled={zoom === 1}
+                      onClick={() => setZoom(1)}
                       type="button"
                     >
                       {copy.historyZoomReset}
                     </button>
                     <button
                       className="outline-btn auth-inline-btn"
-                      disabled={zoom >= 1.5}
-                      onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
+                      disabled={zoom >= 2}
+                      onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
                       type="button"
                     >
                       {copy.historyZoomIn}
@@ -739,9 +822,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               style={{
                                 display: 'block',
                                 margin: '0 auto',
-                                width: `${zoom * 50}%`,
+                                width: `${zoom * 100}%`,
                                 maxWidth: '100%',
-                                maxHeight: isMobile ? '30vh' : '36vh',
+                                maxHeight: isMobile ? '52vh' : '62vh',
                                 height: 'auto',
                                 objectFit: 'contain',
                                 userSelect: 'none',
@@ -752,6 +835,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                           <div
                             style={{
                               display: 'grid',
+                              gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr',
                               gap: 8,
                               alignContent: 'start',
                             }}
@@ -760,48 +844,70 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={() => { void handleShareOnKakao(); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('kakao')}
                               {copy.shareKakao}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={handleShareOnX}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('x')}
                               {copy.shareXShort}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={handleShareOnFacebook}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('facebook')}
                               {copy.shareFacebookShort}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={handleShareOnLine}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('line')}
                               {copy.shareLine}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
-                              onClick={handleInstagramSave}
+                              onClick={handleShareOnTikTok}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('tiktok')}
+                              TikTok
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={handleInstagramSave}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
+                              type="button"
+                            >
+                              {renderSocialIcon('instagram')}
                               {copy.saveForInstagram}
                             </button>
                             <button
                               className="outline-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={() => { void handleCopySelectedLink(); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('link')}
                               {copy.copyLink}
                             </button>
                             <button
@@ -812,8 +918,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                                   downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
                                 }
                               }}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
                               type="button"
                             >
+                              {renderSocialIcon('download')}
                               {copy.historyDownload}
                             </button>
                           </div>
