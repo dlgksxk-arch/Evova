@@ -3335,6 +3335,15 @@ const App: React.FC = () => {
       : lang === 'zh'
         ? `剩余积分 ${currentCredits}`
         : `${currentCredits} credits left`;
+  const headerSubscriptionLabel = currentUser
+    ? lang === 'ko'
+      ? `구독 ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
+      : lang === 'ja'
+        ? `購読 ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
+        : lang === 'zh'
+          ? `订阅 ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
+          : `Plan ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
+    : '';
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -5119,6 +5128,11 @@ const App: React.FC = () => {
             >
               {currentUser ? headerCreditLabel : t.creditCheck}
             </button>
+            {currentUser && (
+              <button className="nav-quick-btn nav-subscription-btn" onClick={openMyPageModal} type="button">
+                {headerSubscriptionLabel}
+              </button>
+            )}
             <button className="outline-btn nav-quick-buy-btn" onClick={openCreditPlanModal} type="button">
               {t.chargeCredits}
             </button>
