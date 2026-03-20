@@ -40,7 +40,6 @@ import {
   callSubjectClassifier,
   callTryOn,
 } from './lib/api/hamdeva';
-import { openPaddleOverlayCheckout } from './lib/paddle';
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
@@ -79,7 +78,7 @@ const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
-const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
+const SUBJECT_TYPES = ['dog', 'cat'] as const;
 type CreditProductKind = 'subscription' | 'extra_credit';
 type CreditProduct = {
   id: CheckoutProductId;
@@ -93,34 +92,16 @@ type CreditProduct = {
 };
 const CREDIT_PRODUCTS = [
   { id: 'starter', kind: 'subscription', label: 'Starter', paidCredit: 1000, salePriceUsd: 9.99, description: 'Ideal for light use', bonusEligible: true },
-  { id: 'creator', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 29.99, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
+  { id: 'popular', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 29.99, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
   { id: 'pro', kind: 'subscription', label: 'Pro', paidCredit: 10000, salePriceUsd: 49.99, description: 'For heavy and frequent use', bonusEligible: true },
   { id: 'small_pack', kind: 'extra_credit', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 12.99, description: 'Instant extra credits when you need a quick refill' },
   { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59.99, description: 'A larger refill for ongoing pet fitting sessions' },
   { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99.99, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
-
-const LEMON_VARIANT_IDS = {
-  starter: '1425119',
-  creator: '1425108',
-  pro: '1425124',
-  small_pack: '1425127',
-  medium_pack: '1425130',
-  large_pack: '1425131',
-} as const;
-
-type LemonCheckoutProductId = keyof typeof LEMON_VARIANT_IDS;
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
-
-function redirectToCheckout(variantId: string): void {
-  const url = `https://hamdeva.lemonsqueezy.com/checkout/buy/${variantId}`;
-  window.location.href = url;
-}
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
-const PADDLE_CLIENT_TOKEN = (import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined)?.trim() || '';
-const PADDLE_ENV = ((import.meta.env.VITE_PADDLE_ENV as string | undefined)?.trim().toLowerCase() === 'sandbox' ? 'sandbox' : 'production') as 'sandbox' | 'production';
 const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
 const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
@@ -351,7 +332,7 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       extraCreditsIntro: '추가 크레딧은 구독과 별개로 즉시 충전되며 첫 결제 보너스는 적용되지 않습니다.',
       descriptionById: {
         starter: '가볍게 시작하기 좋은 플랜',
-        creator: '가장 많은 사용자가 선택하는 플랜',
+        popular: '가장 많은 사용자가 선택하는 플랜',
         pro: '자주 생성하는 사용자를 위한 플랜',
         small_pack: '빠르게 부족한 크레딧을 채우는 소형 팩',
         medium_pack: '추가 생성이 필요한 순간에 바로 쓰는 중형 팩',
@@ -372,7 +353,7 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       extraCreditsIntro: '追加クレジットは即時購入用で、初回購入ボーナスは適用されません。',
       descriptionById: {
         starter: '軽い利用に向いたプラン',
-        creator: '多くのユーザーに最適なプラン',
+        popular: '多くのユーザーに最適なプラン',
         pro: '高頻度で使う方向けのプラン',
         small_pack: '少量をすぐ補充したい時の追加パック',
         medium_pack: '継続利用向けの追加クレジット',
@@ -393,7 +374,7 @@ const getPricingUiCopy = (lang: LanguageCode) => {
       extraCreditsIntro: '额外积分可立即购买，不适用首次购买奖励。',
       descriptionById: {
         starter: '适合轻度使用',
-        creator: '最适合大多数用户',
+        popular: '最适合大多数用户',
         pro: '适合高频和重度使用',
         small_pack: '适合临时补充少量积分',
         medium_pack: '适合继续生成时快速补充',
@@ -413,7 +394,7 @@ const getPricingUiCopy = (lang: LanguageCode) => {
     extraCreditsIntro: 'Extra credits are separate one-time purchases and do not include the first purchase bonus.',
     descriptionById: {
       starter: 'Ideal for light use',
-      creator: 'Best for most users',
+      popular: 'Best for most users',
       pro: 'For heavy and frequent use',
       small_pack: 'Instant extra credits for quick top-ups',
       medium_pack: 'More credits when you need continued usage',
@@ -611,7 +592,7 @@ const translations = {
     paymentSessionLabel: '결제 세션',
     goToMyPage: '마이페이지로 이동',
     starterProductName: 'starter',
-    creatorProductName: 'creator',
+    popularProductName: 'popular',
     proProductName: 'pro',
     freeResultNoticeTitle: '이미지에 워터마크가 적용됩니다.',
     freeResultNoticeBody: '모든 이미지 결과에는 HAMDEVA AI 워터마크가 포함됩니다.',
@@ -926,7 +907,7 @@ const translations = {
     paymentSessionLabel: 'Session',
     goToMyPage: 'Go to My Page',
     starterProductName: 'starter',
-    creatorProductName: 'creator',
+    popularProductName: 'popular',
     proProductName: 'pro',
     freeResultNoticeTitle: 'Watermark applied to this image.',
     freeResultNoticeBody: 'All generated image results include the HAMDEVA AI watermark.',
@@ -2224,13 +2205,8 @@ const requireDb = () => {
 };
 
 const normalizeSubjectType = (value: unknown): SubjectType => (
-  value === 'dog' || value === 'cat' ? value : 'human'
+  value === 'dog' || value === 'cat' ? value : 'dog'
 );
-
-const getLemonVariantId = (productId: CheckoutProductId): string | null => {
-  const variantId = LEMON_VARIANT_IDS[productId as LemonCheckoutProductId];
-  return typeof variantId === 'string' ? variantId : null;
-};
 
 const getSubjectTypeLabel = (lang: LanguageCode, subjectType: SubjectType): string => {
   const labels = {
@@ -2617,6 +2593,7 @@ const getGenerateErrorMessage = (
     prepTimeoutDetail: string;
     authTimeoutDetail: string;
     resultImageTimeoutDetail: string;
+    petOnlyDetail: string;
   },
 ): string => {
   const raw = error instanceof Error ? error.message : '';
@@ -2643,6 +2620,10 @@ const getGenerateErrorMessage = (
 
   if (raw === 'DUPLICATE_REQUEST') {
     return t.duplicateRequestBlocked;
+  }
+
+  if (raw === 'PET_ONLY_SUBJECT') {
+    return details.petOnlyDetail;
   }
 
   if (raw === 'GENERATION_TIMEOUT') {
@@ -3194,7 +3175,7 @@ const App: React.FC = () => {
   const [clothFile, setClothFile] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [gender, setGender] = useState<'female' | 'male' | 'dog' | 'cat'>('female');
-  const [subjectType, setSubjectType] = useState<SubjectType>('human');
+  const [subjectType, setSubjectType] = useState<SubjectType>('dog');
   const [detectedSubjectType, setDetectedSubjectType] = useState<SubjectType | null>(null);
   const [subjectDetectionStatus, setSubjectDetectionStatus] = useState<'idle' | 'detecting' | 'ready' | 'error'>('idle');
   const [subjectTypeManualOverride, setSubjectTypeManualOverride] = useState(false);
@@ -3291,12 +3272,26 @@ const App: React.FC = () => {
     styleBadge: string;
   };
   const sampleBadgeLabel = translate('ui.sampleBadge');
-  const generationErrorCopy = translate('errors.generation', { returnObjects: true }) as {
-    timeoutDetail: string;
-    prepTimeoutDetail: string;
-    authTimeoutDetail: string;
-    resultImageTimeoutDetail: string;
-  };
+  const petOnlyImageMessage = lang === 'ko'
+    ? '사람 사진은 지원하지 않습니다. 강아지나 고양이 사진만 업로드해 주세요.'
+    : lang === 'ja'
+      ? '人物写真には対応していません。犬または猫の写真のみアップロードしてください。'
+      : lang === 'zh'
+        ? '暂不支持人物照片。请仅上传狗或猫的照片。'
+        : 'Human photos are not supported. Please upload a dog or cat photo only.';
+  const generationErrorCopy = (() => {
+    const base = translate('errors.generation', { returnObjects: true }) as {
+      timeoutDetail: string;
+      prepTimeoutDetail: string;
+      authTimeoutDetail: string;
+      resultImageTimeoutDetail: string;
+      petOnlyDetail?: string;
+    };
+    return {
+      ...base,
+      petOnlyDetail: base.petOnlyDetail || petOnlyImageMessage,
+    };
+  })();
   const authErrorCopy = translate('errors.auth', { returnObjects: true }) as {
     invalidCredential: string;
     emailAlreadyInUse: string;
@@ -4027,9 +4022,16 @@ const App: React.FC = () => {
         : await ensureDataUrl(source).then((src) => resizeImage(src, 768));
       const detected = await callSubjectClassifier(prepared);
       setDetectedSubjectType(detected);
+      if (detected === 'human') {
+        setSubjectDetectionStatus('error');
+        setPersonUploadMessage(petOnlyImageMessage);
+        alert(petOnlyImageMessage);
+        return;
+      }
       if (!subjectTypeManualOverride) {
         setSubjectType(detected);
       }
+      setPersonUploadMessage(null);
       setSubjectDetectionStatus('ready');
     } catch (error) {
       console.error('Failed to classify subject type:', error);
@@ -4397,18 +4399,6 @@ const App: React.FC = () => {
 
     setIsStartingCheckout(productId);
     try {
-      const lemonVariantId = getLemonVariantId(productId);
-      if (lemonVariantId) {
-        setShowCreditPlanModal(false);
-        setMobileMenuOpen(false);
-        redirectToCheckout(lemonVariantId);
-        return;
-      }
-
-      if (!PADDLE_CLIENT_TOKEN) {
-        throw new Error('PAYMENT_NOT_CONFIGURED');
-      }
-
       const authToken = await currentUser.getIdToken();
       const session = await callCreateCheckoutSession({
         authToken,
@@ -4416,24 +4406,15 @@ const App: React.FC = () => {
         uid: currentUser.uid,
       });
 
-      if (!session.sessionId) {
+      if (!session.checkoutUrl) {
         throw new Error('PAYMENT_NOT_CONFIGURED');
       }
 
-      const successUrl = `${window.location.origin}/payment-success?session_id=${encodeURIComponent(session.sessionId)}`;
-      const theme = darkMode ? 'dark' : 'light';
       setShowCreditPlanModal(false);
       setMobileMenuOpen(false);
-      await openPaddleOverlayCheckout({
-        clientToken: PADDLE_CLIENT_TOKEN,
-        environment: PADDLE_ENV,
-        transactionId: session.sessionId,
-        successUrl,
-        locale: lang,
-        theme,
-      });
+      window.location.href = session.checkoutUrl;
     } catch (error) {
-      console.error('Failed to start Paddle checkout:', error);
+      console.error('Failed to start LemonSqueezy checkout:', error);
       const message = error instanceof Error && error.message === 'PAYMENT_NOT_CONFIGURED'
         ? t.paymentConfigError
         : t.paymentConfigError;
@@ -4912,7 +4893,16 @@ const App: React.FC = () => {
         'GENERATION_PREP_TIMEOUT',
       );
 
-      const resolvedSubjectType = subjectType;
+      const verifiedSubjectType = await withTimeout(
+        callSubjectClassifier(preparedPersonImage),
+        GENERATION_PREP_TIMEOUT_MS,
+        'SUBJECT_CLASSIFY_TIMEOUT',
+      );
+      if (verifiedSubjectType === 'human') {
+        throw new Error('PET_ONLY_SUBJECT');
+      }
+
+      const resolvedSubjectType = normalizeSubjectType(verifiedSubjectType);
       const personInputLabel = getFaceInputLabel(lang, sampleBadgeLabel, selectedSampleUrl, personFile);
       const garmentInputLabel = getGarmentInputLabel(lang, sampleBadgeLabel, selectedClothSampleUrl, clothFile);
       const [personPreviewImage, garmentPreviewImage] = await Promise.all([
@@ -5063,7 +5053,7 @@ const App: React.FC = () => {
       setPersonImage(null);
       setPersonFile(null);
       setSelectedSampleUrl(null);
-      setSubjectType('human');
+      setSubjectType('dog');
       setDetectedSubjectType(null);
       setSubjectDetectionStatus('idle');
       setSubjectTypeManualOverride(false);

@@ -85,7 +85,24 @@ const isRealMemberUser = (user: AdminUserListItem): boolean => {
     return false;
   }
 
-  return ![email, displayName, nickname, uid].some((value) => value.includes('smoke'));
+  if (email.endsWith('@example.com')) {
+    return false;
+  }
+
+  return ![email, displayName, nickname, uid].some((value) => value.includes('smoke') || value.includes('codex-sample'));
+};
+
+const formatCompactDuration = (value?: number | null): string => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return '-';
+  }
+
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${Math.max(1, minutes)}m`;
 };
 
 const renderDetailValue = (
@@ -156,10 +173,8 @@ const AdminUserListTable: React.FC<AdminUserListTableProps> = ({
     <div className="admin-user-list-table">
       <div className="admin-user-list-head">
         <span>{copy.emailLabel}</span>
-        <span>{copy.adminDisplayName ?? '닉네임 / 이름'}</span>
-        <span>{copy.adminJoinedAt} / {copy.adminLastLoginAt ?? '최근 로그인'}</span>
+        <span>{copy.adminTotalGenerated ?? '생성 / 방문'}</span>
         <span>{copy.adminCreditsColumn}</span>
-        <span>{copy.adminSubscribed ?? '구독'} / {copy.subscriptionPlanLabel}</span>
         <span>{copy.adminActions ?? '작업'}</span>
       </div>
 
@@ -185,23 +200,15 @@ const AdminUserListTable: React.FC<AdminUserListTableProps> = ({
         >
           <span className="admin-user-primary">
             <strong>{item.email || '-'}</strong>
-            <small>{item.uid}</small>
-          </span>
-          <span className="admin-user-meta">
-            <strong>{getUserDisplayName(item)}</strong>
-            <small>{item.role || 'user'}</small>
+            <small>{getUserDisplayName(item)} · {item.uid}</small>
           </span>
           <span className="admin-user-stack">
-            <strong>{formatTimestampLabel(item.createdAt)}</strong>
-            <small>{formatTimestampLabel(item.lastLoginAt)}</small>
+            <strong>{copy.adminTotalGenerated ?? '총 생성 수'} {item.totalGenerated ?? 0}</strong>
+            <small>{copy.adminLastLoginAt ?? '최근 로그인'} {formatTimestampLabel(item.lastLoginAt)}</small>
           </span>
           <span className="admin-user-stack">
             <strong>{item.credits ?? 0}</strong>
-            <small>{copy.adminDailyCredit ?? 'dailyCredit'} {item.dailyCredit ?? 0} · {copy.adminPaidCredit ?? 'paidCredit'} {item.paidCredit ?? 0}</small>
-          </span>
-          <span className="admin-user-stack">
-            <strong>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</strong>
-            <small>{item.isSubscribed ? (copy.adminSubscribedYesLabel ?? '구독 중') : (copy.adminSubscribedNoLabel ?? '미구독')}</small>
+            <small>{copy.adminDailyCredit ?? 'dailyCredit'} {item.dailyCredit ?? 0} · {copy.adminPaidCredit ?? 'paidCredit'} {item.paidCredit ?? 0} · {copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</small>
           </span>
           <span className="admin-user-actions">
             <button
@@ -369,6 +376,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       : activeLogTab === 'payments'
         ? paymentLogsState
         : activityLogsState;
+
+  const purchaseHistory = activeDetailUser?.purchaseHistory ?? [];
 
   const openUserModal = () => {
     setIsUserModalOpen(true);
@@ -730,21 +739,75 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <p className="admin-empty-state">{copy.adminUserDetailEmpty ?? '상세를 보려면 사용자를 선택하세요.'}</p>
               ) : null}
               {activeDetailUser ? (
-                <dl className="admin-user-detail-grid">
-                  {renderDetailValue('uid', activeDetailUser.uid)}
-                  {renderDetailValue(copy.emailLabel, activeDetailUser.email || '-')}
-                  {renderDetailValue(copy.adminDisplayName ?? '닉네임 / 이름', getUserDisplayName(activeDetailUser))}
-                  {renderDetailValue(copy.adminRole, activeDetailUser.role || 'user')}
-                  {renderDetailValue(copy.adminCreditsColumn, activeDetailUser.credits ?? 0)}
-                  {renderDetailValue(copy.adminDailyCredit ?? 'dailyCredit', activeDetailUser.dailyCredit ?? 0)}
-                  {renderDetailValue(copy.adminPaidCredit ?? 'paidCredit', activeDetailUser.paidCredit ?? 0)}
-                  {renderDetailValue(copy.adminTotalGenerated ?? '총 생성 수', activeDetailUser.totalGenerated ?? 0)}
-                  {renderDetailValue(copy.adminSubscribed ?? '구독 여부', activeDetailUser.isSubscribed ? (copy.adminSubscribedYesLabel ?? '구독 중') : (copy.adminSubscribedNoLabel ?? '미구독'))}
-                  {renderDetailValue(copy.subscriptionPlanLabel, copy.subscriptionPlanValue(activeDetailUser.subscriptionPlan || 'free'))}
-                  {renderDetailValue(copy.adminJoinedAt, formatTimestampLabel(activeDetailUser.createdAt))}
-                  {renderDetailValue(copy.adminLastLoginAt ?? '최근 로그인', formatTimestampLabel(activeDetailUser.lastLoginAt))}
-                  {renderDetailValue(copy.adminUpdatedAt ?? '수정일', formatTimestampLabel(activeDetailUser.updatedAt))}
-                </dl>
+                <>
+                  <div className="admin-user-stat-strip">
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.credits ?? 0}</strong>
+                      <span>{copy.adminCreditsColumn}</span>
+                    </div>
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.totalGenerated ?? 0}</strong>
+                      <span>{copy.adminTotalGenerated ?? '총 생성 수'}</span>
+                    </div>
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.giftReceivedCount ?? 0}</strong>
+                      <span>{copy.adminGiftButton ?? '선물'} {copy.adminCountLabel ?? '횟수'}</span>
+                    </div>
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.giftedCreditTotal ?? 0}</strong>
+                      <span>{copy.adminGiftButton ?? '선물'} {copy.adminCreditsColumn}</span>
+                    </div>
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.purchaseCount ?? 0}</strong>
+                      <span>{copy.adminPaymentsSection ?? '구매 이력'}</span>
+                    </div>
+                    <div className="admin-user-stat-chip">
+                      <strong>{activeDetailUser.purchasedCreditTotal ?? 0}</strong>
+                      <span>{copy.purchaseCreditsLabel ?? '구매 크레딧'}</span>
+                    </div>
+                  </div>
+                  <dl className="admin-user-detail-grid compact">
+                    {renderDetailValue('uid', activeDetailUser.uid)}
+                    {renderDetailValue(copy.emailLabel, activeDetailUser.email || '-')}
+                    {renderDetailValue(copy.adminDisplayName ?? '닉네임 / 이름', getUserDisplayName(activeDetailUser))}
+                    {renderDetailValue(copy.adminRole, activeDetailUser.role || 'user')}
+                    {renderDetailValue(copy.adminDailyCredit ?? 'dailyCredit', activeDetailUser.dailyCredit ?? 0)}
+                    {renderDetailValue(copy.adminPaidCredit ?? 'paidCredit', activeDetailUser.paidCredit ?? 0)}
+                    {renderDetailValue(copy.adminSubscribed ?? '구독 여부', activeDetailUser.isSubscribed ? (copy.adminSubscribedYesLabel ?? '구독 중') : (copy.adminSubscribedNoLabel ?? '미구독'))}
+                    {renderDetailValue(copy.subscriptionPlanLabel, copy.subscriptionPlanValue(activeDetailUser.subscriptionPlan || 'free'))}
+                    {renderDetailValue(copy.adminJoinedAt, formatTimestampLabel(activeDetailUser.createdAt))}
+                    {renderDetailValue(copy.adminLastLoginAt ?? '최근 로그인', formatTimestampLabel(activeDetailUser.lastLoginAt))}
+                    {renderDetailValue(copy.adminUpdatedAt ?? '수정일', formatTimestampLabel(activeDetailUser.updatedAt))}
+                    {renderDetailValue(copy.adminVisitCountLabel ?? '방문 횟수', activeDetailUser.visitCount ?? '-')}
+                    {renderDetailValue(copy.adminTotalStayLabel ?? '총 체류 시간', formatCompactDuration(activeDetailUser.totalStaySeconds))}
+                  </dl>
+                  <section className="admin-user-history-card">
+                    <div className="admin-user-history-header">
+                      <h5>{copy.adminPaymentsSection ?? '구매 이력'}</h5>
+                      <p>{copy.adminPurchaseHistoryHint ?? '최근 결제 기록 10건까지 표시합니다.'}</p>
+                    </div>
+                    {purchaseHistory.length > 0 ? (
+                      <div className="admin-user-history-table">
+                        <div className="admin-user-history-head">
+                          <span>{copy.adminCreatedAt}</span>
+                          <span>{copy.adminPaymentProduct ?? '상품'}</span>
+                          <span>{copy.adminCreditsColumn}</span>
+                          <span>{copy.adminStatus}</span>
+                        </div>
+                        {purchaseHistory.map((item) => (
+                          <div key={item.id} className="admin-user-history-row">
+                            <span>{formatTimestampLabel(item.paidAt || item.createdAt)}</span>
+                            <span>{item.productId || '-'}</span>
+                            <span>{item.paidCredit ?? 0}</span>
+                            <span>{item.status || '-'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="admin-empty-state compact">{copy.adminNoData ?? '표시할 데이터가 없습니다.'}</p>
+                    )}
+                  </section>
+                </>
               ) : null}
             </aside>
           </div>

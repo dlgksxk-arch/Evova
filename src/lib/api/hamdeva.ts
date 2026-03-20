@@ -22,8 +22,8 @@ const apiUrl = (path: string): string => `${API_BASE_URL}${path}`;
 const TRYON_ENDPOINT = apiUrl('/api/tryon');
 const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
 const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
-const PADDLE_CHECKOUT_ENDPOINT = apiUrl('/api/paddle/checkout');
-const PADDLE_SESSION_ENDPOINT = apiUrl('/api/paddle/session');
+const LEMON_CHECKOUT_ENDPOINT = apiUrl('/api/lemon/checkout');
+const LEMON_SESSION_ENDPOINT = apiUrl('/api/lemon/session');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
 const ADMIN_USER_DETAIL_ENDPOINT = apiUrl('/api/admin/users/detail');
@@ -156,7 +156,7 @@ export const callCreateCheckoutSession = async (payload: {
   productId: CheckoutProductId;
   uid?: string;
 }): Promise<CheckoutSessionResponse> => {
-  const res = await fetch(PADDLE_CHECKOUT_ENDPOINT, {
+  const res = await fetch(LEMON_CHECKOUT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ export const callCheckoutSessionStatus = async (payload: {
   sessionId?: string | null;
 }): Promise<CheckoutSessionStatusResponse> => {
   const query = payload.sessionId ? `?sessionId=${encodeURIComponent(payload.sessionId)}` : '';
-  const res = await fetch(`${PADDLE_SESSION_ENDPOINT}${query}`, {
+  const res = await fetch(`${LEMON_SESSION_ENDPOINT}${query}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${payload.authToken}`,
@@ -266,11 +266,22 @@ const normalizeAdminUser = <T extends {
   createdAt?: number | null;
   lastLoginAt?: number | null;
   updatedAt?: number | null;
+  purchaseHistory?: Array<{
+    paidAt?: number | null;
+    createdAt?: number | null;
+  }>;
 }>(user: T) => ({
   ...user,
   createdAt: toTimestampLike(user.createdAt),
   lastLoginAt: toTimestampLike(user.lastLoginAt),
   updatedAt: toTimestampLike(user.updatedAt),
+  purchaseHistory: Array.isArray(user.purchaseHistory)
+    ? user.purchaseHistory.map((item) => ({
+        ...item,
+        paidAt: toTimestampLike(item.paidAt),
+        createdAt: toTimestampLike(item.createdAt),
+      }))
+    : user.purchaseHistory,
 });
 
 const normalizeTimestampFields = <T extends Record<string, unknown>>(

@@ -57,7 +57,7 @@ const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
 const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
 const MAX_ARCHIVED_CREATIONS = 5;
-const PADDLE_PROVIDER = 'paddle';
+const LEMON_PROVIDER = 'lemon';
 const PAYMENT_CURRENCY = 'usd';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
@@ -83,8 +83,8 @@ const PAYMENT_PRODUCTS = {
     paidCredit: 1000,
     name: 'HAMDEVA Starter Credits',
   },
-  creator: {
-    id: 'creator',
+  popular: {
+    id: 'popular',
     amountCents: 2999,
     amountUsd: 29.99,
     currency: PAYMENT_CURRENCY,
@@ -122,14 +122,6 @@ const PAYMENT_PRODUCTS = {
     currency: PAYMENT_CURRENCY,
     paidCredit: 10000,
     name: 'HAMDEVA Large Credit Pack',
-  },
-  studio: {
-    id: 'studio',
-    amountCents: 5999,
-    amountUsd: 59.99,
-    currency: PAYMENT_CURRENCY,
-    paidCredit: 25000,
-    name: 'HAMDEVA Studio Credits',
   },
 } as const;
 const OPENAI_IMAGE_TOKEN_PRICING = {
@@ -205,54 +197,96 @@ Use clean realistic lighting and a believable background that matches the garmen
 Strict negatives: no identity change, no different model, no age change, no ethnicity change, no beautification, no face reshaping, no glamour retouching, no costume redesign, no cropped head, no missing hands or feet, no extra fingers, no distorted face.`;
 const DOG_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
-Generate a single realistic full-body fashion image of the same dog wearing an adapted version of the referenced outfit.
+Create one realistic, high-quality, full-body pet fashion portrait of the same dog wearing an adapted version of the referenced outfit.
 
-Requirements:
-- preserve the exact dog identity, breed appearance, fur pattern, and face
-- the result must remain fully canine, never human or humanoid
-- the face must be a real dog face only, with dog muzzle, dog nose, dog mouth, dog ears, and dog eyes
-- do not generate any human face, human skin, human nose, human lips, human teeth styling, or human facial structure
-- preserve the clothing color, silhouette, and design as closely as possible
-- adapt the outfit naturally to a dog body
-- keep the visible limbs fully dog-like with dog front paws and dog hind paws that match the same dog identity
-- do not generate human hands, human feet, human fingers, human toes, or mixed human-animal limbs
-- use a more expressive fashion pose and cinematic background that strongly match the outfit concept
-- add a lively, cute, upbeat pet action such as a playful step, happy bounce, slight hop, tail-up stance, paw lift, or curious head tilt when it fits the outfit mood
-- make the overall mood cheerful, charming, and instantly lovable while staying realistic
-- keep balanced body proportions
-- place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
-- keep the head proportion about 10% smaller than before relative to the overall body in the composition
-- use professional lighting
+Core identity rules:
+- preserve the exact same dog identity, breed appearance, fur pattern, face shape, muzzle, ears, nose, eyes, and body proportions
+- the result must stay fully canine from head to toe, never human or humanoid
+- show only real dog facial anatomy and real dog limbs
+- keep dog front paws and hind paws clearly dog-like and consistent with the same dog identity
+- do not generate any human face, human skin, human lips, human nose, human teeth styling, human hands, human feet, fingers, toes, or mixed anatomy
+
+Outfit rules:
+- preserve the outfit color, silhouette, design language, trim, accessories, and overall styling concept as closely as possible
+- adapt the outfit naturally and believably to a dog body without changing the core design concept
+- keep the full outfit readable in one glance
+
+Action and mood rules:
+- capture a cute, lively, cheerful dog action that feels like a single charming moment from a fashion shoot
+- prefer actions such as a playful paw lift, tiny bounce, happy step forward, tail-up pose, curious head tilt, light trot start, or excited stance
+- the action should feel adorable, bright, and full of personality, not static
+- keep the expression alert, happy, lovable, and camera-friendly
+- the pose should feel playful first, editorial second
+
+Composition rules:
 - single subject only
-- full body shot
 - one image only
-- no collage, no duplicate subject, no cartoon styling
-- strict negatives: no human face, no humanoid face, no human hands, no human feet, no fingers, no toes, no mixed anatomy, no missing paws`;
+- full-body shot
+- keep the full head, full body, full outfit, and all paws inside the frame
+- use balanced body proportions and professional lighting
+- place the camera slightly farther back so the head reads a bit smaller inside the full-body composition and the outfit remains easy to read
+
+Scene rules:
+- use a clean, realistic, visually charming background that supports the outfit mood
+- keep the scene bright, polished, and suitable for a premium pet fashion preview
+
+Strict negatives:
+- no human face
+- no humanoid body
+- no human hands or feet
+- no fingers or toes
+- no mixed anatomy
+- no missing paws
+- no duplicate subject
+- no collage
+- no cartoon styling
+- no horror, aggression, or distorted anatomy`;
 const CAT_PROMPT = `Use the first input image as the animal identity reference and the second input image as the outfit reference.
 
-Generate a single realistic full-body fashion image of the same cat wearing an adapted version of the referenced outfit.
+Create one realistic, high-quality, full-body pet fashion portrait of the same cat wearing an adapted version of the referenced outfit.
 
-Requirements:
-- preserve the exact cat identity, fur markings, and face
-- the result must remain fully feline, never human or humanoid
-- the face must be a real cat face only, with cat muzzle, cat nose, cat mouth, cat ears, and cat eyes
-- do not generate any human face, human skin, human nose, human lips, human teeth styling, or human facial structure
-- preserve the clothing color, silhouette, and design as closely as possible
-- adapt the outfit naturally to a cat body
-- keep the visible limbs fully cat-like with cat front paws and cat hind paws that match the same cat identity
-- do not generate human hands, human feet, human fingers, human toes, or mixed human-animal limbs
-- use a more expressive fashion pose and cinematic background that strongly match the outfit concept
-- add a lively, cute, upbeat pet action such as a graceful paw step, playful stretch, small hop, tail-up stance, curious head tilt, or alert pose when it fits the outfit mood
-- make the overall mood cheerful, charming, and instantly lovable while staying realistic
-- keep balanced body proportions
-- place the camera slightly farther back so the head appears about 30% smaller within the full-body frame
-- keep the head proportion about 10% smaller than before relative to the overall body in the composition
-- use professional lighting
+Core identity rules:
+- preserve the exact same cat identity, fur markings, face shape, ears, nose, eyes, whisker area, and body proportions
+- the result must stay fully feline from head to toe, never human or humanoid
+- show only real cat facial anatomy and real cat limbs
+- keep cat front paws and hind paws clearly cat-like and consistent with the same cat identity
+- do not generate any human face, human skin, human lips, human nose, human teeth styling, human hands, human feet, fingers, toes, or mixed anatomy
+
+Outfit rules:
+- preserve the outfit color, silhouette, design language, trim, accessories, and overall styling concept as closely as possible
+- adapt the outfit naturally and believably to a cat body without changing the core design concept
+- keep the full outfit readable in one glance
+
+Action and mood rules:
+- capture a cute, lively, elegant cat action that feels like a single charming moment from a fashion shoot
+- prefer actions such as a graceful paw step, playful stretch, tiny hop, tail-up stance, curious head tilt, light prance, or alert pose
+- the action should feel adorable, bright, and full of personality, not static
+- keep the expression alert, sweet, charming, and camera-friendly
+- the pose should feel playful first, editorial second
+
+Composition rules:
 - single subject only
-- full body shot
 - one image only
-- no collage, no duplicate subject, no cartoon styling
-- strict negatives: no human face, no humanoid face, no human hands, no human feet, no fingers, no toes, no mixed anatomy, no missing paws`;
+- full-body shot
+- keep the full head, full body, full outfit, and all paws inside the frame
+- use balanced body proportions and professional lighting
+- place the camera slightly farther back so the head reads a bit smaller inside the full-body composition and the outfit remains easy to read
+
+Scene rules:
+- use a clean, realistic, visually charming background that supports the outfit mood
+- keep the scene bright, polished, and suitable for a premium pet fashion preview
+
+Strict negatives:
+- no human face
+- no humanoid body
+- no human hands or feet
+- no fingers or toes
+- no mixed anatomy
+- no missing paws
+- no duplicate subject
+- no collage
+- no cartoon styling
+- no horror, aggression, or distorted anatomy`;
 const VIDEO_PROMPT_TEMPLATE = `Use the generated outfit image as the identity and outfit reference.
 
 Create a short cinematic fashion showcase video of the exact same subject wearing the exact same outfit.
@@ -286,7 +320,7 @@ type CreditTransactionType =
   | 'admin_gift';
 type PaymentProductId = keyof typeof PAYMENT_PRODUCTS;
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'canceled';
-type PaymentProvider = 'polar' | 'paddle';
+type PaymentProvider = 'lemon';
 type OpenAIKeySource = 'env' | 'config' | 'missing';
 type OpenAIKeyState = {
   key: string;
@@ -323,6 +357,23 @@ type AdminUserListItem = {
 };
 type AdminUserDetail = AdminUserListItem & {
   updatedAt: number | null;
+  giftReceivedCount?: number;
+  giftedCreditTotal?: number;
+  purchaseCount?: number;
+  purchasedCreditTotal?: number;
+  visitCount?: number | null;
+  totalStaySeconds?: number | null;
+  purchaseHistory?: Array<{
+    id: string;
+    provider?: string;
+    productId?: string;
+    status?: string;
+    amount?: number;
+    currency?: string;
+    paidCredit?: number;
+    paidAt?: number | null;
+    createdAt?: number | null;
+  }>;
 };
 type UserAccount = {
   email: string;
@@ -424,16 +475,17 @@ type CheckoutSessionRequest = {
   uid?: string;
   productId?: PaymentProductId;
 };
-type PaddleTransactionRecord = {
+type LemonCheckoutRecord = {
   id?: string;
-  status?: string;
-  custom_data?: Record<string, unknown>;
-  currency_code?: string | null;
-  billed_at?: string | null;
-  updated_at?: string | null;
+  attributes?: {
+    url?: string;
+  };
 };
-type PaddleWebhookEvent = {
-  event_type?: string;
+type LemonWebhookEvent = {
+  meta?: {
+    event_name?: string;
+    custom_data?: Record<string, unknown>;
+  };
   data?: Record<string, unknown>;
 };
 
@@ -620,53 +672,64 @@ const getGoogleVideoApiKey = (): string => {
   return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 
-const getPaddleApiKey = (): string => {
-  const envKey = process.env['PADDLE_API_KEY'];
+const LEMON_VARIANT_IDS: Record<PaymentProductId, string> = {
+  starter: '1425119',
+  popular: '1425108',
+  pro: '1425124',
+  small_pack: '1425127',
+  medium_pack: '1425130',
+  large_pack: '1425131',
+};
+
+const getLemonApiKey = (): string => {
+  const envKey = process.env['LEMONSQUEEZY_API_KEY'] ?? process.env['LEMON_API_KEY'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.paddle?.api_key;
+  const configKey = functions.config()?.lemon?.api_key;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const getPaddleApiBaseUrl = (): string => {
-  const environment = (process.env['PADDLE_ENV'] ?? functions.config()?.paddle?.environment ?? 'production').toString().trim().toLowerCase();
-  return environment === 'sandbox' ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
+const getLemonStoreId = (): string => {
+  const envValue = process.env['LEMONSQUEEZY_STORE_ID'] ?? process.env['LEMON_STORE_ID'];
+  if (typeof envValue === 'string' && envValue.trim()) {
+    return envValue.trim();
+  }
+
+  const configValue = functions.config()?.lemon?.store_id;
+  return typeof configValue === 'string' ? configValue.trim() : '';
 };
 
-const getPaddleWebhookSecret = (): string => {
-  const envKey = process.env['PADDLE_WEBHOOK_SECRET'];
+const getLemonApiBaseUrl = (): string => 'https://api.lemonsqueezy.com/v1';
+
+const getLemonWebhookSecret = (): string => {
+  const envKey = process.env['LEMONSQUEEZY_WEBHOOK_SECRET'] ?? process.env['LEMON_WEBHOOK_SECRET'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.paddle?.webhook_secret;
+  const configKey = functions.config()?.lemon?.webhook_secret;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const getPaddlePriceId = (productId: PaymentProductId): string => {
-  const envKey = process.env[`PADDLE_PRICE_ID_${productId.toUpperCase()}`];
-  if (typeof envKey === 'string' && envKey.trim()) {
-    return envKey.trim();
-  }
-
-  const configuredPrices = functions.config()?.paddle?.prices as Record<string, unknown> | undefined;
-  const configuredProductId = configuredPrices?.[productId];
-  if (typeof configuredProductId === 'string' && configuredProductId.trim()) {
-    return configuredProductId.trim();
-  }
-
-  return '';
+const getLemonEnvironment = (): 'production' | 'sandbox' => {
+  const value = (process.env['LEMON_ENV'] ?? functions.config()?.lemon?.environment ?? 'production').toString().trim().toLowerCase();
+  return value === 'sandbox' ? 'sandbox' : 'production';
 };
 
-const requirePaddleConfig = (): { apiKey: string } => {
-  const apiKey = getPaddleApiKey();
-  if (!apiKey) {
+const getLemonVariantId = (productId: PaymentProductId): string => (
+  LEMON_VARIANT_IDS[productId] || ''
+);
+
+const requireLemonConfig = (): { apiKey: string; storeId: string } => {
+  const apiKey = getLemonApiKey();
+  const storeId = getLemonStoreId();
+  if (!apiKey || !storeId) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
-  return { apiKey };
+  return { apiKey, storeId };
 };
 
 const roundEstimatedCost = (value: number): number =>
@@ -749,8 +812,8 @@ const buildTryOnPrompt = (subjectType: SubjectType, bodyProfile?: BodyProfile): 
   const stylingGuide = [
     bodyProfile?.outfitName ? `The garment should read clearly as ${bodyProfile.outfitName}.` : null,
     bodyProfile?.outfitMood ? `Match the overall styling to a ${bodyProfile.outfitMood} mood.` : 'Choose a pose and scene that strongly match the garment mood and purpose rather than using a generic studio-only result.',
-    'Make the pose more dramatic, visually confident, and editorial so the outfit mood reads clearly at a glance, while still keeping anatomy believable and the garment undistorted.',
-    subjectType === 'dog' || subjectType === 'cat' ? 'Add a cute, playful action that makes the pet look more lively and joyful at a glance, such as a paw lift, happy bounce, light step, tail-up pose, or curious head tilt, while keeping the full outfit readable.' : null,
+    'Make the pose readable at a glance so the outfit mood feels clear immediately, while still keeping anatomy believable and the garment undistorted.',
+    subjectType === 'dog' || subjectType === 'cat' ? 'Prioritize a cute, lively pet action over a stiff fashion pose. The image should feel like a charming split-second moment with energy, joy, and personality while keeping the outfit clearly visible.' : null,
     bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a bold expressive pose that fits the outfit mood, formality, and silhouette while keeping the full garment readable.',
     bodyProfile?.backgroundHint ? `Use ${bodyProfile.backgroundHint} as the background direction.` : 'Use a realistic background that suits the outfit mood and cultural context.',
     subjectType === 'dog' ? 'The final result must show only a dog face and dog paws, with no human or humanoid facial or limb features anywhere in the image.' : null,
@@ -2369,40 +2432,19 @@ const normalizePaymentStatusForClient = (status: string | undefined): PaymentSes
   return 'pending';
 };
 
-const fetchPaddleTransaction = async (transactionId: string): Promise<PaddleTransactionRecord | null> => {
-  const apiKey = getPaddleApiKey();
-  if (!apiKey || !transactionId) {
-    return null;
-  }
-
-  const response = await fetch(`${getPaddleApiBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const payload = await response.json().catch(() => ({})) as { data?: PaddleTransactionRecord };
-  return getObjectValue(payload.data, payload) as PaddleTransactionRecord;
-};
-
 const getCheckoutSessionStatus = async (
   user: AuthenticatedUser,
   sessionId?: string,
 ): Promise<PaymentSessionStatusResult> => {
   const userSnapshotPromise = db.collection('users').doc(user.uid).get();
   const paymentSnapshotPromise = sessionId
-    ? db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get()
+    ? db.collection('payments').doc(buildPaymentDocId(LEMON_PROVIDER, sessionId)).get()
     : db.collection('payments')
         .where('uid', '==', user.uid)
         .orderBy('updatedAt', 'desc')
         .limit(10)
         .get()
-        .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === PADDLE_PROVIDER) ?? null);
+        .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === LEMON_PROVIDER) ?? null);
 
   const [paymentSnapshotLike, userSnapshot] = await Promise.all([
     paymentSnapshotPromise,
@@ -2413,49 +2455,10 @@ const getCheckoutSessionStatus = async (
     ? paymentSnapshotLike
     : null;
   let paymentData = paymentSnapshot?.data() ?? {};
-  const remoteTransaction = sessionId ? await fetchPaddleTransaction(sessionId) : null;
-  const remoteStatus = typeof remoteTransaction?.status === 'string' ? remoteTransaction.status.toLowerCase() : null;
-
-  if (sessionId && remoteStatus === 'completed') {
-    const customData = getObjectValue(remoteTransaction?.custom_data);
-    const uid = getStringValue(paymentData.uid, customData.uid);
-    const rawProductId = getStringValue(paymentData.productId, customData.productId);
-
-    if (uid === user.uid && isPaymentProductId(rawProductId)) {
-      await fulfillCreditPurchase({
-        provider: PADDLE_PROVIDER,
-        providerPaymentId: sessionId,
-        uid,
-        productId: rawProductId,
-        amount: null,
-        currency: getStringValue(remoteTransaction?.currency_code),
-        paidAt: getStringValue(remoteTransaction?.billed_at, remoteTransaction?.updated_at),
-        rawPayload: remoteTransaction,
-      });
-
-      const [freshPaymentSnapshot, freshUserSnapshot] = await Promise.all([
-        db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get(),
-        db.collection('users').doc(user.uid).get(),
-      ]);
-      paymentSnapshot = freshPaymentSnapshot;
-      paymentData = freshPaymentSnapshot.data() ?? {};
-      account = normalizeUserAccount(user.email, freshUserSnapshot.data());
-    }
-  } else if (sessionId && remoteStatus && ['canceled', 'cancelled', 'past_due'].includes(remoteStatus) && paymentSnapshot?.exists) {
-    await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId: sessionId, status: remoteStatus.startsWith('cancel') ? 'canceled' : 'failed' });
-    const freshPaymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get();
-    paymentSnapshot = freshPaymentSnapshot;
-    paymentData = freshPaymentSnapshot.data() ?? {};
-  }
 
   if (!paymentSnapshot?.exists) {
-    const statusForClient = remoteStatus === 'completed'
-      ? 'completed'
-      : remoteStatus && ['canceled', 'cancelled', 'past_due', 'failed'].includes(remoteStatus)
-        ? remoteStatus
-        : 'pending';
     return {
-      status: normalizePaymentStatusForClient(statusForClient),
+      status: 'pending',
       paymentId: null,
       paidCredit: 0,
       dailyCredit: account.dailyCredit,
@@ -2469,12 +2472,7 @@ const getCheckoutSessionStatus = async (
   }
 
   const storedStatus = typeof paymentData.status === 'string' ? paymentData.status.toLowerCase() : undefined;
-  const statusForClient = storedStatus === 'paid'
-    ? 'paid'
-    : remoteStatus === 'completed'
-      ? 'completed'
-      : remoteStatus || storedStatus || 'pending';
-  const normalizedStatus = normalizePaymentStatusForClient(statusForClient);
+  const normalizedStatus = normalizePaymentStatusForClient(storedStatus || 'pending');
 
   return {
     status: normalizedStatus,
@@ -2503,50 +2501,82 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
     return;
   }
 
-  const { apiKey } = requirePaddleConfig();
+  const { apiKey, storeId } = requireLemonConfig();
   const product = getPaymentProduct(productId);
-  const paddlePriceId = getPaddlePriceId(productId);
-  if (!paddlePriceId) {
+  const variantId = getLemonVariantId(productId);
+  if (!variantId) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
-  const response = await fetch(`${getPaddleApiBaseUrl()}/transactions`, {
+  const successUrl = `${process.env['APP_BASE_URL']?.trim() || 'https://hamdeva.com'}/payment-success`;
+  const response = await fetch(`${getLemonApiBaseUrl()}/checkouts`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      Accept: 'application/vnd.api+json',
+      'Content-Type': 'application/vnd.api+json',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      items: [
-        {
-          price_id: paddlePriceId,
-          quantity: 1,
+      data: {
+        type: 'checkouts',
+        attributes: {
+          checkout_data: {
+            email: user.email,
+            custom: {
+              uid: user.uid,
+              productId: product.id,
+              paidCredit: String(product.paidCredit),
+            },
+          },
+          checkout_options: {
+            embed: false,
+            media: true,
+            logo: true,
+            desc: true,
+          },
+          product_options: {
+            redirect_url: successUrl,
+            receipt_button_text: 'Return to HAMDEVA',
+            receipt_link_url: successUrl,
+          },
+          test_mode: getLemonEnvironment() === 'sandbox',
         },
-      ],
-      collection_mode: 'automatic',
-      custom_data: {
-        uid: user.uid,
-        productId: product.id,
-        paidCredit: String(product.paidCredit),
+        relationships: {
+          store: {
+            data: {
+              type: 'stores',
+              id: storeId,
+            },
+          },
+          variant: {
+            data: {
+              type: 'variants',
+              id: variantId,
+            },
+          },
+        },
       },
     }),
   });
-  const payload = await response.json().catch(() => ({})) as { data?: PaddleTransactionRecord };
-  const session = getObjectValue(payload.data, payload) as PaddleTransactionRecord;
-  if (!response.ok || !session.id) {
+  const payload = await response.json().catch(() => ({})) as { data?: LemonCheckoutRecord };
+  const checkoutData = getObjectValue(payload.data, payload);
+  const checkout = checkoutData as LemonCheckoutRecord;
+  const checkoutUrl = getStringValue(checkout.attributes?.url, getObjectValue(checkoutData.attributes).url);
+  const checkoutId = getStringValue(checkout.id);
+  if (!response.ok || !checkoutId || !checkoutUrl) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
   await upsertPendingPayment({
-    provider: PADDLE_PROVIDER,
-    providerPaymentId: session.id,
+    provider: LEMON_PROVIDER,
+    providerPaymentId: checkoutId,
     uid: user.uid,
     productId,
   });
 
   res.json({
     success: true,
-    sessionId: session.id,
-    checkoutUrl: null,
+    sessionId: checkoutId,
+    checkoutUrl,
   });
 };
 
@@ -2588,98 +2618,93 @@ const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymen
   };
 };
 
-const verifyPaddleWebhookSignature = (rawPayload: string, signatureHeader: string, webhookSecret: string): boolean => {
-  const pairs = signatureHeader.split(';').map((part) => part.trim()).filter(Boolean);
-  const timestamp = pairs.find((part) => part.startsWith('ts='))?.slice(3);
-  const signatures = pairs.filter((part) => part.startsWith('h1=')).map((part) => part.slice(3));
-
-  if (!timestamp || signatures.length === 0) {
+const verifyLemonWebhookSignature = (rawPayload: string, signatureHeader: string, webhookSecret: string): boolean => {
+  try {
+    const expected = createHmac('sha256', webhookSecret).update(rawPayload).digest('hex');
+    const expectedBuffer = Buffer.from(expected, 'hex');
+    const candidateBuffer = Buffer.from(signatureHeader, 'hex');
+    return candidateBuffer.length === expectedBuffer.length && timingSafeEqual(candidateBuffer, expectedBuffer);
+  } catch {
     return false;
   }
-
-  const signedPayload = `${timestamp}:${rawPayload}`;
-  const expected = createHmac('sha256', webhookSecret).update(signedPayload).digest('hex');
-  const expectedBuffer = Buffer.from(expected, 'hex');
-
-  return signatures.some((signature) => {
-    try {
-      const candidate = Buffer.from(signature, 'hex');
-      return candidate.length === expectedBuffer.length && timingSafeEqual(candidate, expectedBuffer);
-    } catch {
-      return false;
-    }
-  });
 };
 
-const handlePaddleWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
+const handleLemonWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
-  const webhookSecret = getPaddleWebhookSecret();
+  const webhookSecret = getLemonWebhookSecret();
   if (!webhookSecret) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
   const rawPayload = req.rawBody.toString('utf8');
   const headers = getRequestStringHeaders(req);
-  const signatureHeader = headers['paddle-signature'];
+  const signatureHeader = headers['x-signature'];
   if (!signatureHeader) {
     res.status(400).json({ error: 'MISSING_SIGNATURE' });
     return;
   }
 
-  if (!verifyPaddleWebhookSignature(rawPayload, signatureHeader, webhookSecret)) {
-    functions.logger.error('Paddle webhook signature verification failed');
+  if (!verifyLemonWebhookSignature(rawPayload, signatureHeader, webhookSecret)) {
+    functions.logger.error('LemonSqueezy webhook signature verification failed');
     res.status(400).json({ error: 'INVALID_SIGNATURE' });
     return;
   }
 
-  const event = JSON.parse(rawPayload) as PaddleWebhookEvent;
+  const event = JSON.parse(rawPayload) as LemonWebhookEvent;
   const data = getObjectValue(event.data);
-  const customData = getObjectValue(data.custom_data);
+  const attributes = getObjectValue(data.attributes);
+  const customData = getObjectValue(event.meta?.custom_data);
   const providerPaymentId = getStringValue(data.id);
-  const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(PADDLE_PROVIDER, providerPaymentId) : null;
+  const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(LEMON_PROVIDER, providerPaymentId) : null;
   const uid = getStringValue(customData.uid, contextFromPayment?.uid);
   const rawProductId = getStringValue(customData.productId, contextFromPayment?.productId);
-  const eventType = getStringValue(event.event_type);
-  const transactionStatus = getStringValue(data.status).toLowerCase();
-  const isCompletedEvent = eventType === 'transaction.completed' || (eventType === 'transaction.updated' && transactionStatus === 'completed');
-  const isFailedEvent = eventType === 'transaction.payment_failed' || (eventType === 'transaction.updated' && transactionStatus === 'past_due');
-  const isCanceledEvent = eventType === 'transaction.canceled' || (eventType === 'transaction.updated' && ['canceled', 'cancelled'].includes(transactionStatus));
+  const eventType = getStringValue(event.meta?.event_name);
+  const isCompletedEvent = eventType === 'order_created';
+  const isFailedEvent = eventType === 'subscription_payment_failed';
+  const isCanceledEvent = eventType === 'subscription_cancelled' || eventType === 'subscription_expired';
 
   try {
     if (isCompletedEvent) {
       if (!providerPaymentId || !uid || !isPaymentProductId(rawProductId)) {
-        throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
+        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
       }
 
       await fulfillCreditPurchase({
-        provider: PADDLE_PROVIDER,
+        provider: LEMON_PROVIDER,
         providerPaymentId,
         uid,
         productId: rawProductId,
-        amount: null,
-        currency: getStringValue(data.currency_code),
-        paidAt: getStringValue(data.billed_at, data.updated_at),
+        amount: (() => {
+          const rawAmount = typeof attributes.total === 'number'
+            ? attributes.total
+            : typeof attributes.total === 'string'
+              ? Number.parseFloat(attributes.total)
+              : Number.NaN;
+          return Number.isFinite(rawAmount) ? rawAmount / 100 : null;
+        })(),
+        currency: getStringValue(attributes.currency, attributes.currency_code),
+        paidAt: getStringValue(attributes.created_at, attributes.updated_at),
         rawPayload: event,
       });
     } else if (isFailedEvent) {
       if (!providerPaymentId) {
-        throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
+        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
       }
-      await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId, status: 'failed' });
+      await markPaymentStatus({ provider: LEMON_PROVIDER, providerPaymentId, status: 'failed' });
     } else if (isCanceledEvent) {
       if (!providerPaymentId) {
-        throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
+        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
       }
-      await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId, status: 'canceled' });
+      await markPaymentStatus({ provider: LEMON_PROVIDER, providerPaymentId, status: 'canceled' });
     }
 
     res.json({ received: true });
   } catch (error) {
-    functions.logger.error('Paddle webhook processing failed', {
+    functions.logger.error('LemonSqueezy webhook processing failed', {
       eventType,
       message: error instanceof Error ? error.message : 'unknown',
       error,
@@ -2786,6 +2811,23 @@ const getDisplayNameValue = (data: FirebaseFirestore.DocumentData | undefined): 
   return nickname || null;
 };
 
+const isRealAdminMemberEmail = (value: string): boolean => {
+  const email = value.trim().toLowerCase();
+  if (!email) {
+    return false;
+  }
+
+  if (email.endsWith('@example.com')) {
+    return false;
+  }
+
+  return !email.includes('smoke') && !email.includes('codex-sample');
+};
+
+const isRealAdminMemberItem = (item: AdminUserListItem): boolean => (
+  isRealAdminMemberEmail(item.email)
+);
+
 const buildAdminUserListItem = (
   snapshot: FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot,
 ): AdminUserListItem | null => {
@@ -2815,19 +2857,66 @@ const buildAdminUserListItem = (
   };
 };
 
-const buildAdminUserDetail = (
+const buildAdminUserDetail = async (
   snapshot: FirebaseFirestore.DocumentSnapshot,
-): AdminUserDetail | null => {
+): Promise<AdminUserDetail | null> => {
   const summary = buildAdminUserListItem(snapshot);
   if (!summary) {
     return null;
   }
 
   const data = snapshot.data() ?? {};
+  const [giftSnapshot, paymentSnapshot] = await Promise.all([
+    db.collection('credit_transactions').where('uid', '==', snapshot.id).get(),
+    db.collection('payments').where('uid', '==', snapshot.id).get(),
+  ]);
+  const giftRecords = giftSnapshot.docs
+    .map((doc) => doc.data() ?? {})
+    .filter((item) => item.type === 'admin_gift');
+  const giftedCreditTotal = giftRecords.reduce((sum, item) => {
+    const amount = typeof item.amount === 'number' && Number.isFinite(item.amount) ? item.amount : 0;
+    return sum + amount;
+  }, 0);
+  const purchaseHistory = paymentSnapshot.docs
+    .map((doc) => {
+      const item = doc.data() ?? {};
+      return {
+        id: doc.id,
+        provider: typeof item.provider === 'string' ? item.provider : '',
+        productId: typeof item.productId === 'string' ? item.productId : '',
+        status: typeof item.status === 'string' ? item.status : '',
+        amount: typeof item.amount === 'number' && Number.isFinite(item.amount) ? item.amount : 0,
+        currency: typeof item.currency === 'string' ? item.currency : '',
+        paidCredit: typeof item.paidCredit === 'number' && Number.isFinite(item.paidCredit) ? item.paidCredit : 0,
+        paidAt: serializeTimestamp(item.paidAt),
+        createdAt: serializeTimestamp(item.createdAt),
+      };
+    })
+    .sort((left, right) => {
+      const leftTime = left.paidAt ?? left.createdAt ?? 0;
+      const rightTime = right.paidAt ?? right.createdAt ?? 0;
+      return rightTime - leftTime;
+    });
+  const paidPurchases = purchaseHistory.filter((item) => item.status === 'paid');
+  const getNumberField = (...values: unknown[]): number | null => {
+    for (const value of values) {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.max(0, Math.trunc(value));
+      }
+    }
+    return null;
+  };
 
   return {
     ...summary,
     updatedAt: serializeTimestamp(data.updatedAt),
+    giftReceivedCount: giftRecords.length,
+    giftedCreditTotal,
+    purchaseCount: paidPurchases.length,
+    purchasedCreditTotal: paidPurchases.reduce((sum, item) => sum + (item.paidCredit || 0), 0),
+    visitCount: getNumberField(data.visitCount, data.totalVisitCount, data.totalVisits),
+    totalStaySeconds: getNumberField(data.totalStaySeconds, data.totalStayDurationSeconds, data.totalUsageSeconds),
+    purchaseHistory: purchaseHistory.slice(0, 10),
   };
 };
 
@@ -2921,7 +3010,7 @@ const buildAdminUserSearchResults = async (queryText: string, limit: number): Pr
   [uidSnapshot, emailSnapshot, displayNameSnapshot, nicknameSnapshot].forEach((snapshot) => {
     snapshot?.docs.forEach((doc) => {
       const item = buildAdminUserListItem(doc);
-      if (item && !deduped.has(item.uid)) {
+      if (item && isRealAdminMemberItem(item) && !deduped.has(item.uid)) {
         deduped.set(item.uid, item);
       }
     });
@@ -3087,7 +3176,8 @@ const handleAdminUsersListRequest = async (req: functions.https.Request, res: fu
   const snapshot = await usersQuery.get();
   const users = snapshot.docs
     .map((doc) => buildAdminUserListItem(doc))
-    .filter((item): item is AdminUserListItem => item !== null);
+    .filter((item): item is AdminUserListItem => item !== null)
+    .filter(isRealAdminMemberItem);
   const nextCursor = snapshot.docs.length === limit ? snapshot.docs[snapshot.docs.length - 1]?.id ?? null : null;
 
   res.json({
@@ -3108,7 +3198,7 @@ const handleAdminUserDetailRequest = async (req: functions.https.Request, res: f
   }
 
   const snapshot = await db.collection('users').doc(targetUid).get();
-  const detail = buildAdminUserDetail(snapshot);
+  const detail = await buildAdminUserDetail(snapshot);
   if (!detail) {
     res.status(404).json({ error: 'USER_NOT_FOUND', message: '사용자를 찾을 수 없습니다.' });
     return;
@@ -3280,17 +3370,18 @@ const handleAdminGiftCreditRequest = async (req: functions.https.Request, res: f
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    updatedUser = {
-      ...(buildAdminUserDetail(targetSnapshot) as AdminUserDetail),
+    const nextSummary = buildAdminUserListItem(targetSnapshot);
+    updatedUser = nextSummary ? {
+      ...nextSummary,
       credits: nextAccount.credits,
       dailyCredit: nextAccount.dailyCredit,
       paidCredit: nextAccount.paidCredit,
       updatedAt: null,
-    };
+    } : null;
   });
 
   const latestSnapshot = await targetUserRef.get();
-  const latestUser = buildAdminUserDetail(latestSnapshot) ?? updatedUser;
+  const latestUser = await buildAdminUserDetail(latestSnapshot) ?? updatedUser;
 
   res.json({
     success: true,
@@ -3391,6 +3482,13 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
 
   let chargeResult: ChargeResult;
   const resolvedSubjectType = normalizeSubjectType(subjectType);
+  if (resolvedSubjectType === 'human') {
+    res.status(400).json({
+      error: 'PET_ONLY_SUBJECT',
+      message: 'Human photos are not supported. Please upload a dog or cat photo only.',
+    });
+    return;
+  }
   try {
     chargeResult = await beginGenerationCharge(user, requestId, resolvedSubjectType);
   } catch (error) {
@@ -3989,12 +4087,12 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/paddle/webhook' || normalizedPath === '/polar/webhook') {
-      await handlePaddleWebhookRequest(req, res);
+    if (normalizedPath === '/lemon/webhook') {
+      await handleLemonWebhookRequest(req, res);
       return;
     }
 
-    if (normalizedPath === '/paddle/checkout' || normalizedPath === '/polar/checkout') {
+    if (normalizedPath === '/lemon/checkout') {
       try {
         await handleCreateCheckoutSessionRequest(req, res);
       } catch (error) {
@@ -4003,7 +4101,7 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/paddle/session' || normalizedPath === '/polar/session') {
+    if (normalizedPath === '/lemon/session') {
       try {
         await handleCheckoutSessionStatusRequest(req, res);
       } catch (error) {

@@ -5,7 +5,7 @@ export type SubscriptionPlan = 'free' | 'basic' | 'pro';
 export type UserRole = 'user' | 'admin';
 export type CreditKind = 'daily' | 'paid';
 export type SubjectType = 'human' | 'dog' | 'cat';
-export type CheckoutProductId = 'starter' | 'creator' | 'pro' | 'studio' | 'small_pack' | 'medium_pack' | 'large_pack';
+export type CheckoutProductId = 'starter' | 'popular' | 'pro' | 'small_pack' | 'medium_pack' | 'large_pack';
 export interface ApiBonusFields {
   dailyRewardGranted?: number;
   signupBonusGranted?: number;
@@ -82,8 +82,27 @@ export interface AdminUserListItem {
   lastLoginAt?: Timestamp | null;
 }
 
+export interface AdminUserPurchaseItem {
+  id: string;
+  provider?: string;
+  productId?: string;
+  status?: string;
+  amount?: number;
+  currency?: string;
+  paidCredit?: number;
+  paidAt?: Timestamp | null;
+  createdAt?: Timestamp | null;
+}
+
 export interface AdminUserDetail extends AdminUserListItem {
   updatedAt?: Timestamp | null;
+  giftReceivedCount?: number;
+  giftedCreditTotal?: number;
+  purchaseCount?: number;
+  purchasedCreditTotal?: number;
+  visitCount?: number | null;
+  totalStaySeconds?: number | null;
+  purchaseHistory?: AdminUserPurchaseItem[];
 }
 
 export interface AdminUserListResponse {
