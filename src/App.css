@@ -316,7 +316,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-quick-btn,
-.nav-quick-buy-btn,
+.nav-payment-btn,
 .nav-quick-primary {
   min-height: 32px;
   height: 32px;
@@ -368,26 +368,37 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-quick-btn,
-.nav-quick-buy-btn,
+.nav-payment-btn,
 .nav-quick-primary,
 .header-account-trigger {
   box-sizing: border-box;
 }
 
-.nav-quick-buy-btn {
-  min-width: auto;
-  padding: 0 9px;
+.nav-payment-btn {
+  min-width: 0;
+  width: fit-content;
+  flex: 0 0 auto;
+  align-self: center;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent-gold) 22%, var(--border));
   border-color: color-mix(in srgb, var(--accent-gold) 22%, var(--border));
   background: linear-gradient(180deg, #fff4b5 0%, #ffd86a 100%);
   color: #6a3e00;
   box-shadow: 0 6px 14px rgba(255, 216, 92, 0.22);
+  font-size: 12px;
   font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-.nav-quick-buy-btn:hover {
+.nav-payment-btn:hover {
   border-color: color-mix(in srgb, #ffb300 32%, var(--border));
   background: linear-gradient(180deg, #fff0a1 0%, #ffcf4a 100%);
   color: #5a3400;
+  transform: translateY(-1px);
 }
 
 .nav-logo-button {
@@ -5588,7 +5599,7 @@ body {
 }
 
 .nav-quick-btn,
-.nav-quick-buy-btn,
+.nav-payment-btn,
 .nav-quick-primary,
 .header-account-trigger {
   min-height: 34px;
@@ -5615,23 +5626,17 @@ body {
   color: var(--text);
 }
 
-.nav-quick-buy-btn {
-  min-height: 30px;
-  height: 30px;
-  min-width: 0;
-  width: fit-content;
-  flex: 0 0 auto;
-  align-self: center;
-  padding: 0 8px;
-  font-size: 12px;
-  font-weight: 800;
+.nav-payment-btn {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 7px;
+  font-size: 11px;
   background: linear-gradient(135deg, #ffd65a, #ffb938);
   border-color: rgba(255, 171, 26, 0.4);
   color: #4a2500;
-  white-space: nowrap;
 }
 
-.nav-quick-buy-btn:hover {
+.nav-payment-btn:hover {
   background: linear-gradient(135deg, #ffe17e, #ffc85b);
   color: #3d2000;
 }
@@ -5682,7 +5687,7 @@ body {
 .nav-quick-btn,
 .nav-quick-primary,
 .header-account-trigger,
-.nav-quick-buy-btn {
+.nav-payment-btn {
   white-space: nowrap;
   color: var(--text);
 }
@@ -6067,8 +6072,8 @@ body {
   color: var(--text-on-dark);
 }
 
-[data-theme='dark'] .nav-quick-buy-btn,
-.app-root.dark .nav-quick-buy-btn {
+[data-theme='dark'] .nav-payment-btn,
+.app-root.dark .nav-payment-btn {
   color: #4e2b00;
 }
 

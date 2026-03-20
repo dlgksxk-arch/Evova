@@ -5157,7 +5157,7 @@ const App: React.FC = () => {
                 {headerSubscriptionLabel}
               </button>
             )}
-            <button className="outline-btn nav-quick-buy-btn" onClick={openCreditPlanModal} type="button">
+            <button className="nav-payment-btn" onClick={openCreditPlanModal} type="button">
               {t.chargeCredits}
             </button>
           </div>
