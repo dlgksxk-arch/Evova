@@ -2494,6 +2494,18 @@ const toTimestampMillis = (value: unknown): number | null => {
   return null;
 };
 
+const sortPaymentDocsByUpdatedAtDesc = <
+  T extends FirebaseFirestore.QueryDocumentSnapshot | FirebaseFirestore.DocumentSnapshot
+>(docs: T[]): T[] => docs
+  .slice()
+  .sort((a, b) => {
+    const aData = typeof a.data === 'function' ? a.data() ?? {} : {};
+    const bData = typeof b.data === 'function' ? b.data() ?? {} : {};
+    const aUpdated = toTimestampMillis(aData.updatedAt) ?? toTimestampMillis(aData.createdAt) ?? 0;
+    const bUpdated = toTimestampMillis(bData.updatedAt) ?? toTimestampMillis(bData.createdAt) ?? 0;
+    return bUpdated - aUpdated;
+  });
+
 const getCheckoutSessionStatus = async (
   user: AuthenticatedUser,
   sessionId?: string,
@@ -2503,10 +2515,10 @@ const getCheckoutSessionStatus = async (
     ? db.collection('payments').doc(buildPaymentDocId(LEMON_PROVIDER, sessionId)).get()
     : db.collection('payments')
         .where('uid', '==', user.uid)
-        .orderBy('updatedAt', 'desc')
-        .limit(10)
+        .limit(20)
         .get()
-        .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === LEMON_PROVIDER) ?? null);
+        .then((snapshot) => sortPaymentDocsByUpdatedAtDesc(snapshot.docs)
+          .find((doc) => doc.data()?.provider === LEMON_PROVIDER) ?? null);
 
   const [paymentSnapshotLike, userSnapshot] = await Promise.all([
     paymentSnapshotPromise,
@@ -2540,11 +2552,10 @@ const getCheckoutSessionStatus = async (
     const pendingCreatedAtMillis = toTimestampMillis(paymentData.createdAt) ?? 0;
     const latestPaidSnapshot = await db.collection('payments')
       .where('uid', '==', user.uid)
-      .orderBy('updatedAt', 'desc')
       .limit(20)
       .get();
 
-    const matchedPaidDoc = latestPaidSnapshot.docs.find((doc) => {
+    const matchedPaidDoc = sortPaymentDocsByUpdatedAtDesc(latestPaidSnapshot.docs).find((doc) => {
       const data = doc.data();
       if (data?.provider !== LEMON_PROVIDER || data?.status !== 'paid') {
         return false;
