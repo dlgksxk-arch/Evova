@@ -28,6 +28,7 @@ export type SitePage =
   | 'ai-fitting-faq'
   | 'about'
   | 'privacy'
+  | 'refund-policy'
   | 'terms'
   | 'contact'
   | 'board'
@@ -50,6 +51,7 @@ export const SITE_PAGES: SitePage[] = [
   'ai-fitting-faq',
   'about',
   'privacy',
+  'refund-policy',
   'terms',
   'contact',
   'board',

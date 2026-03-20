@@ -12,6 +12,7 @@
     "ai-fitting-faq": "AI Fitting FAQ",
     "about": "About",
     "privacy": "Privacy Policy",
+    "refund-policy": "Refund Policy",
     "terms": "Terms of Service",
     "contact": "Contact",
     "board": "Board",
@@ -440,6 +441,33 @@
             "Users are responsible for deciding whether an image is appropriate to upload. That includes considering personal privacy, third-party rights, minors, copyrighted materials, and any region-specific legal restrictions.",
             "If a user would not be comfortable with an image entering an AI-assisted processing flow, that image should not be uploaded to the service.",
             "A clear privacy policy helps set expectations before any data is submitted."
+          ]
+        }
+      ]
+    },
+    "refund-policy": {
+      "title": "Refund Policy",
+      "description": "Review when credits may be restored, when payments can be reviewed, and what kinds of digital purchases are generally non-refundable.",
+      "sections": [
+        {
+          "heading": "Credit restoration after failed generation",
+          "paragraphs": [
+            "If credits were deducted but image generation failed because of a service-side error, HAMDEVA may restore the deducted credits to the same account balance.",
+            "This policy applies to failed delivery cases where the service did not successfully provide the requested generation result."
+          ]
+        },
+        {
+          "heading": "Payment review cases",
+          "paragraphs": [
+            "If a payment was completed by mistake, charged more than once, or affected by a technical issue, users should contact support with the account email, payment time, and a short description of the issue.",
+            "Support review is required before any exception can be considered."
+          ]
+        },
+        {
+          "heading": "Digital product rule",
+          "paragraphs": [
+            "Credit products are digital goods delivered for immediate use inside the service. Because of that, completed purchases are generally treated as non-refundable once the credits have been delivered.",
+            "Exceptions may be considered only for duplicate payment, failed credit delivery, or another verified technical fault."
           ]
         }
       ]

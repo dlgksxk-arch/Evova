@@ -109,7 +109,7 @@ const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'outfit-photo-tips',
   'ai-fitting-faq',
 ];
-const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'terms', 'contact'];
+const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'refund-policy', 'terms', 'contact'];
 const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'about',
   'how-it-works',
@@ -2911,6 +2911,7 @@ const PAGE_PATHS: Record<SitePage, string> = {
   'outfit-photo-tips': '/outfit-photo-tips',
   'ai-fitting-faq': '/ai-fitting-faq',
   privacy: '/privacy',
+  'refund-policy': '/refund-policy',
   terms: '/terms',
   contact: '/contact',
   board: '/board',
@@ -2931,6 +2932,7 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
   'privacy',
+  'refund-policy',
   'terms',
 ]);
 const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
