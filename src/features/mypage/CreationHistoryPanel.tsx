@@ -827,7 +827,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         <div
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 148px',
+                            gridTemplateColumns: '1fr',
                             gap: 12,
                             alignItems: 'stretch',
                           }}
@@ -865,93 +865,16 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               }}
                             />
                           </div>
-                          <div
-                            style={{
-                              display: 'grid',
-                              gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr',
-                              gap: 8,
-                              alignContent: 'start',
-                            }}
-                          >
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={() => { void handleShareOnKakao(); }}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('kakao')}
-                              {copy.shareKakao}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={handleShareOnX}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('x')}
-                              {copy.shareXShort}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={handleShareOnFacebook}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('facebook')}
-                              {copy.shareFacebookShort}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={handleShareOnLine}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('line')}
-                              {copy.shareLine}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={handleShareOnTikTok}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('tiktok')}
-                              TikTok
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={handleInstagramSave}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('instagram')}
-                              {copy.saveForInstagram}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
-                              disabled={!selectedItem.imageUrl}
-                              onClick={() => { void handleCopySelectedLink(); }}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
-                              type="button"
-                            >
-                              {renderSocialIcon('link')}
-                              {copy.copyLink}
-                            </button>
-                            <button
-                              className="outline-btn auth-inline-btn"
+                              className="download-btn auth-inline-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={() => {
                                 if (selectedItem.imageUrl) {
                                   downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
                                 }
                               }}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                               type="button"
                             >
                               {renderSocialIcon('download')}
@@ -962,11 +885,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         {!isImageLoading ? (
                           <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
                             {copy.historyZoomHint}
-                          </div>
-                        ) : null}
-                        {shareStatus ? (
-                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
-                            {shareStatus}
                           </div>
                         ) : null}
                       </div>

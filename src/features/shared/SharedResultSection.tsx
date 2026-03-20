@@ -1,6 +1,5 @@
 import React from 'react';
 import type { PublicResultRecord } from '../../types/hamdeva';
-import ResultActionsPanel from '../tryon/ResultActionsPanel';
 
 interface SharedResultSectionProps {
   loading: boolean;
@@ -66,24 +65,17 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
                 className="is-visible"
               />
             </div>
-            <ResultActionsPanel
-              imageSrc={record.resultImageUrl}
-              link={link}
-              disableDownload={false}
-              shareStatus={shareStatus}
-              copy={copy}
-              onDownload={onDownloadResult}
-              onShareLink={onShareLink}
-              onCopyLink={onCopyLink}
-              onShareOnKakao={onShareOnKakao}
-              onShareOnLine={onShareOnLine}
-              onShareOnX={onShareOnX}
-              onShareOnFacebook={onShareOnFacebook}
-              onInstagramSave={onInstagramSave}
-              onShareOnTikTok={onShareOnTikTok}
-              onTryAnotherOutfit={onTryAnotherOutfit}
-              onRandomOutfit={onRandomOutfit}
-            />
+            <div className="result-action-grid">
+              <button className="download-btn result-action-btn" onClick={() => onDownloadResult(record.resultImageUrl)} type="button">
+                {copy.downloadImage}
+              </button>
+              <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
+                {copy.tryAnotherOutfit}
+              </button>
+              <button className="outline-btn result-action-btn" onClick={onRandomOutfit} type="button">
+                {copy.randomOutfit}
+              </button>
+            </div>
           </>
         )}
       </article>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
-import ResultActionsPanel from './ResultActionsPanel';
 
 const EmptyPreviewState: React.FC<{
   title: string;
@@ -288,24 +287,24 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           />
         )}
       </div>
-      <ResultActionsPanel
-        imageSrc={finalImageSrc}
-        link={shareResultLink}
-        disableDownload={resultPreviewState !== 'ready'}
-        shareStatus={shareStatus}
-        copy={copy}
-        onDownload={onDownloadResult}
-        onShareLink={onShareLink}
-        onCopyLink={onCopyLink}
-        onShareOnKakao={onShareOnKakao}
-        onShareOnLine={onShareOnLine}
-        onShareOnX={onShareOnX}
-        onShareOnFacebook={onShareOnFacebook}
-        onInstagramSave={onInstagramSave}
-        onShareOnTikTok={onShareOnTikTok}
-        onTryAnotherOutfit={onTryAnotherOutfit}
-        onRandomOutfit={onRandomOutfit}
-      />
+      <div className="page-article">
+        <div className="result-action-grid single-row">
+          <button
+            className="download-btn result-action-btn"
+            disabled={resultPreviewState !== 'ready'}
+            onClick={() => onDownloadResult(finalImageSrc)}
+            type="button"
+          >
+            {copy.downloadImage}
+          </button>
+          <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
+            {copy.tryAnotherOutfit}
+          </button>
+          <button className="outline-btn result-action-btn" onClick={onRandomOutfit} type="button">
+            {copy.randomOutfit}
+          </button>
+        </div>
+      </div>
       {resultWatermarkApplied && (
         <div className="credit-result-notice page-article">
           <strong>{copy.freeResultNoticeTitle}</strong>
