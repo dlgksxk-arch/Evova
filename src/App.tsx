@@ -560,7 +560,7 @@ const translations = {
     shareFacebookShort: '페이스북 공유',
     downloadImage: '이미지 다운로드',
     saveForInstagram: '인스타용 저장',
-    instagramHelperText: '이미지를 저장한 뒤 인스타그램에 업로드해보세요',
+    instagramHelperText: '인스타 피드용 이미지가 저장되었습니다.',
     linkCopied: '링크가 복사되었습니다',
     linkCopyFailed: '링크 복사에 실패했습니다',
     imageNotReady: '이미지가 준비되지 않았습니다',
@@ -876,7 +876,7 @@ const translations = {
     shareFacebookShort: 'Share on Facebook',
     downloadImage: 'Download Image',
     saveForInstagram: 'Save for Instagram',
-    instagramHelperText: 'Save the image and upload it to Instagram',
+    instagramHelperText: 'Instagram feed image saved.',
     linkCopied: 'Link copied',
     linkCopyFailed: 'Failed to copy link',
     imageNotReady: 'Image is not ready',
@@ -1217,7 +1217,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     shareFacebookShort: '分享到 Facebook',
     downloadImage: '下载图片',
     saveForInstagram: '保存到 Instagram',
-    instagramHelperText: '保存图片后上传到 Instagram',
+    instagramHelperText: '已保存适合 Instagram 动态的图片。',
     linkCopied: '链接已复制',
     linkCopyFailed: '链接复制失败',
     imageNotReady: '图片尚未准备好',
@@ -1382,7 +1382,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     shareFacebookShort: 'Facebookで共有',
     downloadImage: '画像をダウンロード',
     saveForInstagram: 'Instagram用に保存',
-    instagramHelperText: '画像を保存してInstagramにアップロードしてみましょう',
+    instagramHelperText: 'Instagram フィード向け画像を保存しました。',
     linkCopied: 'リンクをコピーしました',
     linkCopyFailed: 'リンクのコピーに失敗しました',
     imageNotReady: '画像の準備ができていません',
@@ -2860,6 +2860,24 @@ const createShareImageFile = async (src: string, filename = 'hamdeva-share-image
   return new File([blob], resolvedName, { type: blob.type });
 };
 
+const isRemoteHttpUrl = (value: string | null | undefined): value is string =>
+  typeof value === 'string' && /^https?:\/\//.test(value);
+
+const resolveRemoteShareImageUrl = (...values: Array<string | null | undefined>): string | null =>
+  values.find((value): value is string => isRemoteHttpUrl(value)) ?? null;
+
+const downloadBlob = (blob: Blob, filename: string): void => {
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    link.click();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  }
+};
+
 const downloadBlobUrl = (src: string, filename: string): void => {
   const link = document.createElement('a');
   link.href = src;
@@ -2871,6 +2889,120 @@ const downloadBlobUrl = (src: string, filename: string): void => {
 
 const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
+};
+
+const loadImageElement = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('IMAGE_LOAD_FAILED'));
+    img.decoding = 'async';
+    img.src = src;
+  });
+
+const canvasToBlob = (canvas: HTMLCanvasElement, type = 'image/jpeg', quality = 0.92): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('CANVAS_EXPORT_FAILED'));
+        return;
+      }
+      resolve(blob);
+    }, type, quality);
+  });
+
+const createInstagramFeedBlob = async (src: string): Promise<Blob> => {
+  const feedWidth = 1080;
+  const feedHeight = 1350;
+  const framePaddingX = 72;
+  const framePaddingTop = 90;
+  const framePaddingBottom = 140;
+  const cardRadius = 36;
+  const safeDataUrl = await ensureDataUrl(src);
+  const image = await loadImageElement(safeDataUrl);
+  const canvas = document.createElement('canvas');
+  canvas.width = feedWidth;
+  canvas.height = feedHeight;
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('CANVAS_CONTEXT_UNAVAILABLE');
+  }
+
+  const background = context.createLinearGradient(0, 0, feedWidth, feedHeight);
+  background.addColorStop(0, '#fff8ef');
+  background.addColorStop(0.5, '#ffe3c7');
+  background.addColorStop(1, '#ffd0a8');
+  context.fillStyle = background;
+  context.fillRect(0, 0, feedWidth, feedHeight);
+
+  context.fillStyle = 'rgba(255, 255, 255, 0.42)';
+  context.beginPath();
+  context.arc(220, 210, 160, 0, Math.PI * 2);
+  context.arc(930, 1120, 210, 0, Math.PI * 2);
+  context.fill();
+
+  const cardX = framePaddingX;
+  const cardY = framePaddingTop;
+  const cardWidth = feedWidth - framePaddingX * 2;
+  const cardHeight = feedHeight - framePaddingTop - framePaddingBottom;
+
+  context.save();
+  context.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  context.shadowColor = 'rgba(120, 66, 18, 0.16)';
+  context.shadowBlur = 32;
+  context.shadowOffsetY = 18;
+  context.beginPath();
+  context.moveTo(cardX + cardRadius, cardY);
+  context.lineTo(cardX + cardWidth - cardRadius, cardY);
+  context.quadraticCurveTo(cardX + cardWidth, cardY, cardX + cardWidth, cardY + cardRadius);
+  context.lineTo(cardX + cardWidth, cardY + cardHeight - cardRadius);
+  context.quadraticCurveTo(cardX + cardWidth, cardY + cardHeight, cardX + cardWidth - cardRadius, cardY + cardHeight);
+  context.lineTo(cardX + cardRadius, cardY + cardHeight);
+  context.quadraticCurveTo(cardX, cardY + cardHeight, cardX, cardY + cardHeight - cardRadius);
+  context.lineTo(cardX, cardY + cardRadius);
+  context.quadraticCurveTo(cardX, cardY, cardX + cardRadius, cardY);
+  context.closePath();
+  context.fill();
+  context.restore();
+
+  const imageAreaX = cardX + 28;
+  const imageAreaY = cardY + 28;
+  const imageAreaWidth = cardWidth - 56;
+  const imageAreaHeight = cardHeight - 56;
+  const imageScale = Math.min(imageAreaWidth / image.width, imageAreaHeight / image.height);
+  const imageDrawWidth = Math.round(image.width * imageScale);
+  const imageDrawHeight = Math.round(image.height * imageScale);
+  const imageDrawX = imageAreaX + Math.round((imageAreaWidth - imageDrawWidth) / 2);
+  const imageDrawY = imageAreaY + Math.round((imageAreaHeight - imageDrawHeight) / 2);
+
+  context.save();
+  context.beginPath();
+  context.moveTo(imageAreaX + 28, imageAreaY);
+  context.lineTo(imageAreaX + imageAreaWidth - 28, imageAreaY);
+  context.quadraticCurveTo(imageAreaX + imageAreaWidth, imageAreaY, imageAreaX + imageAreaWidth, imageAreaY + 28);
+  context.lineTo(imageAreaX + imageAreaWidth, imageAreaY + imageAreaHeight - 28);
+  context.quadraticCurveTo(imageAreaX + imageAreaWidth, imageAreaY + imageAreaHeight, imageAreaX + imageAreaWidth - 28, imageAreaY + imageAreaHeight);
+  context.lineTo(imageAreaX + 28, imageAreaY + imageAreaHeight);
+  context.quadraticCurveTo(imageAreaX, imageAreaY + imageAreaHeight, imageAreaX, imageAreaY + imageAreaHeight - 28);
+  context.lineTo(imageAreaX, imageAreaY + 28);
+  context.quadraticCurveTo(imageAreaX, imageAreaY, imageAreaX + 28, imageAreaY);
+  context.closePath();
+  context.clip();
+  context.fillStyle = '#fffaf4';
+  context.fillRect(imageAreaX, imageAreaY, imageAreaWidth, imageAreaHeight);
+  context.drawImage(image, imageDrawX, imageDrawY, imageDrawWidth, imageDrawHeight);
+  context.restore();
+
+  context.fillStyle = '#7a3e14';
+  context.font = '700 34px Georgia, serif';
+  context.fillText('HAMDEVA', cardX + 34, feedHeight - 52);
+
+  context.fillStyle = 'rgba(122, 62, 20, 0.82)';
+  context.font = '500 24px system-ui, sans-serif';
+  context.fillText('Instagram feed ready', cardX + 240, feedHeight - 52);
+
+  return canvasToBlob(canvas, 'image/jpeg', 0.94);
 };
 
 const readGenerationDurations = (): number[] => {
@@ -3242,6 +3374,7 @@ const App: React.FC = () => {
   const [clothUploadMessage, setClothUploadMessage] = useState<string | null>(null);
 
   const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
+  const [finalShareImageUrl, setFinalShareImageUrl] = useState<string | null>(null);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
   const [shareStatus, setShareStatus] = useState<string | null>(null);
@@ -3642,6 +3775,7 @@ const App: React.FC = () => {
     sharedResultRouteId,
     notFoundMessage: t.resultNotFound,
   });
+  const currentShareImageUrl = resolveRemoteShareImageUrl(finalShareImageUrl, sharedResultRecord?.resultImageUrl);
   useCreditBootstrap({
     currentUser,
     rewardMessage: t.todayDailyRewardGranted,
@@ -4246,6 +4380,7 @@ const App: React.FC = () => {
   };
   const clearGeneratedResult = () => {
     setFinalImageSrc(null);
+    setFinalShareImageUrl(null);
     setLatestSharedResultId(null);
     setShareStatus(null);
     setResultPreviewState('idle');
@@ -4302,7 +4437,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const sharedPreview = await createHistoryPreview(finalImageSrc, 720);
+      const sharedPreview = currentShareImageUrl || await createHistoryPreview(finalImageSrc, 720);
       const publicResultRef = doc(collection(requireDb(), 'publicResults'));
 
       await setDoc(publicResultRef, {
@@ -4321,14 +4456,21 @@ const App: React.FC = () => {
       return null;
     }
   };
+  const resolveShareTargetUrl = async (link: string | null): Promise<string | null> => {
+    if (currentShareImageUrl) {
+      return currentShareImageUrl;
+    }
+
+    return ensureSharedResultLink(link);
+  };
   const handleCopyLink = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(resolvedLink);
+      await navigator.clipboard.writeText(resolvedTargetUrl);
       setShareStatus(t.linkCopied);
     } catch (error) {
       console.error('Failed to copy share link:', error);
@@ -4336,19 +4478,19 @@ const App: React.FC = () => {
     }
   };
   const handleShareLink = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
-    const shareImageSrc = finalImageSrc || sharedResultRecord?.resultImageUrl || null;
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
 
     if (navigator.share) {
       try {
         const sharePayload = {
           title: 'HAMDEVA | AI Pet Outfit Generator',
           text: t.shareDefaultText,
-          url: resolvedLink,
+          url: resolvedTargetUrl,
         };
 
         if (shareImageSrc) {
@@ -4375,17 +4517,15 @@ const App: React.FC = () => {
       }
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedTargetUrl)}`);
   };
   const handleShareOnKakao = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
-    const shareImageSrc = [finalImageSrc, sharedResultRecord?.resultImageUrl]
-      .find((value): value is string => typeof value === 'string' && /^https?:\/\//.test(value))
-      ?? 'https://hamdeva.com/og-image.jpg';
+    const shareImageSrc = currentShareImageUrl ?? DEFAULT_OG_IMAGE;
 
     try {
       const kakao = await loadKakaoSdk();
@@ -4401,16 +4541,16 @@ const App: React.FC = () => {
           description: 'Upload your pet photo and outfit image to generate an AI pet fitting preview in seconds.',
           imageUrl: shareImageSrc,
           link: {
-            mobileWebUrl: resolvedLink,
-            webUrl: resolvedLink,
+            mobileWebUrl: resolvedTargetUrl,
+            webUrl: resolvedTargetUrl,
           },
         },
         buttons: [
           {
-            title: 'Open Result',
+            title: 'Open Image',
             link: {
-              mobileWebUrl: resolvedLink,
-              webUrl: resolvedLink,
+              mobileWebUrl: resolvedTargetUrl,
+              webUrl: resolvedTargetUrl,
             },
           },
         ],
@@ -4421,28 +4561,28 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnLine = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
-    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(resolvedTargetUrl)}`);
   };
   const handleShareOnX = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedTargetUrl)}`);
   };
   const handleShareOnFacebook = async (link: string | null) => {
-    const resolvedLink = await ensureSharedResultLink(link);
-    if (!resolvedLink) {
+    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    if (!resolvedTargetUrl) {
       return;
     }
 
-    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(resolvedLink)}`);
+    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(resolvedTargetUrl)}`);
   };
   const handleInstagramSave = async (src: string | null) => {
     if (!src) {
@@ -4451,7 +4591,8 @@ const App: React.FC = () => {
     }
 
     try {
-      await downloadImageFile(src, buildTimestampedImageFilename('hamdeva-instagram'));
+      const instagramFeedBlob = await createInstagramFeedBlob(src);
+      downloadBlob(instagramFeedBlob, buildTimestampedImageFilename('hamdeva-instagram-feed'));
       setShareStatus(t.instagramHelperText);
     } catch (error) {
       console.error('Failed to prepare Instagram save:', error);
@@ -4963,6 +5104,7 @@ const App: React.FC = () => {
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
+    setFinalShareImageUrl(null);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await withTimeout(
@@ -5026,6 +5168,7 @@ const App: React.FC = () => {
       );
       setResultPreviewState('loading');
       setFinalImageSrc(result);
+      setFinalShareImageUrl(resultPayload.shareImageUrl ?? null);
       setSubjectType(normalizeSubjectType(resultPayload.subjectType || resolvedSubjectType));
       setResultWatermarkApplied(resultPayload.watermarkApplied === true);
       setResultUsedCreditType(resultPayload.usedCreditType ?? null);

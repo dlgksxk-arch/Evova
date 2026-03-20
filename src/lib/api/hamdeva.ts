@@ -130,6 +130,7 @@ export const callTryOn = async (payload: {
     return {
       image: normalizeGeneratedImage(data.image, data.mimeType),
       success: data.success,
+      shareImageUrl: typeof data.shareImageUrl === 'string' ? data.shareImageUrl : undefined,
       subjectType: data.subjectType,
       usedCreditType: data.usedCreditType,
       watermarkApplied: data.watermarkApplied,

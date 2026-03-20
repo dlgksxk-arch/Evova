@@ -3129,6 +3129,7 @@ const handleTryOnRequest = async (req, res, label) => {
         const watermarkApplied = true;
         const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
         let creationFilePath = null;
+        let shareImageUrl;
         try {
             creationFilePath = await uploadCreationAsset({
                 uid: user.uid,
@@ -3142,6 +3143,7 @@ const handleTryOnRequest = async (req, res, label) => {
                 type: 'image',
                 fileUrl: creationFilePath,
             });
+            shareImageUrl = await getSignedCreationUrl(creationFilePath);
         }
         catch (creationError) {
             functions.logger.error('Failed to persist image creation record', creationError);
@@ -3160,6 +3162,7 @@ const handleTryOnRequest = async (req, res, label) => {
             success: true,
             image: imageAssets.responseDataUrl,
             mimeType: imageAssets.responseMimeType,
+            shareImageUrl,
             subjectType: resolvedSubjectType,
             usedCreditType: chargeResult.usedCreditType,
             watermarkApplied,

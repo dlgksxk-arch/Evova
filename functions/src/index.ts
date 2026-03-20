@@ -463,6 +463,7 @@ type TryOnSuccessResponse = ApiBonusFields & {
   success: true;
   image: string;
   mimeType: string;
+  shareImageUrl?: string;
   subjectType: SubjectType;
   usedCreditType: CreditType;
   watermarkApplied: boolean;
@@ -4059,6 +4060,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
     const watermarkApplied = true;
     const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
     let creationFilePath: string | null = null;
+    let shareImageUrl: string | undefined;
 
     try {
       creationFilePath = await uploadCreationAsset({
@@ -4073,6 +4075,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
         type: 'image',
         fileUrl: creationFilePath,
       });
+      shareImageUrl = await getSignedCreationUrl(creationFilePath);
     } catch (creationError) {
       functions.logger.error('Failed to persist image creation record', creationError);
     }
@@ -4091,6 +4094,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
       success: true,
       image: imageAssets.responseDataUrl,
       mimeType: imageAssets.responseMimeType,
+      shareImageUrl,
       subjectType: resolvedSubjectType,
       usedCreditType: chargeResult.usedCreditType,
       watermarkApplied,

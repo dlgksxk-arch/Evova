@@ -48,6 +48,7 @@ export interface TryOnResponse extends ApiBonusFields {
   success?: boolean;
   image?: string;
   mimeType?: string;
+  shareImageUrl?: string;
   subjectType?: SubjectType;
   usedCreditType?: CreditKind;
   watermarkApplied?: boolean;
