@@ -2432,6 +2432,27 @@ const normalizePaymentStatusForClient = (status: string | undefined): PaymentSes
   return 'pending';
 };
 
+const toTimestampMillis = (value: unknown): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof admin.firestore.Timestamp) {
+    return value.toMillis();
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.getTime();
+  }
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.getTime();
+  }
+
+  return null;
+};
+
 const getCheckoutSessionStatus = async (
   user: AuthenticatedUser,
   sessionId?: string,
@@ -2472,7 +2493,34 @@ const getCheckoutSessionStatus = async (
   }
 
   const storedStatus = typeof paymentData.status === 'string' ? paymentData.status.toLowerCase() : undefined;
-  const normalizedStatus = normalizePaymentStatusForClient(storedStatus || 'pending');
+  let normalizedStatus = normalizePaymentStatusForClient(storedStatus || 'pending');
+
+  if (normalizedStatus === 'pending') {
+    const pendingCreatedAtMillis = toTimestampMillis(paymentData.createdAt) ?? 0;
+    const latestPaidSnapshot = await db.collection('payments')
+      .where('uid', '==', user.uid)
+      .orderBy('updatedAt', 'desc')
+      .limit(20)
+      .get();
+
+    const matchedPaidDoc = latestPaidSnapshot.docs.find((doc) => {
+      const data = doc.data();
+      if (data?.provider !== LEMON_PROVIDER || data?.status !== 'paid') {
+        return false;
+      }
+
+      const candidateUpdatedAtMillis = toTimestampMillis(data.updatedAt) ?? 0;
+      const candidateCreatedAtMillis = toTimestampMillis(data.createdAt) ?? 0;
+      return candidateUpdatedAtMillis >= pendingCreatedAtMillis || candidateCreatedAtMillis >= pendingCreatedAtMillis;
+    });
+
+    if (matchedPaidDoc) {
+      paymentSnapshot = matchedPaidDoc;
+      paymentData = matchedPaidDoc.data() ?? {};
+      normalizedStatus = 'success';
+      account = normalizeUserAccount(user.email, userSnapshot.data());
+    }
+  }
 
   return {
     status: normalizedStatus,

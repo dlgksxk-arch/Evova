@@ -30,8 +30,8 @@ If `VITE_API_BASE_URL` is empty, the frontend keeps using same-origin `/api/*`.
   - `/api/video`
   - `/api/video-status`
   - `/api/video-content`
-  - `/api/polar/checkout`
-  - `/api/polar/session`
+  - `/api/lemon/checkout`
+  - `/api/lemon/session`
 
 ## Backend preview support
 
