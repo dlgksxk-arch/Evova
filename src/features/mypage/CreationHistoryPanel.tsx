@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { GenerationRecord } from '../../types/hamdeva';
+import { db } from '../../firebase';
 
 type KakaoSdk = {
   isInitialized?: () => boolean;
@@ -29,6 +31,7 @@ const IMAGE_LOAD_MIN_MS = 400;
 const HISTORY_VISIBLE_ROWS = 7;
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
+const HISTORY_SHARE_PREVIEW_BASE_URL = 'https://hamdeva.com/api/share-preview';
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -79,6 +82,9 @@ const inferFileExtension = (item: GenerationRecord): string => {
 const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
+
+const buildHistorySharePreviewUrl = (resultId: string): string =>
+  `${HISTORY_SHARE_PREVIEW_BASE_URL}?id=${encodeURIComponent(resultId)}`;
 
 const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' | 'instagram' | 'link' | 'download') => {
   const commonProps = {
@@ -276,6 +282,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [sharePreviewUrl, setSharePreviewUrl] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -397,6 +404,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(1);
     setShareStatus(null);
+    setSharePreviewUrl(null);
   };
 
   const startImageLoading = () => {
@@ -469,7 +477,36 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSelectedItem(item);
     setZoom(1);
     setShareStatus(null);
+    setSharePreviewUrl(null);
     startImageLoading();
+  };
+
+  const ensureSharePreviewUrl = async (): Promise<string | null> => {
+    if (sharePreviewUrl) {
+      return sharePreviewUrl;
+    }
+
+    if (!selectedItem?.imageUrl || !db) {
+      setShareStatus(copy.imageNotReady);
+      return null;
+    }
+
+    try {
+      const publicResultRef = doc(collection(db, 'publicResults'));
+      await setDoc(publicResultRef, {
+        resultImageUrl: selectedItem.imageUrl,
+        language: locale,
+        createdAt: serverTimestamp(),
+        sharedAt: serverTimestamp(),
+      });
+      const nextUrl = buildHistorySharePreviewUrl(publicResultRef.id);
+      setSharePreviewUrl(nextUrl);
+      return nextUrl;
+    } catch (error) {
+      console.error('Failed to create history share preview:', error);
+      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
+      return null;
+    }
   };
 
   const handleShareOnKakao = async () => {
@@ -479,19 +516,24 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
 
     try {
+      const previewUrl = await ensureSharePreviewUrl();
+      if (!previewUrl) {
+        return;
+      }
       const kakao = await loadKakaoSdk();
       if (!kakao?.Share?.sendDefault) {
-        openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(selectedItem.imageUrl)}`);
+        openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(previewUrl)}`);
         return;
       }
 
       kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
+          title: 'HAMDEVA result',
           imageUrl: selectedItem.imageUrl,
           link: {
-            mobileWebUrl: selectedItem.imageUrl,
-            webUrl: selectedItem.imageUrl,
+            mobileWebUrl: previewUrl,
+            webUrl: previewUrl,
           },
         },
       });
@@ -502,31 +544,46 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
   };
 
-  const handleShareOnX = () => {
+  const handleShareOnX = async () => {
     if (!selectedItem?.imageUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(selectedItem.imageUrl)}`);
+    const previewUrl = await ensureSharePreviewUrl();
+    if (!previewUrl) {
+      return;
+    }
+
+    openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(previewUrl)}`);
   };
 
-  const handleShareOnFacebook = () => {
+  const handleShareOnFacebook = async () => {
     if (!selectedItem?.imageUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(selectedItem.imageUrl)}`);
+    const previewUrl = await ensureSharePreviewUrl();
+    if (!previewUrl) {
+      return;
+    }
+
+    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(previewUrl)}`);
   };
 
-  const handleShareOnLine = () => {
+  const handleShareOnLine = async () => {
     if (!selectedItem?.imageUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(selectedItem.imageUrl)}`);
+    const previewUrl = await ensureSharePreviewUrl();
+    if (!previewUrl) {
+      return;
+    }
+
+    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(previewUrl)}`);
   };
 
   const handleInstagramSave = () => {
@@ -567,7 +624,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
 
     try {
-      await navigator.clipboard.writeText(selectedItem.imageUrl);
+      const previewUrl = await ensureSharePreviewUrl();
+      if (!previewUrl) {
+        return;
+      }
+
+      await navigator.clipboard.writeText(previewUrl);
       setShareStatus(copy.linkCopied);
     } catch (error) {
       console.error('Failed to copy history image link:', error);

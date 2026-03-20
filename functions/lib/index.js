@@ -2181,6 +2181,55 @@ const handleShareImageUploadRequest = async (req, res) => {
         shareImageUrl,
     });
 };
+const handleSharePreviewRequest = async (req, res) => {
+    if (req.method !== 'GET') {
+        res.status(405).send('Method Not Allowed');
+        return;
+    }
+    const id = typeof req.query.id === 'string' ? req.query.id.trim() : '';
+    if (!id) {
+        res.status(400).send('Missing share id');
+        return;
+    }
+    const snapshot = await db.collection('publicResults').doc(id).get();
+    if (!snapshot.exists) {
+        res.status(404).send('Shared result not found');
+        return;
+    }
+    const data = snapshot.data() ?? {};
+    const imageUrl = typeof data.resultImageUrl === 'string' && data.resultImageUrl.trim()
+        ? data.resultImageUrl.trim()
+        : `${process.env['APP_BASE_URL']?.trim() || 'https://hamdeva.com'}/og-image.jpg`;
+    const title = 'HAMDEVA result';
+    const description = 'Generated pet fitting result image.';
+    const canonicalUrl = `${process.env['APP_BASE_URL']?.trim() || 'https://hamdeva.com'}/api/share-preview?id=${encodeURIComponent(id)}`;
+    const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title}</title>
+    <meta name="description" content="${description}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:url" content="${canonicalUrl}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    <meta http-equiv="refresh" content="0; url=${imageUrl}" />
+    <link rel="canonical" href="${canonicalUrl}" />
+  </head>
+  <body>
+    <p>Redirecting to image...</p>
+  </body>
+</html>`;
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=300');
+    res.status(200).send(html);
+};
 const getStringValue = (...values) => values.find((value) => typeof value === 'string' && value.trim()) || '';
 const getStringLikeValue = (...values) => {
     for (const value of values) {
@@ -3746,6 +3795,15 @@ exports.api = functions
     if (normalizedPath === '/share-image') {
         try {
             await handleShareImageUploadRequest(req, res);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (normalizedPath === '/share-preview') {
+        try {
+            await handleSharePreviewRequest(req, res);
         }
         catch (error) {
             handleApiError(res, error, 500);
