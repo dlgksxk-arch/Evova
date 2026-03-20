@@ -705,12 +705,12 @@ const getGoogleVideoApiKey = (): string => {
 };
 
 const LEMON_VARIANT_IDS: Record<PaymentProductId, string> = {
-  starter: '1425119',
-  popular: '1425108',
-  pro: '1425124',
-  small_pack: '1425127',
-  medium_pack: '1425130',
-  large_pack: '1425131',
+  starter: '1425369',
+  popular: '1425372',
+  pro: '1425382',
+  small_pack: '1425386',
+  medium_pack: '1425388',
+  large_pack: '1425391',
 };
 
 const getLemonApiKey = (): string => {
