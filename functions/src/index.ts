@@ -3,9 +3,16 @@ import * as functions from 'firebase-functions';
 import { createHmac, timingSafeEqual } from 'crypto';
 import sharp from 'sharp';
 
-admin.initializeApp();
+const FIREBASE_STORAGE_BUCKET =
+  process.env['FIREBASE_STORAGE_BUCKET']?.trim()
+  || process.env['VITE_FIREBASE_STORAGE_BUCKET']?.trim()
+  || 'hamdeva.appspot.com';
+
+admin.initializeApp({
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+});
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const bucket = admin.storage().bucket(FIREBASE_STORAGE_BUCKET);
 
 const CORS_ORIGIN = [
   'https://hamdeva.com',
