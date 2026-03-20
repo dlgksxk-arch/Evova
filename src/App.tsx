@@ -80,12 +80,25 @@ const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
 const SUBJECT_TYPES = ['human', 'dog', 'cat'] as const;
+type CreditProductKind = 'subscription' | 'extra_credit';
+type CreditProduct = {
+  id: CheckoutProductId;
+  kind: CreditProductKind;
+  label: string;
+  paidCredit: number;
+  salePriceUsd: number;
+  description: string;
+  badge?: string;
+  bonusEligible?: boolean;
+};
 const CREDIT_PRODUCTS = [
-  { id: 'starter', label: 'Starter', paidCredit: 1000, salePriceUsd: 3.99, compareAtPriceUsd: 5.69, badge: '30% OFF' },
-  { id: 'creator', label: 'Popular', paidCredit: 5000, salePriceUsd: 15.99, compareAtPriceUsd: 24.99, badge: '36% OFF' },
-  { id: 'pro', label: 'Pro', paidCredit: 10000, salePriceUsd: 29.99, compareAtPriceUsd: 46.99, badge: '36% OFF' },
-  { id: 'studio', label: 'Studio', paidCredit: 25000, salePriceUsd: 59.99, compareAtPriceUsd: 99.99, badge: '40% OFF', extraBadge: 'Best Value' },
-] as const;
+  { id: 'starter', kind: 'subscription', label: 'Starter', paidCredit: 1000, salePriceUsd: 9.99, description: 'Ideal for light use', bonusEligible: true },
+  { id: 'creator', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 29.99, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
+  { id: 'pro', kind: 'subscription', label: 'Pro', paidCredit: 10000, salePriceUsd: 49.99, description: 'For heavy and frequent use', bonusEligible: true },
+  { id: 'small_pack', kind: 'extra_credit', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 12.99, description: 'Instant extra credits when you need a quick refill' },
+  { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59.99, description: 'A larger refill for ongoing pet fitting sessions' },
+  { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99.99, description: 'Best when you need a big extra credit top-up right away' },
+] as const satisfies readonly CreditProduct[];
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
@@ -304,6 +317,91 @@ const getStyleGuideVisualCopy = (lang: LanguageCode) => {
       { title: 'Dog vs. cat context', body: 'Dogs are often evaluated around walks and weather, while cats usually need more emphasis on indoor comfort and tolerance.' },
       { title: 'What reads well on camera', body: 'Cleaner face framing, visible body shape, and readable trim placement usually create stronger previews and better shareable images.' },
     ],
+  };
+};
+
+const getPricingUiCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      subscriptionTitle: 'Choose Your Plan',
+      subscriptionSubtitle: '구독 플랜을 선택하고 매달 반려동물 피팅 크레딧을 받아보세요.',
+      extraCreditsTitle: 'Need More Credits?',
+      extraCreditsSubtitle: '구독 보너스 없이 필요한 만큼 추가 크레딧을 바로 구매할 수 있습니다.',
+      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      subscribeCta: 'Subscribe',
+      buyCreditsCta: 'Buy Credits',
+      subscriptionIntro: '구독 플랜은 첫 결제 1회에 한해 20% 추가 크레딧이 적용됩니다.',
+      extraCreditsIntro: '추가 크레딧은 구독과 별개로 즉시 충전되며 첫 결제 보너스는 적용되지 않습니다.',
+      descriptionById: {
+        starter: '가볍게 시작하기 좋은 플랜',
+        creator: '가장 많은 사용자가 선택하는 플랜',
+        pro: '자주 생성하는 사용자를 위한 플랜',
+        small_pack: '빠르게 부족한 크레딧을 채우는 소형 팩',
+        medium_pack: '추가 생성이 필요한 순간에 바로 쓰는 중형 팩',
+        large_pack: '대량 생성 전에 한 번에 보충하는 대형 팩',
+      } as Record<CheckoutProductId, string>,
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      subscriptionTitle: 'Choose Your Plan',
+      subscriptionSubtitle: '毎月の利用量に合わせてサブスクリプションを選べます。',
+      extraCreditsTitle: 'Need More Credits?',
+      extraCreditsSubtitle: 'サブスクリプション特典なしで追加クレジットをすぐ購入できます。',
+      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      subscribeCta: 'Subscribe',
+      buyCreditsCta: 'Buy Credits',
+      subscriptionIntro: 'サブスクリプションは初回決済時のみ 20% 追加クレジットの対象です。',
+      extraCreditsIntro: '追加クレジットは即時購入用で、初回購入ボーナスは適用されません。',
+      descriptionById: {
+        starter: '軽い利用に向いたプラン',
+        creator: '多くのユーザーに最適なプラン',
+        pro: '高頻度で使う方向けのプラン',
+        small_pack: '少量をすぐ補充したい時の追加パック',
+        medium_pack: '継続利用向けの追加クレジット',
+        large_pack: '多めにまとめて補充したい時の追加クレジット',
+      } as Record<CheckoutProductId, string>,
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      subscriptionTitle: 'Choose Your Plan',
+      subscriptionSubtitle: '选择适合你使用频率的订阅方案。',
+      extraCreditsTitle: 'Need More Credits?',
+      extraCreditsSubtitle: '无需订阅奖励，也可以立即购买额外积分。',
+      firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+      subscribeCta: 'Subscribe',
+      buyCreditsCta: 'Buy Credits',
+      subscriptionIntro: '订阅方案仅在首次付款时享受一次性 20% 额外积分。',
+      extraCreditsIntro: '额外积分可立即购买，不适用首次购买奖励。',
+      descriptionById: {
+        starter: '适合轻度使用',
+        creator: '最适合大多数用户',
+        pro: '适合高频和重度使用',
+        small_pack: '适合临时补充少量积分',
+        medium_pack: '适合继续生成时快速补充',
+        large_pack: '适合一次性补充大量积分',
+      } as Record<CheckoutProductId, string>,
+    };
+  }
+  return {
+    subscriptionTitle: 'Choose Your Plan',
+    subscriptionSubtitle: 'Pick a subscription that matches how often you create pet fitting previews.',
+    extraCreditsTitle: 'Need More Credits?',
+    extraCreditsSubtitle: 'Purchase additional credits instantly without a subscription bonus.',
+    firstPurchaseBonus: 'First purchase bonus: +20% extra credits (one-time only)',
+    subscribeCta: 'Subscribe',
+    buyCreditsCta: 'Buy Credits',
+    subscriptionIntro: 'Subscription plans include a one-time +20% extra credits message for the first purchase only.',
+    extraCreditsIntro: 'Extra credits are separate one-time purchases and do not include the first purchase bonus.',
+    descriptionById: {
+      starter: 'Ideal for light use',
+      creator: 'Best for most users',
+      pro: 'For heavy and frequent use',
+      small_pack: 'Instant extra credits for quick top-ups',
+      medium_pack: 'More credits when you need continued usage',
+      large_pack: 'A larger refill for heavy extra demand',
+    } as Record<CheckoutProductId, string>,
   };
 };
 type SubjectType = typeof SUBJECT_TYPES[number];
@@ -3371,6 +3469,9 @@ const App: React.FC = () => {
     return params.get('session_id') || params.get('transaction_id') || params.get('checkout_id');
   })();
   const editorialUiCopy = getEditorialUiCopy(lang);
+  const pricingUiCopy = getPricingUiCopy(lang);
+  const subscriptionProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'subscription');
+  const extraCreditProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'extra_credit');
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
   const currentEditorialPage = getEditorialPage(currentPage);
   const relatedEditorialCards = currentEditorialPage
@@ -5581,72 +5682,67 @@ const App: React.FC = () => {
             {currentPage === 'pricing' && (
               <>
                 <article className="page-article">
-                  <h2>{lang === 'ko' ? '크레딧 상품 비교' : lang === 'ja' ? 'クレジット商品比較' : lang === 'zh' ? '积分商品对比' : 'Compare credit packs'}</h2>
-                  <p>
-                    {lang === 'ko'
-                      ? 'HAMDEVA는 이미지 1회 생성마다 100 크레딧이 사용됩니다. 아래 가격표는 현재 제공 중인 크레딧 상품을 빠르게 비교하기 위한 안내 페이지입니다.'
-                      : lang === 'ja'
-                        ? 'HAMDEVA では画像を 1 回生成するたびに 100 クレジットが使われます。下の価格表は、現在のクレジット商品をすばやく比較するための案内ページです。'
-                        : lang === 'zh'
-                          ? 'HAMDEVA 每次生成图片会使用 100 积分。下方价格表用于快速比较当前提供的积分商品。'
-                          : 'Each HAMDEVA image generation uses 100 credits. The pricing table below is a quick guide to compare the current credit packs.'}
-                  </p>
+                  <h2>{pricingUiCopy.subscriptionTitle}</h2>
+                  <p>{pricingUiCopy.subscriptionSubtitle}</p>
+                  <p className="pricing-bonus-note">{pricingUiCopy.firstPurchaseBonus}</p>
                 </article>
                 <div className="credit-plan-grid">
-                  {CREDIT_PRODUCTS.map((product) => {
-                    const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
-                    const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
-                    const estimatedGenerations = Math.floor(product.paidCredit / GENERATION_COST);
-
+                  {subscriptionProducts.map((product) => {
                     return (
-                      <article key={`pricing-${product.id}`} className="credit-plan-card">
+                      <article key={`pricing-${product.id}`} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                         <div className="credit-plan-copy">
-                          <div className="credit-plan-badges">
-                            {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
-                            {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
-                          </div>
-                          <strong>{product.label} - {product.paidCredit.toLocaleString()} {t.credits}</strong>
-                          <p className="credit-plan-price-row">
-                            <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
-                            <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
-                          </p>
-                          <p className="credit-plan-savings">
-                            <span className="credit-plan-save-pill">{t.savePercent(discountPercent)}</span>
-                            <span className="credit-plan-save-amount">{t.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
-                          </p>
-                          <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
-                          <p>
-                            {lang === 'ko'
-                              ? `예상 생성 가능 횟수: 약 ${estimatedGenerations}회`
-                              : lang === 'ja'
-                                ? `生成目安: 約 ${estimatedGenerations} 回`
-                                : lang === 'zh'
-                                  ? `预计可生成次数：约 ${estimatedGenerations} 次`
-                                  : `Estimated generations: about ${estimatedGenerations}`}
-                          </p>
+                          {product.badge ? (
+                            <div className="credit-plan-badges">
+                              <span className="credit-plan-badge accent">{product.badge}</span>
+                            </div>
+                          ) : null}
+                          <strong>{product.label}</strong>
+                          <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
+                          <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                          <p>{pricingUiCopy.descriptionById[product.id]}</p>
+                          {product.bonusEligible ? <p className="pricing-inline-note">{pricingUiCopy.firstPurchaseBonus}</p> : null}
                         </div>
                         <button
                           className="generate-btn auth-inline-btn"
-                          onClick={openCreditPlanModal}
+                          onClick={() => { void handleStartCheckout(product.id); }}
+                          disabled={isStartingCheckout === product.id}
                           type="button"
                         >
-                          {t.purchaseNow}
+                          {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
                         </button>
                       </article>
                     );
                   })}
                 </div>
                 <article className="page-article">
+                  <h2>{pricingUiCopy.extraCreditsTitle}</h2>
+                  <p>{pricingUiCopy.extraCreditsSubtitle}</p>
+                  <p className="pricing-inline-note">{pricingUiCopy.extraCreditsIntro}</p>
+                </article>
+                <div className="credit-plan-grid">
+                  {extraCreditProducts.map((product) => (
+                    <article key={`pricing-${product.id}`} className="credit-plan-card pricing-tier-card pricing-extra-card">
+                      <div className="credit-plan-copy">
+                        <strong>{product.label}</strong>
+                        <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
+                        <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                        <p>{pricingUiCopy.descriptionById[product.id]}</p>
+                      </div>
+                      <button
+                        className="outline-btn auth-inline-btn pricing-extra-cta"
+                        onClick={() => { void handleStartCheckout(product.id); }}
+                        disabled={isStartingCheckout === product.id}
+                        type="button"
+                      >
+                        {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.buyCreditsCta}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+                <article className="page-article">
                   <h2>{lang === 'ko' ? '참고 안내' : lang === 'ja' ? 'ご案内' : lang === 'zh' ? '参考说明' : 'Pricing notes'}</h2>
-                  <p>
-                    {lang === 'ko'
-                      ? '회원가입 시 기본 300 크레딧이 한 번 지급되며, 실제 남은 크레딧과 결제 상태는 마이페이지에서 확인할 수 있습니다. 결제가 완료되면 크레딧이 자동으로 적립됩니다.'
-                      : lang === 'ja'
-                        ? '新規登録時には基本 300 クレジットが一度だけ付与されます。現在の残高や決済状態はマイページで確認できます。決済が完了するとクレジットが自動で反映されます。'
-                        : lang === 'zh'
-                          ? '注册时会一次性发放 300 积分。当前余额与支付状态可在我的页面查看。支付完成后积分会自动到账。'
-                          : 'You receive 300 starter credits once when you sign up. Check your live balance and payment status in My Page. Credits are added automatically after a completed payment.'}
-                  </p>
+                  <p>{pricingUiCopy.subscriptionIntro}</p>
+                  <p>{pricingUiCopy.extraCreditsIntro}</p>
                 </article>
               </>
             )}
@@ -5830,7 +5926,7 @@ const App: React.FC = () => {
                 firebaseDisabledMessage={firebaseDisabledMessage}
                 isStartingCheckout={isStartingCheckout}
                 products={CREDIT_PRODUCTS}
-                copy={{ ...t, loginComingSoon: loginComingSoonLabel }}
+                copy={{ ...t, loginComingSoon: loginComingSoonLabel, pricingUi: pricingUiCopy }}
                 onLogin={() => openAuthModal('login')}
                 onNavigateSiteManagement={openAdminModal}
                 onNavigateTerms={() => navigateToPage('terms')}
@@ -5902,39 +5998,64 @@ const App: React.FC = () => {
           className="credit-plan-modal"
           onClose={() => setShowCreditPlanModal(false)}
         >
-          <div className="credit-plan-grid">
-            {CREDIT_PRODUCTS.map((product) => {
-              const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
-              const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
-              return (
-                <article key={product.id} className="credit-plan-card">
-                  <div className="credit-plan-copy">
-                    <div className="credit-plan-badges">
-                      {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
-                      {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+          <div className="pricing-section-stack">
+            <section className="pricing-section-shell">
+              <div className="pricing-section-header">
+                <h3>{pricingUiCopy.subscriptionTitle}</h3>
+                <p>{pricingUiCopy.firstPurchaseBonus}</p>
+              </div>
+              <div className="credit-plan-grid">
+                {subscriptionProducts.map((product) => (
+                  <article key={product.id} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
+                    <div className="credit-plan-copy">
+                      {product.badge ? (
+                        <div className="credit-plan-badges">
+                          <span className="credit-plan-badge accent">{product.badge}</span>
+                        </div>
+                      ) : null}
+                      <strong>{product.label}</strong>
+                      <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
+                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p>{pricingUiCopy.descriptionById[product.id]}</p>
                     </div>
-                    <strong>{product.label} - {product.paidCredit.toLocaleString()} {t.credits}</strong>
-                    <p className="credit-plan-price-row">
-                      <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
-                      <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
-                    </p>
-                    <p className="credit-plan-savings">
-                      <span className="credit-plan-save-pill">{t.savePercent(discountPercent)}</span>
-                      <span className="credit-plan-save-amount">{t.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
-                    </p>
-                    <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
-                  </div>
-                  <button
-                    className="generate-btn auth-inline-btn"
-                    disabled={isStartingCheckout === product.id}
-                    onClick={() => { void handleStartCheckout(product.id); }}
-                    type="button"
-                  >
-                    {isStartingCheckout === product.id ? t.paymentRedirecting : t.purchaseNow}
-                  </button>
-                </article>
-              );
-            })}
+                    <button
+                      className="generate-btn auth-inline-btn"
+                      disabled={isStartingCheckout === product.id}
+                      onClick={() => { void handleStartCheckout(product.id); }}
+                      type="button"
+                    >
+                      {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <section className="pricing-section-shell">
+              <div className="pricing-section-header">
+                <h3>{pricingUiCopy.extraCreditsTitle}</h3>
+                <p>{pricingUiCopy.extraCreditsSubtitle}</p>
+              </div>
+              <div className="credit-plan-grid">
+                {extraCreditProducts.map((product) => (
+                  <article key={product.id} className="credit-plan-card pricing-tier-card pricing-extra-card">
+                    <div className="credit-plan-copy">
+                      <strong>{product.label}</strong>
+                      <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
+                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p>{pricingUiCopy.descriptionById[product.id]}</p>
+                    </div>
+                    <button
+                      className="outline-btn auth-inline-btn pricing-extra-cta"
+                      disabled={isStartingCheckout === product.id}
+                      onClick={() => { void handleStartCheckout(product.id); }}
+                      type="button"
+                    >
+                      {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.buyCreditsCta}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
         </ShellModal>
       )}

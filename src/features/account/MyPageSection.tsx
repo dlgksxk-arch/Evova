@@ -18,12 +18,13 @@ interface MyPageSectionProps {
   isStartingCheckout: CheckoutProductId | null;
   products: ReadonlyArray<{
     id: CheckoutProductId;
+    kind: 'subscription' | 'extra_credit';
     label: string;
     salePriceUsd: number;
-    compareAtPriceUsd: number;
     paidCredit: number;
+    description: string;
     badge?: string;
-    extraBadge?: string;
+    bonusEligible?: boolean;
   }>;
   copy: Record<string, any>;
   onLogin: () => void;
@@ -116,39 +117,64 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         <article className="page-article">
           <h3>{copy.chargeCredits}</h3>
           <p>{copy.chargeDescription}</p>
-          <div className="credit-product-grid">
-            {products.map((product) => {
-              const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
-              const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
-              return (
-                <article key={product.id} className="credit-product-card">
-                  <div className="credit-plan-copy">
-                    <div className="credit-plan-badges">
-                      {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
-                      {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+          <div className="pricing-section-stack">
+            <section className="pricing-section-shell">
+              <div className="pricing-section-header">
+                <h4>{copy.pricingUi.subscriptionTitle}</h4>
+                <p>{copy.pricingUi.firstPurchaseBonus}</p>
+              </div>
+              <div className="credit-product-grid">
+                {products.filter((product) => product.kind === 'subscription').map((product) => (
+                  <article key={product.id} className={`credit-product-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
+                    <div className="credit-plan-copy">
+                      {product.badge ? (
+                        <div className="credit-plan-badges">
+                          <span className="credit-plan-badge accent">{product.badge}</span>
+                        </div>
+                      ) : null}
+                      <strong>{product.label}</strong>
+                      <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
+                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p>{copy.pricingUi.descriptionById[product.id]}</p>
                     </div>
-                    <strong>{product.label} - {product.paidCredit.toLocaleString()} {copy.credits}</strong>
-                    <p className="credit-plan-price-row">
-                      <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
-                      <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
-                    </p>
-                    <p className="credit-plan-savings">
-                      <span className="credit-plan-save-pill">{copy.savePercent(discountPercent)}</span>
-                      <span className="credit-plan-save-amount">{copy.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
-                    </p>
-                    <p>{copy.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
-                  </div>
-                  <button
-                    className="generate-btn auth-inline-btn"
-                    disabled={isStartingCheckout === product.id}
-                    onClick={() => onStartCheckout(product.id)}
-                    type="button"
-                  >
-                    {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.purchaseNow}
-                  </button>
-                </article>
-              );
-            })}
+                    <button
+                      className="generate-btn auth-inline-btn"
+                      disabled={isStartingCheckout === product.id}
+                      onClick={() => onStartCheckout(product.id)}
+                      type="button"
+                    >
+                      {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.pricingUi.subscribeCta}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+            <section className="pricing-section-shell">
+              <div className="pricing-section-header">
+                <h4>{copy.pricingUi.extraCreditsTitle}</h4>
+                <p>{copy.pricingUi.extraCreditsSubtitle}</p>
+              </div>
+              <div className="credit-product-grid">
+                {products.filter((product) => product.kind === 'extra_credit').map((product) => (
+                  <article key={product.id} className="credit-product-card pricing-tier-card pricing-extra-card">
+                    <div className="credit-plan-copy">
+                      <strong>{product.label}</strong>
+                      <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
+                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p>{copy.pricingUi.descriptionById[product.id]}</p>
+                    </div>
+                    <button
+                      className="outline-btn auth-inline-btn pricing-extra-cta"
+                      disabled={isStartingCheckout === product.id}
+                      onClick={() => onStartCheckout(product.id)}
+                      type="button"
+                    >
+                      {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.pricingUi.buyCreditsCta}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
         </article>
       )}

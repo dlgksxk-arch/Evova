@@ -5,7 +5,7 @@ export type SubscriptionPlan = 'free' | 'basic' | 'pro';
 export type UserRole = 'user' | 'admin';
 export type CreditKind = 'daily' | 'paid';
 export type SubjectType = 'human' | 'dog' | 'cat';
-export type CheckoutProductId = 'starter' | 'creator' | 'pro' | 'studio';
+export type CheckoutProductId = 'starter' | 'creator' | 'pro' | 'studio' | 'small_pack' | 'medium_pack' | 'large_pack';
 export interface ApiBonusFields {
   dailyRewardGranted?: number;
   signupBonusGranted?: number;

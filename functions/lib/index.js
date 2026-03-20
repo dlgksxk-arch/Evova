@@ -114,27 +114,51 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
     starter: {
         id: 'starter',
-        amountCents: 399,
-        amountUsd: 3.99,
+        amountCents: 999,
+        amountUsd: 9.99,
         currency: PAYMENT_CURRENCY,
         paidCredit: 1000,
         name: 'HAMDEVA Starter Credits',
     },
     creator: {
         id: 'creator',
-        amountCents: 1599,
-        amountUsd: 15.99,
+        amountCents: 2999,
+        amountUsd: 29.99,
         currency: PAYMENT_CURRENCY,
         paidCredit: 5000,
         name: 'HAMDEVA Popular Credits',
     },
     pro: {
         id: 'pro',
-        amountCents: 2999,
-        amountUsd: 29.99,
+        amountCents: 4999,
+        amountUsd: 49.99,
         currency: PAYMENT_CURRENCY,
         paidCredit: 10000,
         name: 'HAMDEVA Pro Credits',
+    },
+    small_pack: {
+        id: 'small_pack',
+        amountCents: 1299,
+        amountUsd: 12.99,
+        currency: PAYMENT_CURRENCY,
+        paidCredit: 1000,
+        name: 'HAMDEVA Small Credit Pack',
+    },
+    medium_pack: {
+        id: 'medium_pack',
+        amountCents: 5999,
+        amountUsd: 59.99,
+        currency: PAYMENT_CURRENCY,
+        paidCredit: 5000,
+        name: 'HAMDEVA Medium Credit Pack',
+    },
+    large_pack: {
+        id: 'large_pack',
+        amountCents: 9999,
+        amountUsd: 99.99,
+        currency: PAYMENT_CURRENCY,
+        paidCredit: 10000,
+        name: 'HAMDEVA Large Credit Pack',
     },
     studio: {
         id: 'studio',
@@ -1695,6 +1719,7 @@ const fulfillCreditPurchase = async (params) => {
         account = signupBonus.account;
         account = {
             ...account,
+            // TODO: apply one-time +20% bonus credits for the first subscription purchase only.
             paidCredit: account.paidCredit + product.paidCredit,
             credits: account.dailyCredit + account.paidCredit + product.paidCredit,
         };
