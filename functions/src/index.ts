@@ -495,6 +495,8 @@ type PaymentSessionStatusResult = {
   dailyCredit: number | null;
   paidCreditBalance: number | null;
   totalCreditBalance: number | null;
+  isSubscribed: boolean;
+  subscriptionPlan: SubscriptionPlan;
 };
 type GenerationUsageMetadata = {
   type?: GenerationRequestType;
@@ -2556,6 +2558,8 @@ const getCheckoutSessionStatus = async (
       dailyCredit: account.dailyCredit,
       paidCreditBalance: account.paidCredit,
       totalCreditBalance: account.credits,
+      isSubscribed: account.isSubscribed,
+      subscriptionPlan: account.subscriptionPlan,
     };
   }
 
@@ -2599,6 +2603,8 @@ const getCheckoutSessionStatus = async (
     dailyCredit: account.dailyCredit,
     paidCreditBalance: account.paidCredit,
     totalCreditBalance: account.credits,
+    isSubscribed: account.isSubscribed,
+    subscriptionPlan: account.subscriptionPlan,
   };
 };
 
@@ -2726,6 +2732,30 @@ const getObjectValue = (...values: unknown[]): Record<string, unknown> =>
 const getArrayValue = (...values: unknown[]): unknown[] =>
   (values.find((value) => Array.isArray(value)) as unknown[] | undefined) ?? [];
 
+const getWebhookCustomData = (
+  event: LemonWebhookEvent,
+  data: Record<string, unknown>,
+  attributes: Record<string, unknown>,
+): Record<string, unknown> => getObjectValue(
+  event.meta?.custom_data,
+  getObjectValue(getObjectValue(data.meta).custom_data),
+  getObjectValue(attributes.custom_data),
+  getObjectValue(getObjectValue(attributes.checkout_data).custom),
+);
+
+const getWebhookEventName = (
+  event: LemonWebhookEvent,
+  headers: Record<string, string>,
+  data: Record<string, unknown>,
+  attributes: Record<string, unknown>,
+): string => getStringValue(
+  headers['x-event-name'],
+  headers['x-event-type'],
+  event.meta?.event_name,
+  getObjectValue(data.meta).event_name,
+  attributes.event_name,
+).trim().toLowerCase();
+
 const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
   const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(provider, providerPaymentId)).get();
   const data = paymentSnapshot.data();
@@ -2806,8 +2836,12 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
   const event = JSON.parse(rawPayload) as LemonWebhookEvent;
   const data = getObjectValue(event.data);
   const attributes = getObjectValue(data.attributes);
-  const customData = getObjectValue(event.meta?.custom_data);
-  const providerPaymentId = getStringValue(data.id);
+  const customData = getWebhookCustomData(event, data, attributes);
+  const providerPaymentId = getStringValue(
+    attributes.order_id,
+    getObjectValue(attributes.order).id,
+    data.id,
+  );
   const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(LEMON_PROVIDER, providerPaymentId) : null;
   const firstOrderItem = getObjectValue(attributes.first_order_item);
   const firstOrderItemVariant = getObjectValue(firstOrderItem.variant);
@@ -2839,11 +2873,12 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
     customData.productId,
     contextFromPayment?.productId,
     productIdFromVariant,
+    attributes.product_id,
     firstOrderItem.product_id,
     firstOrderItemProduct.id,
   );
-  const eventType = getStringValue(event.meta?.event_name);
-  const isCompletedEvent = eventType === 'order_created';
+  const eventType = getWebhookEventName(event, headers, data, attributes);
+  const isCompletedEvent = eventType === 'order_created' || eventType === 'subscription_created';
   const isFailedEvent = eventType === 'subscription_payment_failed';
   const isCanceledEvent = eventType === 'subscription_cancelled' || eventType === 'subscription_expired';
 

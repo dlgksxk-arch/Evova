@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { User } from 'firebase/auth';
-import { callCheckoutSessionStatus } from '../lib/api/hamdeva';
+import { callCheckoutSessionStatus, callCreditBootstrap } from '../lib/api/hamdeva';
 import type { SitePage } from '../locales';
+import { normalizeUserProfile } from '../lib/profile';
 import type { UserProfile } from '../types/hamdeva';
 
 export const usePaymentSessionStatus = ({
@@ -49,16 +50,36 @@ export const usePaymentSessionStatus = ({
           typeof response.dailyCredit === 'number'
           || typeof response.paidCreditBalance === 'number'
           || typeof response.totalCreditBalance === 'number'
+          || typeof response.isSubscribed === 'boolean'
+          || typeof response.subscriptionPlan === 'string'
         ) {
-          setUserProfile((prev) => prev ? {
-            ...prev,
-            dailyCredit: typeof response.dailyCredit === 'number' ? response.dailyCredit : prev.dailyCredit,
-            paidCredit: typeof response.paidCreditBalance === 'number' ? response.paidCreditBalance : prev.paidCredit,
-            credits: typeof response.totalCreditBalance === 'number' ? response.totalCreditBalance : prev.credits,
-          } : prev);
+          setUserProfile((prev) => normalizeUserProfile(currentUser.email || '', {
+            ...(prev ?? {}),
+            dailyCredit: typeof response.dailyCredit === 'number' ? response.dailyCredit : prev?.dailyCredit,
+            paidCredit: typeof response.paidCreditBalance === 'number' ? response.paidCreditBalance : prev?.paidCredit,
+            credits: typeof response.totalCreditBalance === 'number' ? response.totalCreditBalance : prev?.credits,
+            isSubscribed: typeof response.isSubscribed === 'boolean' ? response.isSubscribed : prev?.isSubscribed,
+            subscriptionPlan: response.subscriptionPlan ?? prev?.subscriptionPlan,
+          }));
         }
 
         if (response.status === 'success') {
+          try {
+            const bootstrapResponse = await callCreditBootstrap(currentUser);
+
+            if (!cancelled && bootstrapResponse.profile) {
+              setUserProfile(normalizeUserProfile(currentUser.email || '', bootstrapResponse.profile));
+            }
+          } catch (bootstrapError) {
+            if (!cancelled) {
+              console.error('Failed to refresh credits after payment success:', bootstrapError);
+            }
+          }
+
+          if (cancelled) {
+            return;
+          }
+
           setPaymentStatusMessage(statusMessages.success);
           return;
         }

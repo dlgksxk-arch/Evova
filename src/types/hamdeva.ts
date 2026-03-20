@@ -247,6 +247,8 @@ export interface CheckoutSessionStatusResponse {
   dailyCredit?: number | null;
   paidCreditBalance?: number | null;
   totalCreditBalance?: number | null;
+  isSubscribed?: boolean;
+  subscriptionPlan?: SubscriptionPlan;
 }
 
 export interface PublicResultRecord {

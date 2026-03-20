@@ -12,8 +12,6 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_LIST_VISIBLE_ROWS = 20;
-const HISTORY_ROW_MIN_HEIGHT = 52;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -148,7 +146,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isImageReady, setIsImageReady] = useState(false);
@@ -192,6 +189,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
     selectedPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [selectedItem]);
+
+  useEffect(() => {
+    if (selectedItem && !items.some((item) => item.id === selectedItem.id)) {
+      resetExpandedPanel();
+    }
+  }, [items, selectedItem]);
 
   const visibleItems = useMemo(() => (
     [...items]
@@ -280,322 +283,273 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       <p className="history-guide-copy">{copy.historyGuide}</p>
       {!hasVisibleItems ? <p>{copy.historyEmpty}</p> : null}
       {hasVisibleItems ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: 8,
-            maxHeight: HISTORY_LIST_VISIBLE_ROWS * HISTORY_ROW_MIN_HEIGHT,
-            overflowY: 'auto',
-            paddingRight: 4,
-          }}
-        >
+        <>
+          <div className="creation-history-grid">
           {visibleItems.map((item) => {
             const isExpanded = selectedItem?.id === item.id;
+            const itemLabel = `[${formatDateTime(item.createdAt, locale)}]`;
 
             return (
-              <div key={item.id} style={{ display: 'grid', gap: 8 }}>
-                <button
-                  className="outline-btn auth-inline-btn"
-                  onClick={() => handleOpenItem(item)}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId((prev) => prev === item.id ? null : prev)}
-                  style={{
-                    width: '100%',
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    padding: '12px 16px',
-                    minHeight: HISTORY_ROW_MIN_HEIGHT,
-                    background: hoveredItemId === item.id ? 'var(--upload-hover-bg)' : 'transparent',
-                    transition: 'background-color 0.2s ease, opacity 0.2s ease',
-                    opacity: hoveredItemId === item.id ? 1 : 0.96,
-                    borderColor: isExpanded ? 'var(--primary)' : undefined,
-                    overflow: 'hidden',
-                  }}
-                  type="button"
-                >
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: isMobile ? 8 : 14,
-                      width: '100%',
-                      minWidth: 0,
-                      flexWrap: 'nowrap',
-                    }}
-                  >
-                    <strong
-                      style={{
-                        flex: '0 0 auto',
-                        maxWidth: isMobile ? 124 : 188,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      [{formatDateTime(item.createdAt, locale)}] IMAGE{isPreservedItem(item) ? ` (${copy.historyArchived})` : ''}
-                    </strong>
-                    <span
-                      style={{
-                        color: 'var(--text-sub)',
-                        fontSize: 13,
-                        minWidth: 0,
-                        flex: '1 1 0',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {historyCopy.personLabel}: {getPersonLabel(item)}
-                    </span>
-                    <span
-                      style={{
-                        color: 'var(--text-sub)',
-                        fontSize: 13,
-                        minWidth: 0,
-                        flex: '1 1 0',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {historyCopy.garmentLabel}: {getGarmentLabel(item)}
-                    </span>
-                    <span style={{ color: 'var(--text-sub)', fontSize: 13, flex: '0 0 auto', whiteSpace: 'nowrap' }}>
-                      {isExpanded ? copy.historyPreviewClose : copy.historyPreviewOpen}
-                    </span>
-                  </span>
-                </button>
-
-                {isExpanded ? (
-                  <div
-                    ref={selectedPanelRef}
-                    style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 20,
-                      background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
-                      boxShadow: 'var(--shadow-sm)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <strong style={{ display: 'block' }}>
-                          [{formatDateTime(item.createdAt, locale)}] IMAGE{isPreservedItem(item) ? ` (${copy.historyArchived})` : ''}
-                        </strong>
-                        <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(item.expiresAt, locale)}</p>
-                        <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                          {historyCopy.personLabel}: {getPersonLabel(item)}
-                        </p>
-                        <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                          {historyCopy.garmentLabel}: {getGarmentLabel(item)}
-                        </p>
-                      </div>
-                      <button className="outline-btn auth-inline-btn" disabled={submitting} onClick={resetExpandedPanel} type="button">{copy.close}</button>
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 8,
-                        justifyContent: 'flex-end',
-                        padding: '12px 20px 0',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <button
-                        className="outline-btn auth-inline-btn"
-                        disabled={zoom <= 0.5}
-                        onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
-                        type="button"
-                      >
-                        {copy.historyZoomOut}
-                      </button>
-                      <button
-                        className="outline-btn auth-inline-btn"
-                        disabled={zoom === 0.5}
-                        onClick={() => setZoom(0.5)}
-                        type="button"
-                      >
-                        {copy.historyZoomReset}
-                      </button>
-                      <button
-                        className="outline-btn auth-inline-btn"
-                        disabled={zoom >= 1.5}
-                        onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
-                        type="button"
-                      >
-                        {copy.historyZoomIn}
-                      </button>
-                    </div>
-
-                    <div
-                      onWheel={(event) => {
-                        if (event.ctrlKey) {
-                          event.preventDefault();
-                        }
-                      }}
-                      style={{
-                        padding: isMobile ? 16 : 20,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: isMobile ? '1fr' : 'minmax(240px, 320px) minmax(0, 1fr)',
-                          gap: 16,
-                          marginBottom: 16,
-                          alignItems: 'stretch',
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'grid',
-                            gap: 16,
-                            gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
-                          }}
-                        >
-                          <div style={previewCardStyle}>
-                            <strong>{historyCopy.personLabel}</strong>
-                            {item.personPreviewUrl ? (
-                              <img
-                                src={item.personPreviewUrl}
-                                alt={historyCopy.personLabel}
-                                style={previewThumbStyle}
-                              />
-                            ) : (
-                              <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                                {getPersonLabel(item)}
-                              </div>
-                            )}
-                            <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                              {getPersonLabel(item)}
-                            </span>
-                          </div>
-                          <div style={previewCardStyle}>
-                            <strong>{historyCopy.garmentLabel}</strong>
-                            {item.garmentPreviewUrl ? (
-                              <img
-                                src={item.garmentPreviewUrl}
-                                alt={historyCopy.garmentLabel}
-                                style={previewThumbStyle}
-                              />
-                            ) : (
-                              <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                                {getGarmentLabel(item)}
-                              </div>
-                            )}
-                            <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                              {getGarmentLabel(item)}
-                            </span>
-                          </div>
-                        </div>
-                        <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
-                          <strong>{historyCopy.resultLabel}</strong>
-                          <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                            {historyCopy.resultPreview}
-                          </span>
-                          {isImageLoading || !isImageReady ? (
-                            <div style={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
-                              {copy.historyLoading}
-                            </div>
-                          ) : null}
-                          <div
-                            style={{
-                              width: '100%',
-                              overflowX: 'auto',
-                              overflowY: 'visible',
-                              border: '1px solid var(--border)',
-                              borderRadius: 16,
-                              padding: 16,
-                              background: 'rgba(255,255,255,0.35)',
-                              minHeight: isMobile ? 280 : 520,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <img
-                              alt={copy.resultPreviewAlt}
-                              onLoad={finishImageLoading}
-                              draggable={false}
-                              src={item.imageUrl || ''}
-                              style={{
-                                display: 'block',
-                                margin: '0 auto',
-                                width: `${zoom * 100}%`,
-                                maxWidth: '100%',
-                                maxHeight: isMobile ? '60vh' : '72vh',
-                                height: 'auto',
-                                objectFit: 'contain',
-                                userSelect: 'none',
-                                visibility: isImageLoading ? 'hidden' : 'visible',
-                              }}
-                            />
-                          </div>
-                          {!isImageLoading ? (
-                            <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
-                              {copy.historyZoomHint}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        justifyContent: isMobile ? 'stretch' : 'flex-end',
-                        padding: '16px 20px',
-                        borderTop: '1px solid var(--border)',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <button
-                        className="outline-btn auth-inline-btn"
-                        disabled={submitting}
-                        onClick={() => {
-                          if (item.imageUrl) {
-                            downloadFile(item.imageUrl, `hamdeva-image-${item.id}.${inferFileExtension(item)}`);
-                          }
-                        }}
-                        style={{ flex: isMobile ? 1 : undefined }}
-                        type="button"
-                      >
-                        {copy.historyDownload}
-                      </button>
-                      <button
-                        className={isPreservedItem(item) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
-                        disabled={submitting || isPreservedItem(item)}
-                        onClick={() => {
-                          if (!canArchiveSelectedItem) {
-                            alert(copy.historyArchiveLimit(maxPreserved));
-                            return;
-                          }
-                          void handleArchive();
-                        }}
-                        style={{ flex: isMobile ? 1 : undefined }}
-                        type="button"
-                      >
-                        {isPreservedItem(item) ? copy.historyArchived : copy.historyArchive}
-                      </button>
-                      <button
-                        className="outline-btn auth-inline-btn"
-                        disabled={submitting}
-                        onClick={() => { void handleDelete(); }}
-                        style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
-                        type="button"
-                      >
-                        {submitting ? copy.historyProcessing : copy.historyDelete}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+              <button
+                key={item.id}
+                className={`creation-history-card ${isExpanded ? 'is-selected' : ''}`}
+                onClick={() => handleOpenItem(item)}
+                type="button"
+              >
+                <div className="creation-history-thumbnail">
+                  <img
+                    src={item.imageUrl || ''}
+                    alt={`${itemLabel} ${historyCopy.resultLabel}`}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="creation-history-card-copy">
+                  <strong>{itemLabel}</strong>
+                  <span>{historyCopy.resultLabel}</span>
+                  {isPreservedItem(item) ? (
+                    <span className="creation-history-badge">{copy.historyArchived}</span>
+                  ) : null}
+                </div>
+              </button>
             );
           })}
-        </div>
+          </div>
+
+          {selectedItem ? (
+            <div
+              ref={selectedPanelRef}
+              className="creation-history-selected-panel"
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 20,
+                background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
+                boxShadow: 'var(--shadow-sm)',
+                overflow: 'hidden',
+                marginTop: 18,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ display: 'block' }}>
+                    [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
+                  </strong>
+                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
+                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                    {historyCopy.personLabel}: {getPersonLabel(selectedItem)}
+                  </p>
+                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                    {historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}
+                  </p>
+                </div>
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={submitting}
+                  onClick={resetExpandedPanel}
+                  type="button"
+                >
+                  {copy.close}
+                </button>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  justifyContent: 'flex-end',
+                  padding: '12px 20px 0',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={zoom <= 0.5}
+                  onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
+                  type="button"
+                >
+                  {copy.historyZoomOut}
+                </button>
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={zoom === 0.5}
+                  onClick={() => setZoom(0.5)}
+                  type="button"
+                >
+                  {copy.historyZoomReset}
+                </button>
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={zoom >= 1.5}
+                  onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
+                  type="button"
+                >
+                  {copy.historyZoomIn}
+                </button>
+              </div>
+
+              <div
+                onWheel={(event) => {
+                  if (event.ctrlKey) {
+                    event.preventDefault();
+                  }
+                }}
+                style={{
+                  padding: isMobile ? 16 : 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'minmax(240px, 320px) minmax(0, 1fr)',
+                    gap: 16,
+                    marginBottom: 16,
+                    alignItems: 'stretch',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'grid',
+                      gap: 16,
+                      gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
+                    }}
+                  >
+                    <div style={previewCardStyle}>
+                      <strong>{historyCopy.personLabel}</strong>
+                      {selectedItem.personPreviewUrl ? (
+                        <img
+                          src={selectedItem.personPreviewUrl}
+                          alt={historyCopy.personLabel}
+                          style={previewThumbStyle}
+                        />
+                      ) : (
+                        <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                          {getPersonLabel(selectedItem)}
+                        </div>
+                      )}
+                      <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                        {getPersonLabel(selectedItem)}
+                      </span>
+                    </div>
+                    <div style={previewCardStyle}>
+                      <strong>{historyCopy.garmentLabel}</strong>
+                      {selectedItem.garmentPreviewUrl ? (
+                        <img
+                          src={selectedItem.garmentPreviewUrl}
+                          alt={historyCopy.garmentLabel}
+                          style={previewThumbStyle}
+                        />
+                      ) : (
+                        <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                          {getGarmentLabel(selectedItem)}
+                        </div>
+                      )}
+                      <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                        {getGarmentLabel(selectedItem)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
+                    <strong>{historyCopy.resultLabel}</strong>
+                    <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                      {historyCopy.resultPreview}
+                    </span>
+                    {isImageLoading || !isImageReady ? (
+                      <div style={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
+                        {copy.historyLoading}
+                      </div>
+                    ) : null}
+                    <div
+                      style={{
+                        width: '100%',
+                        overflowX: 'auto',
+                        overflowY: 'visible',
+                        border: '1px solid var(--border)',
+                        borderRadius: 16,
+                        padding: 16,
+                        background: 'rgba(255,255,255,0.35)',
+                        minHeight: isMobile ? 280 : 520,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <img
+                        alt={copy.resultPreviewAlt}
+                        onLoad={finishImageLoading}
+                        draggable={false}
+                        src={selectedItem.imageUrl || ''}
+                        style={{
+                          display: 'block',
+                          margin: '0 auto',
+                          width: `${zoom * 100}%`,
+                          maxWidth: '100%',
+                          maxHeight: isMobile ? '60vh' : '72vh',
+                          height: 'auto',
+                          objectFit: 'contain',
+                          userSelect: 'none',
+                          visibility: isImageLoading ? 'hidden' : 'visible',
+                        }}
+                      />
+                    </div>
+                    {!isImageLoading ? (
+                      <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
+                        {copy.historyZoomHint}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  justifyContent: isMobile ? 'stretch' : 'flex-end',
+                  padding: '16px 20px',
+                  borderTop: '1px solid var(--border)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={submitting}
+                  onClick={() => {
+                    if (selectedItem.imageUrl) {
+                      downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                    }
+                  }}
+                  style={{ flex: isMobile ? 1 : undefined }}
+                  type="button"
+                >
+                  {copy.historyDownload}
+                </button>
+                <button
+                  className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+                  disabled={submitting || isPreservedItem(selectedItem)}
+                  onClick={() => {
+                    if (!canArchiveSelectedItem) {
+                      alert(copy.historyArchiveLimit(maxPreserved));
+                      return;
+                    }
+                    void handleArchive();
+                  }}
+                  style={{ flex: isMobile ? 1 : undefined }}
+                  type="button"
+                >
+                  {isPreservedItem(selectedItem) ? copy.historyArchived : copy.historyArchive}
+                </button>
+                <button
+                  className="outline-btn auth-inline-btn"
+                  disabled={submitting}
+                  onClick={() => { void handleDelete(); }}
+                  style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
+                  type="button"
+                >
+                  {submitting ? copy.historyProcessing : copy.historyDelete}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </article>
   );
