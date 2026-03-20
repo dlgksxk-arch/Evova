@@ -91,12 +91,12 @@ type CreditProduct = {
   bonusEligible?: boolean;
 };
 const CREDIT_PRODUCTS = [
-  { id: 'starter', kind: 'subscription', label: 'Starter', paidCredit: 1000, salePriceUsd: 9.99, description: 'Ideal for light use', bonusEligible: true },
-  { id: 'popular', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 29.99, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
-  { id: 'pro', kind: 'subscription', label: 'Pro', paidCredit: 10000, salePriceUsd: 49.99, description: 'For heavy and frequent use', bonusEligible: true },
-  { id: 'small_pack', kind: 'extra_credit', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 12.99, description: 'Instant extra credits when you need a quick refill' },
-  { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59.99, description: 'A larger refill for ongoing pet fitting sessions' },
-  { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99.99, description: 'Best when you need a big extra credit top-up right away' },
+  { id: 'starter', kind: 'subscription', label: 'Starter', paidCredit: 1000, salePriceUsd: 9900, description: 'Ideal for light use', bonusEligible: true },
+  { id: 'popular', kind: 'subscription', label: 'Popular', paidCredit: 5000, salePriceUsd: 29900, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
+  { id: 'pro', kind: 'subscription', label: 'Pro', paidCredit: 10000, salePriceUsd: 49900, description: 'For heavy and frequent use', bonusEligible: true },
+  { id: 'small_pack', kind: 'extra_credit', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 12900, description: 'Instant extra credits when you need a quick refill' },
+  { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59000, description: 'A larger refill for ongoing pet fitting sessions' },
+  { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99900, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
@@ -2463,6 +2463,8 @@ const formatTimestampLabel = (value?: Timestamp | null): string => {
     return '';
   }
 };
+
+const formatCreditProductPrice = (price: number): string => `${price.toLocaleString('ko-KR')}원`;
 
 const formatEstimatedCostLabel = (value: number | null | undefined): string =>
   typeof value === 'number' && Number.isFinite(value)
@@ -5717,7 +5719,7 @@ const App: React.FC = () => {
                           ) : null}
                           <strong>{product.label}</strong>
                           <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
-                          <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                          <p className="credit-plan-sale-price">{formatCreditProductPrice(product.salePriceUsd)}</p>
                           <p>{pricingUiCopy.descriptionById[product.id]}</p>
                         </div>
                         <button
@@ -5743,7 +5745,7 @@ const App: React.FC = () => {
                       <div className="credit-plan-copy">
                         <strong>{product.label}</strong>
                         <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
-                        <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                        <p className="credit-plan-sale-price">{formatCreditProductPrice(product.salePriceUsd)}</p>
                         <p>{pricingUiCopy.descriptionById[product.id]}</p>
                       </div>
                       <button
@@ -6028,7 +6030,7 @@ const App: React.FC = () => {
                       ) : null}
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
-                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p className="credit-plan-sale-price">{formatCreditProductPrice(product.salePriceUsd)}</p>
                       <p>{pricingUiCopy.descriptionById[product.id]}</p>
                     </div>
                     <button
@@ -6054,7 +6056,7 @@ const App: React.FC = () => {
                     <div className="credit-plan-copy">
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
-                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p className="credit-plan-sale-price">{formatCreditProductPrice(product.salePriceUsd)}</p>
                       <p>{pricingUiCopy.descriptionById[product.id]}</p>
                     </div>
                     <button

@@ -66,6 +66,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDeleteHistoryItem,
 }) => {
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+  const formatProductPrice = (price: number): string => `${price.toLocaleString('ko-KR')}원`;
 
   return (
     <div className="mypage-layout">
@@ -143,7 +144,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                       ) : null}
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
-                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p className="credit-plan-sale-price">{formatProductPrice(product.salePriceUsd)}</p>
                       <p>{copy.pricingUi.descriptionById[product.id]}</p>
                     </div>
                     <button
@@ -169,7 +170,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                     <div className="credit-plan-copy">
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
-                      <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
+                      <p className="credit-plan-sale-price">{formatProductPrice(product.salePriceUsd)}</p>
                       <p>{copy.pricingUi.descriptionById[product.id]}</p>
                     </div>
                     <button

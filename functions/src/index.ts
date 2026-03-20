@@ -58,7 +58,7 @@ const HISTORY_RETENTION_DAYS = 15;
 const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
 const MAX_ARCHIVED_CREATIONS = 5;
 const LEMON_PROVIDER = 'lemon';
-const PAYMENT_CURRENCY = 'usd';
+const PAYMENT_CURRENCY = 'krw';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
 const DEFAULT_ADMIN_GIFT_SENDER_NAME = 'EVOVA 운영팀';
@@ -77,48 +77,48 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
   starter: {
     id: 'starter',
-    amountCents: 999,
-    amountUsd: 9.99,
+    amountCents: 990000,
+    amountUsd: 9900,
     currency: PAYMENT_CURRENCY,
     paidCredit: 1000,
     name: 'HAMDEVA Starter Credits',
   },
   popular: {
     id: 'popular',
-    amountCents: 2999,
-    amountUsd: 29.99,
+    amountCents: 2990000,
+    amountUsd: 29900,
     currency: PAYMENT_CURRENCY,
     paidCredit: 5000,
     name: 'HAMDEVA Popular Credits',
   },
   pro: {
     id: 'pro',
-    amountCents: 4999,
-    amountUsd: 49.99,
+    amountCents: 4990000,
+    amountUsd: 49900,
     currency: PAYMENT_CURRENCY,
     paidCredit: 10000,
     name: 'HAMDEVA Pro Credits',
   },
   small_pack: {
     id: 'small_pack',
-    amountCents: 1299,
-    amountUsd: 12.99,
+    amountCents: 1290000,
+    amountUsd: 12900,
     currency: PAYMENT_CURRENCY,
     paidCredit: 1000,
     name: 'HAMDEVA Small Credit Pack',
   },
   medium_pack: {
     id: 'medium_pack',
-    amountCents: 5999,
-    amountUsd: 59.99,
+    amountCents: 5900000,
+    amountUsd: 59000,
     currency: PAYMENT_CURRENCY,
     paidCredit: 5000,
     name: 'HAMDEVA Medium Credit Pack',
   },
   large_pack: {
     id: 'large_pack',
-    amountCents: 9999,
-    amountUsd: 99.99,
+    amountCents: 9990000,
+    amountUsd: 99900,
     currency: PAYMENT_CURRENCY,
     paidCredit: 10000,
     name: 'HAMDEVA Large Credit Pack',
