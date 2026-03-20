@@ -108,6 +108,7 @@ const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
 const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
+const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
@@ -3541,7 +3542,21 @@ const App: React.FC = () => {
       };
   const paymentSessionId = (() => {
     const params = new URLSearchParams(routeSearch);
-    return params.get('session_id') || params.get('transaction_id') || params.get('checkout_id');
+    const paramSessionId = params.get('session_id') || params.get('transaction_id') || params.get('checkout_id');
+    if (paramSessionId) {
+      try {
+        window.sessionStorage.setItem(PAYMENT_PENDING_SESSION_STORAGE_KEY, paramSessionId);
+      } catch {
+        // Ignore storage failures and keep using the URL param.
+      }
+      return paramSessionId;
+    }
+
+    try {
+      return window.sessionStorage.getItem(PAYMENT_PENDING_SESSION_STORAGE_KEY);
+    } catch {
+      return null;
+    }
   })();
   const editorialUiCopy = getEditorialUiCopy(lang);
   const pricingUiCopy = getPricingUiCopy(lang);
@@ -4466,6 +4481,14 @@ const App: React.FC = () => {
 
       if (!session.checkoutUrl) {
         throw new Error('PAYMENT_NOT_CONFIGURED');
+      }
+
+      try {
+        if (session.sessionId) {
+          window.sessionStorage.setItem(PAYMENT_PENDING_SESSION_STORAGE_KEY, session.sessionId);
+        }
+      } catch {
+        // Ignore storage failures and continue to checkout.
       }
 
       setShowCreditPlanModal(false);

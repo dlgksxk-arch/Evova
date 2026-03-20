@@ -2392,6 +2392,7 @@ const upsertPendingPayment = async (params: {
     uid: params.uid,
     provider: params.provider,
     providerPaymentId: params.providerPaymentId,
+    checkoutSessionId: params.providerPaymentId,
     productId: product.id,
     amount: product.amountUsd,
     amountCents: product.amountCents,
@@ -2429,6 +2430,8 @@ const fulfillCreditPurchase = async (params: {
   providerPaymentId: string;
   uid: string;
   productId: PaymentProductId;
+  providerOrderId?: string | null;
+  checkoutSessionId?: string | null;
   amount?: number | null;
   currency?: string | null;
   paidAt?: string | number | Date | null;
@@ -2443,13 +2446,42 @@ const fulfillCreditPurchase = async (params: {
     : null;
 
   await db.runTransaction(async (transaction) => {
-    const [paymentSnapshot, userSnapshot] = await Promise.all([
+    const duplicatePaymentQuery = params.providerOrderId
+      ? db.collection('payments').where('providerOrderId', '==', params.providerOrderId).limit(1)
+      : null;
+
+    const [paymentSnapshot, userSnapshot, duplicatePaymentSnapshot] = await Promise.all([
       transaction.get(paymentRef),
       transaction.get(userRef),
+      duplicatePaymentQuery ? transaction.get(duplicatePaymentQuery) : Promise.resolve(null),
     ]);
 
     const existingPayment = paymentSnapshot.data();
     if (existingPayment?.status === 'paid') {
+      return;
+    }
+
+    const duplicatePaidPaymentDoc = duplicatePaymentSnapshot?.docs.find((doc) => doc.id !== paymentRef.id && doc.data()?.status === 'paid');
+    if (duplicatePaidPaymentDoc) {
+      const duplicatePaymentData = duplicatePaidPaymentDoc.data() ?? {};
+      transaction.set(paymentRef, {
+        uid: params.uid,
+        email: typeof duplicatePaymentData.email === 'string' ? duplicatePaymentData.email : existingPayment?.email ?? '',
+        provider: params.provider,
+        providerPaymentId: params.providerPaymentId,
+        providerOrderId: params.providerOrderId ?? duplicatePaymentData.providerOrderId ?? null,
+        checkoutSessionId: params.checkoutSessionId ?? existingPayment?.checkoutSessionId ?? params.providerPaymentId,
+        productId: product.id,
+        amount: typeof params.amount === 'number' && Number.isFinite(params.amount) ? params.amount : duplicatePaymentData.amount ?? product.amountUsd,
+        amountCents: product.amountCents,
+        currency: typeof params.currency === 'string' && params.currency ? params.currency : duplicatePaymentData.currency ?? product.currency,
+        paidCredit: product.paidCredit,
+        status: 'paid',
+        paidAt: duplicatePaymentData.paidAt ?? paidAtTimestamp,
+        rawPayload: params.rawPayload ?? duplicatePaymentData.rawPayload ?? null,
+        createdAt: paymentSnapshot.exists ? existingPayment?.createdAt ?? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
       return;
     }
 
@@ -2490,6 +2522,8 @@ const fulfillCreditPurchase = async (params: {
       email: email || account.email,
       provider: params.provider,
       providerPaymentId: params.providerPaymentId,
+      providerOrderId: params.providerOrderId ?? null,
+      checkoutSessionId: params.checkoutSessionId ?? existingPayment?.checkoutSessionId ?? params.providerPaymentId,
       productId: product.id,
       amount: typeof params.amount === 'number' && Number.isFinite(params.amount) ? params.amount : product.amountUsd,
       amountCents: product.amountCents,
@@ -2606,6 +2640,7 @@ const getCheckoutSessionStatus = async (
   if (normalizedStatus === 'pending') {
     const reconciledPaymentId = await syncPendingPaymentWithLemonOrder({
       user,
+      pendingPaymentId: paymentSnapshot.id,
       pendingPaymentData: paymentData,
     });
 
@@ -2904,6 +2939,7 @@ const getRecentPaidLemonOrder = async (params: {
 
 const syncPendingPaymentWithLemonOrder = async (params: {
   user: AuthenticatedUser;
+  pendingPaymentId: string;
   pendingPaymentData: Record<string, unknown>;
 }): Promise<string | null> => {
   const expectedProductId = isPaymentProductId(params.pendingPaymentData.productId)
@@ -2937,9 +2973,11 @@ const syncPendingPaymentWithLemonOrder = async (params: {
 
   await fulfillCreditPurchase({
     provider: LEMON_PROVIDER,
-    providerPaymentId,
+    providerPaymentId: params.pendingPaymentId,
     uid: params.user.uid,
     productId: resolvedProductId,
+    providerOrderId: providerPaymentId,
+    checkoutSessionId: params.pendingPaymentId,
     amount: (() => {
       const rawAmount = typeof attributes.total === 'number'
         ? attributes.total
@@ -2956,7 +2994,7 @@ const syncPendingPaymentWithLemonOrder = async (params: {
     },
   });
 
-  return providerPaymentId;
+  return params.pendingPaymentId;
 };
 
 const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
@@ -3105,6 +3143,7 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
         providerPaymentId,
         uid,
         productId: rawProductId,
+        providerOrderId: providerPaymentId,
         amount: (() => {
           const rawAmount = typeof attributes.total === 'number'
             ? attributes.total

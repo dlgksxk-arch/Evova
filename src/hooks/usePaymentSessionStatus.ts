@@ -6,6 +6,8 @@ import type { SitePage } from '../locales';
 import { normalizeUserProfile } from '../lib/profile';
 import type { UserProfile } from '../types/hamdeva';
 
+const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
+
 export const usePaymentSessionStatus = ({
   currentPage,
   currentUser,
@@ -66,6 +68,14 @@ export const usePaymentSessionStatus = ({
       }
     };
 
+    const clearPendingSessionId = () => {
+      try {
+        window.sessionStorage.removeItem(PAYMENT_PENDING_SESSION_STORAGE_KEY);
+      } catch {
+        // Ignore storage cleanup failures.
+      }
+    };
+
     const poll = async () => {
       try {
         const authToken = await currentUser.getIdToken();
@@ -97,6 +107,7 @@ export const usePaymentSessionStatus = ({
 
         if (response.status === 'success') {
           clearScheduledReload();
+          clearPendingSessionId();
           try {
             const bootstrapResponse = await callCreditBootstrap(currentUser);
 
@@ -119,6 +130,7 @@ export const usePaymentSessionStatus = ({
 
         if (response.status === 'failed') {
           clearScheduledReload();
+          clearPendingSessionId();
           setPaymentStatusMessage(statusMessages.failed);
           return;
         }
