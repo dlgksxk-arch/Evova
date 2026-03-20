@@ -3395,7 +3395,7 @@ a { color: inherit; text-decoration: none; }
 
 .creation-history-scroll {
   overflow-y: auto;
-  max-height: calc((var(--history-card-height, 188px) * var(--history-visible-rows, 6)) + (18px * var(--history-visible-rows, 6)));
+  max-height: calc((var(--history-card-height, 188px) * var(--history-visible-rows, 7)) + (18px * var(--history-visible-rows, 7)));
   padding-right: 6px;
 }
 

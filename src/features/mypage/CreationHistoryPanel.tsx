@@ -12,7 +12,7 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_VISIBLE_ROWS = 6;
+const HISTORY_VISIBLE_ROWS = 7;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -265,7 +265,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   }, [selectedItem, visibleItems, columnCount]);
 
   const hasVisibleItems = visibleItems.length > 0;
-  const canArchiveSelectedItem = Boolean(selectedItem && !isPreservedItem(selectedItem) && preservedCount < maxPreserved);
+  const isSelectedItemPreserved = Boolean(selectedItem && isPreservedItem(selectedItem));
+  const canArchiveSelectedItem = Boolean(selectedItem && (!isSelectedItemPreserved && preservedCount < maxPreserved));
 
   const resetExpandedPanel = () => {
     setSelectedItem(null);
@@ -291,11 +292,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   };
 
   const handleArchive = async () => {
-    if (!selectedItem || isPreservedItem(selectedItem)) {
+    if (!selectedItem) {
       return;
     }
 
-    if (preservedCount >= maxPreserved) {
+    const isCurrentlyPreserved = isPreservedItem(selectedItem);
+
+    if (!isCurrentlyPreserved && preservedCount >= maxPreserved) {
       alert(copy.historyArchiveLimit(maxPreserved));
       return;
     }
@@ -303,7 +306,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSubmitting(true);
     try {
       await onTogglePreserve(selectedItem);
-      setPendingArchiveSelectionId(selectedItem.id);
+      if (!isCurrentlyPreserved) {
+        setPendingArchiveSelectionId(selectedItem.id);
+      } else {
+        setPendingArchiveSelectionId(null);
+      }
     } catch (archiveError) {
       console.error('Failed to archive creation:', archiveError);
       alert(archiveError instanceof Error ? archiveError.message : copy.historyArchiveFailed);
@@ -622,10 +629,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       {copy.historyDownload}
                     </button>
                     <button
-                      className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
-                      disabled={submitting || isPreservedItem(selectedItem)}
+                      className={isSelectedItemPreserved ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+                      disabled={submitting}
                       onClick={() => {
-                        if (!canArchiveSelectedItem) {
+                        if (!isSelectedItemPreserved && !canArchiveSelectedItem) {
                           alert(copy.historyArchiveLimit(maxPreserved));
                           return;
                         }
@@ -634,7 +641,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       style={{ flex: isMobile ? 1 : undefined }}
                       type="button"
                     >
-                      {isPreservedItem(selectedItem) ? copy.historyArchived : copy.historyArchive}
+                      {isSelectedItemPreserved ? (copy.historyUnarchive ?? copy.historyArchive) : copy.historyArchive}
                     </button>
                     <button
                       className="outline-btn auth-inline-btn"
