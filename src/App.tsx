@@ -3065,7 +3065,7 @@ const normalizeLanguageCode = (value: string | null | undefined): LanguageCode =
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const { i18n: i18next, t: translate } = useTranslation();
-  const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
+  const SUPPORT_EMAIL = 'jerome912@daum.net';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
