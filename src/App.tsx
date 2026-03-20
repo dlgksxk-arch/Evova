@@ -3333,14 +3333,14 @@ const App: React.FC = () => {
           name: 'HAMDEVA',
           url: SITE_URL,
           logo: `${SITE_URL}/og-image.png`,
-          description: 'HAMDEVA is an AI pet outfit preview platform for dog outfit ideas, cat outfit ideas, and dress-up your pet styling.',
+          description: 'HAMDEVA is an AI pet fitting platform for dogs and cats.',
           contactEmail: SUPPORT_EMAIL,
           contactType: 'customer support',
         }),
         createWebSiteSchema({
           name: 'HAMDEVA',
           url: SITE_URL,
-          description: 'HAMDEVA provides pet outfit previews, dog and cat outfit generators, and sample outfit guides.',
+          description: 'Upload your dog or cat photo and try different outfits instantly with AI.',
         }),
       ]
     : [];
@@ -3800,6 +3800,8 @@ const App: React.FC = () => {
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
     upsertMeta('meta[name="keywords"]', { name: 'keywords', content: pageKeywords });
     upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
+    upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: pageMeta.title });
+    upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: pageMeta.description });
     upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: pageUrl });
     upsertMeta('meta[name="robots"]', { name: 'robots', content: robotsContent });
 
@@ -4065,7 +4067,7 @@ const App: React.FC = () => {
     if (navigator.share) {
       try {
         const sharePayload = {
-          title: 'HAMDEVA - AI Virtual Fitting Playground',
+          title: 'HAMDEVA | AI Pet Outfit Generator',
           text: t.shareDefaultText,
           url: resolvedLink,
         };
@@ -4116,8 +4118,8 @@ const App: React.FC = () => {
       kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
-          title: 'HAMDEVA - AI Virtual Fitting Playground',
-          description: 'Try AI virtual fitting online with HAMDEVA.',
+          title: 'HAMDEVA | AI Pet Outfit Generator',
+          description: 'Upload your pet photo and outfit image to generate an AI pet fitting preview in seconds.',
           imageUrl: shareImageSrc,
           link: {
             mobileWebUrl: resolvedLink,
