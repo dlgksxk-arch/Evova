@@ -238,6 +238,8 @@ Keep the full head, full hair, both hands, both feet, and the entire outfit full
 Use realistic but flattering editorial body proportions with clean posture and balanced head-to-body ratio.
 Make the overall silhouette look elegant and proportionate without changing the person's core build unrealistically.
 Keep the face clearly visible and not smaller than necessary.
+Push the image toward strong photorealism with high real-world visual fidelity, believable skin detail, realistic fabric texture, and natural depth.
+Respect real-world physics: gravity, fabric weight, tension, fold behavior, seam pull, body contact, and natural drape must all look physically believable.
 
 Use clean realistic lighting and a believable background that matches the garment mood, cultural context, and styling purpose.
 
@@ -283,6 +285,8 @@ Composition rules:
 - keep the full head, full body, full outfit, and all paws inside the frame
 - use balanced body proportions and professional lighting
 - place the camera slightly farther back so the head reads a bit smaller inside the full-body composition and the outfit remains easy to read
+- push the final result toward strong photorealism with believable fur detail, fabric texture, lighting response, and real camera-like depth
+- respect real-world physics so the outfit follows believable gravity, fabric weight, fold behavior, stretch, compression, and contact with the dog body
 
 Scene rules:
 - use a clean, realistic, visually charming background that supports the outfit mood
@@ -345,6 +349,8 @@ Composition rules:
 - keep the full head, full body, full outfit, and all paws inside the frame
 - use balanced body proportions and professional lighting
 - place the camera slightly farther back so the head reads a bit smaller inside the full-body composition and the outfit remains easy to read
+- push the final result toward strong photorealism with believable fur detail, fabric texture, lighting response, and real camera-like depth
+- respect real-world physics so the outfit follows believable gravity, fabric weight, fold behavior, stretch, compression, and contact with the cat body
 
 Scene rules:
 - use a clean, realistic, visually charming background that supports the outfit mood
@@ -588,6 +594,8 @@ const buildTryOnPrompt = (subjectType, bodyProfile) => {
         subjectType === 'dog' || subjectType === 'cat' ? 'Face accuracy and outfit accuracy are the two most important goals. The pet face must match the reference animal as closely as possible, and the outfit must match the reference garment as closely as possible.' : null,
         subjectType === 'dog' || subjectType === 'cat' ? 'Do not invent a different pet face, different fur pattern, different ear shape, or a generic substitute outfit.' : null,
         'Make the pose readable at a glance so the outfit mood feels clear immediately, while still keeping anatomy believable and the garment undistorted.',
+        'Increase the sense of strong photorealism, real camera capture, believable material response, and physically correct garment behavior.',
+        'Cloth, fur, skin, and accessories should obey believable physics, including gravity, weight, tension, fold direction, compression, and contact with the body.',
         subjectType === 'dog' || subjectType === 'cat' ? 'Prioritize a cute, lively pet action over a stiff fashion pose. The image should feel like a charming split-second moment with energy, joy, and personality while keeping the outfit clearly visible.' : null,
         bodyProfile?.poseHint ? bodyProfile.poseHint.charAt(0).toUpperCase() + bodyProfile.poseHint.slice(1) + '.' : 'Use a bold expressive pose that fits the outfit mood, formality, and silhouette while keeping the full garment readable.',
         bodyProfile?.backgroundHint ? `Use ${bodyProfile.backgroundHint} as the background direction.` : 'Use a realistic background that suits the outfit mood and cultural context.',
