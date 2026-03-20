@@ -1286,8 +1286,11 @@ const requireAdminUser = async (user: AuthenticatedUser): Promise<UserAccount> =
 
 const createCreditTransactionRef = () => db.collection('credit_transactions').doc();
 
-const buildPaymentDocId = (provider: PaymentProvider, providerPaymentId: string): string =>
-  `${provider}_${providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+const buildPaymentDocId = (provider: PaymentProvider, providerPaymentId: string): string => {
+  const sanitizedId = providerPaymentId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const prefix = `${provider}_`;
+  return sanitizedId.startsWith(prefix) ? sanitizedId : `${prefix}${sanitizedId}`;
+};
 
 const createGenerationDocRef = (uid: string, requestId: string) =>
   db.collection('generations').doc(buildGenerationRequestDocId(uid, requestId));
@@ -2894,9 +2897,11 @@ const getRecentPaidLemonOrder = async (params: {
   email: string;
   expectedProductId?: PaymentProductId;
   createdAfterMillis?: number;
+  createdBeforeMillis?: number;
 }): Promise<LemonOrderRecord | null> => {
   const orders = await listRecentLemonOrdersByEmail(params.email);
   const createdAfterMillis = params.createdAfterMillis ?? 0;
+  const createdBeforeMillis = params.createdBeforeMillis ?? Number.MAX_SAFE_INTEGER;
 
   const candidates = orders
     .map((order) => {
@@ -2926,15 +2931,67 @@ const getRecentPaidLemonOrder = async (params: {
         return false;
       }
 
-      return candidate.updatedAtMillis >= createdAfterMillis || candidate.createdAtMillis >= createdAfterMillis;
+      const candidateEventMillis = candidate.createdAtMillis || candidate.updatedAtMillis;
+      return candidateEventMillis >= createdAfterMillis && candidateEventMillis <= createdBeforeMillis;
     })
     .sort((a, b) => {
-      const aMillis = Math.max(a.updatedAtMillis, a.createdAtMillis);
-      const bMillis = Math.max(b.updatedAtMillis, b.createdAtMillis);
-      return bMillis - aMillis;
+      const aMillis = a.createdAtMillis || a.updatedAtMillis || 0;
+      const bMillis = b.createdAtMillis || b.updatedAtMillis || 0;
+      return aMillis - bMillis;
     });
 
   return candidates[0]?.order ?? null;
+};
+
+const findMatchingPendingPaymentDocId = async (params: {
+  uid: string;
+  productId: PaymentProductId;
+  orderCreatedAtMillis: number;
+  preferredCheckoutSessionId?: string;
+}): Promise<string | null> => {
+  const snapshot = await db.collection('payments')
+    .where('uid', '==', params.uid)
+    .limit(30)
+    .get();
+
+  const candidates = sortPaymentDocsByUpdatedAtDesc(snapshot.docs)
+    .filter((doc) => {
+      const data = doc.data();
+      if (data?.provider !== LEMON_PROVIDER || data?.productId !== params.productId) {
+        return false;
+      }
+
+      if (data?.status === 'paid') {
+        return false;
+      }
+
+      const createdAtMillis = toTimestampMillis(data.createdAt) ?? 0;
+      return createdAtMillis > 0
+        && createdAtMillis <= params.orderCreatedAtMillis
+        && params.orderCreatedAtMillis - createdAtMillis <= 1000 * 60 * 30;
+    })
+    .sort((a, b) => {
+      const aData = a.data() ?? {};
+      const bData = b.data() ?? {};
+      const aCreatedAtMillis = toTimestampMillis(aData.createdAt) ?? 0;
+      const bCreatedAtMillis = toTimestampMillis(bData.createdAt) ?? 0;
+      return bCreatedAtMillis - aCreatedAtMillis;
+    });
+
+  if (params.preferredCheckoutSessionId) {
+    const preferredCheckoutSessionId = params.preferredCheckoutSessionId;
+    const preferredDoc = candidates.find((doc) => {
+      const data = doc.data() ?? {};
+      return data.providerPaymentId === preferredCheckoutSessionId
+        || data.checkoutSessionId === preferredCheckoutSessionId
+        || doc.id === buildPaymentDocId(LEMON_PROVIDER, preferredCheckoutSessionId);
+    });
+    if (preferredDoc) {
+      return preferredDoc.id;
+    }
+  }
+
+  return candidates[0]?.id ?? null;
 };
 
 const syncPendingPaymentWithLemonOrder = async (params: {
@@ -2945,11 +3002,12 @@ const syncPendingPaymentWithLemonOrder = async (params: {
   const expectedProductId = isPaymentProductId(params.pendingPaymentData.productId)
     ? params.pendingPaymentData.productId
     : undefined;
-  const createdAfterMillis = toTimestampMillis(params.pendingPaymentData.createdAt) ?? Date.now() - (1000 * 60 * 30);
+  const pendingCreatedAtMillis = toTimestampMillis(params.pendingPaymentData.createdAt) ?? Date.now() - (1000 * 60 * 30);
   const matchedOrder = await getRecentPaidLemonOrder({
     email: params.user.email,
     expectedProductId,
-    createdAfterMillis,
+    createdAfterMillis: Math.max(0, pendingCreatedAtMillis - (1000 * 60 * 2)),
+    createdBeforeMillis: pendingCreatedAtMillis + (1000 * 60 * 30),
   });
 
   if (!matchedOrder) {
@@ -2970,6 +3028,13 @@ const syncPendingPaymentWithLemonOrder = async (params: {
     });
     return null;
   }
+
+  functions.logger.info('Reconciling pending Lemon payment with paid order', {
+    uid: params.user.uid,
+    pendingPaymentId: params.pendingPaymentId,
+    providerOrderId: providerPaymentId,
+    resolvedProductId,
+  });
 
   await fulfillCreditPurchase({
     provider: LEMON_PROVIDER,
@@ -3138,12 +3203,39 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
         throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
       }
 
+      const webhookCreatedAtMillis = toTimestampMillis(
+        getStringValue(attributes.created_at, attributes.updated_at),
+      ) ?? Date.now();
+      const checkoutSessionId = getStringValue(
+        customData.checkoutSessionId,
+        customData.checkoutId,
+        customData.checkout_id,
+      );
+      const matchedPendingPaymentId = contextFromPayment
+        ? buildPaymentDocId(LEMON_PROVIDER, providerPaymentId)
+        : await findMatchingPendingPaymentDocId({
+          uid,
+          productId: rawProductId,
+          orderCreatedAtMillis: webhookCreatedAtMillis,
+          preferredCheckoutSessionId: checkoutSessionId || undefined,
+        });
+      const targetPaymentId = matchedPendingPaymentId ?? providerPaymentId;
+
+      functions.logger.info('Processing Lemon completed payment event', {
+        eventType,
+        uid,
+        providerOrderId: providerPaymentId,
+        targetPaymentId,
+        productId: rawProductId,
+      });
+
       await fulfillCreditPurchase({
         provider: LEMON_PROVIDER,
-        providerPaymentId,
+        providerPaymentId: targetPaymentId,
         uid,
         productId: rawProductId,
         providerOrderId: providerPaymentId,
+        checkoutSessionId: checkoutSessionId || matchedPendingPaymentId || null,
         amount: (() => {
           const rawAmount = typeof attributes.total === 'number'
             ? attributes.total
