@@ -1151,6 +1151,38 @@ a { color: inherit; text-decoration: none; }
   align-items: start;
 }
 
+.about-visual-article {
+  overflow: hidden;
+}
+
+.about-visual-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.about-visual-flow {
+  margin-top: 0;
+}
+
+.about-visual-flow .howto-stage-image-card {
+  min-height: 240px;
+}
+
+.about-story-card-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.about-story-card {
+  min-height: 0;
+}
+
+.about-story-card h3 {
+  margin-bottom: 10px;
+}
+
 .sample-reference-sidebar,
 .sample-reference-main {
   min-width: 0;
@@ -4267,6 +4299,13 @@ a { color: inherit; text-decoration: none; }
   .board-notice-section {
     gap: 14px;
   }
+  .about-visual-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .about-story-card-grid {
+    gap: 10px;
+  }
   .page-article,
   .compact-info-card,
   .content-card,
@@ -4848,6 +4887,9 @@ a { color: inherit; text-decoration: none; }
   .sample-breed-card {
     padding: 10px;
     gap: 8px;
+  }
+  .about-visual-flow .howto-stage-image-card {
+    min-height: 190px;
   }
   .sample-outfit-thumbnail-copy strong,
   .sample-breed-card-copy strong {

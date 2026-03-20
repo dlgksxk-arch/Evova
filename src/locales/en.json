@@ -306,27 +306,46 @@
     },
     "about": {
       "title": "About",
-      "description": "Learn why HAMDEVA exists and how it frames AI pet outfit previews for dogs and cats.",
+      "description": "Read why HAMDEVA exists, how pet outfit previews fit into real planning, and what kind of experience the service is trying to create.",
       "sections": [
         {
           "heading": "Why HAMDEVA exists",
           "paragraphs": [
-            "HAMDEVA was built for people who want a faster visual decision before buying or planning an outfit for their dog or cat.",
-            "The goal is to reduce uncertainty early and make pet styling more fun, not to replace how a real outfit fits in person."
+            "HAMDEVA was built for people who want a faster visual decision before buying, styling, or planning an outfit for their dog or cat.",
+            "Pet outfits are often hard to judge in advance because the mood of a look can change a lot depending on fur color, face shape, body size, and the overall styling balance in a photo.",
+            "The service exists to make that early comparison step easier. Instead of guessing from a product image alone, users can preview a direction first and decide what feels worth trying next."
           ]
         },
         {
-          "heading": "Why the site has informational pages",
+          "heading": "Where it helps most",
           "paragraphs": [
-            "The public pages explain brand intent, garment context, and workflow expectations in separate places instead of pushing everything into the generator.",
-            "That structure makes the site easier to understand and keeps each page focused on one job."
+            "HAMDEVA works especially well in moments where people need a quick sense of mood before they commit. That includes themed photos, holiday costumes, birthday looks, casual social posts, and playful outfit planning.",
+            "A user may not need a final answer immediately. They may only need to know whether one look feels softer, funnier, cleaner, more formal, or more shareable than another.",
+            "That is where a preview tool becomes useful: it reduces uncertainty early and turns styling into a lighter, more enjoyable comparison process."
           ]
         },
         {
-          "heading": "How to understand the AI result",
+          "heading": "Why the site includes reading pages",
           "paragraphs": [
-            "HAMDEVA treats AI output as a playful planning preview. It is useful for comparing pet outfit mood, cuteness, and direction, but it does not replace real fitting.",
-            "The strongest use case is early evaluation: deciding what is worth trying or sharing next."
+            "HAMDEVA is designed as more than a button that generates an image. The service also includes pages that explain how to use the tool, how to pick references, and how to browse outfit ideas.",
+            "That separation matters because users usually have different questions at different stages. Sometimes they want to know what the service is for, sometimes they want a workflow, and sometimes they want outfit inspiration.",
+            "Keeping those roles separate makes the site easier to understand and gives each page a clearer job."
+          ]
+        },
+        {
+          "heading": "How to read the AI result",
+          "paragraphs": [
+            "HAMDEVA treats AI output as a visual planning preview, not as a guarantee of exact real-world fit. It is useful for comparing mood, cuteness, silhouette direction, and styling balance before the real step.",
+            "The result can help users notice whether an outfit feels too busy, whether the face area stays readable, whether a costume mood lands well, or whether a different direction might suit the pet better.",
+            "The strongest use case is early evaluation: deciding what is worth trying, saving, sharing, or buying next."
+          ]
+        },
+        {
+          "heading": "The experience HAMDEVA aims for",
+          "paragraphs": [
+            "The service is meant to feel light, fast, and easy to revisit. A good pet fitting experience should not require complicated editing knowledge before a user can get to a useful preview.",
+            "Users should be able to upload one pet photo, swap outfit references, compare results, and keep their favorite image with very little friction.",
+            "That is the direction HAMDEVA continues to focus on: a simple visual workflow for playful pet outfit planning."
           ]
         }
       ]

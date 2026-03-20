@@ -209,6 +209,75 @@ const getHomeQuickCopy = (lang: LanguageCode) => {
     ctaBody: 'Create your pet outfit preview in seconds.',
   };
 };
+const getAboutVisualCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      eyebrow: 'ABOUT HAMDEVA',
+      title: '반려동물 사진 한 장에서 시작되는 스타일 실험',
+      body: 'HAMDEVA는 펫 사진, 의상 이미지, 결과 미리보기를 한 흐름으로 연결해 반려동물 스타일 아이디어를 빠르게 비교하도록 만든 서비스입니다.',
+      petLabel: '반려동물 사진',
+      outfitLabel: '의상 이미지',
+      resultLabel: '펫 피팅 결과',
+      cards: [
+        {
+          title: '왜 만들었나요?',
+          body: '막상 옷을 사거나 촬영을 준비하기 전에, 우리 아이에게 어떤 분위기가 어울릴지 먼저 보고 싶은 순간이 많기 때문입니다.',
+        },
+        {
+          title: '어떻게 읽으면 좋을까요?',
+          body: 'HAMDEVA는 정답을 주는 도구보다 비교를 돕는 도구에 가깝습니다. 여러 의상 중 어떤 방향이 더 잘 맞는지 빠르게 좁혀볼 수 있습니다.',
+        },
+        {
+          title: '언제 유용할까요?',
+          body: '기념 촬영, SNS 공유, 시즌 코스튬, 선물용 의상 고민처럼 실제 구매와 촬영 전에 가볍게 미리 보는 용도로 잘 맞습니다.',
+        },
+      ],
+    };
+  }
+  if (lang === 'ja') {
+    return {
+      eyebrow: 'ABOUT HAMDEVA',
+      title: 'ペット写真から始まるスタイルの比較体験',
+      body: 'HAMDEVA はペット写真、衣装画像、結果プレビューを一つの流れでつなぎ、ペットのスタイルアイデアをすばやく比べられるようにしたサービスです。',
+      petLabel: 'ペット写真',
+      outfitLabel: '衣装画像',
+      resultLabel: 'ペット試着結果',
+      cards: [
+        { title: 'なぜ作られたのか', body: '衣装を買う前や撮影前に、まず似合う雰囲気を見たい場面が多いからです。' },
+        { title: 'どう見るべきか', body: 'HAMDEVA は最終回答よりも比較のためのプレビューです。どの方向が合うかを早く絞れます。' },
+        { title: 'どんな時に役立つか', body: '記念撮影、SNS 共有、季節コスチューム、イベント準備の前段階で特に便利です。' },
+      ],
+    };
+  }
+  if (lang === 'zh') {
+    return {
+      eyebrow: 'ABOUT HAMDEVA',
+      title: '从一张宠物照片开始的穿搭比较体验',
+      body: 'HAMDEVA 把宠物照片、服装图片和结果预览连接成一个清晰流程，让你更快比较宠物穿搭灵感。',
+      petLabel: '宠物照片',
+      outfitLabel: '服装图片',
+      resultLabel: '宠物试穿结果',
+      cards: [
+        { title: '为什么做这个服务', body: '很多时候在购买或拍摄前，用户更想先知道自己的宠物适合什么样的气质。' },
+        { title: '应该如何理解结果', body: 'HAMDEVA 更像比较工具，而不是最终答案。它适合先筛选方向，再做下一步决定。' },
+        { title: '适合哪些场景', body: '纪念拍摄、社交分享、节日服装和活动准备前，都很适合先用它看看预览。' },
+      ],
+    };
+  }
+  return {
+    eyebrow: 'ABOUT HAMDEVA',
+    title: 'A quick way to compare pet outfit ideas',
+    body: 'HAMDEVA connects a pet photo, an outfit image, and a result preview so you can compare cute style directions before you commit to one.',
+    petLabel: 'Pet photo',
+    outfitLabel: 'Outfit image',
+    resultLabel: 'Pet fitting result',
+    cards: [
+      { title: 'Why it exists', body: 'Many people want to check the mood of an outfit before they buy, plan, or share something for their dog or cat.' },
+      { title: 'How to use it', body: 'HAMDEVA works best as an early comparison tool. It helps you narrow ideas and spot what feels right first.' },
+      { title: 'Where it helps', body: 'It is useful for themed shoots, social posts, holiday looks, and playful outfit planning before the real step.' },
+    ],
+  };
+};
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -3085,6 +3154,7 @@ const App: React.FC = () => {
   const t = uiTranslations[lang];
   const purchasePauseCopy = getPurchasePauseCopy(lang);
   const homeQuickCopy = getHomeQuickCopy(lang);
+  const aboutVisualCopy = getAboutVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
   const petBreedGuideGroups = (['dog', 'cat'] as FaceCategory[]).map((category) => ({
     category,
@@ -5338,6 +5408,60 @@ const App: React.FC = () => {
                 formatTimestampLabel={formatTimestampLabel}
               />
             )}
+            {currentPage === 'about' && (
+              <article className="page-article about-visual-article">
+                <div className="howto-visual-header">
+                  <span className="howto-visual-eyebrow">{aboutVisualCopy.eyebrow}</span>
+                  <h2>{aboutVisualCopy.title}</h2>
+                  <p>{aboutVisualCopy.body}</p>
+                </div>
+                <div className="about-visual-grid">
+                  <div className="howto-visual-flow about-visual-flow">
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">1</span>
+                        <strong>{aboutVisualCopy.petLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.petLabel}</span>
+                        <img src={guideFixedPet} alt={aboutVisualCopy.petLabel} loading="lazy" />
+                      </div>
+                    </article>
+                    <div className="howto-flow-arrow">→</div>
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">2</span>
+                        <strong>{aboutVisualCopy.outfitLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.outfitLabel}</span>
+                        <img src={guideFixedCloth} alt={aboutVisualCopy.outfitLabel} loading="lazy" />
+                      </div>
+                    </article>
+                    <div className="howto-flow-arrow">→</div>
+                    <article className="howto-visual-stage">
+                      <div className="howto-visual-stage-header">
+                        <span className="howto-stage-badge">3</span>
+                        <strong>{aboutVisualCopy.resultLabel}</strong>
+                      </div>
+                      <div className="howto-stage-image-card">
+                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.resultLabel}</span>
+                        <img src={guideFixedResult} alt={aboutVisualCopy.resultLabel} loading="lazy" />
+                      </div>
+                    </article>
+                  </div>
+                  <div className="about-story-card-grid">
+                    {aboutVisualCopy.cards.map((card) => (
+                      <article key={card.title} className="compact-info-card about-story-card">
+                        <h3>{card.title}</h3>
+                        <p>{card.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            )}
+
             {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
