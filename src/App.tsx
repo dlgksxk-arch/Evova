@@ -99,6 +99,22 @@ const CREDIT_PRODUCTS = [
   { id: 'medium_pack', kind: 'extra_credit', label: 'Medium Pack', paidCredit: 5000, salePriceUsd: 59.99, description: 'A larger refill for ongoing pet fitting sessions' },
   { id: 'large_pack', kind: 'extra_credit', label: 'Large Pack', paidCredit: 10000, salePriceUsd: 99.99, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
+
+const LEMON_VARIANT_IDS = {
+  starter: '1425119',
+  creator: '1425108',
+  pro: '1425124',
+  small_pack: '1425127',
+  medium_pack: '1425130',
+  large_pack: '1425131',
+} as const;
+
+type LemonCheckoutProductId = keyof typeof LEMON_VARIANT_IDS;
+
+function redirectToCheckout(variantId: string): void {
+  const url = `https://hamdeva.lemonsqueezy.com/checkout/buy/${variantId}`;
+  window.location.href = url;
+}
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
@@ -2209,6 +2225,11 @@ const requireDb = () => {
 const normalizeSubjectType = (value: unknown): SubjectType => (
   value === 'dog' || value === 'cat' ? value : 'human'
 );
+
+const getLemonVariantId = (productId: CheckoutProductId): string | null => {
+  const variantId = LEMON_VARIANT_IDS[productId as LemonCheckoutProductId];
+  return typeof variantId === 'string' ? variantId : null;
+};
 
 const getSubjectTypeLabel = (lang: LanguageCode, subjectType: SubjectType): string => {
   const labels = {
@@ -4373,13 +4394,20 @@ const App: React.FC = () => {
       return;
     }
 
-    if (!PADDLE_CLIENT_TOKEN) {
-      alert(t.paymentConfigError);
-      return;
-    }
-
     setIsStartingCheckout(productId);
     try {
+      const lemonVariantId = getLemonVariantId(productId);
+      if (lemonVariantId) {
+        setShowCreditPlanModal(false);
+        setMobileMenuOpen(false);
+        redirectToCheckout(lemonVariantId);
+        return;
+      }
+
+      if (!PADDLE_CLIENT_TOKEN) {
+        throw new Error('PAYMENT_NOT_CONFIGURED');
+      }
+
       const authToken = await currentUser.getIdToken();
       const session = await callCreateCheckoutSession({
         authToken,
@@ -5700,7 +5728,6 @@ const App: React.FC = () => {
                           <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
                           <p className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</p>
                           <p>{pricingUiCopy.descriptionById[product.id]}</p>
-                          {product.bonusEligible ? <p className="pricing-inline-note">{pricingUiCopy.firstPurchaseBonus}</p> : null}
                         </div>
                         <button
                           className="generate-btn auth-inline-btn"
@@ -5739,11 +5766,6 @@ const App: React.FC = () => {
                     </article>
                   ))}
                 </div>
-                <article className="page-article">
-                  <h2>{lang === 'ko' ? '참고 안내' : lang === 'ja' ? 'ご案内' : lang === 'zh' ? '参考说明' : 'Pricing notes'}</h2>
-                  <p>{pricingUiCopy.subscriptionIntro}</p>
-                  <p>{pricingUiCopy.extraCreditsIntro}</p>
-                </article>
               </>
             )}
 

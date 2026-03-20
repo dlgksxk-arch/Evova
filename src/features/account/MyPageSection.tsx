@@ -40,7 +40,7 @@ interface MyPageSectionProps {
 
 const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
-  userProfile: _userProfile,
+  userProfile,
   currentDailyCredit,
   currentPaidCredit,
   currentCredits,
@@ -51,7 +51,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   products,
   copy,
   onLogin,
-  onNavigateSiteManagement: _onNavigateSiteManagement,
+  onNavigateSiteManagement,
   onNavigateTerms: _onNavigateTerms,
   onStartCheckout,
   formatTimestampLabel: _formatTimestampLabel,
@@ -63,6 +63,8 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDownloadHistoryItem: _onDownloadHistoryItem,
   onDeleteHistoryItem,
 }) => {
+  const isAdminUser = userProfile?.role === 'admin';
+
   return (
     <div className="mypage-layout">
       {!currentUser && (
@@ -85,6 +87,11 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               <h2>{copy.myPage}</h2>
               <p className="admin-section-helper">{copy.currentCredits(currentCredits)}</p>
             </div>
+            {isAdminUser ? (
+              <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">
+                {copy.adminTitle ?? copy.siteManagementTitle ?? '관리자 페이지'}
+              </button>
+            ) : null}
           </div>
           <div className="credit-balance-grid">
             <div className="credit-balance-card">

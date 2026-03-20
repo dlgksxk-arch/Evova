@@ -176,6 +176,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   resultWatermarkApplied,
   shareResultLink,
   shareStatus,
+  lang,
   emptyFaceTips,
   emptyClothTips,
   emptyPreviewCopy,
@@ -211,6 +212,25 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const progressIndex = finalImageSrc ? 3 : isGenerating ? 2 : isReadyToGenerate ? 1 : 0;
+  const modalActionHelper = lang === 'ko'
+    ? {
+        person: '아래 박스를 눌러 바로 업로드할 수 있어요.',
+        cloth: '아래 박스를 눌러 의상 사진을 바로 업로드할 수 있어요.',
+      }
+    : lang === 'ja'
+      ? {
+          person: '下のボックスをタップするとすぐにアップロードできます。',
+          cloth: '下のボックスをタップすると衣装画像をすぐにアップロードできます。',
+        }
+      : lang === 'zh'
+        ? {
+            person: '点击下方区域即可直接上传。',
+            cloth: '点击下方区域即可直接上传服装图片。',
+          }
+        : {
+            person: 'Tap the box below to upload right away.',
+            cloth: 'Tap the box below to upload an outfit image right away.',
+          };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -325,13 +345,15 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
             {isModalLayout ? <p className="modal-card-description">{modalCopy?.personCardBody}</p> : null}
           </div>
-          <div className="try-actions">
+          <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
               {copy.chooseSample}
             </button>
-            <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
-              {copy.uploadMyPhoto}
-            </button>
+            {!isModalLayout ? (
+              <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
+                {copy.uploadMyPhoto}
+              </button>
+            ) : null}
             <input
               id="p-up"
               ref={personInputRef}
@@ -347,6 +369,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
+          {isModalLayout ? <p className="try-actions-helper">{modalActionHelper.person}</p> : null}
           <div
             className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
             onClick={() => {
@@ -414,13 +437,15 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
             {isModalLayout ? <p className="modal-card-description">{modalCopy?.garmentCardBody}</p> : null}
           </div>
-          <div className="try-actions">
+          <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
               {copy.chooseClothingSample}
             </button>
-            <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
-              {copy.uploadClothing}
-            </button>
+            {!isModalLayout ? (
+              <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
+                {copy.uploadClothing}
+              </button>
+            ) : null}
             <input
               id="c-up"
               ref={clothInputRef}
@@ -436,6 +461,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
+          {isModalLayout ? <p className="try-actions-helper">{modalActionHelper.cloth}</p> : null}
           <div
             className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
             onClick={() => {
