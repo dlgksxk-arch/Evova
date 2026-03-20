@@ -12,6 +12,7 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
+const HISTORY_VISIBLE_ROWS = 6;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -147,10 +148,14 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isImageReady, setIsImageReady] = useState(false);
   const [zoom, setZoom] = useState(0.5);
+  const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
+  const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const loadingStartedAtRef = useRef(0);
   const historyCopy = getHistoryCopy(locale);
   const getPersonLabel = (item: GenerationRecord) => getResolvedPersonLabel(item, historyCopy);
@@ -176,6 +181,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
+      setViewportWidth(window.innerWidth);
     };
 
     window.addEventListener('resize', handleResize);
@@ -183,24 +189,80 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!selectedItem || !selectedPanelRef.current) {
+    if (!selectedItem) {
       return;
     }
 
-    selectedPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [selectedItem]);
-
-  useEffect(() => {
-    if (selectedItem && !items.some((item) => item.id === selectedItem.id)) {
+    const nextSelectedItem = items.find((item) => item.id === selectedItem.id) ?? null;
+    if (!nextSelectedItem) {
       resetExpandedPanel();
+      return;
+    }
+
+    if (nextSelectedItem !== selectedItem) {
+      setSelectedItem(nextSelectedItem);
     }
   }, [items, selectedItem]);
 
   const visibleItems = useMemo(() => (
     [...items]
       .filter((item) => Boolean(item.imageUrl))
-      .sort((a, b) => (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0))
+      .sort((a, b) => {
+        const preserveDiff = Number(isPreservedItem(b)) - Number(isPreservedItem(a));
+        if (preserveDiff !== 0) {
+          return preserveDiff;
+        }
+
+        return (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0);
+      })
   ), [items]);
+
+  const columnCount = useMemo(() => {
+    if (viewportWidth <= 520) {
+      return 1;
+    }
+    if (viewportWidth <= 768) {
+      return 2;
+    }
+    if (viewportWidth <= 980) {
+      return 3;
+    }
+    if (viewportWidth <= 1200) {
+      return 4;
+    }
+    if (viewportWidth <= 1400) {
+      return 5;
+    }
+    return 6;
+  }, [viewportWidth]);
+
+  const visibleRows = useMemo(() => {
+    const rows: GenerationRecord[][] = [];
+    for (let index = 0; index < visibleItems.length; index += columnCount) {
+      rows.push(visibleItems.slice(index, index + columnCount));
+    }
+    return rows;
+  }, [visibleItems, columnCount]);
+
+  useEffect(() => {
+    if (!selectedItem || !selectedPanelRef.current || !scrollContainerRef.current) {
+      return;
+    }
+
+    const selectedIndex = visibleItems.findIndex((item) => item.id === selectedItem.id);
+    if (selectedIndex < 0) {
+      return;
+    }
+
+    const rowIndex = Math.floor(selectedIndex / columnCount);
+    const rowElement = rowRefs.current[rowIndex];
+    if (rowElement) {
+      scrollContainerRef.current.scrollTo({
+        top: rowElement.offsetTop,
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedItem, visibleItems, columnCount]);
 
   const hasVisibleItems = visibleItems.length > 0;
   const canArchiveSelectedItem = Boolean(selectedItem && !isPreservedItem(selectedItem) && preservedCount < maxPreserved);
@@ -241,6 +303,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSubmitting(true);
     try {
       await onTogglePreserve(selectedItem);
+      setPendingArchiveSelectionId(selectedItem.id);
     } catch (archiveError) {
       console.error('Failed to archive creation:', archiveError);
       alert(archiveError instanceof Error ? archiveError.message : copy.historyArchiveFailed);
@@ -277,279 +340,317 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     startImageLoading();
   };
 
+  useEffect(() => {
+    if (!pendingArchiveSelectionId || !scrollContainerRef.current) {
+      return;
+    }
+
+    const preservedItem = visibleItems.find((item) => item.id === pendingArchiveSelectionId);
+    if (!preservedItem || !isPreservedItem(preservedItem)) {
+      return;
+    }
+
+    scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    setPendingArchiveSelectionId(null);
+  }, [pendingArchiveSelectionId, visibleItems]);
+
+  const selectedRowIndex = selectedItem
+    ? visibleRows.findIndex((row) => row.some((item) => item.id === selectedItem.id))
+    : -1;
+
   return (
     <article className="page-article">
       <h3>{copy.historyTitle}</h3>
       <p className="history-guide-copy">{copy.historyGuide}</p>
       {!hasVisibleItems ? <p>{copy.historyEmpty}</p> : null}
       {hasVisibleItems ? (
-        <>
-          <div className="creation-history-grid">
-          {visibleItems.map((item) => {
-            const isExpanded = selectedItem?.id === item.id;
-            const itemLabel = `[${formatDateTime(item.createdAt, locale)}]`;
-
-            return (
-              <button
-                key={item.id}
-                className={`creation-history-card ${isExpanded ? 'is-selected' : ''}`}
-                onClick={() => handleOpenItem(item)}
-                type="button"
+        <div
+          ref={scrollContainerRef}
+          className="creation-history-scroll"
+          style={{
+            '--history-visible-rows': String(HISTORY_VISIBLE_ROWS),
+            '--history-column-count': String(columnCount),
+          } as React.CSSProperties}
+        >
+          {visibleRows.map((row, rowIndex) => (
+            <React.Fragment key={`history-row-${rowIndex}`}>
+              <div
+                ref={(element) => {
+                  rowRefs.current[rowIndex] = element;
+                }}
+                className="creation-history-grid"
               >
-                <div className="creation-history-thumbnail">
-                  <img
-                    src={item.imageUrl || ''}
-                    alt={`${itemLabel} ${historyCopy.resultLabel}`}
-                    loading="lazy"
-                  />
-                </div>
-                <div className="creation-history-card-copy">
-                  <strong>{itemLabel}</strong>
-                  <span>{historyCopy.resultLabel}</span>
-                  {isPreservedItem(item) ? (
-                    <span className="creation-history-badge">{copy.historyArchived}</span>
-                  ) : null}
-                </div>
-              </button>
-            );
-          })}
-          </div>
+                {row.map((item) => {
+                  const isExpanded = selectedItem?.id === item.id;
+                  const itemLabel = `[${formatDateTime(item.createdAt, locale)}]`;
 
-          {selectedItem ? (
-            <div
-              ref={selectedPanelRef}
-              className="creation-history-selected-panel"
-              style={{
-                border: '1px solid var(--border)',
-                borderRadius: 20,
-                background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
-                boxShadow: 'var(--shadow-sm)',
-                overflow: 'hidden',
-                marginTop: 18,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 0 }}>
-                  <strong style={{ display: 'block' }}>
-                    [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
-                  </strong>
-                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
-                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                    {historyCopy.personLabel}: {getPersonLabel(selectedItem)}
-                  </p>
-                  <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
-                    {historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}
-                  </p>
-                </div>
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={submitting}
-                  onClick={resetExpandedPanel}
-                  type="button"
-                >
-                  {copy.close}
-                </button>
+                  return (
+                    <button
+                      key={item.id}
+                      className={`creation-history-card ${isExpanded ? 'is-selected' : ''}`}
+                      onClick={() => handleOpenItem(item)}
+                      type="button"
+                    >
+                      <div className="creation-history-thumbnail">
+                        <img
+                          src={item.imageUrl || ''}
+                          alt={`${itemLabel} ${historyCopy.resultLabel}`}
+                          loading="lazy"
+                        />
+                        {isPreservedItem(item) ? (
+                          <span className="creation-history-thumbnail-badge">{copy.historyArchived}</span>
+                        ) : null}
+                      </div>
+                      <div className="creation-history-card-copy">
+                        <strong>{itemLabel}</strong>
+                        <span>{historyCopy.resultLabel}</span>
+                        {isPreservedItem(item) ? (
+                          <span className="creation-history-badge">{copy.historyArchived}</span>
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 8,
-                  justifyContent: 'flex-end',
-                  padding: '12px 20px 0',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={zoom <= 0.5}
-                  onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
-                  type="button"
-                >
-                  {copy.historyZoomOut}
-                </button>
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={zoom === 0.5}
-                  onClick={() => setZoom(0.5)}
-                  type="button"
-                >
-                  {copy.historyZoomReset}
-                </button>
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={zoom >= 1.5}
-                  onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
-                  type="button"
-                >
-                  {copy.historyZoomIn}
-                </button>
-              </div>
-
-              <div
-                onWheel={(event) => {
-                  if (event.ctrlKey) {
-                    event.preventDefault();
-                  }
-                }}
-                style={{
-                  padding: isMobile ? 16 : 20,
-                }}
-              >
+              {selectedItem && selectedRowIndex === rowIndex ? (
                 <div
+                  ref={selectedPanelRef}
+                  className="creation-history-selected-panel"
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'minmax(240px, 320px) minmax(0, 1fr)',
-                    gap: 16,
-                    marginBottom: 16,
-                    alignItems: 'stretch',
+                    border: '1px solid var(--border)',
+                    borderRadius: 20,
+                    background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
+                    boxShadow: 'var(--shadow-sm)',
+                    overflow: 'hidden',
+                    marginTop: 18,
+                    marginBottom: 18,
                   }}
                 >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: 'block' }}>
+                        [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
+                      </strong>
+                      <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
+                      <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                        {historyCopy.personLabel}: {getPersonLabel(selectedItem)}
+                      </p>
+                      <p style={{ marginTop: 4, color: 'var(--text-sub)' }}>
+                        {historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}
+                      </p>
+                    </div>
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={submitting}
+                      onClick={resetExpandedPanel}
+                      type="button"
+                    >
+                      {copy.close}
+                    </button>
+                  </div>
+
                   <div
                     style={{
-                      display: 'grid',
-                      gap: 16,
-                      gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
+                      display: 'flex',
+                      gap: 8,
+                      justifyContent: 'flex-end',
+                      padding: '12px 20px 0',
+                      flexWrap: 'wrap',
                     }}
                   >
-                    <div style={previewCardStyle}>
-                      <strong>{historyCopy.personLabel}</strong>
-                      {selectedItem.personPreviewUrl ? (
-                        <img
-                          src={selectedItem.personPreviewUrl}
-                          alt={historyCopy.personLabel}
-                          style={previewThumbStyle}
-                        />
-                      ) : (
-                        <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                          {getPersonLabel(selectedItem)}
-                        </div>
-                      )}
-                      <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                        {getPersonLabel(selectedItem)}
-                      </span>
-                    </div>
-                    <div style={previewCardStyle}>
-                      <strong>{historyCopy.garmentLabel}</strong>
-                      {selectedItem.garmentPreviewUrl ? (
-                        <img
-                          src={selectedItem.garmentPreviewUrl}
-                          alt={historyCopy.garmentLabel}
-                          style={previewThumbStyle}
-                        />
-                      ) : (
-                        <div style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                          {getGarmentLabel(selectedItem)}
-                        </div>
-                      )}
-                      <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                        {getGarmentLabel(selectedItem)}
-                      </span>
-                    </div>
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={zoom <= 0.5}
+                      onClick={() => setZoom((prev) => Math.max(0.5, Number((prev - 0.25).toFixed(2))))}
+                      type="button"
+                    >
+                      {copy.historyZoomOut}
+                    </button>
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={zoom === 0.5}
+                      onClick={() => setZoom(0.5)}
+                      type="button"
+                    >
+                      {copy.historyZoomReset}
+                    </button>
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={zoom >= 1.5}
+                      onClick={() => setZoom((prev) => Math.min(1.5, Number((prev + 0.25).toFixed(2))))}
+                      type="button"
+                    >
+                      {copy.historyZoomIn}
+                    </button>
                   </div>
-                  <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
-                    <strong>{historyCopy.resultLabel}</strong>
-                    <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                      {historyCopy.resultPreview}
-                    </span>
-                    {isImageLoading || !isImageReady ? (
-                      <div style={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
-                        {copy.historyLoading}
-                      </div>
-                    ) : null}
+
+                  <div
+                    onWheel={(event) => {
+                      if (event.ctrlKey) {
+                        event.preventDefault();
+                      }
+                    }}
+                    style={{
+                      padding: isMobile ? 16 : 20,
+                    }}
+                  >
                     <div
                       style={{
-                        width: '100%',
-                        overflowX: 'auto',
-                        overflowY: 'visible',
-                        border: '1px solid var(--border)',
-                        borderRadius: 16,
-                        padding: 16,
-                        background: 'rgba(255,255,255,0.35)',
-                        minHeight: isMobile ? 280 : 520,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(160px, 220px) minmax(0, 1fr)',
+                        gap: 16,
+                        marginBottom: 16,
+                        alignItems: 'stretch',
                       }}
                     >
-                      <img
-                        alt={copy.resultPreviewAlt}
-                        onLoad={finishImageLoading}
-                        draggable={false}
-                        src={selectedItem.imageUrl || ''}
+                      <div
                         style={{
-                          display: 'block',
-                          margin: '0 auto',
-                          width: `${zoom * 100}%`,
-                          maxWidth: '100%',
-                          maxHeight: isMobile ? '60vh' : '72vh',
-                          height: 'auto',
-                          objectFit: 'contain',
-                          userSelect: 'none',
-                          visibility: isImageLoading ? 'hidden' : 'visible',
+                          display: 'grid',
+                          gap: 16,
+                          gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
                         }}
-                      />
-                    </div>
-                    {!isImageLoading ? (
-                      <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
-                        {copy.historyZoomHint}
+                      >
+                        <div style={previewCardStyle}>
+                          <strong>{historyCopy.personLabel}</strong>
+                          {selectedItem.personPreviewUrl ? (
+                            <img
+                              src={selectedItem.personPreviewUrl}
+                              alt={historyCopy.personLabel}
+                              style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto' }}
+                            />
+                          ) : (
+                            <div style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                              {getPersonLabel(selectedItem)}
+                            </div>
+                          )}
+                          <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                            {getPersonLabel(selectedItem)}
+                          </span>
+                        </div>
+                        <div style={previewCardStyle}>
+                          <strong>{historyCopy.garmentLabel}</strong>
+                          {selectedItem.garmentPreviewUrl ? (
+                            <img
+                              src={selectedItem.garmentPreviewUrl}
+                              alt={historyCopy.garmentLabel}
+                              style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto' }}
+                            />
+                          ) : (
+                            <div style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                              {getGarmentLabel(selectedItem)}
+                            </div>
+                          )}
+                          <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                            {getGarmentLabel(selectedItem)}
+                          </span>
+                        </div>
                       </div>
-                    ) : null}
+                      <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
+                        <strong>{historyCopy.resultLabel}</strong>
+                        <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                          {historyCopy.resultPreview}
+                        </span>
+                        {isImageLoading || !isImageReady ? (
+                          <div style={{ minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
+                            {copy.historyLoading}
+                          </div>
+                        ) : null}
+                        <div
+                          style={{
+                            width: '100%',
+                            overflowX: 'auto',
+                            overflowY: 'visible',
+                            border: '1px solid var(--border)',
+                            borderRadius: 16,
+                            padding: 16,
+                            background: 'rgba(255,255,255,0.35)',
+                            minHeight: isMobile ? 140 : 260,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <img
+                            alt={copy.resultPreviewAlt}
+                            onLoad={finishImageLoading}
+                            draggable={false}
+                            src={selectedItem.imageUrl || ''}
+                            style={{
+                              display: 'block',
+                              margin: '0 auto',
+                              width: `${zoom * 50}%`,
+                              maxWidth: '100%',
+                              maxHeight: isMobile ? '30vh' : '36vh',
+                              height: 'auto',
+                              objectFit: 'contain',
+                              userSelect: 'none',
+                              visibility: isImageLoading ? 'hidden' : 'visible',
+                            }}
+                          />
+                        </div>
+                        {!isImageLoading ? (
+                          <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
+                            {copy.historyZoomHint}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 12,
+                      justifyContent: isMobile ? 'stretch' : 'flex-end',
+                      padding: '16px 20px',
+                      borderTop: '1px solid var(--border)',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={submitting}
+                      onClick={() => {
+                        if (selectedItem.imageUrl) {
+                          downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                        }
+                      }}
+                      style={{ flex: isMobile ? 1 : undefined }}
+                      type="button"
+                    >
+                      {copy.historyDownload}
+                    </button>
+                    <button
+                      className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+                      disabled={submitting || isPreservedItem(selectedItem)}
+                      onClick={() => {
+                        if (!canArchiveSelectedItem) {
+                          alert(copy.historyArchiveLimit(maxPreserved));
+                          return;
+                        }
+                        void handleArchive();
+                      }}
+                      style={{ flex: isMobile ? 1 : undefined }}
+                      type="button"
+                    >
+                      {isPreservedItem(selectedItem) ? copy.historyArchived : copy.historyArchive}
+                    </button>
+                    <button
+                      className="outline-btn auth-inline-btn"
+                      disabled={submitting}
+                      onClick={() => { void handleDelete(); }}
+                      style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
+                      type="button"
+                    >
+                      {submitting ? copy.historyProcessing : copy.historyDelete}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 12,
-                  justifyContent: isMobile ? 'stretch' : 'flex-end',
-                  padding: '16px 20px',
-                  borderTop: '1px solid var(--border)',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={submitting}
-                  onClick={() => {
-                    if (selectedItem.imageUrl) {
-                      downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-                    }
-                  }}
-                  style={{ flex: isMobile ? 1 : undefined }}
-                  type="button"
-                >
-                  {copy.historyDownload}
-                </button>
-                <button
-                  className={isPreservedItem(selectedItem) ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
-                  disabled={submitting || isPreservedItem(selectedItem)}
-                  onClick={() => {
-                    if (!canArchiveSelectedItem) {
-                      alert(copy.historyArchiveLimit(maxPreserved));
-                      return;
-                    }
-                    void handleArchive();
-                  }}
-                  style={{ flex: isMobile ? 1 : undefined }}
-                  type="button"
-                >
-                  {isPreservedItem(selectedItem) ? copy.historyArchived : copy.historyArchive}
-                </button>
-                <button
-                  className="outline-btn auth-inline-btn"
-                  disabled={submitting}
-                  onClick={() => { void handleDelete(); }}
-                  style={{ color: '#ef4444', flex: isMobile ? 1 : undefined }}
-                  type="button"
-                >
-                  {submitting ? copy.historyProcessing : copy.historyDelete}
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </>
+              ) : null}
+            </React.Fragment>
+          ))}
+        </div>
       ) : null}
     </article>
   );
