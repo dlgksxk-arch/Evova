@@ -2,10 +2,10 @@
 
 Current production baseline:
 
-- frontend: React + Vite on Firebase Hosting
+- frontend: React + Vite on Cloudflare-managed production deploy
 - backend source of truth: Firebase Functions in `functions/src/index.ts`
 - legacy/local-only stub: `server/index.js`
-- AI/payment stack: OpenAI image + Google Veo video + Polar + Firebase Auth/Firestore
+- AI/payment stack: OpenAI image + Google Veo video + Paddle + Firebase Auth/Firestore
 
 See:
 
@@ -22,12 +22,13 @@ See:
   - `OPENAI_CLASSIFICATION_MODEL=gpt-4.1-nano`
   - `GOOGLE_VIDEO_API_KEY=...`
   - `GOOGLE_VIDEO_MODEL=veo-3.1-generate-preview`
-  - `POLAR_API_KEY=...`
-  - `POLAR_WEBHOOK_SECRET=...`
-  - `POLAR_PRODUCT_ID_STARTER=...`
-  - `POLAR_PRODUCT_ID_CREATOR=...`
-  - `POLAR_PRODUCT_ID_PRO=...`
-  - `POLAR_PRODUCT_ID_STUDIO=...`
+  - `PADDLE_API_KEY=...`
+  - `PADDLE_WEBHOOK_SECRET=...`
+  - `PADDLE_ENV=production`
+  - `PADDLE_PRICE_ID_STARTER=...`
+  - `PADDLE_PRICE_ID_CREATOR=...`
+  - `PADDLE_PRICE_ID_PRO=...`
+  - `PADDLE_PRICE_ID_STUDIO=...`
   - `APP_BASE_URL=https://your-domain`
 - Create root `.env` before frontend dev/build and set:
   - `VITE_FIREBASE_API_KEY=...`
@@ -38,6 +39,8 @@ See:
   - `VITE_FIREBASE_APP_ID=...`
   - `VITE_FUNCTIONS_BASE_URL=http://127.0.0.1:5001/<project-id>/asia-northeast3` for local dev, or your deployed Functions base URL
   - `VITE_API_BASE_URL=` to override frontend API calls in preview/staging deployments. Leave empty in production when `/api` is same-origin.
+  - `VITE_PADDLE_CLIENT_TOKEN=...`
+  - `VITE_PADDLE_ENV=production`
 - Deploy Functions with:
   - `firebase deploy --only functions`
 - Local verification:

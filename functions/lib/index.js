@@ -39,8 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanupExpiredCreations = exports.generateTryOn = exports.api = void 0;
 const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
+const crypto_1 = require("crypto");
 const sharp_1 = __importDefault(require("sharp"));
-const standardwebhooks_1 = require("standardwebhooks");
 admin.initializeApp();
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
@@ -94,9 +94,8 @@ const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
 const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
 const MAX_ARCHIVED_CREATIONS = 5;
-const POLAR_PROVIDER = 'polar';
+const PADDLE_PROVIDER = 'paddle';
 const PAYMENT_CURRENCY = 'usd';
-const DEFAULT_POLAR_PRODUCT_ID = 'f6417ea7-1715-47e0-8799-4671c3b04fb5';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
 const DEFAULT_ADMIN_GIFT_SENDER_NAME = 'EVOVA 운영팀';
@@ -356,40 +355,40 @@ const getGoogleVideoApiKey = () => {
     const apiKey = process.env['GOOGLE_VIDEO_API_KEY'];
     return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
-const getPolarApiKey = () => {
-    const envKey = process.env['POLAR_ACCESS_TOKEN'] ?? process.env['POLAR_API_KEY'];
+const getPaddleApiKey = () => {
+    const envKey = process.env['PADDLE_API_KEY'];
     if (typeof envKey === 'string' && envKey.trim()) {
         return envKey.trim();
     }
-    const configKey = functions.config()?.polar?.access_token ?? functions.config()?.polar?.api_key;
+    const configKey = functions.config()?.paddle?.api_key;
     return typeof configKey === 'string' ? configKey.trim() : '';
 };
-const getPolarApiBaseUrl = () => {
-    const server = (process.env['POLAR_SERVER'] ?? functions.config()?.polar?.server ?? 'production').toString().trim().toLowerCase();
-    return server === 'sandbox' ? 'https://sandbox-api.polar.sh/v1' : 'https://api.polar.sh/v1';
+const getPaddleApiBaseUrl = () => {
+    const environment = (process.env['PADDLE_ENV'] ?? functions.config()?.paddle?.environment ?? 'production').toString().trim().toLowerCase();
+    return environment === 'sandbox' ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
 };
-const getPolarWebhookSecret = () => {
-    const envKey = process.env['POLAR_WEBHOOK_SECRET'];
+const getPaddleWebhookSecret = () => {
+    const envKey = process.env['PADDLE_WEBHOOK_SECRET'];
     if (typeof envKey === 'string' && envKey.trim()) {
         return envKey.trim();
     }
-    const configKey = functions.config()?.polar?.webhook_secret;
+    const configKey = functions.config()?.paddle?.webhook_secret;
     return typeof configKey === 'string' ? configKey.trim() : '';
 };
-const getPolarProductExternalId = (productId) => {
-    const envKey = process.env[`POLAR_PRODUCT_ID_${productId.toUpperCase()}`];
+const getPaddlePriceId = (productId) => {
+    const envKey = process.env[`PADDLE_PRICE_ID_${productId.toUpperCase()}`];
     if (typeof envKey === 'string' && envKey.trim()) {
         return envKey.trim();
     }
-    const configuredProducts = functions.config()?.polar?.products;
-    const configuredProductId = configuredProducts?.[productId];
+    const configuredPrices = functions.config()?.paddle?.prices;
+    const configuredProductId = configuredPrices?.[productId];
     if (typeof configuredProductId === 'string' && configuredProductId.trim()) {
         return configuredProductId.trim();
     }
-    return DEFAULT_POLAR_PRODUCT_ID;
+    return '';
 };
-const requirePolarConfig = () => {
-    const apiKey = getPolarApiKey();
+const requirePaddleConfig = () => {
+    const apiKey = getPaddleApiKey();
     if (!apiKey) {
         throw new Error(PAYMENT_CONFIG_ERROR);
     }
@@ -1626,20 +1625,8 @@ const upsertCreationRecord = async (params) => {
         isDeleted: false,
     }, { merge: true });
 };
-const getAppBaseUrl = (req) => {
-    const configuredBaseUrl = process.env['APP_BASE_URL']?.trim() || functions.config()?.app?.base_url?.trim() || '';
-    if (configuredBaseUrl) {
-        return configuredBaseUrl.replace(/\/+$/, '');
-    }
-    const origin = req.get('origin') ?? '';
-    const isPreviewOrigin = PREVIEW_ORIGIN_SUFFIXES.some((suffix) => origin.includes(suffix));
-    if (CORS_ORIGIN.includes(origin) || isPreviewOrigin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return origin.replace(/\/+$/, '');
-    }
-    return CORS_ORIGIN[0];
-};
 const getPaymentProduct = (productId) => PAYMENT_PRODUCTS[productId];
-const getPolarWebhookHeaders = (req) => Object.entries(req.headers).reduce((acc, [key, value]) => {
+const getRequestStringHeaders = (req) => Object.entries(req.headers).reduce((acc, [key, value]) => {
     if (typeof value === 'string') {
         acc[key] = value;
     }
@@ -1747,17 +1734,17 @@ const normalizePaymentStatusForClient = (status) => {
     if (status === 'paid' || status === 'succeeded' || status === 'confirmed' || status === 'completed') {
         return 'success';
     }
-    if (status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'expired') {
+    if (status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'expired' || status === 'past_due') {
         return 'failed';
     }
     return 'pending';
 };
-const fetchPolarCheckoutStatus = async (checkoutId) => {
-    const apiKey = getPolarApiKey();
-    if (!apiKey || !checkoutId) {
+const fetchPaddleTransaction = async (transactionId) => {
+    const apiKey = getPaddleApiKey();
+    if (!apiKey || !transactionId) {
         return null;
     }
-    const response = await fetch(`${getPolarApiBaseUrl()}/checkouts/${encodeURIComponent(checkoutId)}`, {
+    const response = await fetch(`${getPaddleApiBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`, {
         method: 'GET',
         headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -1767,30 +1754,67 @@ const fetchPolarCheckoutStatus = async (checkoutId) => {
         return null;
     }
     const payload = await response.json().catch(() => ({}));
-    return typeof payload.status === 'string' ? payload.status.toLowerCase() : null;
+    return getObjectValue(payload.data, payload);
 };
 const getCheckoutSessionStatus = async (user, sessionId) => {
     const userSnapshotPromise = db.collection('users').doc(user.uid).get();
     const paymentSnapshotPromise = sessionId
-        ? db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, sessionId)).get()
+        ? db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get()
         : db.collection('payments')
             .where('uid', '==', user.uid)
             .orderBy('updatedAt', 'desc')
             .limit(10)
             .get()
-            .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === POLAR_PROVIDER) ?? null);
+            .then((snapshot) => snapshot.docs.find((doc) => doc.data()?.provider === PADDLE_PROVIDER) ?? null);
     const [paymentSnapshotLike, userSnapshot] = await Promise.all([
         paymentSnapshotPromise,
         userSnapshotPromise,
     ]);
-    const account = normalizeUserAccount(user.email, userSnapshot.data());
-    const paymentSnapshot = paymentSnapshotLike && 'exists' in paymentSnapshotLike
+    let account = normalizeUserAccount(user.email, userSnapshot.data());
+    let paymentSnapshot = paymentSnapshotLike && 'exists' in paymentSnapshotLike
         ? paymentSnapshotLike
         : null;
+    let paymentData = paymentSnapshot?.data() ?? {};
+    const remoteTransaction = sessionId ? await fetchPaddleTransaction(sessionId) : null;
+    const remoteStatus = typeof remoteTransaction?.status === 'string' ? remoteTransaction.status.toLowerCase() : null;
+    if (sessionId && remoteStatus === 'completed') {
+        const customData = getObjectValue(remoteTransaction?.custom_data);
+        const uid = getStringValue(paymentData.uid, customData.uid);
+        const rawProductId = getStringValue(paymentData.productId, customData.productId);
+        if (uid === user.uid && isPaymentProductId(rawProductId)) {
+            await fulfillCreditPurchase({
+                provider: PADDLE_PROVIDER,
+                providerPaymentId: sessionId,
+                uid,
+                productId: rawProductId,
+                amount: null,
+                currency: getStringValue(remoteTransaction?.currency_code),
+                paidAt: getStringValue(remoteTransaction?.billed_at, remoteTransaction?.updated_at),
+                rawPayload: remoteTransaction,
+            });
+            const [freshPaymentSnapshot, freshUserSnapshot] = await Promise.all([
+                db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get(),
+                db.collection('users').doc(user.uid).get(),
+            ]);
+            paymentSnapshot = freshPaymentSnapshot;
+            paymentData = freshPaymentSnapshot.data() ?? {};
+            account = normalizeUserAccount(user.email, freshUserSnapshot.data());
+        }
+    }
+    else if (sessionId && remoteStatus && ['canceled', 'cancelled', 'past_due'].includes(remoteStatus) && paymentSnapshot?.exists) {
+        await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId: sessionId, status: remoteStatus.startsWith('cancel') ? 'canceled' : 'failed' });
+        const freshPaymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(PADDLE_PROVIDER, sessionId)).get();
+        paymentSnapshot = freshPaymentSnapshot;
+        paymentData = freshPaymentSnapshot.data() ?? {};
+    }
     if (!paymentSnapshot?.exists) {
-        const remoteStatus = sessionId ? await fetchPolarCheckoutStatus(sessionId) : null;
+        const statusForClient = remoteStatus === 'completed'
+            ? 'completed'
+            : remoteStatus && ['canceled', 'cancelled', 'past_due', 'failed'].includes(remoteStatus)
+                ? remoteStatus
+                : 'pending';
         return {
-            status: normalizePaymentStatusForClient(remoteStatus || 'pending'),
+            status: normalizePaymentStatusForClient(statusForClient),
             paymentId: null,
             paidCredit: 0,
             dailyCredit: account.dailyCredit,
@@ -1798,15 +1822,16 @@ const getCheckoutSessionStatus = async (user, sessionId) => {
             totalCreditBalance: account.credits,
         };
     }
-    const paymentData = paymentSnapshot.data() ?? {};
     if (paymentData.uid !== user.uid) {
         throw new Error('FORBIDDEN');
     }
-    const storedStatus = typeof paymentData.status === 'string' ? paymentData.status : undefined;
-    const remoteStatus = storedStatus === 'paid' || !sessionId
-        ? null
-        : await fetchPolarCheckoutStatus(sessionId);
-    const normalizedStatus = normalizePaymentStatusForClient((remoteStatus || storedStatus || 'pending').toLowerCase());
+    const storedStatus = typeof paymentData.status === 'string' ? paymentData.status.toLowerCase() : undefined;
+    const statusForClient = storedStatus === 'paid'
+        ? 'paid'
+        : remoteStatus === 'completed'
+            ? 'completed'
+            : remoteStatus || storedStatus || 'pending';
+    const normalizedStatus = normalizePaymentStatusForClient(statusForClient);
     return {
         status: normalizedStatus,
         paymentId: paymentSnapshot.id,
@@ -1831,38 +1856,40 @@ const handleCreateCheckoutSessionRequest = async (req, res) => {
         res.status(403).json({ error: 'FORBIDDEN', message: '접근 권한이 없습니다.' });
         return;
     }
-    const { apiKey } = requirePolarConfig();
+    const { apiKey } = requirePaddleConfig();
     const product = getPaymentProduct(productId);
-    const polarProductId = getPolarProductExternalId(productId);
-    if (!polarProductId) {
+    const paddlePriceId = getPaddlePriceId(productId);
+    if (!paddlePriceId) {
         throw new Error(PAYMENT_CONFIG_ERROR);
     }
-    const baseUrl = getAppBaseUrl(req);
-    const response = await fetch(`${getPolarApiBaseUrl()}/checkouts`, {
+    const response = await fetch(`${getPaddleApiBaseUrl()}/transactions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-            products: [polarProductId],
-            success_url: `${baseUrl}/payment-success?checkout_id={CHECKOUT_ID}`,
-            return_url: `${baseUrl}/payment-failed`,
-            metadata: {
+            items: [
+                {
+                    price_id: paddlePriceId,
+                    quantity: 1,
+                },
+            ],
+            collection_mode: 'automatic',
+            custom_data: {
                 uid: user.uid,
                 productId: product.id,
                 paidCredit: String(product.paidCredit),
             },
-            external_customer_id: user.uid,
-            customer_email: user.email || undefined,
         }),
     });
-    const session = await response.json().catch(() => ({}));
-    if (!response.ok || !session.id || !(session.checkoutUrl || session.url)) {
+    const payload = await response.json().catch(() => ({}));
+    const session = getObjectValue(payload.data, payload);
+    if (!response.ok || !session.id) {
         throw new Error(PAYMENT_CONFIG_ERROR);
     }
     await upsertPendingPayment({
-        provider: POLAR_PROVIDER,
+        provider: PADDLE_PROVIDER,
         providerPaymentId: session.id,
         uid: user.uid,
         productId,
@@ -1870,7 +1897,7 @@ const handleCreateCheckoutSessionRequest = async (req, res) => {
     res.json({
         success: true,
         sessionId: session.id,
-        checkoutUrl: session.checkoutUrl || session.url,
+        checkoutUrl: null,
     });
 };
 const handleCheckoutSessionStatusRequest = async (req, res) => {
@@ -1892,8 +1919,8 @@ const handleCheckoutSessionStatusRequest = async (req, res) => {
 };
 const getStringValue = (...values) => values.find((value) => typeof value === 'string' && value.trim()) || '';
 const getObjectValue = (...values) => values.find((value) => value !== null && typeof value === 'object' && !Array.isArray(value)) ?? {};
-const getPolarPaymentContext = async (providerPaymentId) => {
-    const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, providerPaymentId)).get();
+const getStoredPaymentContext = async (provider, providerPaymentId) => {
+    const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(provider, providerPaymentId)).get();
     const data = paymentSnapshot.data();
     if (!data || typeof data.uid !== 'string' || !isPaymentProductId(data.productId)) {
         return null;
@@ -1903,74 +1930,91 @@ const getPolarPaymentContext = async (providerPaymentId) => {
         productId: data.productId,
     };
 };
-const handlePolarWebhookRequest = async (req, res) => {
+const verifyPaddleWebhookSignature = (rawPayload, signatureHeader, webhookSecret) => {
+    const pairs = signatureHeader.split(';').map((part) => part.trim()).filter(Boolean);
+    const timestamp = pairs.find((part) => part.startsWith('ts='))?.slice(3);
+    const signatures = pairs.filter((part) => part.startsWith('h1=')).map((part) => part.slice(3));
+    if (!timestamp || signatures.length === 0) {
+        return false;
+    }
+    const signedPayload = `${timestamp}:${rawPayload}`;
+    const expected = (0, crypto_1.createHmac)('sha256', webhookSecret).update(signedPayload).digest('hex');
+    const expectedBuffer = Buffer.from(expected, 'hex');
+    return signatures.some((signature) => {
+        try {
+            const candidate = Buffer.from(signature, 'hex');
+            return candidate.length === expectedBuffer.length && (0, crypto_1.timingSafeEqual)(candidate, expectedBuffer);
+        }
+        catch {
+            return false;
+        }
+    });
+};
+const handlePaddleWebhookRequest = async (req, res) => {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method Not Allowed' });
         return;
     }
-    const webhookSecret = getPolarWebhookSecret();
+    const webhookSecret = getPaddleWebhookSecret();
     if (!webhookSecret) {
         throw new Error(PAYMENT_CONFIG_ERROR);
     }
     const rawPayload = req.rawBody.toString('utf8');
-    const headers = getPolarWebhookHeaders(req);
-    if (!headers['webhook-signature']) {
+    const headers = getRequestStringHeaders(req);
+    const signatureHeader = headers['paddle-signature'];
+    if (!signatureHeader) {
         res.status(400).json({ error: 'MISSING_SIGNATURE' });
         return;
     }
-    try {
-        const wh = new standardwebhooks_1.Webhook(Buffer.from(webhookSecret).toString('base64'));
-        wh.verify(rawPayload, headers);
-    }
-    catch (error) {
-        functions.logger.error('Polar webhook signature verification failed', error);
+    if (!verifyPaddleWebhookSignature(rawPayload, signatureHeader, webhookSecret)) {
+        functions.logger.error('Paddle webhook signature verification failed');
         res.status(400).json({ error: 'INVALID_SIGNATURE' });
         return;
     }
     const event = JSON.parse(rawPayload);
     const data = getObjectValue(event.data);
-    const metadata = getObjectValue(data.metadata, getObjectValue(data.checkout).metadata, getObjectValue(data.order).metadata);
-    const providerPaymentId = getStringValue(data.checkout_id, data.checkoutId, getObjectValue(data.checkout).id, data.id);
-    const contextFromPayment = providerPaymentId ? await getPolarPaymentContext(providerPaymentId) : null;
-    const uid = getStringValue(metadata.uid, contextFromPayment?.uid);
-    const rawProductId = getStringValue(metadata.productId, contextFromPayment?.productId);
-    const eventType = getStringValue(event.type);
-    const checkoutStatus = getStringValue(data.status, getObjectValue(data.checkout).status).toLowerCase();
-    const isPaidEvent = eventType === 'order.paid' || (eventType === 'checkout.updated' && ['succeeded', 'confirmed', 'paid', 'completed'].includes(checkoutStatus));
-    const isFailedEvent = eventType === 'order.failed' || (eventType === 'checkout.updated' && ['failed'].includes(checkoutStatus));
-    const isCanceledEvent = eventType === 'checkout.expired' || (eventType === 'checkout.updated' && ['expired', 'canceled', 'cancelled'].includes(checkoutStatus));
+    const customData = getObjectValue(data.custom_data);
+    const providerPaymentId = getStringValue(data.id);
+    const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(PADDLE_PROVIDER, providerPaymentId) : null;
+    const uid = getStringValue(customData.uid, contextFromPayment?.uid);
+    const rawProductId = getStringValue(customData.productId, contextFromPayment?.productId);
+    const eventType = getStringValue(event.event_type);
+    const transactionStatus = getStringValue(data.status).toLowerCase();
+    const isCompletedEvent = eventType === 'transaction.completed' || (eventType === 'transaction.updated' && transactionStatus === 'completed');
+    const isFailedEvent = eventType === 'transaction.payment_failed' || (eventType === 'transaction.updated' && transactionStatus === 'past_due');
+    const isCanceledEvent = eventType === 'transaction.canceled' || (eventType === 'transaction.updated' && ['canceled', 'cancelled'].includes(transactionStatus));
     try {
-        if (isPaidEvent) {
+        if (isCompletedEvent) {
             if (!providerPaymentId || !uid || !isPaymentProductId(rawProductId)) {
-                throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+                throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
             }
             await fulfillCreditPurchase({
-                provider: POLAR_PROVIDER,
+                provider: PADDLE_PROVIDER,
                 providerPaymentId,
                 uid,
                 productId: rawProductId,
-                amount: typeof data.amount === 'number' ? data.amount : null,
-                currency: getStringValue(data.currency, getObjectValue(data.checkout).currency),
-                paidAt: getStringValue(data.paid_at, data.paidAt),
+                amount: null,
+                currency: getStringValue(data.currency_code),
+                paidAt: getStringValue(data.billed_at, data.updated_at),
                 rawPayload: event,
             });
         }
         else if (isFailedEvent) {
             if (!providerPaymentId) {
-                throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+                throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
             }
-            await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId, status: 'failed' });
+            await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId, status: 'failed' });
         }
         else if (isCanceledEvent) {
             if (!providerPaymentId) {
-                throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
+                throw new Error('INVALID_PADDLE_PAYMENT_CONTEXT');
             }
-            await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId, status: 'canceled' });
+            await markPaymentStatus({ provider: PADDLE_PROVIDER, providerPaymentId, status: 'canceled' });
         }
         res.json({ received: true });
     }
     catch (error) {
-        functions.logger.error('Polar webhook processing failed', {
+        functions.logger.error('Paddle webhook processing failed', {
             eventType,
             message: error instanceof Error ? error.message : 'unknown',
             error,
@@ -3106,11 +3150,11 @@ exports.api = functions
         await handleSubjectClassificationRequest(req, res);
         return;
     }
-    if (normalizedPath === '/polar/webhook') {
-        await handlePolarWebhookRequest(req, res);
+    if (normalizedPath === '/paddle/webhook' || normalizedPath === '/polar/webhook') {
+        await handlePaddleWebhookRequest(req, res);
         return;
     }
-    if (normalizedPath === '/polar/checkout') {
+    if (normalizedPath === '/paddle/checkout' || normalizedPath === '/polar/checkout') {
         try {
             await handleCreateCheckoutSessionRequest(req, res);
         }
@@ -3119,7 +3163,7 @@ exports.api = functions
         }
         return;
     }
-    if (normalizedPath === '/polar/session') {
+    if (normalizedPath === '/paddle/session' || normalizedPath === '/polar/session') {
         try {
             await handleCheckoutSessionStatusRequest(req, res);
         }

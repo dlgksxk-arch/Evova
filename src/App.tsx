@@ -36,9 +36,11 @@ import {
 import { getLandingContent } from './data/landingContent';
 import {
   callCreditBootstrap,
+  callCreateCheckoutSession,
   callSubjectClassifier,
   callTryOn,
 } from './lib/api/hamdeva';
+import { openPaddleOverlayCheckout } from './lib/paddle';
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
 import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
@@ -69,7 +71,6 @@ declare global {
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
-const PURCHASE_NOTICE_DISMISS_PREFIX = 'HAMDEVA-purchase-notice-dismissed';
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
@@ -88,6 +89,8 @@ const CREDIT_PRODUCTS = [
 const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
+const PADDLE_CLIENT_TOKEN = (import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined)?.trim() || '';
+const PADDLE_ENV = ((import.meta.env.VITE_PADDLE_ENV as string | undefined)?.trim().toLowerCase() === 'sandbox' ? 'sandbox' : 'production') as 'sandbox' | 'production';
 const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
 const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
@@ -122,47 +125,6 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
 ]);
-const getPurchasePauseCopy = (lang: LanguageCode) => {
-  if (lang === 'ko') {
-    return {
-      attemptMessage: '죄송합니다, 준비중입니다.',
-      homeTitle: '앗, 크레딧 상점은 잠깐 쉬는 중이에요',
-      homeBody: '지금은 크레딧을 구매하실 수 없어요. 곧 다시 열릴 예정이니 조금만 기다려 주세요.',
-      homeFootnote: '로그인과 이미지 생성은 그대로 이용하실 수 있어요.',
-      closeToday: '오늘은 이 창을 더이상 열지 않기',
-      close: '귀엽게 닫기',
-    };
-  }
-  if (lang === 'ja') {
-    return {
-      attemptMessage: '申し訳ありません。ただいま準備中です。',
-      homeTitle: 'クレジットショップは少しだけお休み中です',
-      homeBody: '今はクレジットを購入できません。まもなく再開予定ですので、少しだけお待ちください。',
-      homeFootnote: 'ログインと画像生成はそのまま利用できます。',
-      closeToday: '今日はもう表示しない',
-      close: '閉じる',
-    };
-  }
-  if (lang === 'zh') {
-    return {
-      attemptMessage: '抱歉，正在准备中。',
-      homeTitle: '积分商店暂时休息中',
-      homeBody: '现在还不能购买积分，很快就会开放，请再稍等一下。',
-      homeFootnote: '登录和图片生成功能仍可正常使用。',
-      closeToday: '今天不再显示',
-      close: '关闭',
-    };
-  }
-  return {
-    attemptMessage: 'Sorry, this is still in preparation.',
-    homeTitle: 'The credit shop is taking a tiny break',
-    homeBody: 'You cannot buy credits right now, but it should be back soon.',
-    homeFootnote: 'Login and image generation still work as usual.',
-    closeToday: "Don't show this again today",
-    close: 'Close',
-  };
-};
-const getPurchaseNoticeDismissKey = () => `${PURCHASE_NOTICE_DISMISS_PREFIX}:${new Date().toISOString().slice(0, 10)}`;
 const getHomeQuickCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
@@ -3168,13 +3130,6 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerLangMenuOpen, setHeaderLangMenuOpen] = useState(false);
   const [showCreditPlanModal, setShowCreditPlanModal] = useState(false);
-  const [showPurchaseNoticePopup, setShowPurchaseNoticePopup] = useState(() => {
-    try {
-      return localStorage.getItem(getPurchaseNoticeDismissKey()) !== 'hidden';
-    } catch {
-      return true;
-    }
-  });
   const [showMyPageModal, setShowMyPageModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
@@ -3194,7 +3149,6 @@ const App: React.FC = () => {
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
-  const purchasePauseCopy = getPurchasePauseCopy(lang);
   const homeQuickCopy = getHomeQuickCopy(lang);
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
@@ -3404,7 +3358,7 @@ const App: React.FC = () => {
       };
   const paymentSessionId = (() => {
     const params = new URLSearchParams(routeSearch);
-    return params.get('checkout_id') || params.get('session_id');
+    return params.get('session_id') || params.get('transaction_id') || params.get('checkout_id');
   })();
   const editorialUiCopy = getEditorialUiCopy(lang);
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
@@ -4294,25 +4248,53 @@ const App: React.FC = () => {
     setSubjectType(nextSubjectType);
     setSubjectTypeManualOverride(true);
   };
-  const dismissPurchaseNoticeForToday = () => {
-    try {
-      localStorage.setItem(getPurchaseNoticeDismissKey(), 'hidden');
-    } catch {
-      // ignore storage failures
-    }
-    setShowPurchaseNoticePopup(false);
-  };
-  const closePurchaseNotice = () => {
-    setShowPurchaseNoticePopup(false);
-  };
-  const handleStartCheckout = async (_productId: CheckoutProductId) => {
+  const handleStartCheckout = async (productId: CheckoutProductId) => {
     if (!currentUser || isStartingCheckout) {
       if (!currentUser) {
         openAuthModal('login');
       }
       return;
     }
-    alert(purchasePauseCopy.attemptMessage);
+
+    if (!PADDLE_CLIENT_TOKEN) {
+      alert(t.paymentConfigError);
+      return;
+    }
+
+    setIsStartingCheckout(productId);
+    try {
+      const authToken = await currentUser.getIdToken();
+      const session = await callCreateCheckoutSession({
+        authToken,
+        productId,
+        uid: currentUser.uid,
+      });
+
+      if (!session.sessionId) {
+        throw new Error('PAYMENT_NOT_CONFIGURED');
+      }
+
+      const successUrl = `${window.location.origin}/payment-success?session_id=${encodeURIComponent(session.sessionId)}`;
+      const theme = darkMode ? 'dark' : 'light';
+      setShowCreditPlanModal(false);
+      setMobileMenuOpen(false);
+      await openPaddleOverlayCheckout({
+        clientToken: PADDLE_CLIENT_TOKEN,
+        environment: PADDLE_ENV,
+        transactionId: session.sessionId,
+        successUrl,
+        locale: lang,
+        theme,
+      });
+    } catch (error) {
+      console.error('Failed to start Paddle checkout:', error);
+      const message = error instanceof Error && error.message === 'PAYMENT_NOT_CONFIGURED'
+        ? t.paymentConfigError
+        : t.paymentConfigError;
+      alert(message);
+    } finally {
+      setIsStartingCheckout(null);
+    }
   };
   const openCreditPlanModal = () => {
     if (!currentUser) {
@@ -4323,8 +4305,7 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
     setShowMyPageModal(false);
     setShowAdminModal(false);
-    setShowCreditPlanModal(false);
-    alert(purchasePauseCopy.attemptMessage);
+    setShowCreditPlanModal(true);
   };
   const openMyPageModal = () => {
     if (!currentUser) {
@@ -5147,24 +5128,6 @@ const App: React.FC = () => {
             </>
           ) : currentPage === 'home' ? (
             <>
-              {showPurchaseNoticePopup ? (
-                <div className="home-credit-notice" role="dialog" aria-label={purchasePauseCopy.homeTitle}>
-                  <div className="home-credit-notice-badge">🐾</div>
-                  <div className="home-credit-notice-copy">
-                    <strong>{purchasePauseCopy.homeTitle}</strong>
-                    <p>{purchasePauseCopy.homeBody}</p>
-                    <span>{purchasePauseCopy.homeFootnote}</span>
-                  </div>
-                  <div className="home-credit-notice-actions">
-                    <button className="outline-btn auth-inline-btn" onClick={dismissPurchaseNoticeForToday} type="button">
-                      {purchasePauseCopy.closeToday}
-                    </button>
-                    <button className="generate-btn auth-inline-btn home-credit-notice-close" onClick={closePurchaseNotice} type="button">
-                      {purchasePauseCopy.close}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
               <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
               <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
               <p className="hero-sub">{landingContent.hero.subtitle}</p>
@@ -5607,12 +5570,12 @@ const App: React.FC = () => {
                   <h2>{lang === 'ko' ? '참고 안내' : lang === 'ja' ? 'ご案内' : lang === 'zh' ? '参考说明' : 'Pricing notes'}</h2>
                   <p>
                     {lang === 'ko'
-                      ? '회원가입 시 기본 300 크레딧이 한 번 지급되며, 실제 남은 크레딧과 결제 상태는 마이페이지에서 확인할 수 있습니다. 현재 구매 기능은 준비중일 수 있으니 안내 메시지를 함께 확인해 주세요.'
+                      ? '회원가입 시 기본 300 크레딧이 한 번 지급되며, 실제 남은 크레딧과 결제 상태는 마이페이지에서 확인할 수 있습니다. 결제가 완료되면 크레딧이 자동으로 적립됩니다.'
                       : lang === 'ja'
-                        ? '新規登録時には基本 300 クレジットが一度だけ付与されます。現在の残高や決済状態はマイページで確認できます。購入機能は準備中の場合があるため、案内メッセージもあわせて確認してください。'
+                        ? '新規登録時には基本 300 クレジットが一度だけ付与されます。現在の残高や決済状態はマイページで確認できます。決済が完了するとクレジットが自動で反映されます。'
                         : lang === 'zh'
-                          ? '注册时会一次性发放 300 积分。当前余额与支付状态可在我的页面查看。购买功能可能仍在准备中，请同时查看页面提示。'
-                          : 'You receive 300 starter credits once when you sign up. Check your live balance and payment status in My Page. The purchase flow may still show a preparation notice.'}
+                          ? '注册时会一次性发放 300 积分。当前余额与支付状态可在我的页面查看。支付完成后积分会自动到账。'
+                          : 'You receive 300 starter credits once when you sign up. Check your live balance and payment status in My Page. Credits are added automatically after a completed payment.'}
                   </p>
                 </article>
               </>
