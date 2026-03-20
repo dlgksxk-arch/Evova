@@ -75,6 +75,19 @@ const AdminModalFrame: React.FC<{
 const getUserDisplayName = (user?: { displayName?: string | null; nickname?: string | null } | null): string =>
   user?.displayName?.trim() || user?.nickname?.trim() || '-';
 
+const isRealMemberUser = (user: AdminUserListItem): boolean => {
+  const email = (user.email || '').trim().toLowerCase();
+  const displayName = (user.displayName || '').trim().toLowerCase();
+  const nickname = (user.nickname || '').trim().toLowerCase();
+  const uid = (user.uid || '').trim().toLowerCase();
+
+  if (!email) {
+    return false;
+  }
+
+  return ![email, displayName, nickname, uid].some((value) => value.includes('smoke'));
+};
+
 const renderDetailValue = (
   label: string,
   value: React.ReactNode,
@@ -142,18 +155,11 @@ const AdminUserListTable: React.FC<AdminUserListTableProps> = ({
 
     <div className="admin-user-list-table">
       <div className="admin-user-list-head">
-        <span>uid</span>
         <span>{copy.emailLabel}</span>
         <span>{copy.adminDisplayName ?? '닉네임 / 이름'}</span>
-        <span>{copy.adminJoinedAt}</span>
-        <span>{copy.adminLastLoginAt ?? '최근 로그인'}</span>
+        <span>{copy.adminJoinedAt} / {copy.adminLastLoginAt ?? '최근 로그인'}</span>
         <span>{copy.adminCreditsColumn}</span>
-        <span>{copy.adminDailyCredit ?? 'dailyCredit'}</span>
-        <span>{copy.adminPaidCredit ?? 'paidCredit'}</span>
-        <span>{copy.adminSubscribed ?? '구독'}</span>
-        <span>{copy.subscriptionPlanLabel}</span>
-        <span>{copy.adminTotalGenerated ?? '총 생성 수'}</span>
-        <span>{copy.adminRole}</span>
+        <span>{copy.adminSubscribed ?? '구독'} / {copy.subscriptionPlanLabel}</span>
         <span>{copy.adminActions ?? '작업'}</span>
       </div>
 
@@ -177,18 +183,26 @@ const AdminUserListTable: React.FC<AdminUserListTableProps> = ({
           role="button"
           tabIndex={0}
         >
-          <span>{item.uid}</span>
-          <span>{item.email || '-'}</span>
-          <span>{getUserDisplayName(item)}</span>
-          <span>{formatTimestampLabel(item.createdAt)}</span>
-          <span>{formatTimestampLabel(item.lastLoginAt)}</span>
-          <span>{item.credits ?? 0}</span>
-          <span>{item.dailyCredit ?? 0}</span>
-          <span>{item.paidCredit ?? 0}</span>
-          <span>{item.isSubscribed ? (copy.adminSubscribedYes ?? 'Y') : (copy.adminSubscribedNo ?? 'N')}</span>
-          <span>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</span>
-          <span>{item.totalGenerated ?? 0}</span>
-          <span>{item.role || 'user'}</span>
+          <span className="admin-user-primary">
+            <strong>{item.email || '-'}</strong>
+            <small>{item.uid}</small>
+          </span>
+          <span className="admin-user-meta">
+            <strong>{getUserDisplayName(item)}</strong>
+            <small>{item.role || 'user'}</small>
+          </span>
+          <span className="admin-user-stack">
+            <strong>{formatTimestampLabel(item.createdAt)}</strong>
+            <small>{formatTimestampLabel(item.lastLoginAt)}</small>
+          </span>
+          <span className="admin-user-stack">
+            <strong>{item.credits ?? 0}</strong>
+            <small>{copy.adminDailyCredit ?? 'dailyCredit'} {item.dailyCredit ?? 0} · {copy.adminPaidCredit ?? 'paidCredit'} {item.paidCredit ?? 0}</small>
+          </span>
+          <span className="admin-user-stack">
+            <strong>{copy.subscriptionPlanValue(item.subscriptionPlan || 'free')}</strong>
+            <small>{item.isSubscribed ? (copy.adminSubscribedYesLabel ?? '구독 중') : (copy.adminSubscribedNoLabel ?? '미구독')}</small>
+          </span>
           <span className="admin-user-actions">
             <button
               className="outline-btn admin-table-action-btn"
@@ -275,15 +289,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     isOpen: isUserModalOpen,
   });
   const {
-    query: pageUserQuery,
-    setQuery: setPageUserQuery,
-    users: pageUsers,
-    loading: pageUserListLoading,
-    loadingMore: pageUserLoadingMore,
-    error: pageUserListError,
-    hasMore: pageUserHasMore,
-    debouncedQuery: pageDebouncedQuery,
-    loadMore: loadMorePageUsers,
     updateUser: updatePageUser,
   } = useAdminUserList({
     currentUser,
@@ -355,7 +360,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [statusMessage]);
 
   const selectedUserSummary = users.find((item) => item.uid === selectedUserId) ?? null;
-  const pageMemberUsers = pageUsers.filter((item) => typeof item.email === 'string' && item.email.trim().length > 0);
+  const modalMemberUsers = users.filter(isRealMemberUser);
   const activeDetailUser = userDetail ?? selectedUserSummary ?? giftTarget;
   const activeLogState = activeLogTab === 'generations'
     ? generationLogsState
@@ -632,38 +637,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </article>
         <article className="page-article">
-          <div className="admin-section-header">
-            <div>
-              <h3>{copy.adminMemberListSection ?? '회원 리스트'}</h3>
-              <p className="admin-section-helper">{copy.adminMemberListHelper ?? '최근 사용자와 같은 형식으로 바로 조회할 수 있는 회원 리스트입니다.'}</p>
-            </div>
-            <button className="outline-btn auth-inline-btn" onClick={openUserModal} type="button">
-              {copy.adminOpenUserList ?? '사용자 검색 / 선물'}
-            </button>
-          </div>
-          <AdminUserListTable
-            copy={copy}
-            query={pageUserQuery}
-            onQueryChange={setPageUserQuery}
-            hint={copy.adminMemberListSearchHint ?? copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
-            error={pageUserListError}
-            loading={pageUserListLoading}
-            loadingMore={pageUserLoadingMore}
-            debouncedQuery={pageDebouncedQuery}
-            users={pageMemberUsers}
-            selectedUserId={selectedUserId}
-            hasMore={pageUserHasMore}
-            formatTimestampLabel={formatTimestampLabel}
-            onSelectUser={handleSelectUser}
-            onShowDetails={handleOpenUserDetailModal}
-            onGiftUser={(user) => handleOpenGift({
-              ...user,
-              updatedAt: null,
-            } as AdminUserDetail)}
-            onLoadMore={() => { void loadMorePageUsers(); }}
-          />
-        </article>
-        <article className="page-article">
           <h3>{copy.adminBoardSection}</h3>
           <div className="admin-table">
             <div className="admin-table-head admin-board-head">
@@ -720,12 +693,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 copy={copy}
                 query={query}
                 onQueryChange={setQuery}
-                hint={copy.adminUserSearchHint ?? 'ID(uid), 이메일, 닉네임 또는 displayName prefix 검색을 지원합니다. 검색어가 없으면 최근 사용자 20명을 조회합니다.'}
+                hint={copy.adminMemberListSearchHint ?? copy.adminUserSearchHint ?? '실제 회원만 표시하며, 이메일 또는 uid 기준으로 검색할 수 있습니다.'}
                 error={userListError}
                 loading={userListLoading}
                 loadingMore={loadingMore}
                 debouncedQuery={debouncedQuery}
-                users={users}
+                users={modalMemberUsers}
                 selectedUserId={selectedUserId}
                 hasMore={hasMore}
                 formatTimestampLabel={formatTimestampLabel}
