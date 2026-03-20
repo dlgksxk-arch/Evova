@@ -8,6 +8,8 @@ interface PaymentStatusPageProps {
   paidCredit: number;
   copy: Record<string, any>;
   status: 'success' | 'pending' | 'failed';
+  primaryLabel: string;
+  secondaryLabel: string;
   onPrimary: () => void;
   onSecondary: () => void;
 }
@@ -20,6 +22,8 @@ const PaymentStatusPage: React.FC<PaymentStatusPageProps> = ({
   paidCredit,
   copy,
   status,
+  primaryLabel,
+  secondaryLabel,
   onPrimary,
   onSecondary,
 }) => {
@@ -45,10 +49,10 @@ const PaymentStatusPage: React.FC<PaymentStatusPageProps> = ({
         )}
         <div className="credit-cta-actions">
           <button className="generate-btn auth-inline-btn" onClick={onPrimary} type="button">
-            {isSuccess ? copy.goToMyPage : copy.chargeCredits}
+            {primaryLabel}
           </button>
           <button className="outline-btn auth-inline-btn" onClick={onSecondary} type="button">
-            {copy.heroCta}
+            {secondaryLabel}
           </button>
         </div>
       </article>

@@ -5908,6 +5908,8 @@ const App: React.FC = () => {
                       ? 'failed'
                       : 'pending'
                 }
+                primaryLabel={t.goToMyPage}
+                secondaryLabel={contentLocale.nav.home}
                 onPrimary={() => navigateToPage('mypage')}
                 onSecondary={() => navigateToPage('home')}
               />
@@ -5922,6 +5924,8 @@ const App: React.FC = () => {
                 paidCredit={currentPaidCredit}
                 copy={t}
                 status="failed"
+                primaryLabel={t.goToMyPage}
+                secondaryLabel={contentLocale.nav.home}
                 onPrimary={() => navigateToPage('mypage')}
                 onSecondary={() => navigateToPage('home')}
               />

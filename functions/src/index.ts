@@ -522,6 +522,22 @@ type LemonCheckoutRecord = {
     url?: string;
   };
 };
+type LemonOrderRecord = {
+  id?: string | number;
+  attributes?: {
+    identifier?: string | number;
+    status?: string;
+    user_email?: string;
+    currency?: string;
+    total?: string | number;
+    created_at?: string;
+    updated_at?: string;
+    first_order_item?: {
+      product_id?: string | number;
+      variant_id?: string | number;
+    };
+  };
+};
 type LemonWebhookEvent = {
   meta?: {
     event_name?: string;
@@ -2571,6 +2587,27 @@ const getCheckoutSessionStatus = async (
   let normalizedStatus = normalizePaymentStatusForClient(storedStatus || 'pending');
 
   if (normalizedStatus === 'pending') {
+    const reconciledPaymentId = await syncPendingPaymentWithLemonOrder({
+      user,
+      pendingPaymentData: paymentData,
+    });
+
+    if (reconciledPaymentId) {
+      const [reconciledPaymentSnapshot, refreshedUserSnapshot] = await Promise.all([
+        db.collection('payments').doc(buildPaymentDocId(LEMON_PROVIDER, reconciledPaymentId)).get(),
+        db.collection('users').doc(user.uid).get(),
+      ]);
+
+      if (reconciledPaymentSnapshot.exists) {
+        paymentSnapshot = reconciledPaymentSnapshot;
+        paymentData = reconciledPaymentSnapshot.data() ?? {};
+        account = normalizeUserAccount(user.email, refreshedUserSnapshot.data());
+        normalizedStatus = 'success';
+      }
+    }
+  }
+
+  if (normalizedStatus === 'pending') {
     const pendingCreatedAtMillis = toTimestampMillis(paymentData.createdAt) ?? 0;
     const latestPaidSnapshot = await db.collection('payments')
       .where('uid', '==', user.uid)
@@ -2726,6 +2763,18 @@ const handleCheckoutSessionStatusRequest = async (req: functions.https.Request, 
 const getStringValue = (...values: unknown[]): string =>
   values.find((value) => typeof value === 'string' && value.trim()) as string || '';
 
+const getStringLikeValue = (...values: unknown[]): string => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return '';
+};
+
 const getObjectValue = (...values: unknown[]): Record<string, unknown> =>
   (values.find((value) => value !== null && typeof value === 'object' && !Array.isArray(value)) as Record<string, unknown> | undefined) ?? {};
 
@@ -2755,6 +2804,142 @@ const getWebhookEventName = (
   getObjectValue(data.meta).event_name,
   attributes.event_name,
 ).trim().toLowerCase();
+
+const listRecentLemonOrdersByEmail = async (email: string): Promise<LemonOrderRecord[]> => {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return [];
+  }
+
+  const { apiKey, storeId } = requireLemonConfig();
+  const url = new URL(`${getLemonApiBaseUrl()}/orders`);
+  url.searchParams.set('filter[store_id]', storeId);
+  url.searchParams.set('filter[user_email]', normalizedEmail);
+  url.searchParams.set('page[size]', '10');
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/vnd.api+json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    functions.logger.error('Failed to fetch Lemon orders', {
+      status: response.status,
+      email: normalizedEmail,
+    });
+    return [];
+  }
+
+  const payload = await response.json().catch(() => ({})) as { data?: LemonOrderRecord[] };
+  return Array.isArray(payload.data) ? payload.data : [];
+};
+
+const getRecentPaidLemonOrder = async (params: {
+  email: string;
+  expectedProductId?: PaymentProductId;
+  createdAfterMillis?: number;
+}): Promise<LemonOrderRecord | null> => {
+  const orders = await listRecentLemonOrdersByEmail(params.email);
+  const createdAfterMillis = params.createdAfterMillis ?? 0;
+
+  const candidates = orders
+    .map((order) => {
+      const attributes = getObjectValue(order.attributes);
+      const firstOrderItem = getObjectValue(attributes.first_order_item);
+      const variantId = getStringLikeValue(firstOrderItem.variant_id);
+      const productId = params.expectedProductId
+        ?? (variantId ? getProductIdFromLemonVariantId(variantId) : null);
+      const status = getStringValue(attributes.status).trim().toLowerCase();
+      const updatedAtMillis = toTimestampMillis(attributes.updated_at) ?? 0;
+      const createdAtMillis = toTimestampMillis(attributes.created_at) ?? 0;
+
+      return {
+        order,
+        productId,
+        status,
+        updatedAtMillis,
+        createdAtMillis,
+      };
+    })
+    .filter((candidate) => {
+      if (candidate.status !== 'paid') {
+        return false;
+      }
+
+      if (params.expectedProductId && candidate.productId !== params.expectedProductId) {
+        return false;
+      }
+
+      return candidate.updatedAtMillis >= createdAfterMillis || candidate.createdAtMillis >= createdAfterMillis;
+    })
+    .sort((a, b) => {
+      const aMillis = Math.max(a.updatedAtMillis, a.createdAtMillis);
+      const bMillis = Math.max(b.updatedAtMillis, b.createdAtMillis);
+      return bMillis - aMillis;
+    });
+
+  return candidates[0]?.order ?? null;
+};
+
+const syncPendingPaymentWithLemonOrder = async (params: {
+  user: AuthenticatedUser;
+  pendingPaymentData: Record<string, unknown>;
+}): Promise<string | null> => {
+  const expectedProductId = isPaymentProductId(params.pendingPaymentData.productId)
+    ? params.pendingPaymentData.productId
+    : undefined;
+  const createdAfterMillis = toTimestampMillis(params.pendingPaymentData.createdAt) ?? Date.now() - (1000 * 60 * 30);
+  const matchedOrder = await getRecentPaidLemonOrder({
+    email: params.user.email,
+    expectedProductId,
+    createdAfterMillis,
+  });
+
+  if (!matchedOrder) {
+    return null;
+  }
+
+  const attributes = getObjectValue(matchedOrder.attributes);
+  const firstOrderItem = getObjectValue(attributes.first_order_item);
+  const variantId = getStringLikeValue(firstOrderItem.variant_id);
+  const resolvedProductId = expectedProductId ?? (variantId ? getProductIdFromLemonVariantId(variantId) : null);
+  const providerPaymentId = getStringLikeValue(matchedOrder.id, attributes.identifier);
+
+  if (!providerPaymentId || !resolvedProductId) {
+    functions.logger.error('Lemon order match missing payment context', {
+      uid: params.user.uid,
+      providerPaymentId,
+      resolvedProductId,
+    });
+    return null;
+  }
+
+  await fulfillCreditPurchase({
+    provider: LEMON_PROVIDER,
+    providerPaymentId,
+    uid: params.user.uid,
+    productId: resolvedProductId,
+    amount: (() => {
+      const rawAmount = typeof attributes.total === 'number'
+        ? attributes.total
+        : typeof attributes.total === 'string'
+          ? Number.parseFloat(attributes.total)
+          : Number.NaN;
+      return Number.isFinite(rawAmount) ? rawAmount / 100 : null;
+    })(),
+    currency: getStringValue(attributes.currency),
+    paidAt: getStringValue(attributes.created_at, attributes.updated_at),
+    rawPayload: {
+      source: 'session_status_reconcile',
+      lemonOrder: matchedOrder,
+    },
+  });
+
+  return providerPaymentId;
+};
 
 const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
   const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(provider, providerPaymentId)).get();
@@ -2837,7 +3022,7 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
   const data = getObjectValue(event.data);
   const attributes = getObjectValue(data.attributes);
   const customData = getWebhookCustomData(event, data, attributes);
-  const providerPaymentId = getStringValue(
+  const providerPaymentId = getStringLikeValue(
     attributes.order_id,
     getObjectValue(attributes.order).id,
     data.id,
@@ -2857,7 +3042,7 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
     getObjectValue(attributes.customer).email,
     getObjectValue(attributes.user).email,
   ).trim().toLowerCase();
-  const variantId = getStringValue(
+  const variantId = getStringLikeValue(
     customData.variantId,
     firstOrderItem.variant_id,
     firstOrderItemVariant.id,
