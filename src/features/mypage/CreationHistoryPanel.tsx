@@ -401,6 +401,21 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
   };
 
+  const handleCopySelectedLink = async () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(selectedItem.imageUrl);
+      setShareStatus(copy.linkCopied);
+    } catch (error) {
+      console.error('Failed to copy history image link:', error);
+      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -643,17 +658,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         </div>
                       </div>
                       <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                          <strong>{historyCopy.resultLabel}</strong>
-                          <button
-                            className="outline-btn auth-inline-btn"
-                            disabled={!selectedItem.imageUrl || isPreparingShareFile}
-                            onClick={() => { void handleShareSelected(); }}
-                            type="button"
-                          >
-                            {copy.share}
-                          </button>
-                        </div>
+                        <strong>{historyCopy.resultLabel}</strong>
                         <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
                           {historyCopy.resultPreview}
                         </span>
@@ -664,36 +669,81 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         ) : null}
                         <div
                           style={{
-                            width: '100%',
-                            overflowX: 'auto',
-                            overflowY: 'visible',
-                            border: '1px solid var(--border)',
-                            borderRadius: 16,
-                            padding: 16,
-                            background: 'rgba(255,255,255,0.35)',
-                            minHeight: isMobile ? 140 : 260,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 148px',
+                            gap: 12,
+                            alignItems: 'stretch',
                           }}
                         >
-                          <img
-                            alt={copy.resultPreviewAlt}
-                            onLoad={finishImageLoading}
-                            draggable={false}
-                            src={selectedItem.imageUrl || ''}
+                          <div
                             style={{
-                              display: 'block',
-                              margin: '0 auto',
-                              width: `${zoom * 50}%`,
-                              maxWidth: '100%',
-                              maxHeight: isMobile ? '30vh' : '36vh',
-                              height: 'auto',
-                              objectFit: 'contain',
-                              userSelect: 'none',
-                              visibility: isImageLoading ? 'hidden' : 'visible',
+                              width: '100%',
+                              overflowX: 'auto',
+                              overflowY: 'visible',
+                              border: '1px solid var(--border)',
+                              borderRadius: 16,
+                              padding: 16,
+                              background: 'rgba(255,255,255,0.35)',
+                              minHeight: isMobile ? 140 : 260,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
-                          />
+                          >
+                            <img
+                              alt={copy.resultPreviewAlt}
+                              onLoad={finishImageLoading}
+                              draggable={false}
+                              src={selectedItem.imageUrl || ''}
+                              style={{
+                                display: 'block',
+                                margin: '0 auto',
+                                width: `${zoom * 50}%`,
+                                maxWidth: '100%',
+                                maxHeight: isMobile ? '30vh' : '36vh',
+                                height: 'auto',
+                                objectFit: 'contain',
+                                userSelect: 'none',
+                                visibility: isImageLoading ? 'hidden' : 'visible',
+                              }}
+                            />
+                          </div>
+                          <div
+                            style={{
+                              display: 'grid',
+                              gap: 10,
+                              alignContent: 'start',
+                            }}
+                          >
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl || isPreparingShareFile}
+                              onClick={() => { void handleShareSelected(); }}
+                              type="button"
+                            >
+                              {copy.share}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={() => { void handleCopySelectedLink(); }}
+                              type="button"
+                            >
+                              {copy.copyLink}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={!selectedItem.imageUrl}
+                              onClick={() => {
+                                if (selectedItem.imageUrl) {
+                                  downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                                }
+                              }}
+                              type="button"
+                            >
+                              {copy.historyDownload}
+                            </button>
+                          </div>
                         </div>
                         {!isImageLoading ? (
                           <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
@@ -719,19 +769,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       flexWrap: 'wrap',
                     }}
                   >
-                    <button
-                      className="outline-btn auth-inline-btn"
-                      disabled={submitting}
-                      onClick={() => {
-                        if (selectedItem.imageUrl) {
-                          downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-                        }
-                      }}
-                      style={{ flex: isMobile ? 1 : undefined }}
-                      type="button"
-                    >
-                      {copy.historyDownload}
-                    </button>
                     <button
                       className={isSelectedItemPreserved ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
                       disabled={submitting}
