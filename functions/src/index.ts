@@ -2324,6 +2324,18 @@ const upsertCreationRecord = async (params: {
 
 const getPaymentProduct = (productId: PaymentProductId) => PAYMENT_PRODUCTS[productId];
 
+const getSubscriptionPlanForProduct = (productId: PaymentProductId): SubscriptionPlan => {
+  if (productId === 'pro') {
+    return 'pro';
+  }
+
+  if (productId === 'starter' || productId === 'popular') {
+    return 'basic';
+  }
+
+  return 'free';
+};
+
 const getRequestStringHeaders = (req: functions.https.Request): Record<string, string> =>
   Object.entries(req.headers).reduce<Record<string, string>>((acc, [key, value]) => {
     if (typeof value === 'string') {
@@ -2420,6 +2432,12 @@ const fulfillCreditPurchase = async (params: {
     account = {
       ...account,
       // TODO: apply one-time +20% bonus credits for the first subscription purchase only.
+      isSubscribed: product.id === 'starter' || product.id === 'popular' || product.id === 'pro'
+        ? true
+        : account.isSubscribed,
+      subscriptionPlan: product.id === 'starter' || product.id === 'popular' || product.id === 'pro'
+        ? getSubscriptionPlanForProduct(product.id)
+        : account.subscriptionPlan,
       paidCredit: account.paidCredit + product.paidCredit,
       credits: account.dailyCredit + account.paidCredit + product.paidCredit,
     };
@@ -2705,6 +2723,9 @@ const getStringValue = (...values: unknown[]): string =>
 const getObjectValue = (...values: unknown[]): Record<string, unknown> =>
   (values.find((value) => value !== null && typeof value === 'object' && !Array.isArray(value)) as Record<string, unknown> | undefined) ?? {};
 
+const getArrayValue = (...values: unknown[]): unknown[] =>
+  (values.find((value) => Array.isArray(value)) as unknown[] | undefined) ?? [];
+
 const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
   const paymentSnapshot = await db.collection('payments').doc(buildPaymentDocId(provider, providerPaymentId)).get();
   const data = paymentSnapshot.data();
@@ -2716,6 +2737,34 @@ const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymen
     uid: data.uid,
     productId: data.productId,
   };
+};
+
+const getProductIdFromLemonVariantId = (variantId: string): PaymentProductId | null => {
+  const entry = Object.entries(LEMON_VARIANT_IDS).find(([, value]) => value === variantId);
+  if (!entry) {
+    return null;
+  }
+
+  return entry[0] as PaymentProductId;
+};
+
+const getUserContextFromEmail = async (email: string): Promise<{ uid: string } | null> => {
+  if (!email) {
+    return null;
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const snapshot = await db.collection('users')
+    .where('email', '==', normalizedEmail)
+    .limit(1)
+    .get();
+
+  const matchedDoc = snapshot.docs[0];
+  if (!matchedDoc) {
+    return null;
+  }
+
+  return { uid: matchedDoc.id };
 };
 
 const verifyLemonWebhookSignature = (rawPayload: string, signatureHeader: string, webhookSecret: string): boolean => {
@@ -2760,8 +2809,39 @@ const handleLemonWebhookRequest = async (req: functions.https.Request, res: func
   const customData = getObjectValue(event.meta?.custom_data);
   const providerPaymentId = getStringValue(data.id);
   const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(LEMON_PROVIDER, providerPaymentId) : null;
-  const uid = getStringValue(customData.uid, contextFromPayment?.uid);
-  const rawProductId = getStringValue(customData.productId, contextFromPayment?.productId);
+  const firstOrderItem = getObjectValue(attributes.first_order_item);
+  const firstOrderItemVariant = getObjectValue(firstOrderItem.variant);
+  const firstOrderItemProduct = getObjectValue(firstOrderItem.product);
+  const orderItems = getArrayValue(attributes.order_items, attributes.items);
+  const firstArrayItem = getObjectValue(orderItems[0]);
+  const firstArrayItemVariant = getObjectValue(firstArrayItem.variant);
+  const buyerEmail = getStringValue(
+    customData.email,
+    attributes.user_email,
+    attributes.customer_email,
+    attributes.email,
+    getObjectValue(attributes.customer).email,
+    getObjectValue(attributes.user).email,
+  ).trim().toLowerCase();
+  const variantId = getStringValue(
+    customData.variantId,
+    firstOrderItem.variant_id,
+    firstOrderItemVariant.id,
+    firstArrayItem.variant_id,
+    firstArrayItemVariant.id,
+    attributes.variant_id,
+    getObjectValue(attributes.variant).id,
+  );
+  const productIdFromVariant = variantId ? getProductIdFromLemonVariantId(variantId) : null;
+  const userContextFromEmail = buyerEmail ? await getUserContextFromEmail(buyerEmail) : null;
+  const uid = getStringValue(customData.uid, contextFromPayment?.uid, userContextFromEmail?.uid);
+  const rawProductId = getStringValue(
+    customData.productId,
+    contextFromPayment?.productId,
+    productIdFromVariant,
+    firstOrderItem.product_id,
+    firstOrderItemProduct.id,
+  );
   const eventType = getStringValue(event.meta?.event_name);
   const isCompletedEvent = eventType === 'order_created';
   const isFailedEvent = eventType === 'subscription_payment_failed';
