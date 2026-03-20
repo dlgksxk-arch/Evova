@@ -92,7 +92,7 @@ type CreditProduct = {
   bonusEligible?: boolean;
 };
 const CREDIT_PRODUCTS = [
-  { id: 'starter', kind: 'subscription', label: 'SB Starter', paidCredit: 1000, salePriceUsd: 6.9, description: 'Ideal for light use', bonusEligible: true },
+  { id: 'starter', kind: 'subscription', label: 'SB Starter', paidCredit: 1000, salePriceUsd: 4.99, comparePriceUsd: 6.9, description: 'Ideal for light use', bonusEligible: true },
   { id: 'popular', kind: 'subscription', label: 'SB Popular', paidCredit: 3500, salePriceUsd: 20.9, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
   { id: 'pro', kind: 'subscription', label: 'SB Pro', paidCredit: 7000, salePriceUsd: 39.9, description: 'For heavy and frequent use', bonusEligible: true },
   { id: 'small_pack', kind: 'extra_credit', label: 'SP Small Pack', paidCredit: 1000, salePriceUsd: 7.9, description: 'Instant extra credits when you need a quick refill' },

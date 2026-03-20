@@ -119,8 +119,8 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
     starter: {
         id: 'starter',
-        amountCents: 690,
-        amountUsd: 6.9,
+        amountCents: 499,
+        amountUsd: 4.99,
         currency: PAYMENT_CURRENCY,
         paidCredit: 1000,
         name: 'HAMDEVA SB Starter',
