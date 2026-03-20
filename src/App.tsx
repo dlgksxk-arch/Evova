@@ -70,10 +70,6 @@ type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
 const APP_VERSION = __APP_VERSION__;
 const PURCHASE_NOTICE_DISMISS_PREFIX = 'HAMDEVA-purchase-notice-dismissed';
-const DEFAULT_GENERATION_ESTIMATE_MS = 30_000;
-const MIN_GENERATION_ESTIMATE_MS = 12_000;
-const MAX_GENERATION_ESTIMATE_MS = 70_000;
-const GENERATION_ESTIMATE_BUFFER_MS = 10_000;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
@@ -1002,6 +998,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     loginForFree: '注册可获得 300 积分，每日登录再获得 100 积分。',
     credits: '积分',
     currentCredits: (n: number) => `当前积分：${n}`,
+    totalCreditLabel: '总积分',
     generationCost: '1 次生成 = 100 积分',
     generationCostDetailed: (n: number) => `1 次生成 = ${n} 积分`,
     signUpGetCredits: '注册并领取 300 积分',
@@ -1165,6 +1162,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     loginForFree: '新規登録で 300 クレジット、毎日ログインで 100 クレジットを受け取れます。',
     credits: 'クレジット',
     currentCredits: (n: number) => `現在のクレジット: ${n}`,
+    totalCreditLabel: '合計クレジット',
     generationCost: '1 回の生成 = 100 クレジット',
     generationCostDetailed: (n: number) => `1 回の生成 = ${n} クレジット`,
     signUpGetCredits: '登録して 300 クレジットを受け取る',
@@ -2583,6 +2581,20 @@ const downloadImageFile = async (src: string, filename = 'hamdeva-ai-fitting.png
   }
 };
 
+const buildTimestampedImageFilename = (prefix = 'hamdeva-pet-fitting'): string => {
+  const now = new Date();
+  const parts = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+    String(now.getHours()).padStart(2, '0'),
+    String(now.getMinutes()).padStart(2, '0'),
+    String(now.getSeconds()).padStart(2, '0'),
+  ];
+
+  return `${prefix}-${parts[0]}${parts[1]}${parts[2]}-${parts[3]}${parts[4]}${parts[5]}.png`;
+};
+
 const createShareImageFile = async (src: string, filename = 'hamdeva-share-image.png'): Promise<File> => {
   const response = await fetch(src);
   if (!response.ok) {
@@ -2631,20 +2643,6 @@ const writeGenerationDuration = (durationMs: number) => {
     console.warn('Failed to persist generation duration estimate:', error);
   }
 };
-
-const getEstimatedGenerationDuration = (): number => {
-  const durations = readGenerationDurations();
-  if (durations.length === 0) {
-    return Math.min(MAX_GENERATION_ESTIMATE_MS, DEFAULT_GENERATION_ESTIMATE_MS + GENERATION_ESTIMATE_BUFFER_MS);
-  }
-
-  const sorted = [...durations].sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)] ?? DEFAULT_GENERATION_ESTIMATE_MS;
-  const bufferedEstimate = median + GENERATION_ESTIMATE_BUFFER_MS;
-  return Math.min(MAX_GENERATION_ESTIMATE_MS, Math.max(MIN_GENERATION_ESTIMATE_MS, Math.round(bufferedEstimate)));
-};
-
-const formatSecondsLabel = (ms: number): string => `${Math.max(0, Math.ceil(ms / 1000))}s`;
 
 const getFaqTitle = (page: SitePage, pageTitle?: string): string => {
   switch (page) {
@@ -3074,9 +3072,7 @@ const App: React.FC = () => {
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
-  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
-  const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
-  const [generationEstimateMs, setGenerationEstimateMs] = useState(DEFAULT_GENERATION_ESTIMATE_MS);
+  const mobileAccountMenuRef = useRef<HTMLDivElement | null>(null);
   const generationLockRef = useRef(false);
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
@@ -3312,13 +3308,6 @@ const App: React.FC = () => {
       }))
     : [];
   const currentHomeFaqItems = landingContent.faq.items;
-  const generationRemainingMs = Math.max(0, generationEstimateMs - generationElapsedMs);
-  const generationProgressRatio = isGenerating
-    ? Math.min(0.97, generationElapsedMs / generationEstimateMs)
-    : resultPreviewState === 'ready'
-      ? 1
-      : 0;
-  const generationProgressPercent = Math.round(generationProgressRatio * 100);
   const subjectUi = getSubjectUiText(lang);
   const logoutModalCopy = {
     title: t.logoutConfirmTitle,
@@ -3405,7 +3394,6 @@ const App: React.FC = () => {
     setPaymentStatusMessage,
     setUserProfile,
   });
-  const generationStatusLabel = t.generationRemainingLabel;
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     if (!isSupportedLanguageCode(nextLanguage)) {
       return;
@@ -3582,7 +3570,10 @@ const App: React.FC = () => {
   }, [currentUser]);
   useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedDesktopMenu = userMenuRef.current?.contains(target);
+      const clickedMobileMenu = mobileAccountMenuRef.current?.contains(target);
+      if (!clickedDesktopMenu && !clickedMobileMenu) {
         setUserMenuOpen(false);
       }
     };
@@ -3716,17 +3707,6 @@ const App: React.FC = () => {
       setResultPreviewState('idle');
     }
   }, [finalImageSrc]);
-  useEffect(() => {
-    if (!isGenerating || generationStartedAt === null) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setGenerationElapsedMs(Date.now() - generationStartedAt);
-    }, 200);
-
-    return () => window.clearInterval(timer);
-  }, [generationStartedAt, isGenerating]);
   useEffect(() => {
     if (!shareStatus) {
       return;
@@ -4020,7 +4000,7 @@ const App: React.FC = () => {
   };
   const handleDownloadResult = async (src: string) => {
     try {
-      await downloadImageFile(src);
+      await downloadImageFile(src, buildTimestampedImageFilename());
     } catch (error) {
       console.error('Failed to download result image:', error);
       setShareStatus(t.alertError);
@@ -4190,7 +4170,7 @@ const App: React.FC = () => {
     }
 
     try {
-      await downloadImageFile(src);
+      await downloadImageFile(src, buildTimestampedImageFilename('hamdeva-instagram'));
       setShareStatus(t.instagramHelperText);
     } catch (error) {
       console.error('Failed to prepare Instagram save:', error);
@@ -4679,9 +4659,6 @@ const App: React.FC = () => {
     generationLockRef.current = true;
     setIsGenerating(true);
     const startedAt = Date.now();
-    setGenerationStartedAt(startedAt);
-    setGenerationElapsedMs(0);
-    setGenerationEstimateMs(getEstimatedGenerationDuration());
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
@@ -4745,8 +4722,6 @@ const App: React.FC = () => {
       writeGenerationDuration(Date.now() - startedAt);
       setTimeout(() => document.getElementById('result-area')?.scrollIntoView({ behavior: 'smooth' }), 100);
       setIsGenerating(false);
-      setGenerationStartedAt(null);
-      setGenerationElapsedMs(0);
 
       try {
         setUserProfile((prev) => prev ? {
@@ -4773,8 +4748,6 @@ const App: React.FC = () => {
     } finally {
       generationLockRef.current = false;
       setIsGenerating(false);
-      setGenerationStartedAt(null);
-      setGenerationElapsedMs(0);
     }
   };
 
@@ -4797,15 +4770,11 @@ const App: React.FC = () => {
     subjectDetectionStatus,
     finalImageSrc,
     creditNotice,
+    currentCredits,
     currentDailyCredit,
     currentPaidCredit,
     canAffordGeneration,
     generationCost: GENERATION_COST,
-    generationStatusLabel,
-    generationRemainingMs,
-    generationElapsedMs,
-    generationEstimateMs,
-    generationProgressPercent,
     resultWatermarkApplied,
     shareResultLink,
     shareStatus,
@@ -4892,8 +4861,29 @@ const App: React.FC = () => {
     onRandomOutfit: handleRandomOutfit,
     onOpenResultPreview: openResultPreviewModal,
     getSubjectTypeLabel,
-    formatSecondsLabel,
   };
+
+  const accountMenuItems = (
+    <>
+      <button className="lang-option" onClick={openMyPageModal} type="button">
+        {t.myPage}
+      </button>
+      <button className="lang-option" onClick={openCreditPlanModal} type="button">
+        {t.subscriptionPlanLabel}
+      </button>
+      <button className="lang-option" onClick={openMyPageModal} type="button">
+        {t.chargeCredits}
+      </button>
+      {isAdminUser ? (
+        <button className="lang-option" onClick={openAdminModal} type="button">
+          {t.adminTitle}
+        </button>
+      ) : null}
+      <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
+        {t.logout}
+      </button>
+    </>
+  );
 
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
@@ -4937,18 +4927,7 @@ const App: React.FC = () => {
                 <button className="lang-dropdown-trigger user-menu-trigger" onClick={() => setUserMenuOpen((prev) => !prev)} type="button">
                   <span>{currentUser.email?.split('@')[0] || t.myPage}</span>
                 </button>
-                {userMenuOpen && (
-                  <div className="user-menu-dropdown">
-                    {isAdminUser ? (
-                      <button className="lang-option" onClick={openAdminModal} type="button">
-                        {t.adminTitle}
-                      </button>
-                    ) : null}
-                    <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
-                      {t.logout}
-                    </button>
-                  </div>
-                )}
+                {userMenuOpen && <div className="user-menu-dropdown">{accountMenuItems}</div>}
               </div>
             ) : (
               <button
@@ -4965,11 +4944,11 @@ const App: React.FC = () => {
             </button>
           </div>
           <button
-            className="mobile-account-button"
+            className={`mobile-account-button ${currentUser ? 'account-menu-button' : 'auth-login-button'}`}
             aria-label={currentUser ? t.myPage : t.login}
             onClick={() => {
               if (currentUser) {
-                navigateToPage('mypage');
+                setUserMenuOpen((prev) => !prev);
                 return;
               }
 
@@ -4978,10 +4957,16 @@ const App: React.FC = () => {
             title={!currentUser ? t.login : undefined}
             type="button"
           >
-            {currentUser ? '👤' : '↗'}
+            <span aria-hidden="true" className="mobile-account-button-icon">{currentUser ? '👤' : '→'}</span>
+            <span className="mobile-account-button-label">{currentUser ? (currentUser.email?.split('@')[0] || t.myPage) : t.login}</span>
           </button>
         </div>
       </nav>
+      {currentUser && userMenuOpen && (
+        <div className="mobile-account-menu" ref={mobileAccountMenuRef}>
+          {accountMenuItems}
+        </div>
+      )}
       {mobileMenuOpen && (
         <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div

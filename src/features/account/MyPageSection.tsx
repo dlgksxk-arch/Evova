@@ -40,9 +40,9 @@ interface MyPageSectionProps {
 const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
   userProfile: _userProfile,
-  currentDailyCredit: _currentDailyCredit,
-  currentPaidCredit: _currentPaidCredit,
-  currentCredits: _currentCredits,
+  currentDailyCredit,
+  currentPaidCredit,
+  currentCredits,
   locale,
   isFirebaseConfigured,
   firebaseDisabledMessage,
@@ -74,6 +74,30 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                 {copy.login}
               </button>
             )}
+          </div>
+        </article>
+      )}
+      {currentUser && (
+        <article className="page-article">
+          <div className="admin-section-header">
+            <div>
+              <h2>{copy.myPage}</h2>
+              <p className="admin-section-helper">{copy.currentCredits(currentCredits)}</p>
+            </div>
+          </div>
+          <div className="credit-balance-grid">
+            <div className="credit-balance-card">
+              <span>{copy.totalCreditLabel}</span>
+              <strong>{currentCredits}</strong>
+            </div>
+            <div className="credit-balance-card">
+              <span>{copy.dailyCreditLabel}</span>
+              <strong>{currentDailyCredit}</strong>
+            </div>
+            <div className="credit-balance-card">
+              <span>{copy.paidCreditLabel}</span>
+              <strong>{currentPaidCredit}</strong>
+            </div>
           </div>
         </article>
       )}

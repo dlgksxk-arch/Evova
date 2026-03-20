@@ -97,15 +97,11 @@ interface TryOnStudioProps {
   subjectDetectionStatus: 'idle' | 'detecting' | 'ready' | 'error';
   finalImageSrc: string | null;
   creditNotice: string | null;
+  currentCredits: number;
   currentDailyCredit: number;
   currentPaidCredit: number;
   canAffordGeneration: boolean;
   generationCost: number;
-  generationStatusLabel: string;
-  generationRemainingMs: number;
-  generationElapsedMs: number;
-  generationEstimateMs: number;
-  generationProgressPercent: number;
   resultWatermarkApplied: boolean;
   shareResultLink: string | null;
   shareStatus: string | null;
@@ -152,7 +148,6 @@ interface TryOnStudioProps {
   onRandomOutfit: () => void;
   onOpenResultPreview: (src: string) => void;
   getSubjectTypeLabel: (lang: LanguageCode, subjectType: SubjectType) => string;
-  formatSecondsLabel: (ms: number) => string;
   modalCopy?: TryOnModalCopy;
 }
 
@@ -173,15 +168,11 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   clothUploadMessage,
   finalImageSrc,
   creditNotice,
+  currentCredits,
   currentDailyCredit,
   currentPaidCredit,
   canAffordGeneration,
   generationCost,
-  generationStatusLabel,
-  generationRemainingMs,
-  generationElapsedMs,
-  generationEstimateMs,
-  generationProgressPercent,
   resultWatermarkApplied,
   shareResultLink,
   shareStatus,
@@ -213,7 +204,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onTryAnotherOutfit,
   onRandomOutfit,
   onOpenResultPreview,
-  formatSecondsLabel,
   modalCopy,
 }) => {
   const [personDragActive, setPersonDragActive] = useState(false);
@@ -530,6 +520,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         >
           {isGenerating ? <><span className="spinner"></span>{copy.generating}</> : copy.generate}
         </button>
+        {currentUser ? <p className="credit-balance-text credit-balance-text-bottom">{copy.currentCredits(currentCredits)}</p> : null}
         {currentUser && !canAffordGeneration && (
           <>
             <p className="loading-subtext">{copy.notEnoughCredits}</p>
@@ -541,32 +532,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         {isGenerating && (
           <>
             <p className="loading-subtext">{copy.loadingDetail}</p>
-            <div className="generation-gauge" aria-live="polite">
-              <div className="generation-gauge-head">
-                <strong>{generationStatusLabel}</strong>
-                <span>{formatSecondsLabel(generationRemainingMs)}</span>
-              </div>
-              <div
-                className="generation-gauge-track"
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={generationProgressPercent}
-              >
-                <div className="generation-gauge-fill" style={{ width: `${generationProgressPercent}%` }} />
-                <div className="generation-gauge-ticks">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-              <div className="generation-gauge-meta">
-                <span>0s</span>
-                <span>{formatSecondsLabel(generationElapsedMs)}</span>
-                <span>{formatSecondsLabel(generationEstimateMs)}</span>
-              </div>
-            </div>
           </>
         )}
         <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
