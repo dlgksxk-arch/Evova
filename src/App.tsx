@@ -4977,23 +4977,27 @@ const App: React.FC = () => {
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
       <nav className="landing-nav">
         <div className="nav-content">
-          <button
-            className="mobile-menu-toggle"
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-menu"
-            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            type="button"
-          >
-            <span className="hamburger-icon" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </span>
-          </button>
           <div className="nav-brand">
             <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
             <span className="app-version">{appVersion}</span>
+          </div>
+          <div className="nav-quick-scroll nav-inline-actions">
+            <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
+              {landingContent.hero.primaryButton}
+            </button>
+            <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
+              {contentLocale.nav['how-it-works']}
+            </button>
+            <button
+              className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
+              onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
+              type="button"
+            >
+              {currentUser ? headerCreditLabel : t.creditCheck}
+            </button>
+            <button className="outline-btn nav-quick-buy-btn" onClick={openCreditPlanModal} type="button">
+              {t.chargeCredits}
+            </button>
           </div>
           <div className="nav-mobile-tools">
             <div className="user-menu header-account-menu" ref={headerAccountMenuRef}>
@@ -5068,25 +5072,19 @@ const App: React.FC = () => {
             >
               <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
             </button>
-          </div>
-        </div>
-        <div className="nav-quick-strip">
-          <div className="nav-quick-scroll">
-            <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
-              {contentLocale.nav['how-it-works']}
-            </button>
-            <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
-              {landingContent.hero.primaryButton}
-            </button>
             <button
-              className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
-              onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
+              className="mobile-menu-toggle"
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
               type="button"
             >
-              {currentUser ? headerCreditLabel : t.creditCheck}
-            </button>
-            <button className="outline-btn nav-quick-buy-btn" onClick={openCreditPlanModal} type="button">
-              {t.chargeCredits}
+              <span className="hamburger-icon" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
             </button>
           </div>
         </div>

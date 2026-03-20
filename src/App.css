@@ -202,7 +202,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 0 24px;
   margin: 0 auto;
 }
@@ -221,14 +221,14 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: baseline;
   gap: 8px;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  min-width: fit-content;
 }
 
 .nav-mobile-tools {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
 }
 
@@ -287,12 +287,6 @@ a { color: inherit; text-decoration: none; }
   background: var(--bg-alt);
 }
 
-.nav-quick-strip {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 24px 10px;
-}
-
 .nav-quick-scroll {
   display: flex;
   align-items: center;
@@ -306,6 +300,12 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 12px 30px rgba(19, 32, 51, 0.08);
 }
 
+.nav-inline-actions {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
 .nav-quick-scroll::-webkit-scrollbar {
   display: none;
 }
@@ -313,11 +313,11 @@ a { color: inherit; text-decoration: none; }
 .nav-quick-btn,
 .nav-quick-buy-btn,
 .nav-quick-primary {
-  min-height: 42px;
+  min-height: 38px;
   white-space: nowrap;
   border-radius: 999px;
-  padding: 0 16px;
-  font-size: 13px;
+  padding: 0 13px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.01em;
   flex: 0 0 auto;
@@ -337,7 +337,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-quick-primary {
-  min-width: 162px;
+  min-width: 144px;
   box-shadow: 0 10px 22px rgba(255, 77, 184, 0.28);
 }
 
@@ -902,7 +902,7 @@ a { color: inherit; text-decoration: none; }
 .hero-section {
   position: relative;
   min-height: 27vh;
-  padding: 132px 20px 20px;
+  padding: 108px 20px 20px;
   background-color: var(--hero-bg);
   text-align: center;
   overflow: hidden;
@@ -4438,36 +4438,52 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 768px) {
   .hero-section {
     min-height: 20vh;
-    padding: 118px 14px 12px;
+    padding: 98px 14px 12px;
   }
   .nav-content {
-    min-height: 58px;
+    min-height: 56px;
     padding: 0 12px;
-    gap: 10px;
+    gap: 8px;
   }
-  .nav-quick-strip {
-    padding: 0 12px 8px;
+  .nav-brand {
+    gap: 6px;
+  }
+  .app-version {
+    display: none;
   }
   .nav-quick-scroll {
-    gap: 8px;
-    padding: 8px;
-    border-radius: 18px;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 16px;
   }
   .header-account-trigger,
   .nav-quick-btn,
   .nav-quick-buy-btn,
   .nav-quick-primary {
-    min-height: 38px;
-    padding: 0 12px;
-    font-size: 12px;
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
   }
   .nav-quick-primary {
-    min-width: 138px;
+    min-width: 120px;
   }
   .nav-credit-btn {
-    max-width: 148px;
+    max-width: 118px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .nav-mobile-tools {
+    gap: 6px;
+  }
+  .icon-toggle-btn,
+  .mobile-menu-toggle {
+    width: 38px;
+    height: 38px;
+  }
+  .header-account-trigger {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
   }
   .header-account-dropdown {
     right: 0;
