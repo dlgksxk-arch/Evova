@@ -2204,7 +2204,7 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 
 const GENERATION_COST = 100;
 const RESULT_ROUTE_PREFIX = '/result/';
-const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.png';
+const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.jpg';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -3600,7 +3600,7 @@ const App: React.FC = () => {
         createOrganizationSchema({
           name: 'HAMDEVA',
           url: SITE_URL,
-          logo: `${SITE_URL}/og-image.png`,
+          logo: `${SITE_URL}/og-image.jpg`,
           description: 'HAMDEVA is an AI pet fitting platform for dogs and cats.',
           contactEmail: SUPPORT_EMAIL,
           contactType: 'customer support',
@@ -4385,7 +4385,7 @@ const App: React.FC = () => {
 
     const shareImageSrc = [finalImageSrc, sharedResultRecord?.resultImageUrl]
       .find((value): value is string => typeof value === 'string' && /^https?:\/\//.test(value))
-      ?? 'https://hamdeva.com/og-image.png';
+      ?? 'https://hamdeva.com/og-image.jpg';
 
     try {
       const kakao = await loadKakaoSdk();
