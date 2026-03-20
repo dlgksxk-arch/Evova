@@ -5,6 +5,29 @@ import CreationHistoryPanel from '../mypage/CreationHistoryPanel';
 
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 
+const getSubscriptionProductRank = (productId: CheckoutProductId): number => {
+  if (productId === 'starter') {
+    return 0;
+  }
+  if (productId === 'popular') {
+    return 1;
+  }
+  if (productId === 'pro') {
+    return 2;
+  }
+  return -1;
+};
+
+const getCurrentSubscriptionRank = (plan?: UserProfile['subscriptionPlan']): number => {
+  if (plan === 'basic') {
+    return 1;
+  }
+  if (plan === 'pro') {
+    return 2;
+  }
+  return -1;
+};
+
 interface MyPageSectionProps {
   currentUser: User | null;
   userProfile: UserProfile | null;
@@ -67,6 +90,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDeleteHistoryItem,
 }) => {
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
+  const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
   const formatProductPrice = (product: { salePriceUsd: number; kind: 'subscription' | 'extra_credit' }) =>
     `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
 
@@ -136,7 +160,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                 <p>{copy.pricingUi.firstPurchaseBonus}</p>
               </div>
               <div className="credit-product-grid">
-                {products.filter((product) => product.kind === 'subscription').map((product) => (
+                {products.filter((product) => product.kind === 'subscription').map((product) => {
+                  const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
+                  return (
                   <article key={product.id} className={`credit-product-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                     <div className="credit-plan-copy">
                       {product.badge ? (
@@ -156,14 +182,16 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                     </div>
                     <button
                       className="generate-btn auth-inline-btn"
-                      disabled={isStartingCheckout === product.id}
+                      disabled={isStartingCheckout === product.id || isLowerTierDisabled}
                       onClick={() => onStartCheckout(product.id)}
                       type="button"
+                      title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                     >
                       {isStartingCheckout === product.id ? copy.paymentRedirecting : copy.pricingUi.subscribeCta}
                     </button>
                   </article>
-                ))}
+                );
+                })}
               </div>
             </section>
             <section className="pricing-section-shell">

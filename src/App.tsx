@@ -410,6 +410,29 @@ type AuthMode = 'login' | 'signup';
 type SubscriptionPlan = 'free' | 'basic' | 'pro';
 type UserRole = 'user' | 'admin';
 
+const getSubscriptionProductRank = (productId: CheckoutProductId): number => {
+  if (productId === 'starter') {
+    return 0;
+  }
+  if (productId === 'popular') {
+    return 1;
+  }
+  if (productId === 'pro') {
+    return 2;
+  }
+  return -1;
+};
+
+const getCurrentSubscriptionRank = (plan?: SubscriptionPlan): number => {
+  if (plan === 'basic') {
+    return 1;
+  }
+  if (plan === 'pro') {
+    return 2;
+  }
+  return -1;
+};
+
 interface UserProfile {
   email: string;
   dailyCredit: number;
@@ -3344,6 +3367,7 @@ const App: React.FC = () => {
           ? `订阅 ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
           : `Plan ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
     : '';
+  const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -5725,6 +5749,7 @@ const App: React.FC = () => {
                 </article>
                 <div className="credit-plan-grid">
                   {subscriptionProducts.map((product) => {
+                    const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
                     return (
                       <article key={`pricing-${product.id}`} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                         <div className="credit-plan-copy">
@@ -5746,8 +5771,9 @@ const App: React.FC = () => {
                         <button
                           className="generate-btn auth-inline-btn"
                           onClick={() => { void handleStartCheckout(product.id); }}
-                          disabled={isStartingCheckout === product.id}
+                          disabled={isStartingCheckout === product.id || isLowerTierDisabled}
                           type="button"
+                          title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                         >
                           {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
                         </button>
@@ -6041,7 +6067,9 @@ const App: React.FC = () => {
                 <p>{pricingUiCopy.firstPurchaseBonus}</p>
               </div>
               <div className="credit-plan-grid">
-                {subscriptionProducts.map((product) => (
+                {subscriptionProducts.map((product) => {
+                  const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
+                  return (
                   <article key={product.id} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
                     <div className="credit-plan-copy">
                       {product.badge ? (
@@ -6061,14 +6089,16 @@ const App: React.FC = () => {
                     </div>
                     <button
                       className="generate-btn auth-inline-btn"
-                      disabled={isStartingCheckout === product.id}
+                      disabled={isStartingCheckout === product.id || isLowerTierDisabled}
                       onClick={() => { void handleStartCheckout(product.id); }}
                       type="button"
+                      title={isLowerTierDisabled ? 'Current subscription is higher than this plan.' : undefined}
                     >
                       {isStartingCheckout === product.id ? t.paymentRedirecting : pricingUiCopy.subscribeCta}
                     </button>
                   </article>
-                ))}
+                );
+                })}
               </div>
             </section>
             <section className="pricing-section-shell">
