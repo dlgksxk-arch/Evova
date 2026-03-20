@@ -1732,6 +1732,19 @@ const uploadCreationAsset = async (params) => {
     });
     return storagePath;
 };
+const uploadSharedImageAsset = async (params) => {
+    const { mimeType, data } = parseDataUrl(params.image);
+    const normalizedMimeType = mimeType.startsWith('image/') ? mimeType : 'image/png';
+    const storagePath = buildCreationStoragePath(params.uid, params.requestId?.trim() || `share-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, storageExtensionForMimeType(normalizedMimeType));
+    await bucket.file(storagePath).save(Buffer.from(data, 'base64'), {
+        resumable: false,
+        metadata: {
+            contentType: normalizedMimeType,
+            cacheControl: 'public, max-age=31536000, immutable',
+        },
+    });
+    return storagePath;
+};
 const getSignedCreationUrl = async (storagePath) => {
     const [url] = await bucket.file(storagePath).getSignedUrl({
         action: 'read',
@@ -2144,6 +2157,28 @@ const handleCheckoutSessionStatusRequest = async (req, res) => {
     res.json({
         success: true,
         ...status,
+    });
+};
+const handleShareImageUploadRequest = async (req, res) => {
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const user = await requireAuthenticatedUser(req);
+    const { image, requestId } = req.body;
+    if (typeof image !== 'string' || !image.startsWith('data:image/')) {
+        res.status(400).json({ error: 'INVALID_IMAGE', message: '공유할 이미지가 올바르지 않습니다.' });
+        return;
+    }
+    const storagePath = await uploadSharedImageAsset({
+        uid: user.uid,
+        requestId,
+        image,
+    });
+    const shareImageUrl = await getSignedCreationUrl(storagePath);
+    res.json({
+        success: true,
+        shareImageUrl,
     });
 };
 const getStringValue = (...values) => values.find((value) => typeof value === 'string' && value.trim()) || '';
@@ -3702,6 +3737,15 @@ exports.api = functions
     if (normalizedPath === '/lemon/session') {
         try {
             await handleCheckoutSessionStatusRequest(req, res);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (normalizedPath === '/share-image') {
+        try {
+            await handleShareImageUploadRequest(req, res);
         }
         catch (error) {
             handleApiError(res, error, 500);

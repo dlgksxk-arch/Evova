@@ -39,6 +39,7 @@ import {
   callCreateCheckoutSession,
   callSubjectClassifier,
   callTryOn,
+  callUploadShareImage,
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
 import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
@@ -3375,6 +3376,7 @@ const App: React.FC = () => {
 
   const [finalImageSrc, setFinalImageSrc] = useState<string | null>(null);
   const [finalShareImageUrl, setFinalShareImageUrl] = useState<string | null>(null);
+  const [latestGenerationRequestId, setLatestGenerationRequestId] = useState<string | null>(null);
   const [latestSharedResultId, setLatestSharedResultId] = useState<string | null>(null);
   const [sharedResultRouteId, setSharedResultRouteId] = useState<string | null>(() => getSharedResultIdFromPath(window.location.pathname));
   const [shareStatus, setShareStatus] = useState<string | null>(null);
@@ -4381,6 +4383,7 @@ const App: React.FC = () => {
   const clearGeneratedResult = () => {
     setFinalImageSrc(null);
     setFinalShareImageUrl(null);
+    setLatestGenerationRequestId(null);
     setLatestSharedResultId(null);
     setShareStatus(null);
     setResultPreviewState('idle');
@@ -4456,9 +4459,36 @@ const App: React.FC = () => {
       return null;
     }
   };
-  const resolveShareTargetUrl = async (link: string | null): Promise<string | null> => {
+  const ensurePublicShareImageUrl = async (): Promise<string | null> => {
     if (currentShareImageUrl) {
       return currentShareImageUrl;
+    }
+
+    if (!currentUser || !finalImageSrc) {
+      return null;
+    }
+
+    try {
+      const authToken = await currentUser.getIdToken();
+      const response = await callUploadShareImage({
+        authToken,
+        image: finalImageSrc,
+        requestId: latestGenerationRequestId ?? undefined,
+      });
+      const shareImageUrl = typeof response.shareImageUrl === 'string' ? response.shareImageUrl : null;
+      if (shareImageUrl) {
+        setFinalShareImageUrl(shareImageUrl);
+      }
+      return shareImageUrl;
+    } catch (error) {
+      console.error('Failed to upload public share image:', error);
+      return null;
+    }
+  };
+  const resolveShareTargetUrl = async (link: string | null): Promise<string | null> => {
+    const resolvedShareImageUrl = await ensurePublicShareImageUrl();
+    if (resolvedShareImageUrl) {
+      return resolvedShareImageUrl;
     }
 
     return ensureSharedResultLink(link);
@@ -5105,6 +5135,7 @@ const App: React.FC = () => {
     setCreditNotice(null);
     setLatestSharedResultId(null);
     setFinalShareImageUrl(null);
+    setLatestGenerationRequestId(null);
     console.log('HAMDEVA AI: Starting image analysis and composition...');
     try {
       const [preparedPersonImage, preparedClothImage] = await withTimeout(
@@ -5134,6 +5165,7 @@ const App: React.FC = () => {
       ]);
 
       const requestId = createRequestId();
+      setLatestGenerationRequestId(requestId);
       const authToken = await withTimeout(currentUser.getIdToken(), GENERATION_AUTH_TIMEOUT_MS, 'GENERATION_AUTH_TIMEOUT');
       const outfitPromptHints = getOutfitPromptHints({
         garmentLabel: garmentInputLabel,

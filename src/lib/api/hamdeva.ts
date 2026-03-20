@@ -24,6 +24,7 @@ const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
 const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
 const LEMON_CHECKOUT_ENDPOINT = apiUrl('/api/lemon/checkout');
 const LEMON_SESSION_ENDPOINT = apiUrl('/api/lemon/session');
+const SHARE_IMAGE_ENDPOINT = apiUrl('/api/share-image');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
 const ADMIN_USER_DETAIL_ENDPOINT = apiUrl('/api/admin/users/detail');
@@ -190,6 +191,30 @@ export const callCheckoutSessionStatus = async (payload: {
   }
 
   return await res.json() as CheckoutSessionStatusResponse;
+};
+
+export const callUploadShareImage = async (payload: {
+  authToken: string;
+  image: string;
+  requestId?: string;
+}): Promise<{ success?: boolean; shareImageUrl?: string }> => {
+  const res = await fetch(SHARE_IMAGE_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify({
+      image: payload.image,
+      requestId: payload.requestId,
+    }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as { success?: boolean; shareImageUrl?: string };
 };
 
 export const callSubjectClassifier = async (subjectImage: string): Promise<SubjectType> => {
