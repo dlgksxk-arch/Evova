@@ -3129,6 +3129,7 @@ const App: React.FC = () => {
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerLangMenuOpen, setHeaderLangMenuOpen] = useState(false);
+  const [headerAccountMenuOpen, setHeaderAccountMenuOpen] = useState(false);
   const [showCreditPlanModal, setShowCreditPlanModal] = useState(false);
   const [showMyPageModal, setShowMyPageModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -3139,6 +3140,7 @@ const App: React.FC = () => {
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
+  const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
   const generationLockRef = useRef(false);
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
@@ -3206,6 +3208,14 @@ const App: React.FC = () => {
   }).length;
   const loginComingSoonLabel = `${t.login} (${t.comingSoon})`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (${t.comingSoon})`;
+  const headerAccountLabel = currentUser ? t.myPage : t.login;
+  const headerCreditLabel = lang === 'ko'
+    ? `남은 크레딧 ${currentCredits}`
+    : lang === 'ja'
+      ? `残り ${currentCredits} クレジット`
+      : lang === 'zh'
+        ? `剩余积分 ${currentCredits}`
+        : `${currentCredits} credits left`;
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -3640,6 +3650,9 @@ const App: React.FC = () => {
       if (!headerLangMenuRef.current?.contains(target)) {
         setHeaderLangMenuOpen(false);
       }
+      if (!headerAccountMenuRef.current?.contains(target)) {
+        setHeaderAccountMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleOutside);
@@ -3648,6 +3661,7 @@ const App: React.FC = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setHeaderLangMenuOpen(false);
+    setHeaderAccountMenuOpen(false);
   }, [currentPage, lang]);
   useEffect(() => {
     setShowCreditPlanModal(false);
@@ -3676,6 +3690,8 @@ const App: React.FC = () => {
     if (!mobileMenuOpen) {
       return;
     }
+
+    setHeaderAccountMenuOpen(false);
 
     mobileMenuCloseRef.current?.focus();
   }, [mobileMenuOpen]);
@@ -4302,6 +4318,7 @@ const App: React.FC = () => {
       return;
     }
 
+    setHeaderAccountMenuOpen(false);
     setMobileMenuOpen(false);
     setShowMyPageModal(false);
     setShowAdminModal(false);
@@ -4313,6 +4330,7 @@ const App: React.FC = () => {
       return;
     }
 
+    setHeaderAccountMenuOpen(false);
     setMobileMenuOpen(false);
     setShowCreditPlanModal(false);
     setShowAdminModal(false);
@@ -4412,6 +4430,7 @@ const App: React.FC = () => {
     }
   };
   const openLogoutConfirmModal = () => {
+    setHeaderAccountMenuOpen(false);
     setMobileMenuOpen(false);
     setShowLogoutConfirmModal(true);
   };
@@ -4977,6 +4996,39 @@ const App: React.FC = () => {
             <span className="app-version">{appVersion}</span>
           </div>
           <div className="nav-mobile-tools">
+            <div className="user-menu header-account-menu" ref={headerAccountMenuRef}>
+              <button
+                className={`outline-btn auth-inline-btn header-account-trigger ${currentUser ? 'is-authenticated' : ''}`}
+                onClick={() => {
+                  if (!currentUser) {
+                    openAuthModal('login');
+                    return;
+                  }
+                  setHeaderAccountMenuOpen((prev) => !prev);
+                }}
+                type="button"
+              >
+                {headerAccountLabel}
+              </button>
+              {currentUser && headerAccountMenuOpen && (
+                <div className="user-menu-dropdown header-account-dropdown">
+                  <button
+                    className="header-account-dropdown-link"
+                    onClick={openMyPageModal}
+                    type="button"
+                  >
+                    {t.myPage}
+                  </button>
+                  <button
+                    className="header-account-dropdown-link"
+                    onClick={openLogoutConfirmModal}
+                    type="button"
+                  >
+                    {t.logout}
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="header-icon-menu" ref={headerLangMenuRef}>
               <button
                 className="icon-toggle-btn"
@@ -5015,6 +5067,26 @@ const App: React.FC = () => {
               type="button"
             >
               <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
+            </button>
+          </div>
+        </div>
+        <div className="nav-quick-strip">
+          <div className="nav-quick-scroll">
+            <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
+              {contentLocale.nav['how-it-works']}
+            </button>
+            <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
+              {landingContent.hero.primaryButton}
+            </button>
+            <button
+              className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
+              onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
+              type="button"
+            >
+              {currentUser ? headerCreditLabel : t.creditCheck}
+            </button>
+            <button className="outline-btn nav-quick-buy-btn" onClick={openCreditPlanModal} type="button">
+              {t.chargeCredits}
             </button>
           </div>
         </div>
