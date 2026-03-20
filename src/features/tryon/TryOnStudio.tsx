@@ -8,7 +8,7 @@ const EmptyPreviewState: React.FC<{
   tips: string[];
   type: 'face' | 'cloth';
   badgeLabel: string;
-  hint: string;
+  hint?: string;
 }> = ({ title, tips, type, badgeLabel, hint }) => (
   <div className={`empty-preview empty-preview-${type}`}>
     <div className="empty-preview-badge">{badgeLabel}</div>
@@ -20,7 +20,7 @@ const EmptyPreviewState: React.FC<{
         </p>
       ))}
     </div>
-    <div className="empty-preview-hint">{hint}</div>
+    {hint ? <div className="empty-preview-hint">{hint}</div> : null}
   </div>
 );
 
@@ -417,10 +417,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             ) : (
               <EmptyPreviewState
                 title={copy.facePlaceholderTitle}
-                tips={emptyFaceTips}
+                tips={isModalLayout ? emptyFaceTips : emptyFaceTips.slice(0, 2)}
                 type="face"
                 badgeLabel={emptyPreviewCopy.faceBadge}
-                hint={copy.uploadMyPhoto}
+                hint={isModalLayout ? copy.uploadMyPhoto : undefined}
               />
             )}
             {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
@@ -516,10 +516,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             ) : (
               <EmptyPreviewState
                 title={copy.clothingPlaceholderTitle}
-                tips={emptyClothTips}
+                tips={isModalLayout ? emptyClothTips : emptyClothTips.slice(0, 2)}
                 type="cloth"
                 badgeLabel={emptyPreviewCopy.styleBadge}
-                hint={copy.uploadClothing}
+                hint={isModalLayout ? copy.uploadClothing : undefined}
               />
             )}
           </div>

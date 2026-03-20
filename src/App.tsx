@@ -113,8 +113,8 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'mypage'];
-const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing'];
+const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
+const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'about',
   'how-it-works',
@@ -126,7 +126,7 @@ const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'outfit-photo-tips',
   'ai-fitting-faq',
 ];
-const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'refund-policy', 'terms', 'contact'];
+const FOOTER_UTILITY_PAGES: SitePage[] = ['board', 'privacy', 'refund-policy', 'terms', 'contact'];
 const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'about',
   'how-it-works',
@@ -527,21 +527,21 @@ const translations = {
     h2Step: 'Step 02', h2Title: '옷 사진 업로드', h2Desc: '입어보고 싶은 의상 사진을 업로드하세요. 단독 제품 컷 또는 모델 착용 사진 모두 가능합니다.',
     h3Step: 'Step 03', h3Title: 'AI 합성 & 저장', h3Desc: 'AI 생성 버튼을 누르면 자동으로 분석 및 합성이 이루어집니다. 결과 이미지는 바로 저장할 수 있습니다.',
     tryTitle: '지금 바로 시작해보세요', trySub: '회원가입 시 300 크레딧이 한 번 지급됩니다.',
-    step1Label: 'Step 1', step1Title: '반려동물 사진 등록', step1Desc: '반려동물이 잘 보이는 사진을 선택하거나 샘플을 불러오세요',
-    step2Label: 'Step 2', step2Title: '의상 사진 등록', step2Desc: '입혀보고 싶은 의상 사진을 선택하거나 샘플 의상을 골라보세요',
+    step1Label: 'Step 1', step1Title: '반려동물 사진', step1Desc: '얼굴이 잘 보이는 사진이나 샘플을 선택하세요',
+    step2Label: 'Step 2', step2Title: '의상 사진', step2Desc: '입혀보고 싶은 의상 사진이나 샘플을 선택하세요',
     faceCopyrightNotice: '',
     clothingSafetyNotice: '',
     resultPrivacyNotice: '본 이미지는 저장되지 않으며, 결과 확인과 다운로드 용도로만 일시적으로 처리됩니다.',
     chooseSample: '샘플 펫 선택',
-    uploadMyPhoto: '내 반려동물 사진 업로드',
+    uploadMyPhoto: '사진 업로드',
     chooseClothingSample: '샘플 의상 선택',
-    uploadClothing: '의상 사진 업로드',
+    uploadClothing: '의상 업로드',
     preparingPersonUpload: '이미지를 업로드하기 좋게 정리하고 있습니다...',
     preparingClothingUpload: '큰 의상 이미지를 자동으로 최적화하고 있습니다...',
     loadingImage: '이미지 불러오는 중...',
     imageLoadError: '이미지를 불러올 수 없습니다.',
-    facePlaceholderTitle: '반려동물 사진을 넣어주세요',
-    clothingPlaceholderTitle: '의상 사진을 넣어주세요',
+    facePlaceholderTitle: '얼굴이 잘 보이는 사진',
+    clothingPlaceholderTitle: '의상이 잘 보이는 사진',
     renderingResult: '결과 이미지 렌더링 중...',
     resultDisplayError: '결과 이미지를 표시할 수 없습니다.',
     clothingSamplesPending: '샘플 의상 데이터 준비 중입니다.',
@@ -4037,7 +4037,7 @@ const App: React.FC = () => {
       ? buildSharedResultUrl(sharedResultRouteId)
       : `${SITE_URL}${PAGE_PATHS[currentPage]}`;
     const pageKeywords = PAGE_KEYWORDS[currentPage] ?? SITE_KEYWORDS;
-    const ogImage = sharedResultRecord?.resultImageUrl || `${SITE_URL}/og-image.png`;
+    const ogImage = sharedResultRecord?.resultImageUrl || `${SITE_URL}/og-image.jpg`;
     const robotsContent = isPreviewHost || !isIndexablePage
       ? 'noindex, nofollow, noarchive, nosnippet'
       : 'index, follow';
