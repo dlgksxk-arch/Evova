@@ -3,7 +3,6 @@ import React from 'react';
 interface PaymentStatusPageProps {
   title: string;
   description: string;
-  sessionId: string | null;
   dailyCredit: number;
   paidCredit: number;
   copy: Record<string, any>;
@@ -17,7 +16,6 @@ interface PaymentStatusPageProps {
 const PaymentStatusPage: React.FC<PaymentStatusPageProps> = ({
   title,
   description,
-  sessionId,
   dailyCredit,
   paidCredit,
   copy,
@@ -33,8 +31,7 @@ const PaymentStatusPage: React.FC<PaymentStatusPageProps> = ({
     <div className="payment-page-shell">
       <article className="page-article">
         <h2>{title}</h2>
-        <p>{description}</p>
-        {sessionId && <p>{copy.paymentSessionLabel}: {sessionId}</p>}
+        {description ? <p>{description}</p> : null}
         {isSuccess && (
           <div className="credit-balance-grid">
             <div className="credit-balance-card">

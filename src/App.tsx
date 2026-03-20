@@ -5941,8 +5941,7 @@ const App: React.FC = () => {
             {currentPage === 'payment-success' && (
               <PaymentStatusPage
                 title={t.paymentSuccessTitle}
-                description={paymentStatusMessage || t.paymentVerifying}
-                sessionId={paymentSessionId}
+                description={paymentStatusMessage === t.paymentSuccessReady ? t.paymentSuccessReady : ''}
                 dailyCredit={currentDailyCredit}
                 paidCredit={currentPaidCredit}
                 copy={t}
@@ -5964,7 +5963,6 @@ const App: React.FC = () => {
               <PaymentStatusPage
                 title={t.paymentFailedTitle}
                 description={t.paymentFailedDescription}
-                sessionId={null}
                 dailyCredit={currentDailyCredit}
                 paidCredit={currentPaidCredit}
                 copy={t}
