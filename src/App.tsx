@@ -110,6 +110,7 @@ const LEMON_VARIANT_IDS = {
 } as const;
 
 type LemonCheckoutProductId = keyof typeof LEMON_VARIANT_IDS;
+const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 
 function redirectToCheckout(variantId: string): void {
   const url = `https://hamdeva.lemonsqueezy.com/checkout/buy/${variantId}`;
@@ -3314,7 +3315,7 @@ const App: React.FC = () => {
   const currentCredits = userProfile?.credits ?? 0;
   const currentDailyCredit = userProfile?.dailyCredit ?? 0;
   const currentPaidCredit = userProfile?.paidCredit ?? 0;
-  const isAdminUser = userProfile?.role === 'admin';
+  const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
   const guideSampleCat = FACE_SAMPLES.cat[0];
   const guideFixedPet = '/howto-fixed/step-1-pet.jpg';
   const guideFixedCloth = '/howto-fixed/step-2-outfit.jpg';

@@ -3,6 +3,8 @@ import type { User } from 'firebase/auth';
 import type { CheckoutProductId, GenerationRecord, UserProfile } from '../../types/hamdeva';
 import CreationHistoryPanel from '../mypage/CreationHistoryPanel';
 
+const ADMIN_EMAIL = 'dlgksxk@gmail.com';
+
 interface MyPageSectionProps {
   currentUser: User | null;
   userProfile: UserProfile | null;
@@ -63,7 +65,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDownloadHistoryItem: _onDownloadHistoryItem,
   onDeleteHistoryItem,
 }) => {
-  const isAdminUser = userProfile?.role === 'admin';
+  const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
 
   return (
     <div className="mypage-layout">

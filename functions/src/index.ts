@@ -542,10 +542,6 @@ const normalizeSubscriptionPlan = (value: unknown): SubscriptionPlan => {
 };
 
 const normalizeAccountRole = (value: unknown, email: string): AccountRole => {
-  if (value === 'admin') {
-    return 'admin';
-  }
-
   return ADMIN_EMAILS.has(email.toLowerCase()) ? 'admin' : 'user';
 };
 

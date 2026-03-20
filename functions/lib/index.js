@@ -328,9 +328,6 @@ const normalizeSubscriptionPlan = (value) => {
     return 'free';
 };
 const normalizeAccountRole = (value, email) => {
-    if (value === 'admin') {
-        return 'admin';
-    }
     return ADMIN_EMAILS.has(email.toLowerCase()) ? 'admin' : 'user';
 };
 const normalizeSubjectType = (value) => {
