@@ -1,21 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { GenerationRecord } from '../../types/hamdeva';
-import { db } from '../../firebase';
-
-type KakaoSdk = {
-  isInitialized?: () => boolean;
-  init?: (key: string) => void;
-  Share?: {
-    sendDefault: (payload: Record<string, unknown>) => void;
-  };
-};
-
-declare global {
-  interface Window {
-    Kakao?: KakaoSdk;
-  }
-}
 
 interface CreationHistoryPanelProps {
   items: GenerationRecord[];
@@ -29,9 +13,6 @@ interface CreationHistoryPanelProps {
 
 const IMAGE_LOAD_MIN_MS = 400;
 const HISTORY_VISIBLE_ROWS = 7;
-const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
-const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
-const HISTORY_SHARE_PREVIEW_BASE_URL = 'https://hamdeva.com/api/share-preview';
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -83,8 +64,20 @@ const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-const buildHistorySharePreviewUrl = (resultId: string): string =>
-  `${HISTORY_SHARE_PREVIEW_BASE_URL}?id=${encodeURIComponent(resultId)}`;
+const createShareImageFile = async (url: string, item: GenerationRecord): Promise<File> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('SHARE_IMAGE_FETCH_FAILED');
+  }
+
+  const blob = await response.blob();
+  if (!blob.type.startsWith('image/')) {
+    throw new Error('SHARE_IMAGE_INVALID');
+  }
+
+  const extension = inferFileExtension(item);
+  return new File([blob], `hamdeva-history-${item.id}.${extension}`, { type: blob.type });
+};
 
 const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' | 'instagram' | 'link' | 'download') => {
   const commonProps = {
@@ -151,40 +144,6 @@ const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' |
         </svg>
       );
   }
-};
-
-const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
-  if (!KAKAO_JS_KEY) {
-    return null;
-  }
-
-  if (!window.Kakao) {
-    await new Promise<void>((resolve, reject) => {
-      const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${KAKAO_SDK_URL}"]`);
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(), { once: true });
-        existingScript.addEventListener('error', () => reject(new Error('KAKAO_SDK_LOAD_FAILED')), { once: true });
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = KAKAO_SDK_URL;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('KAKAO_SDK_LOAD_FAILED'));
-      document.head.appendChild(script);
-    });
-  }
-
-  if (!window.Kakao) {
-    return null;
-  }
-
-  if (typeof window.Kakao.isInitialized === 'function' && !window.Kakao.isInitialized() && typeof window.Kakao.init === 'function') {
-    window.Kakao.init(KAKAO_JS_KEY);
-  }
-
-  return window.Kakao;
 };
 
 const getHistoryCopy = (locale: string) => {
@@ -264,6 +223,19 @@ const getResolvedGarmentLabel = (item: GenerationRecord, historyCopy: ReturnType
     || (item.garmentPreviewUrl ? historyCopy.savedGarment : '')
     || historyCopy.savedGarment;
 
+const shareImageFile = async (file: File): Promise<boolean> => {
+  if (!navigator.share) {
+    return false;
+  }
+
+  if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
+    return false;
+  }
+
+  await navigator.share({ files: [file] });
+  return true;
+};
+
 const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   items,
   preservedCount,
@@ -282,7 +254,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const [sharePreviewUrl, setSharePreviewUrl] = useState<string | null>(null);
+  const [preparedShareFile, setPreparedShareFile] = useState<File | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -404,7 +376,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(1);
     setShareStatus(null);
-    setSharePreviewUrl(null);
+    setPreparedShareFile(null);
   };
 
   const startImageLoading = () => {
@@ -477,35 +449,31 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSelectedItem(item);
     setZoom(1);
     setShareStatus(null);
-    setSharePreviewUrl(null);
+    setPreparedShareFile(null);
     startImageLoading();
   };
 
-  const ensureSharePreviewUrl = async (): Promise<string | null> => {
-    if (sharePreviewUrl) {
-      return sharePreviewUrl;
-    }
-
-    if (!selectedItem?.imageUrl || !db) {
-      setShareStatus(copy.imageNotReady);
-      return null;
+  const sharePreparedImageFile = async (targetLabel: string): Promise<boolean> => {
+    if (!preparedShareFile) {
+      setShareStatus(`${targetLabel} ${copy.historyLoading}`.trim());
+      return false;
     }
 
     try {
-      const publicResultRef = doc(collection(db, 'publicResults'));
-      await setDoc(publicResultRef, {
-        resultImageUrl: selectedItem.imageUrl,
-        language: locale,
-        createdAt: serverTimestamp(),
-        sharedAt: serverTimestamp(),
-      });
-      const nextUrl = buildHistorySharePreviewUrl(publicResultRef.id);
-      setSharePreviewUrl(nextUrl);
-      return nextUrl;
+      const didShare = await shareImageFile(preparedShareFile);
+      if (!didShare) {
+        return false;
+      }
+      setShareStatus(null);
+      return true;
     } catch (error) {
-      console.error('Failed to create history share preview:', error);
-      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
-      return null;
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return true;
+      }
+
+      console.error(`Failed to share history image to ${targetLabel}:`, error);
+      setShareStatus(copy.imageNotReady);
+      return false;
     }
   };
 
@@ -515,33 +483,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       return;
     }
 
-    try {
-      const previewUrl = await ensureSharePreviewUrl();
-      if (!previewUrl) {
-        return;
-      }
-      const kakao = await loadKakaoSdk();
-      if (!kakao?.Share?.sendDefault) {
-        openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(previewUrl)}`);
-        return;
-      }
-
-      kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: 'HAMDEVA result',
-          imageUrl: selectedItem.imageUrl,
-          link: {
-            mobileWebUrl: previewUrl,
-            webUrl: previewUrl,
-          },
-        },
-      });
-      setShareStatus(null);
-    } catch (error) {
-      console.error('Failed to share history image on Kakao:', error);
-      setShareStatus(copy.imageNotReady);
+    if (await sharePreparedImageFile('KakaoTalk')) {
+      return;
     }
+
+    downloadFile(selectedItem.imageUrl, `hamdeva-kakao-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+    setShareStatus(copy.shareImageSaved);
   };
 
   const handleShareOnX = async () => {
@@ -550,12 +497,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       return;
     }
 
-    const previewUrl = await ensureSharePreviewUrl();
-    if (!previewUrl) {
+    if (await sharePreparedImageFile('X')) {
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?url=${encodeURIComponent(previewUrl)}`);
+    downloadFile(selectedItem.imageUrl, `hamdeva-x-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+    openShareWindow('https://x.com/compose/post');
+    setShareStatus(copy.shareUploadOpened);
   };
 
   const handleShareOnFacebook = async () => {
@@ -564,12 +512,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       return;
     }
 
-    const previewUrl = await ensureSharePreviewUrl();
-    if (!previewUrl) {
+    if (await sharePreparedImageFile('Facebook')) {
       return;
     }
 
-    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(previewUrl)}`);
+    downloadFile(selectedItem.imageUrl, `hamdeva-facebook-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+    openShareWindow('https://www.facebook.com/');
+    setShareStatus(copy.shareImageSaved);
   };
 
   const handleShareOnLine = async () => {
@@ -578,12 +527,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       return;
     }
 
-    const previewUrl = await ensureSharePreviewUrl();
-    if (!previewUrl) {
+    if (await sharePreparedImageFile('LINE')) {
       return;
     }
 
-    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(previewUrl)}`);
+    downloadFile(selectedItem.imageUrl, `hamdeva-line-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+    setShareStatus(copy.shareImageSaved);
   };
 
   const handleInstagramSave = () => {
@@ -594,7 +543,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
     try {
       downloadFile(selectedItem.imageUrl, `hamdeva-instagram-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-      setShareStatus(copy.instagramHelperText || null);
+      openShareWindow('https://www.instagram.com/');
+      setShareStatus(copy.shareUploadOpened);
     } catch (error) {
       console.error('Failed to save history image for Instagram:', error);
       setShareStatus(copy.imageNotReady);
@@ -610,7 +560,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     try {
       downloadFile(selectedItem.imageUrl, `hamdeva-tiktok-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
       openShareWindow('https://www.tiktok.com/upload');
-      setShareStatus(copy.instagramHelperText || null);
+      setShareStatus(copy.shareUploadOpened);
     } catch (error) {
       console.error('Failed to prepare history image for TikTok:', error);
       setShareStatus(copy.imageNotReady);
@@ -624,18 +574,39 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
 
     try {
-      const previewUrl = await ensureSharePreviewUrl();
-      if (!previewUrl) {
-        return;
-      }
-
-      await navigator.clipboard.writeText(previewUrl);
+      await navigator.clipboard.writeText(selectedItem.imageUrl);
       setShareStatus(copy.linkCopied);
     } catch (error) {
       console.error('Failed to copy history image link:', error);
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedItem?.imageUrl) {
+      setPreparedShareFile(null);
+      return;
+    }
+
+    createShareImageFile(selectedItem.imageUrl, selectedItem)
+      .then((file) => {
+        if (!cancelled) {
+          setPreparedShareFile(file);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Failed to prepare history share file:', error);
+          setPreparedShareFile(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItem]);
 
   useEffect(() => {
     if (!pendingArchiveSelectionId || !scrollContainerRef.current) {

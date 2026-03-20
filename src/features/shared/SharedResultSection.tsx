@@ -18,6 +18,7 @@ interface SharedResultSectionProps {
   onShareOnX: (link: string | null) => void;
   onShareOnFacebook: (link: string | null) => void;
   onInstagramSave: (src: string | null) => void;
+  onShareOnTikTok: (src: string | null) => void;
   onRandomOutfit: () => void;
 }
 
@@ -37,6 +38,7 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
   onShareOnX,
   onShareOnFacebook,
   onInstagramSave,
+  onShareOnTikTok,
   onRandomOutfit,
 }) => (
   <main className="section page-shell">
@@ -78,6 +80,7 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
               onShareOnX={onShareOnX}
               onShareOnFacebook={onShareOnFacebook}
               onInstagramSave={onInstagramSave}
+              onShareOnTikTok={onShareOnTikTok}
               onTryAnotherOutfit={onTryAnotherOutfit}
               onRandomOutfit={onRandomOutfit}
             />

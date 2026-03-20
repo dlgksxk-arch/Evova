@@ -138,6 +138,7 @@ interface TryOnStudioProps {
   onShareOnX: (link: string | null) => void;
   onShareOnFacebook: (link: string | null) => void;
   onInstagramSave: (src: string | null) => void;
+  onShareOnTikTok: (src: string | null) => void;
   onTryAnotherOutfit: () => void;
   onRandomOutfit: () => void;
   onOpenResultPreview: (src: string) => void;
@@ -196,6 +197,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onShareOnX,
   onShareOnFacebook,
   onInstagramSave,
+  onShareOnTikTok,
   onTryAnotherOutfit,
   onRandomOutfit,
   onOpenResultPreview,
@@ -300,6 +302,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         onShareOnX={onShareOnX}
         onShareOnFacebook={onShareOnFacebook}
         onInstagramSave={onInstagramSave}
+        onShareOnTikTok={onShareOnTikTok}
         onTryAnotherOutfit={onTryAnotherOutfit}
         onRandomOutfit={onRandomOutfit}
       />

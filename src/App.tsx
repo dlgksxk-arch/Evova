@@ -51,17 +51,9 @@ import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { Timestamp, addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
-type KakaoSdk = {
-  isInitialized?: () => boolean;
-  init?: (key: string) => void;
-  Share?: {
-    sendDefault: (payload: Record<string, unknown>) => void;
-  };
-};
 
 declare global {
   interface Window {
-    Kakao?: KakaoSdk;
     adsbygoogle?: Array<Record<string, unknown>> & {
       pauseAdRequests?: number;
     };
@@ -102,8 +94,6 @@ const CREDIT_PRODUCTS = [
   { id: 'large_pack', kind: 'extra_credit', label: 'SP Large Pack', paidCredit: 6000, salePriceUsd: 35.9, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
-const KAKAO_SDK_URL = 'https://developers.kakao.com/sdk/js/kakao.min.js';
-const KAKAO_JS_KEY = (import.meta.env.VITE_KAKAO_JS_KEY as string | undefined)?.trim();
 const SITE_URL = 'https://hamdeva.com';
 const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
 const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
@@ -562,6 +552,8 @@ const translations = {
     downloadImage: '이미지 다운로드',
     saveForInstagram: '인스타용 저장',
     instagramHelperText: '인스타 피드용 이미지가 저장되었습니다.',
+    shareImageSaved: '이미지를 저장했습니다. 원하는 앱에서 바로 첨부해 주세요.',
+    shareUploadOpened: '이미지를 저장했고 업로드 화면을 열었습니다.',
     linkCopied: '링크가 복사되었습니다',
     linkCopyFailed: '링크 복사에 실패했습니다',
     imageNotReady: '이미지가 준비되지 않았습니다',
@@ -805,7 +797,7 @@ const translations = {
     historyZoomReset: '기본 크기',
     historyZoomIn: '+',
     historyLoading: '불러오는 중...',
-    historyZoomHint: '이미지 전체가 보이도록 기본 크기를 절반으로 줄였습니다. 필요하면 + / - 버튼으로만 조절할 수 있습니다.',
+    historyZoomHint: '화면에 맞게 기본 크기를 잡았습니다. 필요하면 + / - 버튼으로 조절하세요.',
     historyDownload: '다운로드',
     historyArchived: '보관됨',
     historyArchive: '보관',
@@ -878,6 +870,8 @@ const translations = {
     downloadImage: 'Download Image',
     saveForInstagram: 'Save for Instagram',
     instagramHelperText: 'Instagram feed image saved.',
+    shareImageSaved: 'Image saved. Attach it in your app.',
+    shareUploadOpened: 'Image saved and the upload page was opened.',
     linkCopied: 'Link copied',
     linkCopyFailed: 'Failed to copy link',
     imageNotReady: 'Image is not ready',
@@ -1121,7 +1115,7 @@ const translations = {
     historyZoomReset: 'Reset zoom',
     historyZoomIn: '+',
     historyLoading: 'Loading...',
-    historyZoomHint: 'The default zoom is reduced so the full image stays visible. Use only the + / - buttons if you need to adjust it.',
+    historyZoomHint: 'The image starts sized to fit the panel. Use + / - if you need to adjust it.',
     historyDownload: 'Download',
     historyArchived: 'Archived',
     historyArchive: 'Archive',
@@ -1219,6 +1213,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     downloadImage: '下载图片',
     saveForInstagram: '保存到 Instagram',
     instagramHelperText: '已保存适合 Instagram 动态的图片。',
+    shareImageSaved: '图片已保存，请在目标应用中直接附加。',
+    shareUploadOpened: '图片已保存，并已打开上传页面。',
     linkCopied: '链接已复制',
     linkCopyFailed: '链接复制失败',
     imageNotReady: '图片尚未准备好',
@@ -1322,7 +1318,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyZoomReset: '恢复默认大小',
     historyZoomIn: '+',
     historyLoading: '加载中...',
-    historyZoomHint: '默认缩放已调低，方便完整查看图片。如需调整，请使用 + / - 按钮。',
+    historyZoomHint: '已按窗口大小设置默认尺寸。如需调整，请使用 + / - 按钮。',
     historyDownload: '下载',
     historyArchived: '已保留',
     historyArchive: '保留',
@@ -1384,6 +1380,8 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     downloadImage: '画像をダウンロード',
     saveForInstagram: 'Instagram用に保存',
     instagramHelperText: 'Instagram フィード向け画像を保存しました。',
+    shareImageSaved: '画像を保存しました。利用したいアプリで添付してください。',
+    shareUploadOpened: '画像を保存し、投稿ページを開きました。',
     linkCopied: 'リンクをコピーしました',
     linkCopyFailed: 'リンクのコピーに失敗しました',
     imageNotReady: '画像の準備ができていません',
@@ -1487,7 +1485,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyZoomReset: '標準サイズ',
     historyZoomIn: '+',
     historyLoading: '読み込み中...',
-    historyZoomHint: '画像全体が見えるように初期倍率を下げています。必要に応じて + / - ボタンで調整してください。',
+    historyZoomHint: '画面に収まる初期サイズにしています。必要に応じて + / - ボタンで調整してください。',
     historyDownload: 'ダウンロード',
     historyArchived: '保管済み',
     historyArchive: '保管',
@@ -2205,7 +2203,6 @@ const CLOTH_TIPS: Record<LanguageCode, string[]> = {
 
 const GENERATION_COST = 100;
 const RESULT_ROUTE_PREFIX = '/result/';
-const DEFAULT_OG_IMAGE = 'https://hamdeva.com/og-image.jpg';
 const LANGUAGE_FONT_THEMES: Record<LanguageCode, FontTheme> = {
   en: 'latin',
   es: 'latin',
@@ -2345,40 +2342,6 @@ const getSubjectUiText = (lang: LanguageCode) => {
     videoFailed: 'Video generation failed.',
     videoSection: 'Generated video',
   };
-};
-
-const loadKakaoSdk = async (): Promise<KakaoSdk | null> => {
-  if (!KAKAO_JS_KEY) {
-    return null;
-  }
-
-  if (!window.Kakao) {
-    await new Promise<void>((resolve, reject) => {
-      const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${KAKAO_SDK_URL}"]`);
-      if (existingScript) {
-        existingScript.addEventListener('load', () => resolve(), { once: true });
-        existingScript.addEventListener('error', () => reject(new Error('KAKAO_SDK_LOAD_FAILED')), { once: true });
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = KAKAO_SDK_URL;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('KAKAO_SDK_LOAD_FAILED'));
-      document.head.appendChild(script);
-    });
-  }
-
-  if (!window.Kakao) {
-    return null;
-  }
-
-  if (typeof window.Kakao.isInitialized === 'function' && !window.Kakao.isInitialized() && typeof window.Kakao.init === 'function') {
-    window.Kakao.init(KAKAO_JS_KEY);
-  }
-
-  return window.Kakao;
 };
 
 const getAdminVideoLabels = (lang: LanguageCode) => {
@@ -4494,7 +4457,8 @@ const App: React.FC = () => {
     return ensureSharedResultLink(link);
   };
   const handleCopyLink = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    const resolvedTargetUrl = shareImageSrc ?? await resolveShareTargetUrl(link);
     if (!resolvedTargetUrl) {
       return;
     }
@@ -4508,91 +4472,178 @@ const App: React.FC = () => {
     }
   };
   const handleShareLink = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
-    if (!resolvedTargetUrl) {
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    if (!shareImageSrc) {
+      setShareStatus(t.imageNotReady);
       return;
     }
 
-    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
-
     if (navigator.share) {
       try {
-        if (shareImageSrc) {
-          try {
-            const shareFile = await createShareImageFile(shareImageSrc);
-            if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [shareFile] })) {
-              await navigator.share({ files: [shareFile] });
-              return;
-            }
-          } catch (error) {
-            console.error('Failed to attach image to share payload:', error);
-          }
+        const shareFile = await createShareImageFile(shareImageSrc);
+        if (typeof navigator.canShare !== 'function' || navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({ files: [shareFile] });
+          return;
         }
-
-        await navigator.share({ url: resolvedTargetUrl });
-        return;
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
+        if (!(error instanceof DOMException)) {
+          console.error('Failed to attach image to share payload:', error);
+        }
+      }
+
+      const fallbackTargetUrl = await resolveShareTargetUrl(link);
+      if (fallbackTargetUrl) {
+        try {
+          await navigator.share({ url: fallbackTargetUrl });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+          }
+        }
       }
     }
-
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedTargetUrl)}`);
-  };
-  const handleShareOnKakao = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
-    if (!resolvedTargetUrl) {
-      return;
-    }
-
-    const shareImageSrc = currentShareImageUrl ?? DEFAULT_OG_IMAGE;
 
     try {
-      const kakao = await loadKakaoSdk();
-      if (!kakao?.Share?.sendDefault) {
-        await handleShareLink(link);
-        return;
-      }
-
-      kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          imageUrl: shareImageSrc,
-          link: {
-            mobileWebUrl: resolvedTargetUrl,
-            webUrl: resolvedTargetUrl,
-          },
-        },
-      });
+      await downloadImageFile(shareImageSrc, buildTimestampedImageFilename('hamdeva-share'));
+      setShareStatus(t.shareImageSaved);
     } catch (error) {
-      console.error('Failed to share on Kakao:', error);
-      await handleShareLink(link);
+      console.error('Failed to download image for sharing:', error);
+      setShareStatus(t.imageNotReady);
     }
   };
-  const handleShareOnLine = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
-    if (!resolvedTargetUrl) {
+  const handleShareOnKakao = async (_link: string | null) => {
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    if (!shareImageSrc) {
+      setShareStatus(t.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(resolvedTargetUrl)}`);
+    if (navigator.share) {
+      try {
+        const shareFile = await createShareImageFile(shareImageSrc);
+        if (typeof navigator.canShare !== 'function' || navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({ files: [shareFile] });
+          return;
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (!(error instanceof DOMException)) {
+          console.error('Failed to share on Kakao:', error);
+        }
+      }
+    }
+
+    try {
+      await downloadImageFile(shareImageSrc, buildTimestampedImageFilename('hamdeva-kakao'));
+      setShareStatus(t.shareImageSaved);
+    } catch (error) {
+      console.error('Failed to prepare Kakao share image:', error);
+      setShareStatus(t.imageNotReady);
+    }
   };
-  const handleShareOnX = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
-    if (!resolvedTargetUrl) {
+  const handleShareOnLine = async (_link: string | null) => {
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    if (!shareImageSrc) {
+      setShareStatus(t.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(t.shareDefaultText)}&url=${encodeURIComponent(resolvedTargetUrl)}`);
+    if (navigator.share) {
+      try {
+        const shareFile = await createShareImageFile(shareImageSrc);
+        if (typeof navigator.canShare !== 'function' || navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({ files: [shareFile] });
+          return;
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (!(error instanceof DOMException)) {
+          console.error('Failed to share on LINE:', error);
+        }
+      }
+    }
+
+    try {
+      await downloadImageFile(shareImageSrc, buildTimestampedImageFilename('hamdeva-line'));
+      setShareStatus(t.shareImageSaved);
+    } catch (error) {
+      console.error('Failed to prepare LINE share image:', error);
+      setShareStatus(t.imageNotReady);
+    }
   };
-  const handleShareOnFacebook = async (link: string | null) => {
-    const resolvedTargetUrl = await resolveShareTargetUrl(link);
-    if (!resolvedTargetUrl) {
+  const handleShareOnX = async (_link: string | null) => {
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    if (!shareImageSrc) {
+      setShareStatus(t.imageNotReady);
       return;
     }
 
-    openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(resolvedTargetUrl)}`);
+    if (navigator.share) {
+      try {
+        const shareFile = await createShareImageFile(shareImageSrc);
+        if (typeof navigator.canShare !== 'function' || navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({ files: [shareFile] });
+          return;
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (!(error instanceof DOMException)) {
+          console.error('Failed to share on X:', error);
+        }
+      }
+    }
+
+    try {
+      await downloadImageFile(shareImageSrc, buildTimestampedImageFilename('hamdeva-x'));
+      openShareWindow('https://x.com/compose/post');
+      setShareStatus(t.shareUploadOpened);
+    } catch (error) {
+      console.error('Failed to prepare X post image:', error);
+      setShareStatus(t.imageNotReady);
+    }
+  };
+  const handleShareOnFacebook = async (_link: string | null) => {
+    const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
+    if (!shareImageSrc) {
+      setShareStatus(t.imageNotReady);
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        const shareFile = await createShareImageFile(shareImageSrc);
+        if (typeof navigator.canShare !== 'function' || navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({ files: [shareFile] });
+          return;
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        if (!(error instanceof DOMException)) {
+          console.error('Failed to share on Facebook:', error);
+        }
+      }
+    }
+
+    try {
+      await downloadImageFile(shareImageSrc, buildTimestampedImageFilename('hamdeva-facebook'));
+      openShareWindow('https://www.facebook.com/');
+      setShareStatus(t.shareImageSaved);
+    } catch (error) {
+      console.error('Failed to prepare Facebook post image:', error);
+      setShareStatus(t.imageNotReady);
+    }
   };
   const handleInstagramSave = async (src: string | null) => {
     if (!src) {
@@ -4603,9 +4654,25 @@ const App: React.FC = () => {
     try {
       const instagramFeedBlob = await createInstagramFeedBlob(src);
       downloadBlob(instagramFeedBlob, buildTimestampedImageFilename('hamdeva-instagram-feed'));
-      setShareStatus(t.instagramHelperText);
+      openShareWindow('https://www.instagram.com/');
+      setShareStatus(t.shareUploadOpened);
     } catch (error) {
       console.error('Failed to prepare Instagram save:', error);
+      setShareStatus(t.imageNotReady);
+    }
+  };
+  const handleShareOnTikTok = async (src: string | null) => {
+    if (!src) {
+      setShareStatus(t.imageNotReady);
+      return;
+    }
+
+    try {
+      await downloadImageFile(src, buildTimestampedImageFilename('hamdeva-tiktok'));
+      openShareWindow('https://www.tiktok.com/upload');
+      setShareStatus(t.shareUploadOpened);
+    } catch (error) {
+      console.error('Failed to prepare TikTok upload:', error);
       setShareStatus(t.imageNotReady);
     }
   };
@@ -5322,6 +5389,7 @@ const App: React.FC = () => {
     onShareOnX: handleShareOnX,
     onShareOnFacebook: handleShareOnFacebook,
     onInstagramSave: (src: string | null) => { void handleInstagramSave(src); },
+    onShareOnTikTok: (src: string | null) => { void handleShareOnTikTok(src); },
     onTryAnotherOutfit: handleTryAnotherOutfit,
     onRandomOutfit: handleRandomOutfit,
     onOpenResultPreview: openResultPreviewModal,
@@ -5611,6 +5679,7 @@ const App: React.FC = () => {
           onShareOnX={handleShareOnX}
           onShareOnFacebook={handleShareOnFacebook}
           onInstagramSave={(src) => { void handleInstagramSave(src); }}
+          onShareOnTikTok={(src) => { void handleShareOnTikTok(src); }}
           onRandomOutfit={handleRandomOutfit}
         />
       ) : currentPage === 'home' ? (
