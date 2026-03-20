@@ -6,6 +6,7 @@
     "countries": "Country Clothing",
     "how-it-works": "How It Works",
     "fashion-technology": "Pet Style Guide",
+    "pricing": "Pricing",
     "virtual-try-on-guide": "Try-On Guide",
     "outfit-photo-tips": "Photo Tips",
     "ai-fitting-faq": "AI Fitting FAQ",
@@ -325,6 +326,34 @@
         }
       ]
     },
+    "pricing": {
+      "title": "Pricing",
+      "description": "Compare HAMDEVA credit packs, pricing, and estimated generation counts in one place.",
+      "sections": [
+        {
+          "heading": "How credits work",
+          "paragraphs": [
+            "HAMDEVA uses credits so the generation flow stays simple to understand. A standard image generation uses 100 credits.",
+            "That makes it easy to compare packs quickly before you decide how much generation volume you need."
+          ]
+        },
+        {
+          "heading": "Why this page exists",
+          "paragraphs": [
+            "This page is a lightweight pricing guide for users who want to compare pack size, sale price, and estimated generation count without opening a full checkout screen.",
+            "It is meant to help you scan the options fast and then continue into My Page or the credit purchase flow when needed."
+          ]
+        },
+        {
+          "heading": "Refund policy",
+          "paragraphs": [
+            "If credits were deducted but image generation failed because of a service-side error, the used credits may be restored automatically to the same account.",
+            "If a payment was completed by mistake or a technical issue needs manual review, contact HAMDEVA support with the account email, payment time, and a short description of the problem.",
+            "Because credit products are digital goods used inside the service, completed purchases are generally treated as non-refundable unless duplicate payment, failed credit delivery, or another verified technical issue is confirmed."
+          ]
+        }
+      ]
+    },
     "virtual-try-on-guide": {
       "title": "Virtual Try-On Guide",
       "description": "Learn how to approach AI fitting as a practical comparison workflow."
@@ -457,6 +486,14 @@
             "HAMDEVA is offered as a digital fashion and content service. Features, sample collections, informational pages, and generation workflows may evolve over time as the site grows.",
             "The presence of a garment sample, article, or visual example on the site does not automatically mean a physical product is sold, stocked, or guaranteed by HAMDEVA itself.",
             "Users should interpret the public pages as guidance and exploration resources unless a specific commercial relationship is explicitly stated."
+          ]
+        },
+        {
+          "heading": "Refund policy",
+          "paragraphs": [
+            "When a generation fails because of a service-side error after credits were deducted, HAMDEVA may restore the deducted credits to the same user account.",
+            "Payments for digital credit products are generally non-refundable once delivered, except where duplicate payment, failed credit delivery, or another verified technical fault is confirmed by the service team.",
+            "Users requesting a payment review should contact support with enough detail to identify the account and transaction."
           ]
         }
       ]

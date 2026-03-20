@@ -221,8 +221,15 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: baseline;
   gap: 8px;
-  flex: 0 0 auto;
+  flex: 1;
   min-width: 0;
+}
+
+.nav-mobile-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .nav-logo-button {
@@ -307,7 +314,7 @@ a { color: inherit; text-decoration: none; }
 
 .mobile-menu-toggle,
 .mobile-account-button {
-  display: none;
+  display: inline-flex;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -319,6 +326,40 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+}
+
+.mobile-menu-toggle {
+  position: relative;
+  overflow: hidden;
+}
+
+.icon-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+.hamburger-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 14px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .mobile-account-button {
@@ -365,6 +406,33 @@ a { color: inherit; text-decoration: none; }
   background: rgba(255, 255, 255, 0.98);
   box-shadow: var(--shadow-md);
   overflow: hidden;
+  z-index: 1300;
+}
+
+.desktop-nav,
+.desktop-header-actions,
+.mobile-account-button,
+.mobile-account-menu {
+  display: none !important;
+}
+
+.header-icon-menu {
+  position: relative;
+}
+
+.header-icon-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-md);
   z-index: 1300;
 }
 
@@ -4029,7 +4097,7 @@ a { color: inherit; text-decoration: none; }
     min-width: 0;
     flex: 1;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     overflow: hidden;
   }
   .nav-links,
@@ -4037,19 +4105,19 @@ a { color: inherit; text-decoration: none; }
   .credit-pill,
   .auth-nav-btn,
   .lang-dropdown,
-  .dark-toggle,
   .app-version {
     display: none;
   }
-  .mobile-menu-toggle,
-  .mobile-account-button {
-    display: inline-flex;
-  }
-  .mobile-account-menu {
-    display: flex;
-  }
   .nav-logo {
     font-size: 19px;
+  }
+  .nav-mobile-tools {
+    gap: 6px;
+  }
+  .icon-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
   }
   .try-layout { grid-template-columns: 1fr; }
   .try-modal-layout,
@@ -4934,15 +5002,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (min-width: 1025px) {
-  .mobile-menu-toggle,
-  .mobile-account-button {
-    display: none;
-  }
-  .desktop-nav {
-    display: flex;
-  }
-  .desktop-header-actions {
-    display: flex;
+  .mobile-menu-toggle {
+    display: inline-flex;
   }
 }
 

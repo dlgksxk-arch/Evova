@@ -96,14 +96,15 @@ const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
 const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
   SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
 );
-const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'mypage'];
-const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'mypage'];
+const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'mypage'];
+const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
   'about',
   'how-it-works',
   'traditional-clothing',
   'sample-friends',
   'fashion-technology',
+  'pricing',
   'virtual-try-on-guide',
   'outfit-photo-tips',
   'ai-fitting-faq',
@@ -116,6 +117,7 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'sample-friends',
   'countries',
   'fashion-technology',
+  'pricing',
   'virtual-try-on-guide',
   'outfit-photo-tips',
   'ai-fitting-faq',
@@ -2859,36 +2861,6 @@ const getPageCopy = (
   };
 };
 
-const LangDropdown: React.FC<{ lang: LanguageCode; onChange: (l: LanguageCode) => void }> = ({ lang, onChange }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const currentLanguage = VISIBLE_LANGUAGE_OPTIONS.find((option) => option.value === lang) ?? VISIBLE_LANGUAGE_OPTIONS[0];
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-
-  return (
-    <div className="lang-dropdown" ref={ref}>
-      <button className="lang-dropdown-trigger" onClick={() => setOpen(!open)} type="button">
-        <span className="lang-text">{currentLanguage.shortLabel}</span>
-      </button>
-      {open && (
-        <div className="lang-dropdown-menu" style={{ maxHeight: '320px', overflowY: 'auto', minWidth: '220px' }}>
-          {VISIBLE_LANGUAGE_OPTIONS.map((opt) => (
-            <button key={opt.value} className={`lang-option ${lang === opt.value ? 'active' : ''}`}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              type="button">
-              <span>{opt.nativeLabel}</span><span>{opt.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const ShellModal: React.FC<{
   title: string;
   subtitle?: string;
@@ -2934,6 +2906,7 @@ const PAGE_PATHS: Record<SitePage, string> = {
   'sample-friends': '/sample-friends',
   countries: '/countries',
   'fashion-technology': '/fashion-technology',
+  pricing: '/pricing',
   'virtual-try-on-guide': '/virtual-try-on-guide',
   'outfit-photo-tips': '/outfit-photo-tips',
   'ai-fitting-faq': '/ai-fitting-faq',
@@ -2953,6 +2926,7 @@ const INDEXABLE_PAGES = new Set<SitePage>([
   'traditional-clothing',
   'sample-friends',
   'fashion-technology',
+  'pricing',
   'virtual-try-on-guide',
   'outfit-photo-tips',
   'ai-fitting-faq',
@@ -3110,6 +3084,7 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,
   'sample-friends': `${SITE_KEYWORDS}, 샘플 강아지, 샘플 고양이, 강아지 품종, 고양이 품종, dog breeds, cat breeds, pet sample photo`,
   'fashion-technology': `${SITE_KEYWORDS}, 펫 스타일 가이드, 반려동물 의상 아이디어, dog outfit ideas, cat outfit ideas`,
+  pricing: `${SITE_KEYWORDS}, 가격, 요금제, 크레딧 가격, pricing, credits, plans, pet fitting price`,
   'virtual-try-on-guide': `${SITE_KEYWORDS}, 반려동물 가상피팅 가이드, pet virtual try on guide`,
   'outfit-photo-tips': `${SITE_KEYWORDS}, 반려동물 사진 팁, 의상 사진 팁, pet photo tips, outfit photo tips`,
   'ai-fitting-faq': `${SITE_KEYWORDS}, 반려동물 옷입혀보기 faq, pet outfit faq, dog outfit faq, cat outfit faq`,
@@ -3129,7 +3104,6 @@ const App: React.FC = () => {
   const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [clothImage, setClothImage]   = useState<string | null>(null);
   const [personFile, setPersonFile] = useState<File | null>(null);
@@ -3189,8 +3163,8 @@ const App: React.FC = () => {
   const [authForm, setAuthForm] = useState({ email: '', password: '' });
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSubmitting, setAuthSubmitting] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerLangMenuOpen, setHeaderLangMenuOpen] = useState(false);
   const [showCreditPlanModal, setShowCreditPlanModal] = useState(false);
   const [showPurchaseNoticePopup, setShowPurchaseNoticePopup] = useState(() => {
     try {
@@ -3207,7 +3181,7 @@ const App: React.FC = () => {
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
-  const mobileAccountMenuRef = useRef<HTMLDivElement | null>(null);
+  const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const generationLockRef = useRef(false);
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
@@ -3608,7 +3582,6 @@ const App: React.FC = () => {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      setUserMenuOpen(false);
 
       if (!user) {
         setUserProfile(null);
@@ -3708,10 +3681,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      const clickedDesktopMenu = userMenuRef.current?.contains(target);
-      const clickedMobileMenu = mobileAccountMenuRef.current?.contains(target);
-      if (!clickedDesktopMenu && !clickedMobileMenu) {
-        setUserMenuOpen(false);
+      if (!headerLangMenuRef.current?.contains(target)) {
+        setHeaderLangMenuOpen(false);
       }
     };
 
@@ -3720,6 +3691,7 @@ const App: React.FC = () => {
   }, []);
   useEffect(() => {
     setMobileMenuOpen(false);
+    setHeaderLangMenuOpen(false);
   }, [currentPage, lang]);
   useEffect(() => {
     setShowCreditPlanModal(false);
@@ -4346,7 +4318,6 @@ const App: React.FC = () => {
       return;
     }
 
-    setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowMyPageModal(false);
     setShowAdminModal(false);
@@ -4359,7 +4330,6 @@ const App: React.FC = () => {
       return;
     }
 
-    setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowCreditPlanModal(false);
     setShowAdminModal(false);
@@ -4374,7 +4344,6 @@ const App: React.FC = () => {
       return;
     }
 
-    setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowCreditPlanModal(false);
     setShowMyPageModal(false);
@@ -4460,7 +4429,6 @@ const App: React.FC = () => {
     }
   };
   const openLogoutConfirmModal = () => {
-    setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowLogoutConfirmModal(true);
   };
@@ -5002,28 +4970,6 @@ const App: React.FC = () => {
     getSubjectTypeLabel,
   };
 
-  const accountMenuItems = (
-    <>
-      <button className="lang-option" onClick={openMyPageModal} type="button">
-        {t.myPage}
-      </button>
-      <button className="lang-option" onClick={openCreditPlanModal} type="button">
-        {t.subscriptionPlanLabel}
-      </button>
-      <button className="lang-option" onClick={openMyPageModal} type="button">
-        {t.chargeCredits}
-      </button>
-      {isAdminUser ? (
-        <button className="lang-option" onClick={openAdminModal} type="button">
-          {t.adminTitle}
-        </button>
-      ) : null}
-      <button className="lang-option" onClick={openLogoutConfirmModal} type="button">
-        {t.logout}
-      </button>
-    </>
-  );
-
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
@@ -5037,75 +4983,59 @@ const App: React.FC = () => {
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             type="button"
           >
-            ☰
+            <span className="hamburger-icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
           </button>
           <div className="nav-brand">
             <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
             <span className="app-version">{appVersion}</span>
           </div>
-          <div className="nav-links desktop-nav">
-            {HEADER_NAV_PAGES.map((page) => (
+          <div className="nav-mobile-tools">
+            <div className="header-icon-menu" ref={headerLangMenuRef}>
               <button
-                key={page}
-                className={`nav-link ${currentPage === page ? 'active' : ''}`}
-                onClick={() => navigateToPage(page)}
+                className="icon-toggle-btn"
+                aria-expanded={headerLangMenuOpen}
+                aria-label={t.languageLabel}
+                onClick={() => setHeaderLangMenuOpen((prev) => !prev)}
+                title={t.languageLabel}
                 type="button"
               >
-                {page === 'mypage' ? t.myPage : contentLocale.nav[page]}
+                <span aria-hidden="true">🌐</span>
               </button>
-            ))}
-          </div>
-          <div className="nav-right desktop-header-actions">
-            {currentUser && (
-              <button className="outline-btn auth-nav-btn" onClick={openCreditPlanModal} type="button">
-                {t.chargeCredits}
-              </button>
-            )}
-            {currentUser ? (
-              <div className="user-menu" ref={userMenuRef}>
-                <button className="lang-dropdown-trigger user-menu-trigger" onClick={() => setUserMenuOpen((prev) => !prev)} type="button">
-                  <span>{currentUser.email?.split('@')[0] || t.myPage}</span>
-                </button>
-                {userMenuOpen && <div className="user-menu-dropdown">{accountMenuItems}</div>}
-              </div>
-            ) : (
-              <button
-                className="outline-btn auth-nav-btn"
-                onClick={() => openAuthModal('login')}
-                type="button"
-              >
-                {t.login}
-              </button>
-            )}
-            <LangDropdown lang={lang} onChange={handleLanguageChange} />
-            <button className="dark-toggle" onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? '☀️' : '🌙'}
+              {headerLangMenuOpen && (
+                <div className="header-icon-dropdown">
+                  {VISIBLE_LANGUAGE_OPTIONS.map((option) => (
+                    <button
+                      key={`header-lang-${option.value}`}
+                      className={`lang-option ${lang === option.value ? 'active' : ''}`}
+                      onClick={() => {
+                        handleLanguageChange(option.value as LanguageCode);
+                        setHeaderLangMenuOpen(false);
+                      }}
+                      type="button"
+                    >
+                      <span>{option.nativeLabel}</span>
+                      <span>{option.shortLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className="dark-toggle icon-toggle-btn"
+              aria-label={darkMode ? t.lightMode : t.darkMode}
+              onClick={() => setDarkMode(!darkMode)}
+              title={darkMode ? t.lightMode : t.darkMode}
+              type="button"
+            >
+              <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
             </button>
           </div>
-          <button
-            className={`mobile-account-button ${currentUser ? 'account-menu-button' : 'auth-login-button'}`}
-            aria-label={currentUser ? t.myPage : t.login}
-            onClick={() => {
-              if (currentUser) {
-                setUserMenuOpen((prev) => !prev);
-                return;
-              }
-
-              openAuthModal('login');
-            }}
-            title={!currentUser ? t.login : undefined}
-            type="button"
-          >
-            <span aria-hidden="true" className="mobile-account-button-icon">{currentUser ? '👤' : '→'}</span>
-            <span className="mobile-account-button-label">{currentUser ? (currentUser.email?.split('@')[0] || t.myPage) : t.login}</span>
-          </button>
         </div>
       </nav>
-      {currentUser && userMenuOpen && (
-        <div className="mobile-account-menu" ref={mobileAccountMenuRef}>
-          {accountMenuItems}
-        </div>
-      )}
       {mobileMenuOpen && (
         <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div
@@ -5146,55 +5076,13 @@ const App: React.FC = () => {
             </div>
             <div className="mobile-menu-divider" />
             <div className="mobile-nav-section mobile-nav-actions">
-              <div className="mobile-menu-label">{t.languageLabel}</div>
-              <div className="mobile-language-list">
-                {VISIBLE_LANGUAGE_OPTIONS.map((option) => (
-                  <button
-                    key={`mobile-lang-${option.value}`}
-                    className={`mobile-language-button ${lang === option.value ? 'active' : ''}`}
-                    onClick={() => {
-                      handleLanguageChange(option.value as LanguageCode);
-                      setMobileMenuOpen(false);
-                    }}
-                    type="button"
-                >
-                  <span>{option.nativeLabel}</span>
-                  <span>{option.shortLabel}</span>
-                </button>
-              ))}
-              </div>
-              <button
-                className="mobile-menu-link mobile-menu-action"
-                onClick={() => {
-                  setDarkMode(!darkMode);
-                  setMobileMenuOpen(false);
-                }}
-                type="button"
-              >
-                {darkMode ? t.lightMode : t.darkMode}
-              </button>
               {currentUser && (
                 <button
                   className="mobile-menu-link mobile-menu-action"
-                  onClick={() => {
-                    navigateToPage('mypage');
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={openCreditPlanModal}
                   type="button"
                 >
-                  {t.myPage}
-                </button>
-              )}
-              {isAdminUser && (
-                <button
-                  className="mobile-menu-link mobile-menu-action"
-                  onClick={() => {
-                    openAdminModal();
-                    setMobileMenuOpen(false);
-                  }}
-                  type="button"
-                >
-                  {t.adminTitle}
+                  {t.subscriptionPlanLabel}
                 </button>
               )}
               {!currentUser && (
@@ -5652,6 +5540,79 @@ const App: React.FC = () => {
                     )),
                   )}
                 </div>
+              </>
+            )}
+
+            {currentPage === 'pricing' && (
+              <>
+                <article className="page-article">
+                  <h2>{lang === 'ko' ? '크레딧 상품 비교' : lang === 'ja' ? 'クレジット商品比較' : lang === 'zh' ? '积分商品对比' : 'Compare credit packs'}</h2>
+                  <p>
+                    {lang === 'ko'
+                      ? 'HAMDEVA는 이미지 1회 생성마다 100 크레딧이 사용됩니다. 아래 가격표는 현재 제공 중인 크레딧 상품을 빠르게 비교하기 위한 안내 페이지입니다.'
+                      : lang === 'ja'
+                        ? 'HAMDEVA では画像を 1 回生成するたびに 100 クレジットが使われます。下の価格表は、現在のクレジット商品をすばやく比較するための案内ページです。'
+                        : lang === 'zh'
+                          ? 'HAMDEVA 每次生成图片会使用 100 积分。下方价格表用于快速比较当前提供的积分商品。'
+                          : 'Each HAMDEVA image generation uses 100 credits. The pricing table below is a quick guide to compare the current credit packs.'}
+                  </p>
+                </article>
+                <div className="credit-plan-grid">
+                  {CREDIT_PRODUCTS.map((product) => {
+                    const discountPercent = Math.round(((product.compareAtPriceUsd - product.salePriceUsd) / product.compareAtPriceUsd) * 100);
+                    const savingsAmount = product.compareAtPriceUsd - product.salePriceUsd;
+                    const estimatedGenerations = Math.floor(product.paidCredit / GENERATION_COST);
+
+                    return (
+                      <article key={`pricing-${product.id}`} className="credit-plan-card">
+                        <div className="credit-plan-copy">
+                          <div className="credit-plan-badges">
+                            {product.badge ? <span className="credit-plan-badge">{product.badge}</span> : null}
+                            {product.extraBadge ? <span className="credit-plan-badge accent">{product.extraBadge}</span> : null}
+                          </div>
+                          <strong>{product.label} - {product.paidCredit.toLocaleString()} {t.credits}</strong>
+                          <p className="credit-plan-price-row">
+                            <span className="credit-plan-compare-price">${product.compareAtPriceUsd.toFixed(2)}</span>
+                            <span className="credit-plan-sale-price">${product.salePriceUsd.toFixed(2)}</span>
+                          </p>
+                          <p className="credit-plan-savings">
+                            <span className="credit-plan-save-pill">{t.savePercent(discountPercent)}</span>
+                            <span className="credit-plan-save-amount">{t.saveAmountOff(`$${savingsAmount.toFixed(2)}`)}</span>
+                          </p>
+                          <p>{t.paidCreditLabel}: {product.paidCredit.toLocaleString()}</p>
+                          <p>
+                            {lang === 'ko'
+                              ? `예상 생성 가능 횟수: 약 ${estimatedGenerations}회`
+                              : lang === 'ja'
+                                ? `生成目安: 約 ${estimatedGenerations} 回`
+                                : lang === 'zh'
+                                  ? `预计可生成次数：约 ${estimatedGenerations} 次`
+                                  : `Estimated generations: about ${estimatedGenerations}`}
+                          </p>
+                        </div>
+                        <button
+                          className="generate-btn auth-inline-btn"
+                          onClick={openCreditPlanModal}
+                          type="button"
+                        >
+                          {t.purchaseNow}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+                <article className="page-article">
+                  <h2>{lang === 'ko' ? '참고 안내' : lang === 'ja' ? 'ご案内' : lang === 'zh' ? '参考说明' : 'Pricing notes'}</h2>
+                  <p>
+                    {lang === 'ko'
+                      ? '회원가입 시 기본 300 크레딧이 한 번 지급되며, 실제 남은 크레딧과 결제 상태는 마이페이지에서 확인할 수 있습니다. 현재 구매 기능은 준비중일 수 있으니 안내 메시지를 함께 확인해 주세요.'
+                      : lang === 'ja'
+                        ? '新規登録時には基本 300 クレジットが一度だけ付与されます。現在の残高や決済状態はマイページで確認できます。購入機能は準備中の場合があるため、案内メッセージもあわせて確認してください。'
+                        : lang === 'zh'
+                          ? '注册时会一次性发放 300 积分。当前余额与支付状态可在我的页面查看。购买功能可能仍在准备中，请同时查看页面提示。'
+                          : 'You receive 300 starter credits once when you sign up. Check your live balance and payment status in My Page. The purchase flow may still show a preparation notice.'}
+                  </p>
+                </article>
               </>
             )}
 
