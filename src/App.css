@@ -5619,13 +5619,16 @@ body {
   min-height: 30px;
   height: 30px;
   min-width: 0;
-  width: auto;
-  padding: 0 9px;
+  width: fit-content;
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0 8px;
   font-size: 12px;
   font-weight: 800;
   background: linear-gradient(135deg, #ffd65a, #ffb938);
   border-color: rgba(255, 171, 26, 0.4);
   color: #4a2500;
+  white-space: nowrap;
 }
 
 .nav-quick-buy-btn:hover {
