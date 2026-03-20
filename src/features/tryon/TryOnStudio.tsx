@@ -68,12 +68,6 @@ type TryOnModalCopy = {
   actionCardTitle: string;
   actionCardBody: string;
   actionFootnote: string;
-  tipsTitle: string;
-  tips: string[];
-  progressTitle: string;
-  progressItems: string[];
-  usageTitle: string;
-  usageItems: string[];
   resultTitle: string;
 };
 
@@ -211,26 +205,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [clothDragActive, setClothDragActive] = useState(false);
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
-  const progressIndex = finalImageSrc ? 3 : isGenerating ? 2 : isReadyToGenerate ? 1 : 0;
-  const modalActionHelper = lang === 'ko'
-    ? {
-        person: '아래 박스를 눌러 바로 업로드할 수 있어요.',
-        cloth: '아래 박스를 눌러 의상 사진을 바로 업로드할 수 있어요.',
-      }
-    : lang === 'ja'
-      ? {
-          person: '下のボックスをタップするとすぐにアップロードできます。',
-          cloth: '下のボックスをタップすると衣装画像をすぐにアップロードできます。',
-        }
-      : lang === 'zh'
-        ? {
-            person: '点击下方区域即可直接上传。',
-            cloth: '点击下方区域即可直接上传服装图片。',
-          }
-        : {
-            person: 'Tap the box below to upload right away.',
-            cloth: 'Tap the box below to upload an outfit image right away.',
-          };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -261,10 +235,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const accountStatusNode = (
     <>
-      <div className="usage-bar">
-        {currentUser ? `${copy.dailyCreditLabel}: ${currentDailyCredit} / ${copy.paidCreditLabel}: ${currentPaidCredit}` : copy.loginForFree}
-      </div>
-      {creditNotice && <div className="credit-notice-banner">{creditNotice}</div>}
+      {(!isModalLayout || !currentUser) && (
+        <div className="usage-bar">
+          {currentUser ? `${copy.dailyCreditLabel}: ${currentDailyCredit} / ${copy.paidCreditLabel}: ${currentPaidCredit}` : copy.loginForFree}
+        </div>
+      )}
+      {(!isModalLayout || !currentUser) && creditNotice && <div className="credit-notice-banner">{creditNotice}</div>}
       {!currentUser && (
         <div className="credit-cta-panel">
           <p>{copy.authSignupCreditsHint}</p>
@@ -343,7 +319,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className="card-header">
             <span className="section-label">{copy.step1Label}</span>
             <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
-            {isModalLayout ? <p className="modal-card-description">{modalCopy?.personCardBody}</p> : null}
+            {isModalLayout && modalCopy?.personCardBody ? <p className="modal-card-description">{modalCopy.personCardBody}</p> : null}
           </div>
           <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
@@ -369,7 +345,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
-          {isModalLayout ? <p className="try-actions-helper">{modalActionHelper.person}</p> : null}
           <div
             className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
             onClick={() => {
@@ -435,7 +410,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className="card-header">
             <span className="section-label">{copy.step2Label}</span>
             <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
-            {isModalLayout ? <p className="modal-card-description">{modalCopy?.garmentCardBody}</p> : null}
+            {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-card-description">{modalCopy.garmentCardBody}</p> : null}
           </div>
           <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
             <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
@@ -461,7 +436,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               }}
             />
           </div>
-          {isModalLayout ? <p className="try-actions-helper">{modalActionHelper.cloth}</p> : null}
           <div
             className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
             onClick={() => {
@@ -532,21 +506,37 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className="card-header modal-action-header">
             <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
             <h3 className="card-title">{modalCopy?.actionCardTitle}</h3>
-            <p className="modal-card-description">{modalCopy?.actionCardBody}</p>
+            {modalCopy?.actionCardBody ? <p className="modal-card-description">{modalCopy.actionCardBody}</p> : null}
           </div>
         ) : null}
         {copy.realGenerationCta ? <p className="real-generation-label">{copy.realGenerationCta}</p> : null}
-        <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
-        <p className="credit-balance-text">{copy.dailyCreditLabel}: {currentDailyCredit} · {copy.paidCreditLabel}: {currentPaidCredit}</p>
+        {isModalLayout ? (
+          <p className="credit-cost-text credit-cost-text-compact">
+            {copy.generationCostDetailed(generationCost)} · {copy.currentCredits(currentCredits)}
+          </p>
+        ) : (
+          <>
+            <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
+            <p className="credit-balance-text">{copy.dailyCreditLabel}: {currentDailyCredit} · {copy.paidCreditLabel}: {currentPaidCredit}</p>
+          </>
+        )}
         <button
-          className="generate-btn"
+          className={`generate-btn ${isGenerating ? 'is-generating' : ''}`}
           onClick={onGenerate}
           disabled={isGenerating || !currentUser || !activePersonImage || !activeClothImage || !canAffordGeneration}
           type="button"
         >
-          {isGenerating ? <><span className="spinner"></span>{copy.generating}</> : copy.generate}
+          {isGenerating ? (
+            <span className="generate-btn-running">
+              <span className="pet-runner-track" aria-hidden="true">
+                <span className="pet-runner pet-runner-dog">🐶</span>
+                <span className="pet-runner pet-runner-cat">🐱</span>
+              </span>
+              <span>{copy.generating}</span>
+            </span>
+          ) : copy.generate}
         </button>
-        {currentUser ? <p className="credit-balance-text credit-balance-text-bottom">{copy.currentCredits(currentCredits)}</p> : null}
+        {!isModalLayout && currentUser ? <p className="credit-balance-text credit-balance-text-bottom">{copy.currentCredits(currentCredits)}</p> : null}
         {currentUser && !canAffordGeneration && (
           <>
             <p className="loading-subtext">{copy.notEnoughCredits}</p>
@@ -555,7 +545,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </button>
           </>
         )}
-        {isGenerating && (
+        {isGenerating && !isModalLayout && (
           <>
             <p className="loading-subtext">{copy.loadingDetail}</p>
           </>
@@ -570,42 +560,9 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     return (
       <section className="section try-section try-section-modal">
         <div className="section-inner try-modal-inner">
-          {modalCopy?.notice ? <div className="try-modal-notice">{modalCopy.notice}</div> : null}
           {accountStatusNode}
           <div className="try-modal-layout">
             <div className="try-modal-main">{studioMainNode}</div>
-            <aside className="try-modal-side">
-              <article className="try-modal-side-card">
-                <h3>{modalCopy?.tipsTitle}</h3>
-                <ul className="try-modal-list">
-                  {modalCopy?.tips.map((tip) => (
-                    <li key={tip}>{tip}</li>
-                  ))}
-                </ul>
-              </article>
-              <article className="try-modal-side-card">
-                <h3>{modalCopy?.progressTitle}</h3>
-                <ol className="try-modal-progress-list">
-                  {modalCopy?.progressItems.map((item, index) => (
-                    <li
-                      key={item}
-                      className={`try-modal-progress-item ${index < progressIndex ? 'completed' : ''} ${index === progressIndex ? 'active' : ''}`}
-                    >
-                      <span className="try-modal-progress-index">{index + 1}</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ol>
-              </article>
-              <article className="try-modal-side-card">
-                <h3>{modalCopy?.usageTitle}</h3>
-                <ul className="try-modal-list">
-                  {modalCopy?.usageItems.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </article>
-            </aside>
           </div>
         </div>
       </section>

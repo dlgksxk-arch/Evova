@@ -3837,12 +3837,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .try-layout-modal .action-section-card {
-  padding: 22px;
+  padding: 18px;
   border-radius: 20px;
 }
 
 .modal-action-header {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 .video-action-section {
   max-width: 760px;
@@ -3906,6 +3906,12 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-sub);
 }
 
+.credit-cost-text-compact {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-weight: 700;
+}
+
 .credit-balance-text {
   color: var(--primary);
   font-weight: 700;
@@ -3929,8 +3935,60 @@ a { color: inherit; text-decoration: none; }
   justify-content: center;
   line-height: 1;
 }
+.generate-btn.is-generating {
+  background: linear-gradient(135deg, #b8360e, #dd6b20);
+  box-shadow: 0 12px 28px rgba(184,54,14,0.28);
+}
 .generate-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184,54,14,0.4); }
 .generate-btn:disabled { background: var(--border); cursor: not-allowed; box-shadow: none; }
+
+.generate-btn-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pet-runner-track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 54px;
+  height: 24px;
+}
+
+.pet-runner {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  animation: pet-run-bounce 1.2s ease-in-out infinite;
+}
+
+.pet-runner-dog {
+  left: 0;
+}
+
+.pet-runner-cat {
+  right: 0;
+  animation-delay: 0.18s;
+}
+
+@keyframes pet-run-bounce {
+  0%, 100% {
+    transform: translateY(1px) scale(1);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-6deg) scale(1.04);
+  }
+  50% {
+    transform: translateY(1px) translateX(2px) scale(0.98);
+  }
+  75% {
+    transform: translateY(-2px) rotate(6deg) scale(1.04);
+  }
+}
 
 .loading-subtext { margin-top: 16px; font-size: 14px; color: var(--text-sub); }
 
@@ -4218,128 +4276,12 @@ a { color: inherit; text-decoration: none; }
   padding: 0;
 }
 
-.try-modal-notice {
-  margin-bottom: 18px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--accent-gold) 14%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--accent-gold) 22%, var(--border));
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.7;
-  font-weight: 600;
-}
-
 .try-modal-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
-  gap: 22px;
-  align-items: start;
+  display: block;
 }
 
 .try-modal-main {
   min-width: 0;
-}
-
-.try-modal-side {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-
-.try-modal-side-card {
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow: var(--shadow-sm);
-}
-
-.try-modal-side-card h3 {
-  font-size: 20px;
-  line-height: 1.25;
-  color: var(--text);
-  margin-bottom: 14px;
-}
-
-.try-modal-list,
-.try-modal-progress-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.try-modal-list {
-  list-style: none;
-}
-
-.try-modal-list li,
-.try-modal-progress-item {
-  position: relative;
-  padding-left: 18px;
-  color: var(--text-sub);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.try-modal-list li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.72em;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-gold), var(--primary));
-}
-
-.try-modal-progress-list {
-  list-style: none;
-  counter-reset: none;
-}
-
-.try-modal-progress-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface-alt);
-}
-
-.try-modal-progress-item::before {
-  display: none;
-}
-
-.try-modal-progress-item.completed,
-.try-modal-progress-item.active {
-  border-color: rgba(184,54,14,0.24);
-}
-
-.try-modal-progress-item.active {
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
-  color: var(--text);
-  box-shadow: 0 10px 22px rgba(184,54,14,0.12);
-}
-
-.try-modal-progress-item.completed {
-  color: var(--text);
-}
-
-.try-modal-progress-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 16%, transparent);
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 800;
-  flex-shrink: 0;
 }
 
 .modal-content.sample-modal {
