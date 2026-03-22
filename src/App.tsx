@@ -5247,6 +5247,7 @@ const App: React.FC = () => {
     generationLockRef.current = true;
     setIsGenerating(true);
     const startedAt = Date.now();
+    clearGeneratedResult();
     setShareStatus(null);
     setCreditNotice(null);
     setLatestSharedResultId(null);
