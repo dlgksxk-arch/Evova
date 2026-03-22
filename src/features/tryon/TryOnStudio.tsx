@@ -415,8 +415,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     </div>
   );
 
-  const resultNode = isPreviewReady && finalImageSrc ? (
-    <div className={`results-section ${isModalLayout ? 'results-section-modal' : ''}`}>
+  const resultActionsNode = isPreviewReady && finalImageSrc ? (
+    <>
       <div className={`result-showcase-layout result-showcase-layout-actions ${isModalLayout ? 'is-modal' : ''}`}>
         <ResultActionsPanel
           imageSrc={finalImageSrc}
@@ -439,7 +439,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           onRandomOutfit={onRandomOutfit}
         />
       </div>
-      <div className="page-article">
+      <div className={isModalLayout ? 'result-followup-shell' : 'page-article'}>
         <div className="result-action-grid single-row result-followup-actions">
           <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
             {copy.tryAnotherOutfit}
@@ -450,12 +450,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         </div>
       </div>
       {resultWatermarkApplied && (
-        <div className="credit-result-notice page-article">
+        <div className={`credit-result-notice ${isModalLayout ? 'result-followup-shell' : 'page-article'}`}>
           <strong>{copy.freeResultNoticeTitle}</strong>
           <p>{copy.freeResultNoticeBody}</p>
         </div>
       )}
-    </div>
+    </>
   ) : null;
 
   const inputColumnsNode = (
@@ -655,8 +655,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       </div>
   );
 
-  const actionSectionNode = (
-    <div className={`action-section ${isModalLayout ? 'action-section-card' : ''}`}>
+  const actionSectionContentNode = (
+    <>
         {isModalLayout ? (
           <div className="card-header modal-action-header">
             <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
@@ -706,7 +706,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </>
         )}
         <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
-      </div>
+    </>
   );
 
   const studioMainNode = (
@@ -715,19 +715,25 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         <div className="try-modal-workspace">
           <div className="try-modal-left-column">
             {inputColumnsNode}
-            {actionSectionNode}
           </div>
           <div className="try-modal-right-column">
-            {previewPanelNode}
-            {resultNode}
+            <div className="action-section action-section-card try-modal-result-card">
+              {actionSectionContentNode}
+              {previewPanelNode}
+              {resultActionsNode}
+            </div>
           </div>
         </div>
       ) : (
         <>
           {inputColumnsNode}
-          {actionSectionNode}
+          <div className="action-section">{actionSectionContentNode}</div>
           {previewPanelNode}
-          {resultNode}
+          {resultActionsNode ? (
+            <div className="results-section">
+              {resultActionsNode}
+            </div>
+          ) : null}
         </>
       )}
     </>

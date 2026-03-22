@@ -5100,6 +5100,36 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 0;
 }
 
+.try-modal-left-column .modal-input-card-layout {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.try-modal-left-column .modal-input-card-preview {
+  justify-content: stretch;
+}
+
+.try-modal-left-column .preview-box {
+  width: 100%;
+}
+
+.try-modal-result-card {
+  display: grid;
+  gap: 14px;
+}
+
+.try-modal-result-card .result-preview-panel {
+  max-width: none;
+}
+
+.result-followup-shell {
+  width: 100%;
+}
+
+.result-followup-shell .result-followup-actions {
+  max-width: none;
+}
+
 .modal-content.sample-modal {
   background: var(--surface); border-radius: var(--r-xl);
   width: min(860px, calc(100vw - 40px));
