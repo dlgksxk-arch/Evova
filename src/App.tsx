@@ -3438,7 +3438,7 @@ const App: React.FC = () => {
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
-  const [isKakaoInAppBrowser, setIsKakaoInAppBrowser] = useState(false);
+  const [isSocialInAppBrowser, setIsSocialInAppBrowser] = useState(false);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -4068,14 +4068,15 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
   useEffect(() => {
-    const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
-    setIsKakaoInAppBrowser(isKakao);
+    const socialInAppPattern = /KAKAOTALK|FBAN|FBAV|Instagram|Line|TikTok|musical_ly|Twitter|X-WebView|NAVER\(inapp|Snapchat/i;
+    const isSocialInApp = socialInAppPattern.test(navigator.userAgent);
+    setIsSocialInAppBrowser(isSocialInApp);
 
-    if (!isKakao) {
+    if (!isSocialInApp) {
       return;
     }
 
-    const attemptedKey = 'hamdeva-kakao-open-attempted';
+    const attemptedKey = 'hamdeva-social-browser-open-attempted';
     if (window.sessionStorage.getItem(attemptedKey) === '1') {
       return;
     }
@@ -5512,7 +5513,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isKakaoInAppBrowser ? 'has-kakao-browser-banner' : ''}`}>
+    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isSocialInAppBrowser ? 'has-social-browser-banner' : ''}`}>
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
       <nav className="landing-nav">
         <div className="nav-content">
@@ -5708,14 +5709,14 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {isKakaoInAppBrowser && (
-        <div className="kakao-browser-banner" role="alert">
+      {isSocialInAppBrowser && (
+        <div className="social-browser-banner" role="alert">
           <div className="section-inner">
-            <div className="kakao-browser-banner-copy">
-              <strong>카카오톡에서는 로그인이 제한됩니다.</strong>
+            <div className="social-browser-banner-copy">
+              <strong>SNS 앱에서는 로그인이 제한될 수 있습니다.</strong>
               <p>아래 버튼을 눌러 브라우저에서 열어주세요</p>
             </div>
-            <button className="generate-btn kakao-browser-banner-btn" onClick={openInExternalBrowser} type="button">
+            <button className="generate-btn social-browser-banner-btn" onClick={openInExternalBrowser} type="button">
               브라우저에서 열기
             </button>
           </div>
