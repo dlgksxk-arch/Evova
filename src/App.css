@@ -4760,7 +4760,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .result-preview-panel.is-modal {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .result-preview-placeholder,
@@ -4847,6 +4847,11 @@ a { color: inherit; text-decoration: none; }
 .result-showcase-layout-actions {
   max-width: 760px;
   grid-template-columns: minmax(0, 1fr);
+}
+
+.try-modal-right-column .result-showcase-layout-actions {
+  max-width: none;
+  margin-top: 0;
 }
 .result-showcase-layout .composite-result {
   max-width: none;
@@ -5072,6 +5077,27 @@ a { color: inherit; text-decoration: none; }
 
 .try-modal-main {
   min-width: 0;
+}
+
+.try-modal-workspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 392px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.try-modal-left-column,
+.try-modal-right-column {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.try-modal-left-column .try-layout {
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 0;
 }
 
 .modal-content.sample-modal {
@@ -7821,6 +7847,16 @@ body {
 }
 
 @media (max-width: 768px) {
+  .try-modal-workspace {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .try-modal-left-column,
+  .try-modal-right-column {
+    gap: 12px;
+  }
+
   .hero-section {
     padding: 88px 12px 10px;
   }
@@ -8013,6 +8049,10 @@ body {
 }
 
 @media (max-width: 480px) {
+  .try-modal-workspace {
+    gap: 10px;
+  }
+
   .hero-section {
     min-height: 16vh;
     padding: 62px 8px 8px;

@@ -458,9 +458,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     </div>
   ) : null;
 
-  const studioMainNode = (
-    <>
-      <div className={`try-layout ${isModalLayout ? 'try-layout-modal' : ''}`}>
+  const inputColumnsNode = (
+    <div className={`try-layout ${isModalLayout ? 'try-layout-modal' : ''}`}>
         <div className="try-column">
           <div className={isModalLayout ? 'modal-input-card-layout' : undefined}>
             <div className={isModalLayout ? 'modal-input-card-main' : undefined}>
@@ -654,8 +653,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </div>
         </div>
       </div>
+  );
 
-      <div className={`action-section ${isModalLayout ? 'action-section-card' : ''}`}>
+  const actionSectionNode = (
+    <div className={`action-section ${isModalLayout ? 'action-section-card' : ''}`}>
         {isModalLayout ? (
           <div className="card-header modal-action-header">
             <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
@@ -706,8 +707,29 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         )}
         <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
       </div>
-      {previewPanelNode}
-      {resultNode}
+  );
+
+  const studioMainNode = (
+    <>
+      {isModalLayout ? (
+        <div className="try-modal-workspace">
+          <div className="try-modal-left-column">
+            {inputColumnsNode}
+            {actionSectionNode}
+          </div>
+          <div className="try-modal-right-column">
+            {previewPanelNode}
+            {resultNode}
+          </div>
+        </div>
+      ) : (
+        <>
+          {inputColumnsNode}
+          {actionSectionNode}
+          {previewPanelNode}
+          {resultNode}
+        </>
+      )}
     </>
   );
 
