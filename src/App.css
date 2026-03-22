@@ -7795,8 +7795,9 @@ body {
   }
 
   .hero-cta-group {
-    margin-top: 8px;
-    gap: 6px;
+    margin-top: 10px;
+    gap: 10px;
+    width: min(100%, 360px);
   }
 
   .hero-cta-group .generate-btn,
@@ -7805,17 +7806,54 @@ body {
   .hero-home .hero-secondary-btn {
     min-height: 46px;
     font-size: 15px;
-    padding: 0 14px;
+    padding: 0 18px;
+    border-radius: 18px;
+    width: 100%;
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .hero-home .hero-cta-btn,
+  .hero-cta-group .generate-btn {
+    box-shadow: 0 10px 24px rgba(255, 90, 183, 0.22);
+  }
+
+  .hero-home .hero-secondary-btn,
+  .hero-cta-group .outline-btn {
+    min-height: 44px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.46);
+    color: #322446;
+    box-shadow: 0 6px 16px rgba(24, 18, 44, 0.08);
   }
 
   .nav-content {
-    min-height: 50px;
+    min-height: 48px;
     padding: 0 8px;
-    gap: 6px;
+    gap: 5px;
   }
 
   .nav-logo {
     font-size: 12.5px;
+  }
+
+  .nav-quick-primary,
+  .header-account-trigger,
+  .mobile-menu-toggle,
+  .mobile-account-button,
+  .icon-toggle-btn {
+    min-height: 40px;
+    height: 40px;
+    min-width: 40px;
+    width: 40px;
+    border-radius: 12px;
+  }
+
+  .nav-quick-btn,
+  .nav-quick-primary,
+  .header-account-trigger {
+    padding: 0 10px;
+    font-size: 11px;
   }
 
   .try-column,
@@ -7898,7 +7936,7 @@ body {
   }
 
   .hero-home .hero-content {
-    padding: 80px 10px 24px;
+    padding: 78px 10px 20px;
   }
 
   .hero-home-layout {
