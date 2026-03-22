@@ -415,30 +415,33 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     </div>
   );
 
-  const resultActionsNode = isPreviewReady && finalImageSrc ? (
+  const shareSidebarNode = isPreviewReady && finalImageSrc ? (
+    <div className={`result-showcase-layout result-showcase-layout-actions ${isModalLayout ? 'is-modal' : ''}`}>
+      <ResultActionsPanel
+        imageSrc={finalImageSrc}
+        link={shareResultLink}
+        disableDownload={resultPreviewState !== 'ready'}
+        shareStatus={shareStatus}
+        copy={copy}
+        layout="sidebar"
+        showCopy={false}
+        onDownload={onDownloadResult}
+        onShareLink={onShareLink}
+        onCopyLink={onCopyLink}
+        onShareOnKakao={onShareOnKakao}
+        onShareOnLine={onShareOnLine}
+        onShareOnX={onShareOnX}
+        onShareOnFacebook={onShareOnFacebook}
+        onInstagramSave={onInstagramSave}
+        onShareOnTikTok={onShareOnTikTok}
+        onTryAnotherOutfit={onTryAnotherOutfit}
+        onRandomOutfit={onRandomOutfit}
+      />
+    </div>
+  ) : null;
+
+  const resultFollowupNode = isPreviewReady && finalImageSrc ? (
     <>
-      <div className={`result-showcase-layout result-showcase-layout-actions ${isModalLayout ? 'is-modal' : ''}`}>
-        <ResultActionsPanel
-          imageSrc={finalImageSrc}
-          link={shareResultLink}
-          disableDownload={resultPreviewState !== 'ready'}
-          shareStatus={shareStatus}
-          copy={copy}
-          layout="sidebar"
-          showCopy={false}
-          onDownload={onDownloadResult}
-          onShareLink={onShareLink}
-          onCopyLink={onCopyLink}
-          onShareOnKakao={onShareOnKakao}
-          onShareOnLine={onShareOnLine}
-          onShareOnX={onShareOnX}
-          onShareOnFacebook={onShareOnFacebook}
-          onInstagramSave={onInstagramSave}
-          onShareOnTikTok={onShareOnTikTok}
-          onTryAnotherOutfit={onTryAnotherOutfit}
-          onRandomOutfit={onRandomOutfit}
-        />
-      </div>
       <div className={isModalLayout ? 'result-followup-shell' : 'page-article'}>
         <div className="result-action-grid single-row result-followup-actions">
           <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
@@ -489,8 +492,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   }}
                 />
               </div>
-              {isModalLayout && modalCopy?.personCardBody ? <p className="modal-input-helper">{modalCopy.personCardBody}</p> : null}
-              {copy.faceCopyrightNotice ? <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p> : null}
             </div>
             <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
               <div
@@ -543,7 +544,11 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                     tips={isModalLayout ? modalFaceGuide.tips : emptyFaceTips.slice(0, 2)}
                     type="face"
                     badgeLabel={emptyPreviewCopy.faceBadge}
-                    hint={undefined}
+                    hint={
+                      isModalLayout
+                        ? [modalCopy?.personCardBody, copy.faceCopyrightNotice].filter(Boolean).join(' ')
+                        : undefined
+                    }
                   />
                 )}
                 {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
@@ -584,8 +589,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   }}
                 />
               </div>
-              {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-input-helper">{modalCopy.garmentCardBody}</p> : null}
-              {copy.clothingSafetyNotice ? <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p> : null}
             </div>
             <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
               <div
@@ -645,7 +648,11 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                     tips={isModalLayout ? modalClothGuide.tips : emptyClothTips.slice(0, 2)}
                     type="cloth"
                     badgeLabel={emptyPreviewCopy.styleBadge}
-                    hint={undefined}
+                    hint={
+                      isModalLayout
+                        ? [modalCopy?.garmentCardBody, copy.clothingSafetyNotice].filter(Boolean).join(' ')
+                        : undefined
+                    }
                   />
                 )}
               </div>
@@ -712,7 +719,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const studioMainNode = (
     <>
       {isModalLayout ? (
-        <div className="try-modal-workspace">
+        <div className={`try-modal-workspace ${shareSidebarNode ? 'has-share-column' : ''}`}>
           <div className="try-modal-left-column">
             {inputColumnsNode}
           </div>
@@ -720,18 +727,20 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <div className="action-section action-section-card try-modal-result-card">
               {actionSectionContentNode}
               {previewPanelNode}
-              {resultActionsNode}
+              {resultFollowupNode}
             </div>
           </div>
+          {shareSidebarNode ? <div className="try-modal-share-column">{shareSidebarNode}</div> : null}
         </div>
       ) : (
         <>
           {inputColumnsNode}
           <div className="action-section">{actionSectionContentNode}</div>
           {previewPanelNode}
-          {resultActionsNode ? (
+          {shareSidebarNode || resultFollowupNode ? (
             <div className="results-section">
-              {resultActionsNode}
+              {shareSidebarNode}
+              {resultFollowupNode}
             </div>
           ) : null}
         </>
