@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
 import ResultActionsPanel from './ResultActionsPanel';
@@ -88,6 +88,26 @@ const getModalPreviewGuide = (lang: LanguageCode, type: 'face' | 'cloth') => {
       'Choose a sample or use the upload button.',
       'You can also drag an image from another site.',
     ],
+  };
+};
+
+const getGenerationPanelCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      title: '이미지 생성 중',
+      stageGenerating: '반려동물과 의상을 분석하고 있어요',
+      stageRendering: '결과 이미지를 정리하고 있어요',
+      elapsed: '진행률',
+      helper: '강아지와 고양이가 뛰어노는 동안 결과를 만들고 있어요.',
+    };
+  }
+
+  return {
+    title: 'Generating preview',
+    stageGenerating: 'Analyzing your pet and outfit',
+    stageRendering: 'Finishing the result image',
+    elapsed: 'Progress',
+    helper: 'Your dog and cat are running while the preview is being prepared.',
   };
 };
 
@@ -225,10 +245,51 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 }) => {
   const [personDragActive, setPersonDragActive] = useState(false);
   const [clothDragActive, setClothDragActive] = useState(false);
+  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
+  const [generationProgress, setGenerationProgress] = useState(0);
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
   const modalClothGuide = getModalPreviewGuide(lang, 'cloth');
+  const generationPanelCopy = getGenerationPanelCopy(lang);
+
+  useEffect(() => {
+    if (isGenerating) {
+      setGenerationStartedAt((prev) => prev ?? Date.now());
+      return;
+    }
+
+    setGenerationStartedAt(null);
+    setGenerationProgress(finalImageSrc && resultPreviewState === 'ready' ? 100 : 0);
+  }, [finalImageSrc, isGenerating, resultPreviewState]);
+
+  useEffect(() => {
+    if (!isGenerating && !(finalImageSrc && resultPreviewState === 'loading')) {
+      return undefined;
+    }
+
+    const tick = () => {
+      if (finalImageSrc && resultPreviewState === 'loading') {
+        setGenerationProgress(96);
+        return;
+      }
+
+      const startedAt = generationStartedAt ?? Date.now();
+      const elapsed = Date.now() - startedAt;
+      const nextProgress = Math.min(92, Math.max(6, Math.round((elapsed / 30000) * 92)));
+      setGenerationProgress(nextProgress);
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 180);
+    return () => window.clearInterval(timer);
+  }, [finalImageSrc, generationStartedAt, isGenerating, resultPreviewState]);
+
+  useEffect(() => {
+    if (finalImageSrc && resultPreviewState === 'ready') {
+      setGenerationProgress(100);
+    }
+  }, [finalImageSrc, resultPreviewState]);
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -599,6 +660,45 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         )}
         <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
       </div>
+      {(isGenerating || (finalImageSrc && resultPreviewState === 'loading')) ? (
+        <div className={`generation-playground-card ${isModalLayout ? 'is-modal' : ''}`} aria-live="polite">
+          <div className="generation-playground-head">
+            <div>
+              <strong>{generationPanelCopy.title}</strong>
+              <p>{finalImageSrc ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating}</p>
+            </div>
+            <span className="generation-playground-percent">{generationProgress}%</span>
+          </div>
+          <div className="generation-playground-stage" aria-hidden="true">
+            <div className="generation-playground-lane generation-playground-lane-back" />
+            <div className="generation-playground-lane generation-playground-lane-front" />
+            <span className="generation-playground-pet generation-playground-dog">🐶</span>
+            <span className="generation-playground-pet generation-playground-cat">🐱</span>
+            <span className="generation-playground-spark generation-playground-spark-one">✦</span>
+            <span className="generation-playground-spark generation-playground-spark-two">✦</span>
+          </div>
+          <div className="generation-gauge">
+            <div className="generation-gauge-head">
+              <strong>{generationPanelCopy.elapsed}</strong>
+              <span>{generationProgress}%</span>
+            </div>
+            <div className="generation-gauge-track">
+              <div className="generation-gauge-fill" style={{ width: `${generationProgress}%` }} />
+              <div className="generation-gauge-ticks" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+            <div className="generation-gauge-meta">
+              <span>{copy.loadingDetail}</span>
+              <span>{copy.generating}</span>
+            </div>
+          </div>
+          <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
+        </div>
+      ) : null}
       {resultNode}
     </>
   );
