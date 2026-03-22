@@ -7917,7 +7917,41 @@ body {
 
 @media (max-width: 768px) {
   .creation-history-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .creation-history-card {
+    gap: 6px;
+    padding: 6px;
+    border-radius: 16px;
+    min-height: 0;
+  }
+
+  .creation-history-thumbnail {
+    border-radius: 12px;
+  }
+
+  .creation-history-card-copy {
+    gap: 2px;
+  }
+
+  .creation-history-card-copy strong {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .creation-history-card-copy span {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .creation-history-badge,
+  .creation-history-thumbnail-badge {
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 9px;
   }
 
   .history-warning-modal {
@@ -7933,26 +7967,51 @@ body {
 
   .creation-history-page-btn,
   .creation-history-page-indicator {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+  }
+
+  .creation-history-pagination {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
   }
 
   .history-modal-shell {
     width: min(100vw - 16px, 100vw);
-    max-height: min(94vh, 980px);
+    height: min(92vh, 860px);
+    max-height: min(92vh, 860px);
     border-radius: 22px;
   }
 
-  .history-modal-header,
-  .history-modal-body,
-  .history-modal-footer {
-    padding-left: 14px;
-    padding-right: 14px;
+  .history-modal-header {
+    gap: 10px;
+    padding: 12px 12px 8px;
   }
 
   .history-modal-toolbar {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding: 8px 12px 0;
     justify-content: stretch;
+    gap: 6px;
+  }
+
+  .history-modal-header-copy strong {
+    font-size: 14px;
+  }
+
+  .history-modal-header-copy p {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .history-modal-body {
+    overflow: auto;
+    padding: 10px 12px 12px;
+  }
+
+  .history-modal-footer {
+    padding: 8px 12px 12px;
   }
 
   .history-modal-toolbar .auth-inline-btn,
@@ -7962,7 +8021,27 @@ body {
   }
 
   .history-modal-inputs {
-    grid-template-columns: 1fr;
+    order: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .history-selected-result-card {
+    order: 1;
+  }
+
+  .history-modal-mobile-actions {
+    order: 3;
+  }
+
+  .history-modal-inputs > div strong,
+  .history-selected-result-card > strong {
+    font-size: 13px;
+  }
+
+  .history-modal-inputs > div span,
+  .history-selected-result-card > span {
+    font-size: 12px;
   }
 
   .result-share-sidebar-grid {
@@ -8085,9 +8164,62 @@ body {
   .landing-preview-hover {
     display: none;
   }
+
+  .history-selected-result-layout {
+    gap: 8px;
+  }
+
+  .history-modal-mobile-actions .history-actions {
+    margin-top: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .history-modal-mobile-actions .history-action-btn {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .history-modal-footer {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .history-selected-zoom-hint {
+    padding-right: 0;
+    margin-top: 6px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
+  .creation-history-grid {
+    gap: 6px;
+  }
+
+  .creation-history-card {
+    padding: 5px;
+    border-radius: 14px;
+  }
+
+  .creation-history-card-copy strong,
+  .creation-history-card-copy span {
+    font-size: 9px;
+  }
+
+  .creation-history-pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .creation-history-page-btn,
+  .creation-history-page-indicator {
+    width: 100%;
+  }
+
   .landing-result-showcase-section {
     margin-top: -18px;
   }
@@ -8099,6 +8231,24 @@ body {
   .landing-result-preview-copy p {
     font-size: 13px;
     line-height: 1.6;
+  }
+
+  .history-modal-shell {
+    height: min(94vh, 820px);
+    border-radius: 18px;
+  }
+
+  .history-modal-grid {
+    gap: 10px;
+  }
+
+  .history-modal-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .history-modal-mobile-actions .history-actions,
+  .history-modal-footer {
+    grid-template-columns: 1fr;
   }
 }
 

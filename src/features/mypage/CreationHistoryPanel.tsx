@@ -12,7 +12,8 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_PAGE_SIZE = 21;
+const DESKTOP_HISTORY_PAGE_SIZE = 21;
+const MOBILE_HISTORY_PAGE_SIZE = 9;
 const HISTORY_BASE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 
 const getHistoryPagerCopy = (locale: string) => {
@@ -264,6 +265,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const loadingStartedAtRef = useRef(0);
   const historyCopy = getHistoryCopy(locale);
   const pagerCopy = getHistoryPagerCopy(locale);
+  const historyPageSize = isMobile ? MOBILE_HISTORY_PAGE_SIZE : DESKTOP_HISTORY_PAGE_SIZE;
   const getPersonLabel = (item: GenerationRecord) => getResolvedPersonLabel(item, historyCopy);
   const getGarmentLabel = (item: GenerationRecord) => getResolvedGarmentLabel(item, historyCopy);
   const previewCardStyle: React.CSSProperties = {
@@ -321,10 +323,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
         return (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0);
       })
   ), [items]);
-  const pageCount = Math.max(1, Math.ceil(visibleItems.length / HISTORY_PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(visibleItems.length / historyPageSize));
   const pagedItems = useMemo(
-    () => visibleItems.slice(currentPage * HISTORY_PAGE_SIZE, (currentPage + 1) * HISTORY_PAGE_SIZE),
-    [currentPage, visibleItems],
+    () => visibleItems.slice(currentPage * historyPageSize, (currentPage + 1) * historyPageSize),
+    [currentPage, historyPageSize, visibleItems],
   );
 
   const hasVisibleItems = visibleItems.length > 0;
@@ -541,9 +543,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       return;
     }
 
-    setCurrentPage(Math.floor(preservedItemIndex / HISTORY_PAGE_SIZE));
+    setCurrentPage(Math.floor(preservedItemIndex / historyPageSize));
     setPendingArchiveSelectionId(null);
-  }, [pendingArchiveSelectionId, visibleItems]);
+  }, [historyPageSize, pendingArchiveSelectionId, visibleItems]);
 
   useEffect(() => {
     if (!selectedItem) {
