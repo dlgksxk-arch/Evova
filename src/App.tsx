@@ -117,6 +117,9 @@ const HOME_SHOWCASE_RESULT_IMAGES = [
   '/home-showcase/pet-look-03.png',
   '/home-showcase/pet-look-04.png',
   '/home-showcase/pet-look-05.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_6fc2255e-2b2f-4ffd-b9cd-268880eebe84.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_79b61e69-ed70-4eb6-ba50-86a1602cc78d.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7aee75d8-b336-48ae-b5f5-f1973f3ff173.png',
 ] as const;
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
@@ -147,60 +150,72 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
 const getHomeShowcaseCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
-      eyebrow: 'RESULT SPOTLIGHT',
-      title: '설명보다 결과가 먼저 보여야 재밌죠',
-      body: '사용 방법은 사용 방법 페이지에서 충분합니다. 홈에서는 실제 펫 피팅 결과 톤을 먼저 보여주고, 바로 생성까지 이어지게 구성했습니다.',
-      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      eyebrow: 'SEE THE TRANSFORMATION',
+      title: '첫 화면에서 “우리 애도 해보고 싶다”가 들어야 하죠',
+      body: '설명보다 먼저 결과가 보여야 바로 상상이 됩니다. 실제 펫 피팅 예시를 더 넓게 펼쳐두고, 마음에 드는 순간 바로 생성으로 이어지게 바꿨습니다.',
+      chips: ['실제 결과 먼저', '스크롤 멈추는 비주얼', '바로 업로드 시작'],
       items: [
-        { title: '아머 판타지', tag: 'Bold look', alt: '터콰이즈 아머 스타일의 프렌치불독 펫 피팅 결과' },
+        { title: '아머 판타지', tag: 'Fantasy', alt: '터콰이즈 아머 스타일의 프렌치불독 펫 피팅 결과' },
         { title: '한복 나이트', tag: 'Hanbok', alt: '짙은 남색 한복 스타일의 코기 펫 피팅 결과' },
         { title: '민트 세리머니', tag: 'Ceremony', alt: '민트 전통 의상 스타일의 흰 고양이 펫 피팅 결과' },
-        { title: '리본 클래식', tag: 'Classic', alt: '검은 의상과 리본을 착용한 코기 펫 피팅 결과' },
+        { title: '리본 클래식', tag: 'Ribbon', alt: '검은 의상과 리본을 착용한 코기 펫 피팅 결과' },
         { title: '블랙 포멀', tag: 'Formal', alt: '블랙 수트 스타일의 골든리트리버 펫 피팅 결과' },
+        { title: '핑크 팝', tag: 'Pop', alt: '핑크 포인트 의상을 착용한 반려동물 펫 피팅 결과' },
+        { title: '스카이 파일럿', tag: 'Playful', alt: '밝은 블루 톤 의상을 착용한 반려동물 펫 피팅 결과' },
+        { title: '로열 프릴', tag: 'Dressy', alt: '프릴 디테일 의상을 착용한 반려동물 펫 피팅 결과' },
       ],
     };
   }
   if (lang === 'ja') {
     return {
-      eyebrow: 'RESULT SPOTLIGHT',
-      title: '説明より先に結果が見えた方が楽しい',
-      body: '使い方の説明は専用ページで読めます。ホームでは、まず実際のペット試着結果の雰囲気を見て、そのまま生成へ進める構成にしました。',
-      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      eyebrow: 'SEE THE TRANSFORMATION',
+      title: '最初の画面で「うちの子でも試したい」と思わせたい',
+      body: '説明より先に結果が見えれば、使う理由がすぐに伝わります。実際のペット試着例を増やし、気になった瞬間にそのまま生成へ進める流れにしました。',
+      chips: ['実際の結果を先に', '目を止めるビジュアル', 'すぐにアップロード開始'],
       items: [
-        { title: 'アーマー ファンタジー', tag: 'Bold look', alt: 'ターコイズのアーマースタイルを着たフレンチブルドッグのペット試着結果' },
+        { title: 'アーマー ファンタジー', tag: 'Fantasy', alt: 'ターコイズのアーマースタイルを着たフレンチブルドッグのペット試着結果' },
         { title: '韓服ナイト', tag: 'Hanbok', alt: '濃紺の韓服スタイルを着たコーギーのペット試着結果' },
         { title: 'ミント セレモニー', tag: 'Ceremony', alt: 'ミント色の伝統衣装を着た白猫のペット試着結果' },
-        { title: 'リボン クラシック', tag: 'Classic', alt: '黒い衣装とリボンを着たコーギーのペット試着結果' },
+        { title: 'リボン クラシック', tag: 'Ribbon', alt: '黒い衣装とリボンを着たコーギーのペット試着結果' },
         { title: 'ブラック フォーマル', tag: 'Formal', alt: 'ブラックスーツスタイルのゴールデンレトリバーのペット試着結果' },
+        { title: 'ピンク ポップ', tag: 'Pop', alt: 'ピンクのポイント衣装を着たペット試着結果' },
+        { title: 'スカイ パイロット', tag: 'Playful', alt: '明るいブルートーン衣装を着たペット試着結果' },
+        { title: 'ロイヤル フリル', tag: 'Dressy', alt: 'フリルディテール衣装を着たペット試着結果' },
       ],
     };
   }
   if (lang === 'zh') {
     return {
-      eyebrow: 'RESULT SPOTLIGHT',
-      title: '首页先看结果，才更有趣',
-      body: '使用方法已经有独立页面，首页更适合先展示真实的宠物试穿结果，再把用户直接带进生成流程。',
-      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      eyebrow: 'SEE THE TRANSFORMATION',
+      title: '首页就该让人立刻想试试自己家的宠物',
+      body: '先看到结果，用户才会马上产生想象。首页现在铺开更多真实宠物试穿示例，让人一心动就能直接进入生成。',
+      chips: ['先看真实结果', '让人停下来的画面', '马上开始上传'],
       items: [
-        { title: '机甲幻想', tag: 'Bold look', alt: '穿着青绿色盔甲风格服装的法斗宠物试穿结果' },
+        { title: '机甲幻想', tag: 'Fantasy', alt: '穿着青绿色盔甲风格服装的法斗宠物试穿结果' },
         { title: '夜色韩服', tag: 'Hanbok', alt: '穿着深蓝韩服风格服装的柯基宠物试穿结果' },
         { title: '薄荷礼服', tag: 'Ceremony', alt: '穿着薄荷色传统礼服风格服装的白猫宠物试穿结果' },
-        { title: '蝴蝶结经典', tag: 'Classic', alt: '穿着黑色服装和蝴蝶结的柯基宠物试穿结果' },
+        { title: '蝴蝶结经典', tag: 'Ribbon', alt: '穿着黑色服装和蝴蝶结的柯基宠物试穿结果' },
         { title: '黑色正装', tag: 'Formal', alt: '穿着黑色西装风格服装的金毛宠物试穿结果' },
+        { title: '粉色流行', tag: 'Pop', alt: '穿着粉色点缀服装的宠物试穿结果' },
+        { title: '天空飞行员', tag: 'Playful', alt: '穿着明亮蓝色调服装的宠物试穿结果' },
+        { title: '皇家褶边', tag: 'Dressy', alt: '穿着带褶边细节服装的宠物试穿结果' },
       ],
     };
   }
   return {
-    eyebrow: 'RESULT SPOTLIGHT',
-    title: 'Results should sell the fun before the instructions do',
-    body: 'The how-to belongs on the how-to page. The homepage now leads with actual pet fitting results so visitors can feel the tone of the product before they read more.',
-    chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+    eyebrow: 'SEE THE TRANSFORMATION',
+    title: 'The first screen should make people want to try their own pet',
+    body: 'Results need to hit before the explanation does. The homepage now shows a larger wall of real pet fitting examples so visitors can feel the payoff and jump into generation immediately.',
+    chips: ['Real results first', 'Scroll-stopping visuals', 'Upload and generate fast'],
     items: [
-      { title: 'Armor Fantasy', tag: 'Bold look', alt: 'French bulldog pet fitting result in a turquoise armor outfit' },
+      { title: 'Armor Fantasy', tag: 'Fantasy', alt: 'French bulldog pet fitting result in a turquoise armor outfit' },
       { title: 'Hanbok Night', tag: 'Hanbok', alt: 'Corgi pet fitting result in a dark hanbok outfit' },
       { title: 'Mint Ceremony', tag: 'Ceremony', alt: 'White cat pet fitting result in a mint ceremonial outfit' },
-      { title: 'Ribbon Classic', tag: 'Classic', alt: 'Corgi pet fitting result in a black outfit with a ribbon' },
+      { title: 'Ribbon Classic', tag: 'Ribbon', alt: 'Corgi pet fitting result in a black outfit with a ribbon' },
       { title: 'Black Formal', tag: 'Formal', alt: 'Golden retriever pet fitting result in a black suit outfit' },
+      { title: 'Pink Pop', tag: 'Pop', alt: 'Pet fitting result in a pink accent outfit' },
+      { title: 'Sky Pilot', tag: 'Playful', alt: 'Pet fitting result in a bright blue outfit' },
+      { title: 'Royal Frill', tag: 'Dressy', alt: 'Pet fitting result in a frill-detailed outfit' },
     ],
   };
 };
@@ -5674,15 +5689,17 @@ const App: React.FC = () => {
                   {homeShowcaseCopy.items.map((item, index) => (
                     <button
                       key={item.title}
-                      className={`landing-result-tile landing-result-tile-${index + 1}`}
+                      className="landing-result-tile"
                       onClick={handleHeroCta}
                       type="button"
                     >
-                      <img
-                        src={HOME_SHOWCASE_RESULT_IMAGES[index]}
-                        alt={item.alt}
-                        loading="lazy"
-                      />
+                      <div className="landing-result-tile-media">
+                        <img
+                          src={HOME_SHOWCASE_RESULT_IMAGES[index]}
+                          alt={item.alt}
+                          loading="lazy"
+                        />
+                      </div>
                       <div className="landing-result-tile-copy">
                         <span>{item.tag}</span>
                         <strong>{item.title}</strong>
