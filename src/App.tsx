@@ -111,6 +111,13 @@ const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsb
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
+const HOME_SHOWCASE_RESULT_IMAGES = [
+  '/home-showcase/pet-look-01.png',
+  '/home-showcase/pet-look-02.png',
+  '/home-showcase/pet-look-03.png',
+  '/home-showcase/pet-look-04.png',
+  '/home-showcase/pet-look-05.png',
+] as const;
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
@@ -137,52 +144,64 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
 ]);
-const getHomeQuickCopy = (lang: LanguageCode) => {
+const getHomeShowcaseCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
-      previewEyebrow: '결과 예시',
-      previewTitle: '이런 흐름으로 바로 결과를 만들어요',
-      previewBody: '반려동물 사진과 의상 이미지를 넣으면, 귀여운 결과 예시처럼 빠르게 비교할 수 있습니다.',
-      petLabel: '반려동물 사진',
-      outfitLabel: '의상 이미지',
-      resultLabel: '결과 예시',
-      ctaTitle: '지금 바로 시작해보세요',
-      ctaBody: '반려동물 의상 미리보기를 몇 초 안에 만들어볼 수 있어요.',
+      eyebrow: 'RESULT SPOTLIGHT',
+      title: '설명보다 결과가 먼저 보여야 재밌죠',
+      body: '사용 방법은 사용 방법 페이지에서 충분합니다. 홈에서는 실제 펫 피팅 결과 톤을 먼저 보여주고, 바로 생성까지 이어지게 구성했습니다.',
+      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      items: [
+        { title: '아머 판타지', tag: 'Bold look', alt: '터콰이즈 아머 스타일의 프렌치불독 펫 피팅 결과' },
+        { title: '한복 나이트', tag: 'Hanbok', alt: '짙은 남색 한복 스타일의 코기 펫 피팅 결과' },
+        { title: '민트 세리머니', tag: 'Ceremony', alt: '민트 전통 의상 스타일의 흰 고양이 펫 피팅 결과' },
+        { title: '리본 클래식', tag: 'Classic', alt: '검은 의상과 리본을 착용한 코기 펫 피팅 결과' },
+        { title: '블랙 포멀', tag: 'Formal', alt: '블랙 수트 스타일의 골든리트리버 펫 피팅 결과' },
+      ],
     };
   }
   if (lang === 'ja') {
     return {
-      previewEyebrow: '結果プレビュー',
-      previewTitle: 'こんな流れですぐに結果を作れます',
-      previewBody: 'ペット写真と衣装画像を入れるだけで、かわいい結果をすばやく比較できます。',
-      petLabel: 'ペット写真',
-      outfitLabel: '衣装画像',
-      resultLabel: '結果イメージ',
-      ctaTitle: '今すぐ試してみましょう',
-      ctaBody: '数秒でペット衣装プレビューを作れます。',
+      eyebrow: 'RESULT SPOTLIGHT',
+      title: '説明より先に結果が見えた方が楽しい',
+      body: '使い方の説明は専用ページで読めます。ホームでは、まず実際のペット試着結果の雰囲気を見て、そのまま生成へ進める構成にしました。',
+      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      items: [
+        { title: 'アーマー ファンタジー', tag: 'Bold look', alt: 'ターコイズのアーマースタイルを着たフレンチブルドッグのペット試着結果' },
+        { title: '韓服ナイト', tag: 'Hanbok', alt: '濃紺の韓服スタイルを着たコーギーのペット試着結果' },
+        { title: 'ミント セレモニー', tag: 'Ceremony', alt: 'ミント色の伝統衣装を着た白猫のペット試着結果' },
+        { title: 'リボン クラシック', tag: 'Classic', alt: '黒い衣装とリボンを着たコーギーのペット試着結果' },
+        { title: 'ブラック フォーマル', tag: 'Formal', alt: 'ブラックスーツスタイルのゴールデンレトリバーのペット試着結果' },
+      ],
     };
   }
   if (lang === 'zh') {
     return {
-      previewEyebrow: '结果预览',
-      previewTitle: '按这个流程就能快速生成结果',
-      previewBody: '上传宠物照片和服装图片后，就能像下面这样快速看到可爱的效果预览。',
-      petLabel: '宠物照片',
-      outfitLabel: '服装图片',
-      resultLabel: '结果示例',
-      ctaTitle: '现在就试试看',
-      ctaBody: '几秒内就能生成宠物穿搭预览。',
+      eyebrow: 'RESULT SPOTLIGHT',
+      title: '首页先看结果，才更有趣',
+      body: '使用方法已经有独立页面，首页更适合先展示真实的宠物试穿结果，再把用户直接带进生成流程。',
+      chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+      items: [
+        { title: '机甲幻想', tag: 'Bold look', alt: '穿着青绿色盔甲风格服装的法斗宠物试穿结果' },
+        { title: '夜色韩服', tag: 'Hanbok', alt: '穿着深蓝韩服风格服装的柯基宠物试穿结果' },
+        { title: '薄荷礼服', tag: 'Ceremony', alt: '穿着薄荷色传统礼服风格服装的白猫宠物试穿结果' },
+        { title: '蝴蝶结经典', tag: 'Classic', alt: '穿着黑色服装和蝴蝶结的柯基宠物试穿结果' },
+        { title: '黑色正装', tag: 'Formal', alt: '穿着黑色西装风格服装的金毛宠物试穿结果' },
+      ],
     };
   }
   return {
-    previewEyebrow: 'Preview',
-    previewTitle: 'See the result before you scroll',
-    previewBody: 'Upload your pet, add an outfit image, and get a cute preview like this in seconds.',
-    petLabel: 'Pet photo',
-    outfitLabel: 'Outfit image',
-    resultLabel: 'Result preview',
-    ctaTitle: 'Try it now',
-    ctaBody: 'Create your pet outfit preview in seconds.',
+    eyebrow: 'RESULT SPOTLIGHT',
+    title: 'Results should sell the fun before the instructions do',
+    body: 'The how-to belongs on the how-to page. The homepage now leads with actual pet fitting results so visitors can feel the tone of the product before they read more.',
+    chips: ['Share-ready', 'Dog & Cat', 'Fast preview'],
+    items: [
+      { title: 'Armor Fantasy', tag: 'Bold look', alt: 'French bulldog pet fitting result in a turquoise armor outfit' },
+      { title: 'Hanbok Night', tag: 'Hanbok', alt: 'Corgi pet fitting result in a dark hanbok outfit' },
+      { title: 'Mint Ceremony', tag: 'Ceremony', alt: 'White cat pet fitting result in a mint ceremonial outfit' },
+      { title: 'Ribbon Classic', tag: 'Classic', alt: 'Corgi pet fitting result in a black outfit with a ribbon' },
+      { title: 'Black Formal', tag: 'Formal', alt: 'Golden retriever pet fitting result in a black suit outfit' },
+    ],
   };
 };
 const getAboutVisualCopy = (lang: LanguageCode) => {
@@ -3359,7 +3378,7 @@ const App: React.FC = () => {
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
-  const homeQuickCopy = getHomeQuickCopy(lang);
+  const homeShowcaseCopy = getHomeShowcaseCopy(lang);
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -5631,46 +5650,45 @@ const App: React.FC = () => {
       ) : currentPage === 'home' ? (
         <>
           <main className="landing-home-shell">
-            <section className="section landing-preview-section">
-              <div className="section-inner">
-                <div className="section-copy landing-copy landing-preview-copy">
-                  <span className="howto-visual-eyebrow">{homeQuickCopy.previewEyebrow}</span>
-                  <h2>{homeQuickCopy.previewTitle}</h2>
-                  <p>{homeQuickCopy.previewBody}</p>
-                </div>
-                <div className="howto-visual-flow landing-preview-flow">
-                  <article className="howto-visual-stage">
-                    <div className="howto-visual-stage-header">
-                      <span className="howto-stage-badge">1</span>
-                      <strong>{homeQuickCopy.petLabel}</strong>
-                    </div>
-                    <div className="howto-stage-image-card">
-                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.petLabel}</span>
-                      <img src={guideFixedPet} alt={homeQuickCopy.petLabel} loading="lazy" />
-                    </div>
-                  </article>
-                  <div className="howto-flow-arrow">→</div>
-                  <article className="howto-visual-stage">
-                    <div className="howto-visual-stage-header">
-                      <span className="howto-stage-badge">2</span>
-                      <strong>{homeQuickCopy.outfitLabel}</strong>
-                    </div>
-                    <div className="howto-stage-image-card">
-                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.outfitLabel}</span>
-                      <img src={guideFixedCloth} alt={homeQuickCopy.outfitLabel} loading="lazy" />
-                    </div>
-                  </article>
-                  <div className="howto-flow-arrow">→</div>
-                  <article className="howto-visual-stage">
-                    <div className="howto-visual-stage-header">
-                      <span className="howto-stage-badge">3</span>
-                      <strong>{homeQuickCopy.resultLabel}</strong>
-                    </div>
-                    <div className="howto-stage-image-card">
-                      <span className="howto-stage-chip howto-stage-chip-static">{homeQuickCopy.resultLabel}</span>
-                      <img src={guideFixedResult} alt={homeQuickCopy.resultLabel} loading="lazy" />
-                    </div>
-                  </article>
+            <section className="section landing-result-showcase-section">
+              <div className="section-inner landing-result-showcase">
+                <article className="landing-result-showcase-copy">
+                  <span className="howto-visual-eyebrow">{homeShowcaseCopy.eyebrow}</span>
+                  <h2>{homeShowcaseCopy.title}</h2>
+                  <p>{homeShowcaseCopy.body}</p>
+                  <div className="landing-result-chip-row">
+                    {homeShowcaseCopy.chips.map((chip) => (
+                      <span key={chip} className="landing-result-chip">{chip}</span>
+                    ))}
+                  </div>
+                  <div className="landing-inline-actions landing-result-actions">
+                    <button className="generate-btn" onClick={handleHeroCta} type="button">
+                      {landingContent.hero.primaryButton}
+                    </button>
+                    <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                      {landingContent.sampleInfo.button}
+                    </button>
+                  </div>
+                </article>
+                <div className="landing-result-mosaic">
+                  {homeShowcaseCopy.items.map((item, index) => (
+                    <button
+                      key={item.title}
+                      className={`landing-result-tile landing-result-tile-${index + 1}`}
+                      onClick={handleHeroCta}
+                      type="button"
+                    >
+                      <img
+                        src={HOME_SHOWCASE_RESULT_IMAGES[index]}
+                        alt={item.alt}
+                        loading="lazy"
+                      />
+                      <div className="landing-result-tile-copy">
+                        <span>{item.tag}</span>
+                        <strong>{item.title}</strong>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </section>
@@ -5683,39 +5701,6 @@ const App: React.FC = () => {
                 <div className="landing-card-grid">
                   {landingContent.features.items.map((item) => (
                     <article key={item.title} className="compact-info-card landing-feature-card">
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="section landing-step-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.steps.title}</h2>
-                </div>
-                <div className="landing-step-grid">
-                  {landingContent.steps.items.map((item) => (
-                    <article key={item.step} className="page-article landing-step-card">
-                      <span className="landing-step-badge">{item.step}</span>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="section landing-example-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.examples.title}</h2>
-                </div>
-                <div className="landing-card-grid">
-                  {landingContent.examples.items.map((item) => (
-                    <article key={item.title} className="compact-info-card landing-example-card">
                       <h3>{item.title}</h3>
                       <p>{item.description}</p>
                     </article>
