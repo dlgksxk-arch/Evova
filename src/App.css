@@ -4794,7 +4794,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .result-preview-panel.is-modal .result-preview-panel-image {
-  padding: 14px 64px 14px 14px;
+  width: 50%;
+  max-width: calc(100% - 108px);
+  height: calc(100% - 28px);
+  min-height: 0;
+  margin: 14px auto;
+  padding: 0;
+  object-fit: contain;
 }
 
 .result-preview-panel-image.is-visible {
@@ -4972,13 +4978,13 @@ a { color: inherit; text-decoration: none; }
 .result-action-overlay .share-platform-btn,
 .result-action-overlay .download-btn,
 .result-action-overlay .result-action-btn {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border-radius: 999px;
-  justify-content: center;
+  min-width: 122px;
+  width: auto;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 14px;
+  justify-content: flex-start;
   border: none;
   background: rgba(255,255,255,0.92);
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -4987,13 +4993,50 @@ a { color: inherit; text-decoration: none; }
 
 .result-action-overlay .share-platform-btn span:last-child,
 .result-action-overlay .download-btn span:last-child {
-  display: none;
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .result-action-overlay .share-platform-icon {
   width: 18px;
   height: 18px;
   background: transparent;
+}
+
+.result-action-overlay .download-btn {
+  background: linear-gradient(135deg, #ff7a59, #ff4f87);
+  color: #fff;
+}
+
+.result-action-overlay .share-platform-btn.utility {
+  background: rgba(255,255,255,0.94);
+}
+
+.result-action-overlay .share-x {
+  background: #111827;
+  color: #fff;
+}
+
+.result-action-overlay .share-facebook {
+  background: #eaf2ff;
+  color: #1d4ed8;
+}
+
+.result-action-overlay .share-kakao {
+  background: #fee500;
+  color: #3b1e1e;
+}
+
+.result-action-overlay .share-line {
+  background: #e8fff1;
+  color: #059669;
+}
+
+.result-action-overlay .share-instagram {
+  background: linear-gradient(135deg, #fff1f7, #f8e8ff 52%, #eef3ff);
+  color: #c13584;
 }
 
 .result-status-text-overlay {
@@ -7970,8 +8013,8 @@ body {
   .result-action-overlay .share-platform-btn,
   .result-action-overlay .download-btn,
   .result-action-overlay .result-action-btn {
-    width: 40px;
-    min-width: 40px;
+    min-width: 108px;
+    width: auto;
     height: 40px;
     min-height: 40px;
   }
@@ -8198,8 +8241,8 @@ body {
   .result-action-overlay .share-platform-btn,
   .result-action-overlay .download-btn,
   .result-action-overlay .result-action-btn {
-    width: 36px;
-    min-width: 36px;
+    min-width: 96px;
+    width: auto;
     height: 36px;
     min-height: 36px;
   }
