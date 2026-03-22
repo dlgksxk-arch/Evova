@@ -52,3 +52,16 @@ export const LANGUAGE_OPTIONS: LanguageOption[] = [
   { value: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt', shortLabel: 'VI' },
   { value: 'it', label: 'Italian', nativeLabel: 'Italiano', shortLabel: 'IT' },
 ];
+
+export const APP_SUPPORTED_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const satisfies readonly LanguageCode[];
+
+export const PUBLIC_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const satisfies readonly LanguageCode[];
+
+export const PUBLIC_LANGUAGE_OPTIONS: LanguageOption[] = LANGUAGE_OPTIONS.filter((option) =>
+  PUBLIC_LANGUAGE_CODES.includes(option.value as (typeof PUBLIC_LANGUAGE_CODES)[number]),
+);
+
+export const isAppSupportedLanguageCode = (value: string | null | undefined): value is LanguageCode =>
+  value !== null
+  && value !== undefined
+  && APP_SUPPORTED_LANGUAGE_CODES.includes(value as (typeof APP_SUPPORTED_LANGUAGE_CODES)[number]);

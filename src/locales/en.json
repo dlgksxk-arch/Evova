@@ -346,33 +346,24 @@
           ]
         },
         {
-          "heading": "Why this page exists",
+          "heading": "How to read the plans",
           "paragraphs": [
-            "This page is a lightweight pricing guide for users who want to compare pack size, sale price, and estimated generation count without opening a full checkout screen.",
-            "It is meant to help you scan the options fast and then continue into My Page or the credit purchase flow when needed."
+            "Use this page to compare pack size, sale price, and expected generation volume before you enter checkout.",
+            "The goal is simple plan comparison, not to repeat every billing policy or support article in one place."
           ]
         },
         {
-          "heading": "Billing and support",
+          "heading": "Subscriptions and extra credits",
           "paragraphs": [
-            "For payment questions, billing review, or technical issues related to credit delivery, contact HAMDEVA support at dlgksxk@gmail.com.",
-            "For card transactions, Paddle may appear as the merchant of record and billing contact on the payment record."
+            "Some plans are meant for recurring use, while others are one-time credit purchases for lighter or occasional generation volume.",
+            "Choose the option that matches how often you expect to create pet outfit previews rather than defaulting to the largest pack."
           ]
         },
         {
-          "heading": "Business information",
+          "heading": "Billing contact",
           "paragraphs": [
-            "HAMDEVA is operated by Masterlink, a sole proprietorship run by Seunghak Lee in South Korea.",
-            "Business registration date: 2025-11-04.",
-            "Support contact for billing and service questions: dlgksxk@gmail.com."
-          ]
-        },
-        {
-          "heading": "Refund policy",
-          "paragraphs": [
-            "If credits were deducted but image generation failed because of a service-side error, the used credits may be restored automatically to the same account.",
-            "If a payment was completed by mistake or a technical issue needs manual review, contact HAMDEVA support with the account email, payment time, and a short description of the problem.",
-            "Because credit products are digital goods used inside the service, completed purchases are generally treated as non-refundable unless duplicate payment, failed credit delivery, or another verified technical issue is confirmed."
+            "For payment questions or credit delivery issues, contact HAMDEVA support at dlgksxk@gmail.com.",
+            "For card transactions, Paddle may appear as the merchant of record on the payment record."
           ]
         }
       ]
@@ -453,8 +444,7 @@
           "paragraphs": [
             "Images may be transmitted for AI processing, but the service is intended to avoid long-term personal photo storage as part of normal use.",
             "Users should avoid uploading sensitive images they do not wish to process through an AI service.",
-            "Before using the platform, visitors should understand that image-based generation requires temporary technical handling of source material in order to produce the requested output.",
-            "Privacy pages should therefore explain not only legal language, but also the practical meaning of uploading a portrait or garment reference."
+            "Before using the platform, visitors should understand that image-based generation requires temporary technical handling of source material in order to produce the requested output."
           ]
         },
         {
@@ -515,11 +505,10 @@
           ]
         },
         {
-          "heading": "Privacy and image handling",
+          "heading": "Service use",
           "paragraphs": [
-            "Uploaded images are used to generate the requested fitting result and related service functions. HAMDEVA is not intended to operate as a permanent personal photo archive.",
-            "Users should avoid uploading highly sensitive material they do not want processed through an AI-based image workflow. The service is designed around fitting generation, not long-term storage of personal source images.",
-            "These expectations exist so the service can remain focused on its intended use case: visual outfit exploration with informed user consent."
+            "HAMDEVA is offered as a digital pet fitting and content service. Features, sample collections, informational pages, and generation workflows may evolve over time as the site grows.",
+            "The presence of a garment sample, article, or visual example on the site does not automatically mean a physical product is sold or guaranteed by HAMDEVA itself."
           ]
         },
         {
@@ -527,16 +516,7 @@
           "paragraphs": [
             "For support, partnership questions, or content feedback, users can contact HAMDEVA through the support form and the published support email on this page.",
             "The main support contact for HAMDEVA is dlgksxk@gmail.com.",
-            "When reporting a problem, include the action you attempted and the message shown on screen. Clear details make technical support and quality review much faster.",
-            "Well-written support requests help the platform improve both technical stability and content quality over time."
-          ]
-        },
-        {
-          "heading": "Service scope",
-          "paragraphs": [
-            "HAMDEVA is offered as a digital pet fitting and content service. Features, sample collections, informational pages, and generation workflows may evolve over time as the site grows.",
-            "The presence of a garment sample, article, or visual example on the site does not automatically mean a physical product is sold, stocked, or guaranteed by HAMDEVA itself. The service primarily provides digital previews and digital credit-based generation.",
-            "Users should interpret the public pages as guidance and exploration resources unless a specific commercial relationship is explicitly stated."
+            "When reporting a problem, include the action you attempted and the message shown on screen so the issue can be reviewed more efficiently."
           ]
         },
         {
@@ -545,14 +525,6 @@
             "HAMDEVA operates this website as a digital service brand focused on AI pet outfit previews for dogs and cats.",
             "The service is operated by Masterlink, a sole proprietorship run by Seunghak Lee. Business registration date: 2025-11-04.",
             "For some payment transactions, Paddle may act as the merchant of record and process the payment on behalf of the service."
-          ]
-        },
-        {
-          "heading": "Refund policy",
-          "paragraphs": [
-            "When a generation fails because of a service-side error after credits were deducted, HAMDEVA may restore the deducted credits to the same user account.",
-            "Payments for digital credit products are generally non-refundable once delivered, except where duplicate payment, failed credit delivery, or another verified technical fault is confirmed by the service team.",
-            "Users requesting a payment review should contact support with enough detail to identify the account and transaction."
           ]
         }
       ]
@@ -566,9 +538,7 @@
           "paragraphs": [
             "Use the contact form or direct email for product issues, article feedback, or partnership discussions.",
             "The main support email for HAMDEVA is dlgksxk@gmail.com.",
-            "Business operator: Masterlink. Sole proprietor: Seunghak Lee.",
-            "We review messages related to AI quality, cultural content, and platform support.",
-            "The contact page is intended to help visitors understand what kinds of inquiries are appropriate and how to write a message that can be reviewed efficiently."
+            "We review messages related to AI quality, account support, cultural content, and partnership inquiries."
           ]
         },
         {
@@ -577,14 +547,6 @@
             "If you are reporting a technical issue, include the page you visited, the action you attempted, the device or browser you used, and the message that appeared on screen.",
             "If you are sending content feedback, mention the page or garment topic involved and describe what should be corrected, expanded, or clarified.",
             "If you are reaching out for partnership reasons, explain the collaboration context so the request can be reviewed with the right expectations."
-          ]
-        },
-        {
-          "heading": "Response context",
-          "paragraphs": [
-            "A small publisher site cannot guarantee immediate response to every message, but clear and specific inquiries are much easier to evaluate than generic one-line contact requests.",
-            "This page therefore serves two purposes: it gives visitors a working contact route, and it explains how communication with the site should be approached.",
-            "That added context increases the usefulness of the page as real publisher content rather than leaving it as a thin form-only screen."
           ]
         }
       ]

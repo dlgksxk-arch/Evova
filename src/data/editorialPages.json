@@ -12,42 +12,42 @@
   "pages": {
     "about": {
       "title": "About HAMDEVA",
-      "description": "Understand HAMDEVA as a content-led virtual try-on platform, not just a single-purpose fitting tool.",
-      "summary": "HAMDEVA combines AI fitting, educational fashion writing, and practical guidance so visitors can learn before they generate.",
+      "description": "Learn what HAMDEVA does, who it helps, and how pet outfit previews fit into the wider service experience.",
+      "summary": "HAMDEVA is a pet outfit preview service built around simple generation, sample browsing, and practical guidance for better results.",
       "sections": [
         {
-          "heading": "Why HAMDEVA exists",
+          "heading": "What HAMDEVA is for",
           "paragraphs": [
-            "HAMDEVA was built around a problem that many fashion users already feel but rarely describe clearly. Online clothing decisions often begin with uncertainty, especially when the garment is culturally specific, visually complex, or unfamiliar to the person browsing it. A user may like the color of an outfit or the mood of a photograph, but still have no idea how the clothing will read on a real face and body presence. That uncertainty is even stronger when the garment belongs to a tradition such as Hanbok or another regional dress category that the visitor has never worn before.",
-            "The site responds to that problem by combining explanation with visualization. Instead of presenting an empty upload interface and expecting the user to understand everything through trial and error, HAMDEVA surrounds the tool with articles, sample routes, photo guidance, and FAQs that help the visitor make sense of what they are doing. The platform is therefore designed as a publisher site with a working tool inside it, not as a thin wrapper around a generation button."
+            "HAMDEVA helps pet owners preview outfit ideas before they commit to buying, styling, or sharing a look for a dog or cat.",
+            "The service is built for quick visual comparison. Instead of guessing from a clothing image alone, a user can test whether an outfit direction feels playful, formal, seasonal, or photo-friendly on their pet."
           ]
         },
         {
-          "heading": "A publisher model rather than a blank utility",
+          "heading": "Why pet outfit planning needs a preview step",
           "paragraphs": [
-            "Many AI fashion products look busy on the surface but thin underneath. They invite action immediately, yet give the visitor almost no context about garment categories, input quality, or the limits of AI imagery. That kind of experience may generate clicks, but it often produces weak outcomes because the user does not know how to prepare a portrait, why one outfit reference works better than another, or how to interpret the result. HAMDEVA takes the opposite approach. It treats editorial context as infrastructure for better usage.",
-            "That is why the public pages explain traditional outfits, country-specific dress references, input-photo discipline, and the difference between a useful preview and a guaranteed real-world fit. A visitor who reads before generating will often choose better images, compare outputs more carefully, and understand the cultural material more respectfully. In practical terms, good content reduces bad generations, improves trust, and gives the site stronger search value at the same time."
+            "Pet outfits can look very different depending on fur color, face shape, ear silhouette, body proportion, and how much of the neck or chest stays visible in the final image.",
+            "A preview helps users rule out weak directions early. That makes the service useful for costume planning, holiday photos, special events, and everyday outfit experiments without turning every decision into a blind purchase."
           ]
         },
         {
-          "heading": "How the fitting model is framed",
+          "heading": "How the site is organized",
           "paragraphs": [
-            "HAMDEVA does not frame AI as a replacement for tailoring, craft, or physical fitting. The service is described as a visual planning layer that helps users compare silhouette, mood, and garment identity before they move further into shopping, renting, travel planning, or content production. That distinction matters because fashion technology becomes much more credible when it is honest about what it can and cannot do.",
-            "The current workflow uses a portrait or face image as the identity anchor and a clothing image as the strongest garment reference. The output is presented as a coordinated multi-view sheet rather than an isolated glamour shot. This layout is intentionally comparison-friendly. It gives the viewer more useful information about the clothing than a single front-facing result and makes the platform more valuable as a decision-support tool."
+            "HAMDEVA separates its public pages by job. The sample pages help users browse outfits and pet references, the how-to pages explain workflow, and the legal or support pages handle policy and contact questions.",
+            "That structure keeps the main try-on experience lighter. Users can read only the page they need instead of finding the same explanation repeated everywhere."
           ]
         },
         {
-          "heading": "Why cultural fashion needs context",
+          "heading": "How to treat the result",
           "paragraphs": [
-            "A modern blazer and a heritage garment do not ask the same questions from the viewer. People already have a shared visual vocabulary for common everyday fashion items, but traditional clothing often arrives without that background. A user may admire the shape of a Hanbok, Kimono, Qipao, or Saree and still not know why it feels formal, ceremonial, youthful, romantic, or regionally distinctive. Without guidance, those garments can be reduced to decorative novelty.",
-            "HAMDEVA tries to avoid that flattening effect by treating cultural clothing as a topic worthy of explanation. The sample-outfit pages, country pages, and how-to articles are there to help the user see more than surface beauty. They create a path from first impression to informed comparison, which is important both for respectful presentation and for stronger image-generation results."
+            "HAMDEVA presents AI output as a visual planning preview, not as exact proof of real-world fit, tailoring, or fabric behavior.",
+            "The strongest use of a result is comparison. Users can judge mood, silhouette, and shareability first, then decide whether a look is worth trying in real life."
           ]
         },
         {
-          "heading": "What the site is trying to become",
+          "heading": "What users can do next",
           "paragraphs": [
-            "The long-term direction is a hybrid platform where editorial pages, fitting guidance, and practical try-on generation reinforce one another. In that model, the tool does not sit beside the content by accident. The content teaches users what to notice, how to prepare input, and which questions matter. The tool then turns those questions into a visible experiment that helps the user decide more confidently.",
-            "That hybrid structure is also strategically important for search performance and ad safety. A site that offers substantial topic pages, coherent navigation, and information-rich routes can be understood as a real publishing destination. That is a stronger position than a site that presents only tool states, account states, and action prompts. HAMDEVA is therefore being shaped as a content-plus-tool product on purpose."
+            "After a first preview, users can swap outfit references, compare multiple looks with the same pet photo, and save the result they prefer.",
+            "The overall goal is a workflow that stays simple: browse ideas, generate a preview, compare options, and move forward with more confidence."
           ]
         }
       ],
@@ -73,42 +73,42 @@
     },
     "how-it-works": {
       "title": "How HAMDEVA Works",
-      "description": "Follow the full workflow from portrait choice to outfit reference, generation review, and practical comparison.",
-      "summary": "This guide explains how to prepare images, what the system preserves, and how to read the resulting fashion sheet without over-trusting it.",
+      "description": "Follow the core HAMDEVA workflow from pet photo selection to outfit reference choice and result review.",
+      "summary": "This page focuses on the basic pet fitting sequence so users can understand the flow before they start generating.",
       "sections": [
         {
-          "heading": "Start with the right portrait",
+          "heading": "Step 1: Choose the pet photo",
           "paragraphs": [
-            "The fitting process begins with the identity image, and that image does much more than provide a face. It gives the model a reference for overall presence, hairstyle, visible facial structure, and the rough visual center of the person who should appear in the final output. If the portrait is too dark, cropped too aggressively, hidden by hands or hair, or distorted by heavy filters, the model has less stable information to preserve. That usually weakens the realism of the result before the clothing step even begins.",
-            "A good portrait does not need to look expensive. It needs to be readable. Balanced light, a clear front or near-front angle, and enough upper-body information to suggest posture are usually more important than a dramatic background. Users often improve output quality simply by choosing a calmer image that gives the system less ambiguity."
+            "Start with one clear dog or cat photo. The best source usually shows the face well, keeps the body orientation easy to read, and avoids heavy blur or obstruction.",
+            "This image acts as the pet reference for the full generation, so it should represent the pet you actually want to preview."
           ]
         },
         {
-          "heading": "Choose the outfit image with intention",
+          "heading": "Step 2: Pick the outfit image",
           "paragraphs": [
-            "The garment reference is the strongest source for silhouette, trim, color blocking, and decorative hierarchy. In other words, the outfit image tells the model what kind of clothing it should respect. This is why product images, clear editorial references, and visually organized garment photographs tend to work better than chaotic screenshots or heavily obstructed pictures. If the model cannot read the outline of the garment, it becomes much harder to preserve the design in a believable way.",
-            "Users should think of the clothing image as a briefing document rather than a casual attachment. The more clearly the shape, structure, and focal details are shown, the easier it is for the system to generate a result that still feels related to the original garment. Traditional clothing benefits from this especially because sleeve volume, overlap structure, ribbon placement, and skirt or robe behavior matter more than a simple front print."
+            "Next, select the clothing reference that should guide the look. A readable outfit image gives the system a clearer idea of shape, trim, and overall style direction.",
+            "If you do not have your own outfit reference yet, the sample outfit pages work as a safe starting point before you switch to a custom image."
           ]
         },
         {
-          "heading": "Why HAMDEVA uses a multi-view sheet",
+          "heading": "Step 3: Generate the preview",
           "paragraphs": [
-            "One of the most practical parts of the current workflow is the multi-view output format. Instead of asking the system for a single attractive front image, HAMDEVA pushes toward a coordinated sheet that shows the same person and garment from several useful angles. This makes the result more comparable to a catalog or lookbook page and less like a random one-off visual experiment.",
-            "That matters because many outfits reveal their real value in side shape, back drape, or proportion rather than in front-only presentation. A traditional skirt, robe, ribbon, or layered top may look convincing from the front while losing coherence from the side or back. The multi-view approach gives the user more practical information for evaluating whether the visual idea still holds up."
+            "Once both images are ready, run the try-on flow and wait for the result sheet. HAMDEVA is designed to return a comparison-friendly output rather than a single decorative hero image.",
+            "That makes it easier to review one look quickly before moving on to a second outfit or a different pet photo."
           ]
         },
         {
-          "heading": "How to judge the result properly",
+          "heading": "Step 4: Compare the result to the source",
           "paragraphs": [
-            "The result should always be read against the reference images, not as an isolated final truth. A strong review compares silhouette, trim emphasis, garment balance, and whether the output still communicates the same mood as the source. If the result looks softer, shorter, flatter, or more generic than the original outfit, the user should ask whether the garment image was unclear or whether the source contained too much visual noise for the model to interpret well.",
-            "That comparison habit matters more than blind regeneration. Many users assume that more attempts automatically mean better results, but low-quality input often keeps producing low-quality variations. The better workflow is to improve the portrait, refine the garment reference, and treat the model as a visual interpreter that responds to stronger material."
+            "After generation, compare the output with the original outfit image. Check whether the mood, major silhouette, and category cues still feel close to the source.",
+            "If the preview feels weak, the first fix is usually better source material, not blind repetition."
           ]
         },
         {
-          "heading": "Where the workflow is most useful",
+          "heading": "Step 5: Iterate or save",
           "paragraphs": [
-            "HAMDEVA is strongest in the early decision stage. It helps a user decide whether an outfit direction feels promising, whether a traditional garment category suits the intended mood, or whether a look deserves more serious product research. It can also support planning for travel photography, family events, cultural experiences, and concept shoots where visual direction matters before physical fitting becomes possible.",
-            "Used this way, the workflow becomes more than a novelty feature. It becomes a structured preview environment that reduces uncertainty and encourages more thoughtful choices. The supporting content around the tool is meant to strengthen exactly that kind of use."
+            "If the direction works, keep the result and move on to your next decision. If not, swap the outfit image or use a different pet photo and test again.",
+            "The workflow is meant to support fast comparison, not one perfect all-in attempt."
           ]
         }
       ],
@@ -135,41 +135,41 @@
     "traditional-clothing": {
       "title": "Traditional Clothing Sample Outfits",
       "description": "Browse sample outfits as reference material for AI fitting, cultural comparison, and stronger garment selection.",
-      "summary": "Sample outfits work best when they are treated as a learning tool for silhouette, mood, and input quality before generation begins.",
+      "summary": "This page is for browsing sample outfit references so users can choose a clearer style direction before they generate.",
       "sections": [
         {
-          "heading": "Why sample outfits matter",
+          "heading": "Why this page exists",
           "paragraphs": [
-            "Sample outfits lower the barrier to entry for new visitors. Many people arrive at a virtual try-on site without a ready-made garment image they trust. They may be curious about Hanbok, Kimono, Saree, or another traditional outfit, but still lack the confidence to choose a strong reference from the open web. Sample pages solve that problem by offering curated visual starting points that already work inside the product experience.",
-            "This matters for both usability and publishing value. A sample collection is not just a shortcut for the tool. It is also a browsable content layer where users can compare categories, notice differences in silhouette, and understand how various garment types may behave in a fitting result."
+            "Many users arrive without a prepared outfit image. The sample outfit page gives them a cleaner starting point so they can browse styles first and generate second.",
+            "That makes the page useful as both a reference library and a launch point into the try-on flow."
           ]
         },
         {
-          "heading": "Traditional garments as strong references",
+          "heading": "What to look for in a sample",
           "paragraphs": [
-            "Traditional clothing often makes excellent sample material because it has clear identity. Many garments in this category rely on distinct shape language, layering logic, drape, and visible ornament. That gives the model stronger signals than a generic casual top with minimal structure. A Hanbok ribbon, Kimono wrap, Qipao line, or Saree drape gives the output something specific to preserve.",
-            "For users, this specificity is helpful because it turns the result into a more informative comparison. They can see whether the system kept the recognizable character of the garment or flattened it into something ordinary. That makes sample outfits useful not only for quick testing, but also for understanding what kinds of references produce clearer AI behavior."
+            "Strong samples usually have a readable front view, clear edges, and enough visual space around the garment to show the full outline.",
+            "Traditional garments are often useful references because wraps, ribbons, collars, skirt volume, and layered shapes are easier to recognize than a flat casual top."
           ]
         },
         {
-          "heading": "How to browse the page well",
+          "heading": "How to browse the categories",
           "paragraphs": [
-            "A useful way to approach the sample page is to browse before generating. Look for garments with a readable front view, clear edge definition, and enough visual space around the outfit that the shape remains easy to interpret. A strong sample does not have to be the most glamorous one. It should be the one whose design logic is easiest to see.",
-            "Users can also compare categories before choosing. If one outfit feels formal and symmetrical while another feels flowing or dramatic, the comparison itself helps narrow the styling goal. That kind of pre-selection step improves the later try-on result because the user is working from a more deliberate visual decision."
+            "Use the page to compare categories before you choose one image. A formal robe, a soft draped look, and a decorative ceremonial style may all create very different moods in the final preview.",
+            "This browsing step helps you narrow your goal before you spend credits on generation."
           ]
         },
         {
-          "heading": "How sample pages support learning",
+          "heading": "How to move from samples to generation",
           "paragraphs": [
-            "The page has educational value even for users who never click generate. Someone exploring traditional dress categories can still learn from how the references are grouped, how country styles differ, and how ornament density or skirt volume changes the mood of a look. That is one reason a sample page can act as a real editorial asset rather than a thin product list.",
-            "In practice, this means the page should be treated as both a gallery and a guide. The best sample collections do not simply pile images together. They help visitors notice what is distinctive, compare visual families, and move into the tool with stronger expectations."
+            "After choosing a sample, run the try-on result and compare whether the preview still keeps the original category feeling.",
+            "Look for the parts that matter most: overall silhouette, trim placement, drape, and whether the outfit still reads like the same garment family."
           ]
         },
         {
-          "heading": "Turning browsing into better generations",
+          "heading": "When to switch to your own reference",
           "paragraphs": [
-            "Once a user has selected a sample, the next step is to review whether the generated result still communicates the same idea. Did the garment keep its ceremonial structure, its soft drape, or its color hierarchy? Did the output still feel like the same category of clothing? These are better questions than simply asking whether the image looks pretty.",
-            "That is why sample pages are valuable for both AdSense safety and search value. They offer visible publisher content with practical guidance, and they help the user make more informed tool interactions instead of moving directly into low-context generation states."
+            "Samples are best for getting oriented quickly. Once you understand which shape or mood works, you can replace the sample with your own outfit image for a more specific test.",
+            "That sequence keeps the sample page focused on discovery instead of repeating the same workflow advice found elsewhere."
           ]
         }
       ],
@@ -256,42 +256,42 @@
     },
     "fashion-technology": {
       "title": "Fashion Technology and AI Try-On",
-      "description": "Read how reference-based AI imaging supports better clothing decisions without pretending to replace real garments.",
-      "summary": "Fashion technology is most credible when it combines useful visualization with honest explanation, not when it hides limits behind glossy output.",
+      "description": "Read how HAMDEVA uses pet photos and outfit references to create comparison-friendly AI previews.",
+      "summary": "This page focuses on the logic behind the system so users can understand why input quality and view consistency matter.",
       "sections": [
         {
-          "heading": "Technology should reduce uncertainty",
+          "heading": "Why the system separates two inputs",
           "paragraphs": [
-            "The most useful fashion technology does not exist to impress users with novelty alone. It exists to reduce uncertainty in the decision process. Online clothing already depends heavily on images, but ordinary product photography often fails to answer the questions users actually have. They want to know whether a garment still feels elegant from the side, whether a robe or skirt looks balanced on a person, and whether a visually unfamiliar item still seems believable in context.",
-            "AI try-on can help when it is designed as a comparison tool rather than a fantasy engine. That is why HAMDEVA treats technology as a method of making garments easier to read, not just easier to click."
+            "HAMDEVA relies on a pet image and an outfit image that play different roles. The pet photo anchors identity, while the outfit reference anchors clothing structure and visible details.",
+            "Keeping those inputs separate gives the model a clearer task than a vague text-only request."
           ]
         },
         {
-          "heading": "Reference discipline matters",
+          "heading": "Why readable references matter",
           "paragraphs": [
-            "One of the biggest quality differences in digital fashion systems is whether the product respects input hierarchy. A good system needs to know what image controls identity and what image controls garment fidelity. If those roles are blurred, the output often becomes generic, unstable, or visually confused. Reference discipline is therefore not a minor technical note. It is the foundation of credible virtual try-on.",
-            "HAMDEVA leans on this logic by separating portrait and garment inputs and by encouraging users to choose readable images. The tool becomes more trustworthy when the interface teaches the user how the model sees the task."
+            "A weak source image forces the model to guess. That usually leads to flatter outfit detail, less stable pet identity, or a result that feels more generic than the source.",
+            "Clear pet portraits and outfit images with obvious shape give the system better constraints and more predictable output."
           ]
         },
         {
-          "heading": "Why explanation is part of the product",
+          "heading": "Why the output is shown as a sheet",
           "paragraphs": [
-            "Fashion technology becomes risky when it promises too much. A synthetic image cannot tell the full truth about fabric hand, breathability, seam finish, exact measurement, or the emotional experience of wearing a garment. Those realities still belong to physical clothing. A responsible platform should say that directly, because honesty improves trust more than inflated claims do.",
-            "That is also why editorial content matters so much around an AI tool. Explanatory pages give users a framework for reading results correctly. The content is not separate from the technology story. It is part of the technology story because it teaches interpretation."
+            "A multi-view sheet is more useful for comparison than one isolated image. It helps users check front, angle, and rear impressions in one place.",
+            "That format is especially helpful for outfits where drape, sleeve shape, or back structure affects the overall read."
           ]
         },
         {
-          "heading": "Why cultural garments benefit from digital preview",
+          "heading": "Why pets are a special fitting case",
           "paragraphs": [
-            "Cultural garments often suffer the most from context loss online. Users can see a striking photograph and still misunderstand the structure, occasion, or regional logic of the outfit. AI preview, when supported by good writing, can make these garments more legible. A multi-angle sheet gives the viewer more information, while the editorial page explains what they are actually looking at.",
-            "This combination is particularly useful for visitors who do not live near a rental shop, museum program, or specialist retailer. Technology does not replace deeper knowledge, but it can widen access to first-stage understanding."
+            "Dog and cat outfit previews are not only about clothing style. Fur volume, ear shape, chest width, and neck visibility all change how an outfit reads on screen.",
+            "That is one reason pet outfit previews need a workflow designed around animal proportions rather than copied directly from human fashion tools."
           ]
         },
         {
-          "heading": "The future is content plus tooling",
+          "heading": "Where the technology stops",
           "paragraphs": [
-            "As generation models improve, image creation itself will become easier for many sites. That means the real difference among platforms will increasingly come from framing, structure, and editorial quality. Sites that teach users how to think about garments will remain more valuable than sites that simply expose a generation interface with no context.",
-            "For that reason, HAMDEVA is moving toward a model where educational routes, sample routes, and tool routes support each other. The stronger the publishing layer becomes, the more credible the technology layer becomes as well."
+            "The preview can support an early decision, but it cannot confirm exact sizing, material feel, comfort, or tailoring quality.",
+            "That limit is important to keep in mind. The technology is strongest when it is used as decision support, not as a replacement for the real garment."
           ]
         }
       ],
@@ -318,41 +318,41 @@
     "virtual-try-on-guide": {
       "title": "Virtual Try-On Guide",
       "description": "Learn when virtual try-on is useful, what it cannot promise, and how to get better value from the workflow.",
-      "summary": "A useful virtual try-on guide should help users set expectations, prepare references, and judge outputs like visual planning material rather than literal truth.",
+      "summary": "This guide is for deciding when to use pet virtual try-on, how to structure a session, and how to turn previews into better decisions.",
       "sections": [
         {
-          "heading": "What virtual try-on is actually good for",
+          "heading": "Use virtual try-on at the decision stage",
           "paragraphs": [
-            "Virtual try-on works best when the user treats it as a planning environment. It can help compare outfit mood, narrow down garment categories, and preview how a distinctive design might read on a person before a deeper decision is made. It is particularly useful when the clothing is hard to access physically or when the user wants to test several directions quickly.",
-            "This makes the technology valuable for travel planning, concept development, family-event preparation, and exploratory shopping. In each of these cases, the user is not asking for engineering-grade fit data. They are asking for visual guidance."
+            "Pet virtual try-on is most useful before you commit to one outfit direction. It helps when you are comparing options, narrowing categories, or checking whether a style feels right for a dog or cat photo.",
+            "It is less about final proof and more about choosing what deserves a closer look next."
           ]
         },
         {
-          "heading": "What the tool cannot guarantee",
+          "heading": "Start each session with one clear goal",
           "paragraphs": [
-            "No AI image generator can fully reproduce the physical truth of fabric, weight, motion, and tailoring. Even a convincing output should be treated as an informed visualization rather than a final promise. A robe that looks balanced in a rendered sheet may still feel different when worn in real life because material response and body movement matter.",
-            "Users get better value when they accept that limit early. Virtual try-on becomes more trustworthy when it is judged by how well it supports comparison and expectation-setting, not by whether it performs impossible acts of exact prediction."
+            "A session works better when you know what you are testing. You may be comparing seasonal looks, checking costume mood, or reviewing whether one sample outfit family fits your pet photo better than another.",
+            "That small amount of intent helps you choose better references and judge the result more consistently."
           ]
         },
         {
-          "heading": "How to prepare for a useful session",
+          "heading": "Keep a second reference ready",
           "paragraphs": [
-            "The best sessions begin with intention. Decide whether you are comparing categories, testing one specific garment, or trying to understand a traditional outfit more clearly. That purpose affects which portrait and outfit image you should choose. A broad exploration session can start with samples, while a more serious evaluation session should use the cleanest available source material.",
-            "Users also benefit from preparing more than one garment reference. Sometimes the first image is visually attractive but structurally weak as a reference. Having a second, cleaner option makes it easier to test whether the problem came from the model or the source image itself."
+            "One of the easiest ways to improve a session is to keep an alternate outfit image ready. If the first reference is attractive but unclear, a second image with a cleaner outline can reveal whether the problem came from the source.",
+            "This makes the workflow more practical because you are testing decisions, not chasing one image blindly."
           ]
         },
         {
-          "heading": "How to read the result critically",
+          "heading": "Judge whether the preview helps the next choice",
           "paragraphs": [
-            "After generation, compare the result to the source. Is the garment still recognizable? Does the output preserve the same formal or casual mood? Are the important shape cues still present? A strong evaluation looks at proportion, garment identity, and whether the clothing still belongs to the same visual family as the input.",
-            "This critical habit is especially important with traditional dress. Cultural garments can lose meaning when their structure gets simplified. The user should therefore pay attention to what the system preserved and what it softened or generalized."
+            "A useful preview should make the next choice easier. It should help you eliminate weak options, confirm a mood, or decide which outfit is worth refining further.",
+            "If the preview does not help you choose, change the inputs or narrow the question instead of expecting the output alone to solve everything."
           ]
         },
         {
-          "heading": "Why content improves the tool",
+          "heading": "Know when to leave the preview stage",
           "paragraphs": [
-            "A good try-on guide is itself part of the product. It prevents misuse, lowers disappointment, and helps users approach the tool in a way that produces stronger results. That is why HAMDEVA treats guide pages as first-class public content. They are useful even to visitors who have not generated anything yet.",
-            "In search terms, this also gives the site a stronger topical footprint. In product terms, it makes the tool easier to use correctly. The same page therefore supports both discoverability and quality of use."
+            "Once one outfit direction clearly wins, the preview has done its job. At that point the next step may be shopping, comparing real products, or testing a more specific custom outfit image.",
+            "Keeping that boundary clear prevents the guide from repeating the technical or photo-specific advice explained on other pages."
           ]
         }
       ],
@@ -410,10 +410,10 @@
           ]
         },
         {
-          "heading": "A practical improvement loop",
+          "heading": "A practical retry loop",
           "paragraphs": [
             "If a result disappoints you, do not start by blaming the model alone. First, swap in a cleaner portrait or a clearer garment image. Compare the new result against the old one and note whether silhouette fidelity, facial stability, or overall coherence improved. This simple A/B process often reveals that the reference was the real bottleneck.",
-            "That improvement loop is one reason this page belongs in the indexable content set. It helps users get more value from the interactive tool, and it gives search users a practical answer to a common problem before they ever sign in or upload a file."
+            "This is the most useful photo habit on the site: improve one input, compare the output, and keep the cleaner source if it clearly helps."
           ]
         }
       ],
@@ -440,41 +440,34 @@
     "ai-fitting-faq": {
       "title": "AI Fitting FAQ",
       "description": "Review common questions about AI fitting quality, safety, realism, and how to get useful value from the experience.",
-      "summary": "This page answers practical questions that users usually ask after trying the tool or before trusting their first result.",
+      "summary": "This page answers the practical questions users tend to ask after their first generation or before uploading a photo.",
       "sections": [
         {
-          "heading": "Why people need an AI fitting FAQ",
+          "heading": "What counts as a useful result",
           "paragraphs": [
-            "AI fashion tools create a particular kind of uncertainty. Users are excited by the speed of the result, but they are also unsure how much to trust it, what counts as a good input, and whether the preview can stand in for a real fitting decision. A strong FAQ page helps answer these questions in plain language and prevents the product from feeling like a black box.",
-            "This matters for user trust, search performance, and ad safety. FAQ pages can be strong publisher content when they answer real intent and are written to solve actual user confusion rather than to stuff keywords around a tool."
+            "A useful result does not need to behave like a final studio photo. It only needs to be clear enough to help with comparison, mood checking, and option filtering.",
+            "That standard is easier to apply than asking whether an AI preview is perfect in every detail."
           ]
         },
         {
-          "heading": "The realism question",
+          "heading": "Why results can vary so much",
           "paragraphs": [
-            "One of the most common questions is whether the result is realistic enough to use for a serious decision. The right answer is nuanced. A good output can be visually informative and directionally helpful without being a literal prediction of fabric, fit, or movement. Realism in this context means that the garment family, mood, and silhouette feel coherent enough to support comparison.",
-            "This is a useful standard because it matches what the tool can genuinely do. It avoids promising impossible certainty while still acknowledging that a well-made result can help the user think more clearly."
+            "Most quality gaps come from the source material. A clear pet photo and a readable outfit image usually create a stronger preview than a cluttered or low-resolution pair of inputs.",
+            "That is why two sessions can feel very different even when the user follows the same general workflow."
           ]
         },
         {
-          "heading": "The safety and privacy question",
+          "heading": "What to upload and what to avoid",
           "paragraphs": [
-            "Users also want to know whether it is safe to upload personal images. The practical guidance is straightforward. Only upload images you have the right to use, avoid highly sensitive material, and understand that an AI-powered workflow requires temporary technical handling of your source material. A responsible platform should explain these points clearly rather than hiding them behind vague policy language.",
-            "This kind of answer is valuable as publisher content because it meets a real need. Many users search for answers about AI image handling before they are comfortable with a tool. A clear FAQ helps that visitor make an informed decision."
+            "Upload images you have the right to use and avoid highly sensitive material you would not want processed by an AI service.",
+            "If an image feels risky from a privacy or rights perspective, it is better not to upload it."
           ]
         },
         {
-          "heading": "The quality question",
+          "heading": "When to ask support for help",
           "paragraphs": [
-            "Another common question is why one result looks strong while another looks generic. The answer usually comes back to input quality and reference clarity. When the portrait is readable and the garment image has obvious structure, the model has a much better chance of producing a useful result. When the sources are weak, the output tends to flatten detail and lose identity.",
-            "A strong FAQ should therefore not only reassure the user. It should teach better behavior. The best answer is often practical advice about image choice, not empty confidence about the system."
-          ]
-        },
-        {
-          "heading": "Why this page supports both users and SEO",
-          "paragraphs": [
-            "FAQ pages are sometimes treated as template filler, but they can be extremely valuable when written around real user intent. A well-made page answers practical concerns, reduces repetitive support questions, and gives search engines a clear signal that the site covers the topic in depth. On HAMDEVA, this helps the platform look like a publishing destination rather than a single interactive state.",
-            "That positioning is especially important for a tool-heavy site. When the public surface includes strong FAQ and guide content, the platform becomes easier to index, easier to understand, and safer to position around advertising and review systems."
+            "Support is most useful when something looks technically wrong, credits were deducted unexpectedly, or the workflow fails to complete as expected.",
+            "If the issue is mainly image quality, it is usually better to review the photo tips and your source images first."
           ]
         }
       ],

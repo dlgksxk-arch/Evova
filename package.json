@@ -10,6 +10,9 @@
     "dev": "vite",
     "build": "vite build && node scripts/generateStaticSnapshots.mjs",
     "preview": "vite preview",
+    "check:i18n": "node scripts/checkLocaleCompleteness.mjs",
+    "check:i18n:all": "node scripts/checkLocaleCompleteness.mjs --all",
+    "check:i18n:strict": "node scripts/checkLocaleCompleteness.mjs --strict",
     "seed:board": "node scripts/seedBoardPosts.js"
   },
   "dependencies": {

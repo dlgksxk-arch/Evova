@@ -53,7 +53,7 @@ import {
   callUploadShareImage,
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
-import { LANGUAGE_OPTIONS, type LanguageCode } from './constants/languages';
+import { PUBLIC_LANGUAGE_OPTIONS, isAppSupportedLanguageCode, type LanguageCode } from './constants/languages';
 import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
 import { FACE_SAMPLES, getFaceSampleBreed, getPetBreedGuides, type FaceCategory } from './data/faceSamples';
 import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
@@ -111,10 +111,6 @@ const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsb
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
-const SUPPORTED_UI_LANGUAGE_CODES = ['en', 'ko', 'ja', 'zh'] as const;
-const VISIBLE_LANGUAGE_OPTIONS = LANGUAGE_OPTIONS.filter((option) =>
-  SUPPORTED_UI_LANGUAGE_CODES.includes(option.value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]),
-);
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
@@ -3252,7 +3248,6 @@ const removeAdSenseScript = (): void => {
   document.getElementById(ADSENSE_SCRIPT_ID)?.remove();
 };
 
-const SUPPORTED_LANGUAGE_CODES = SUPPORTED_UI_LANGUAGE_CODES;
 const DEFAULT_LANGUAGE: LanguageCode = 'en';
 const SITE_KEYWORDS = '반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 펫 의상 미리보기, 펫 코디, 펫 코스튬, 반려동물 코디, 강아지 옷 추천, 고양이 옷 추천, 펫 스타일 추천, pet outfit generator, dog outfit generator, cat outfit generator, pet costume generator, pet outfit preview, virtual pet try on, dress up your pet, dog costume ideas, cat costume ideas, HAMDEVA, hamdeva';
 const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
@@ -3268,12 +3263,9 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'ai-fitting-faq': `${SITE_KEYWORDS}, 반려동물 옷입혀보기 faq, pet outfit faq, dog outfit faq, cat outfit faq`,
 };
 
-const isSupportedLanguageCode = (value: string | null): value is LanguageCode =>
-  value !== null && SUPPORTED_LANGUAGE_CODES.includes(value as (typeof SUPPORTED_UI_LANGUAGE_CODES)[number]);
-
 const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {
   const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
-  return isSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
+  return isAppSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
 };
 
 // ─── App ──────────────────────────────────────────────────────
@@ -3764,7 +3756,7 @@ const App: React.FC = () => {
     setUserProfile,
   });
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
-    if (!isSupportedLanguageCode(nextLanguage)) {
+    if (!isAppSupportedLanguageCode(nextLanguage)) {
       return;
     }
     void i18next.changeLanguage(nextLanguage);
@@ -5429,7 +5421,7 @@ const App: React.FC = () => {
               </button>
               {headerLangMenuOpen && (
                 <div className="header-icon-dropdown">
-                  {VISIBLE_LANGUAGE_OPTIONS.map((option) => (
+                  {PUBLIC_LANGUAGE_OPTIONS.map((option) => (
                     <button
                       key={`header-lang-${option.value}`}
                       className={`lang-option ${lang === option.value ? 'active' : ''}`}
