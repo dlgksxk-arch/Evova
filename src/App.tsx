@@ -3438,6 +3438,7 @@ const App: React.FC = () => {
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
+  const [isKakaoInAppBrowser, setIsKakaoInAppBrowser] = useState(false);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -4067,6 +4068,26 @@ const App: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
   useEffect(() => {
+    const isKakao = /KAKAOTALK/i.test(navigator.userAgent);
+    setIsKakaoInAppBrowser(isKakao);
+
+    if (!isKakao) {
+      return;
+    }
+
+    const attemptedKey = 'hamdeva-kakao-open-attempted';
+    if (window.sessionStorage.getItem(attemptedKey) === '1') {
+      return;
+    }
+
+    window.sessionStorage.setItem(attemptedKey, '1');
+    const timer = window.setTimeout(() => {
+      openInExternalBrowser();
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+  useEffect(() => {
     setMobileMenuOpen(false);
     setHeaderLangMenuOpen(false);
     setHeaderAccountMenuOpen(false);
@@ -4422,6 +4443,30 @@ const App: React.FC = () => {
     setResultPreviewState('idle');
     setResultWatermarkApplied(false);
     setResultUsedCreditType(null);
+  };
+  const openInExternalBrowser = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const currentUrl = window.location.href;
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+    const isAndroid = /Android/i.test(userAgent);
+
+    if (isAndroid) {
+      const sanitizedUrl = currentUrl.replace(/^https?:\/\//i, '');
+      const scheme = currentUrl.startsWith('https://') ? 'https' : 'http';
+      window.location.href = `intent://${sanitizedUrl}#Intent;scheme=${scheme};package=com.android.chrome;end`;
+      return;
+    }
+
+    if (isIOS) {
+      window.location.href = `x-safari-${currentUrl}`;
+      return;
+    }
+
+    window.location.href = currentUrl;
   };
   const handleRandomOutfit = () => {
     if (clothSampleOptions.length === 0) {
@@ -5467,7 +5512,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme}`}>
+    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isKakaoInAppBrowser ? 'has-kakao-browser-banner' : ''}`}>
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
       <nav className="landing-nav">
         <div className="nav-content">
@@ -5659,6 +5704,20 @@ const App: React.FC = () => {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isKakaoInAppBrowser && (
+        <div className="kakao-browser-banner" role="alert">
+          <div className="section-inner">
+            <div className="kakao-browser-banner-copy">
+              <strong>카카오톡에서는 로그인이 제한됩니다.</strong>
+              <p>아래 버튼을 눌러 브라우저에서 열어주세요</p>
+            </div>
+            <button className="generate-btn kakao-browser-banner-btn" onClick={openInExternalBrowser} type="button">
+              브라우저에서 열기
+            </button>
           </div>
         </div>
       )}
