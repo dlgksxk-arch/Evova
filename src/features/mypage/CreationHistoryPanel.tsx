@@ -13,6 +13,7 @@ interface CreationHistoryPanelProps {
 
 const IMAGE_LOAD_MIN_MS = 400;
 const HISTORY_PAGE_SIZE = 21;
+const HISTORY_BASE_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
 
 const getHistoryPagerCopy = (locale: string) => {
   if (locale.startsWith('ko')) {
@@ -70,6 +71,10 @@ const formatDateTime = (value: unknown, locale: string): string => {
 };
 
 const isPreservedItem = (item: GenerationRecord): boolean => {
+  const preservedAt = getTimestampMillis(item.preservedAt);
+  if (typeof preservedAt === 'number') {
+    return true;
+  }
   const preservedUntil = getTimestampMillis(item.preservedUntil);
   return typeof preservedUntil === 'number' && preservedUntil > Date.now();
 };
@@ -255,6 +260,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [showUnarchiveWarning, setShowUnarchiveWarning] = useState(false);
   const loadingStartedAtRef = useRef(0);
   const historyCopy = getHistoryCopy(locale);
   const pagerCopy = getHistoryPagerCopy(locale);
@@ -335,6 +341,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(1);
     setShareStatus(null);
+    setShowUnarchiveWarning(false);
   };
 
   const startImageLoading = () => {
@@ -395,6 +402,25 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       alert(deleteError instanceof Error ? deleteError.message : copy.historyDeleteFailed);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const isPastBaseRetention = (item: GenerationRecord): boolean => {
+    const createdAt = getTimestampMillis(item.createdAt);
+    return typeof createdAt === 'number' && createdAt + HISTORY_BASE_RETENTION_MS <= Date.now();
+  };
+
+  const handleDownloadSelectedItem = () => {
+    if (!selectedItem?.imageUrl) {
+      setShareStatus(copy.historyDownloadFailed);
+      return;
+    }
+
+    try {
+      downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+    } catch (error) {
+      console.error('Failed to download selected history item:', error);
+      setShareStatus(copy.historyDownloadFailed);
     }
   };
 
@@ -610,7 +636,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 <strong>
                   [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
                 </strong>
-                <p>{copy.historyExpiresAt}: {formatDateTime(selectedItem.expiresAt, locale)}</p>
+                <p>{copy.historyExpiresAt}: {isPreservedItem(selectedItem) ? copy.historyPreservedForever : formatDateTime(selectedItem.expiresAt, locale)}</p>
                 <p>{historyCopy.personLabel}: {getPersonLabel(selectedItem)}</p>
                 <p>{historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}</p>
               </div>
@@ -775,11 +801,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         <button
                           className="download-btn auth-inline-btn history-action-btn"
                           disabled={!selectedItem.imageUrl}
-                          onClick={() => {
-                            if (selectedItem.imageUrl) {
-                              downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-                            }
-                          }}
+                          onClick={handleDownloadSelectedItem}
                           type="button"
                         >
                           {renderSocialIcon('download')}
@@ -834,11 +856,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       <button
                         className="download-btn auth-inline-btn history-action-btn"
                         disabled={!selectedItem.imageUrl}
-                        onClick={() => {
-                          if (selectedItem.imageUrl) {
-                            downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-                          }
-                        }}
+                        onClick={handleDownloadSelectedItem}
                         type="button"
                       >
                         {renderSocialIcon('download')}
@@ -864,6 +882,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                     alert(copy.historyArchiveLimit(maxPreserved));
                     return;
                   }
+                  if (isSelectedItemPreserved && selectedItem && isPastBaseRetention(selectedItem)) {
+                    setShowUnarchiveWarning(true);
+                    return;
+                  }
                   void handleArchive();
                 }}
                 type="button"
@@ -877,6 +899,41 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 type="button"
               >
                 {submitting ? copy.historyProcessing : copy.historyDelete}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedItem && showUnarchiveWarning ? (
+        <div className="modal-backdrop" onClick={() => setShowUnarchiveWarning(false)}>
+          <div
+            className="history-warning-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={copy.historyUnarchiveWarningTitle}
+          >
+            <div className="history-warning-modal-copy">
+              <strong>{copy.historyUnarchiveWarningTitle}</strong>
+              <p>{copy.historyUnarchiveWarningBody}</p>
+            </div>
+            <div className="history-warning-modal-actions">
+              <button className="download-btn auth-inline-btn" onClick={handleDownloadSelectedItem} type="button">
+                {copy.historyDownload}
+              </button>
+              <button className="outline-btn auth-inline-btn" onClick={() => setShowUnarchiveWarning(false)} type="button">
+                {copy.cancel}
+              </button>
+              <button
+                className="outline-btn auth-inline-btn history-warning-unarchive-btn"
+                onClick={() => {
+                  setShowUnarchiveWarning(false);
+                  void handleArchive();
+                }}
+                type="button"
+              >
+                {copy.historyUnarchiveConfirm}
               </button>
             </div>
           </div>

@@ -62,7 +62,6 @@ const VIDEO_ESTIMATED_COST = 0.4;
 const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
-const ARCHIVED_HISTORY_RETENTION_DAYS = 30;
 const MAX_ARCHIVED_CREATIONS = 5;
 const LEMON_PROVIDER = 'lemon';
 const PAYMENT_CURRENCY = 'usd';
@@ -3782,10 +3781,9 @@ const handleArchiveCreationRequest = async (req: functions.https.Request, res: f
       throw new Error('ARCHIVE_LIMIT_REACHED');
     }
 
-    const now = admin.firestore.Timestamp.now();
     transaction.set(creationRef, {
       isArchived: true,
-      expireAt: buildCreationExpireAt(now, ARCHIVED_HISTORY_RETENTION_DAYS),
+      expireAt: null,
     }, { merge: true });
   });
 
@@ -4862,6 +4860,9 @@ export const cleanupExpiredCreations = functions
 
     for (const snapshot of docs.values()) {
       const data = snapshot.data();
+      if (data.isArchived === true && data.isDeleted !== true) {
+        continue;
+      }
       if (typeof data.fileUrl === 'string' && data.fileUrl) {
         await deleteCreationAsset(data.fileUrl);
       }

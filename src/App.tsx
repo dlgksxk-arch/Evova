@@ -86,7 +86,6 @@ const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 75_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
-const PRESERVED_HISTORY_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const PRESERVED_HISTORY_LIMIT = 5;
 const SUBJECT_TYPES = ['dog', 'cat'] as const;
 type CreditProductKind = 'subscription' | 'extra_credit';
@@ -866,7 +865,7 @@ const translations = {
     resultPreviewLoadFailed: '결과를 불러오지 못했습니다.',
     resultPreviewAlt: '확대된 결과 이미지',
     historyTitle: '펫 피팅 히스토리',
-    historyGuide: '생성물은 기본 15일 보관되며, 최대 5개까지 30일 보관할 수 있습니다.',
+    historyGuide: '생성물은 기본 15일 보관되며, 보관한 최대 5개는 탈퇴 전까지 유지됩니다.',
     historyEmpty: '생성 이력이 없습니다.',
     historyPreviewClose: '클릭하여 닫기',
     historyPreviewOpen: '클릭하여 아래에서 보기',
@@ -879,6 +878,7 @@ const translations = {
     historyZoomHint: '화면에 맞게 기본 크기를 잡았습니다. 필요하면 + / - 버튼으로 조절하세요.',
     historyDownload: '다운로드',
     historyArchived: '보관됨',
+    historyPreservedForever: '회원 탈퇴 전까지 보관',
     historyArchive: '보관',
     historyUnarchive: '보관 해제',
     historyDelete: '삭제',
@@ -886,6 +886,9 @@ const translations = {
     historyArchiveLimit: (n: number) => `보관은 최대 ${n}개까지 가능합니다.`,
     historyArchiveFailed: '보관 상태를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.',
     historyDownloadFailed: '결과물을 다운로드하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    historyUnarchiveWarningTitle: '보관 해제 전에 확인해 주세요',
+    historyUnarchiveWarningBody: '이 이미지는 생성일로부터 15일이 지난 상태라 보관을 해제하면 히스토리에서 바로 사라질 수 있습니다. 먼저 다운로드해 두는 것을 권장합니다.',
+    historyUnarchiveConfirm: '그래도 보관 해제',
     historyDeleteConfirm: '이 결과물을 히스토리에서 삭제하시겠습니까?',
     historyDeleteFailed: '히스토리 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.',
     savePercent: (n: number) => `${n}% 할인`,
@@ -1184,7 +1187,7 @@ const translations = {
     resultPreviewLoadFailed: 'Failed to load the result.',
     resultPreviewAlt: 'Expanded result preview',
     historyTitle: 'Pet fitting history',
-    historyGuide: 'Results are kept for 15 days by default, and you can preserve up to 5 items for 30 days.',
+    historyGuide: 'Results are kept for 15 days by default, and up to 5 preserved items stay until account deletion.',
     historyEmpty: 'No generation history yet.',
     historyPreviewClose: 'Click to close',
     historyPreviewOpen: 'Click to view below',
@@ -1197,6 +1200,7 @@ const translations = {
     historyZoomHint: 'The image starts sized to fit the panel. Use + / - if you need to adjust it.',
     historyDownload: 'Download',
     historyArchived: 'Archived',
+    historyPreservedForever: 'Kept until account deletion',
     historyArchive: 'Archive',
     historyUnarchive: 'Remove archive',
     historyDelete: 'Delete',
@@ -1204,6 +1208,9 @@ const translations = {
     historyArchiveLimit: (n: number) => `You can preserve up to ${n} items.`,
     historyArchiveFailed: 'Failed to update the preserve status. Please try again later.',
     historyDownloadFailed: 'Failed to download the result. Please try again later.',
+    historyUnarchiveWarningTitle: 'Check before removing archive',
+    historyUnarchiveWarningBody: 'This image is already older than 15 days from creation, so it may disappear from history as soon as you remove the archive. Download it first if you want to keep a copy.',
+    historyUnarchiveConfirm: 'Remove archive anyway',
     historyDeleteConfirm: 'Delete this result from your history?',
     historyDeleteFailed: 'Failed to delete the history item. Please try again later.',
     savePercent: (n: number) => `Save ${n}%`,
@@ -1387,7 +1394,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultPreviewLoadFailed: '无法加载结果。',
     resultPreviewAlt: '放大的结果预览',
     historyTitle: '宠物试穿历史',
-    historyGuide: '生成结果默认保留 15 天，最多可额外保留 5 个结果 30 天。',
+    historyGuide: '生成结果默认保留 15 天，最多可保留 5 个结果，保留后会一直保存到账号注销前。',
     historyEmpty: '还没有生成记录。',
     historyPreviewClose: '点击关闭',
     historyPreviewOpen: '点击在下方查看',
@@ -1400,6 +1407,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyZoomHint: '已按窗口大小设置默认尺寸。如需调整，请使用 + / - 按钮。',
     historyDownload: '下载',
     historyArchived: '已保留',
+    historyPreservedForever: '保留至账号注销前',
     historyArchive: '保留',
     historyUnarchive: '取消保留',
     historyDelete: '删除',
@@ -1407,6 +1415,9 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyArchiveLimit: (n: number) => `最多只能保留 ${n} 个结果。`,
     historyArchiveFailed: '无法更新保留状态，请稍后再试。',
     historyDownloadFailed: '无法下载结果，请稍后再试。',
+    historyUnarchiveWarningTitle: '取消保留前请先确认',
+    historyUnarchiveWarningBody: '这张图片距离生成时间已经超过 15 天，取消保留后可能会立即从历史记录中消失。建议先下载保存。',
+    historyUnarchiveConfirm: '仍要取消保留',
     historyDeleteConfirm: '要从历史记录中删除这个结果吗？',
     historyDeleteFailed: '删除历史记录失败，请稍后再试。',
     savePercent: (n: number) => `立省 ${n}%`,
@@ -1554,7 +1565,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     resultPreviewLoadFailed: '結果を読み込めませんでした。',
     resultPreviewAlt: '拡大した結果プレビュー',
     historyTitle: 'ペット試着履歴',
-    historyGuide: '生成結果は通常 15 日間保存され、最大 5 件まで 30 日間保管できます。',
+    historyGuide: '生成結果は通常 15 日間保存され、保管した最大 5 件はアカウント削除まで保持されます。',
     historyEmpty: '生成履歴はまだありません。',
     historyPreviewClose: 'クリックして閉じる',
     historyPreviewOpen: 'クリックして下に表示',
@@ -1567,6 +1578,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyZoomHint: '画面に収まる初期サイズにしています。必要に応じて + / - ボタンで調整してください。',
     historyDownload: 'ダウンロード',
     historyArchived: '保管済み',
+    historyPreservedForever: 'アカウント削除まで保管',
     historyArchive: '保管',
     historyUnarchive: '保管解除',
     historyDelete: '削除',
@@ -1574,6 +1586,9 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyArchiveLimit: (n: number) => `保管できる件数は最大 ${n} 件です。`,
     historyArchiveFailed: '保管状態を更新できませんでした。しばらくしてからもう一度お試しください。',
     historyDownloadFailed: '結果をダウンロードできませんでした。しばらくしてからもう一度お試しください。',
+    historyUnarchiveWarningTitle: '保管解除の前に確認してください',
+    historyUnarchiveWarningBody: 'この画像は生成日から 15 日を過ぎているため、保管を解除すると履歴からすぐ消える可能性があります。先にダウンロードしておくことをおすすめします。',
+    historyUnarchiveConfirm: 'それでも保管解除',
     historyDeleteConfirm: 'この結果を履歴から削除しますか？',
     historyDeleteFailed: '履歴の削除に失敗しました。しばらくしてからもう一度お試しください。',
     savePercent: (n: number) => `${n}% オフ`,
@@ -2832,6 +2847,11 @@ const getTimestampMillis = (value?: Timestamp | null): number | null => {
 };
 
 const getHistoryExpiryMillis = (item: GenerationRecord): number | null => {
+  const preservedAt = getTimestampMillis(item.preservedAt);
+  if (typeof preservedAt === 'number') {
+    return null;
+  }
+
   const preservedUntil = getTimestampMillis(item.preservedUntil);
   if (preservedUntil) {
     return preservedUntil;
@@ -3523,10 +3543,15 @@ const App: React.FC = () => {
   const guideFixedResult = '/howto-fixed/step-3-result.jpg';
   const guideSampleCloth = guideFixedCloth;
   const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
-  const preservedHistoryCount = historyItems.filter((item) => {
+  const isHistoryPreserved = (item: Pick<GenerationRecord, 'preservedAt' | 'preservedUntil'>) => {
+    const preservedAt = getTimestampMillis(item.preservedAt);
+    if (typeof preservedAt === 'number') {
+      return true;
+    }
     const preservedUntil = getTimestampMillis(item.preservedUntil);
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
-  }).length;
+  };
+  const preservedHistoryCount = historyItems.filter((item) => isHistoryPreserved(item)).length;
   const loginComingSoonLabel = `${t.login} (${t.comingSoon})`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (${t.comingSoon})`;
   const headerAccountLabel = currentUser ? t.myPage : t.login;
@@ -4834,8 +4859,7 @@ const App: React.FC = () => {
     }
 
     const generationRef = doc(db, 'generations', item.id);
-    const preservedUntil = getTimestampMillis(item.preservedUntil);
-    const isCurrentlyPreserved = typeof preservedUntil === 'number' && preservedUntil > Date.now();
+    const isCurrentlyPreserved = isHistoryPreserved(item);
 
     if (!isCurrentlyPreserved && preservedHistoryCount >= PRESERVED_HISTORY_LIMIT) {
       alert(t.historyArchiveLimit(PRESERVED_HISTORY_LIMIT));
@@ -4849,7 +4873,7 @@ const App: React.FC = () => {
         updatedAt: serverTimestamp(),
       } : {
         preservedAt: serverTimestamp(),
-        preservedUntil: Timestamp.fromMillis(Date.now() + PRESERVED_HISTORY_RETENTION_MS),
+        preservedUntil: null,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {

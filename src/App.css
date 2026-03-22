@@ -3666,7 +3666,7 @@ a { color: inherit; text-decoration: none; }
 
 .creation-history-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 14px;
 }
@@ -3879,6 +3879,43 @@ a { color: inherit; text-decoration: none; }
 }
 
 .history-modal-delete-btn {
+  color: #ef4444;
+}
+
+.history-warning-modal {
+  width: min(520px, calc(100vw - 24px));
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  box-shadow: 0 28px 80px rgba(20, 14, 37, 0.28);
+}
+
+.history-warning-modal-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.history-warning-modal-copy strong {
+  font-size: 20px;
+  color: var(--text);
+}
+
+.history-warning-modal-copy p {
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.history-warning-modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.history-warning-unarchive-btn {
   color: #ef4444;
 }
 
@@ -7203,6 +7240,10 @@ body {
 }
 
 @media (max-width: 1024px) {
+  .creation-history-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .history-modal-shell {
     width: min(980px, calc(100vw - 24px));
   }
@@ -7284,6 +7325,17 @@ body {
 @media (max-width: 768px) {
   .creation-history-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-warning-modal {
+    width: min(100vw - 16px, 100vw);
+    padding: 18px 14px;
+    border-radius: 22px;
+  }
+
+  .history-warning-modal-actions .auth-inline-btn,
+  .history-warning-modal-actions .download-btn {
+    width: 100%;
   }
 
   .creation-history-page-btn,
