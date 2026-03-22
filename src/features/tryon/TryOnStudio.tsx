@@ -71,6 +71,26 @@ type TryOnModalCopy = {
   resultTitle: string;
 };
 
+const getModalPreviewGuide = (lang: LanguageCode, type: 'face' | 'cloth') => {
+  if (lang === 'ko') {
+    return {
+      title: type === 'face' ? '샘플 펫이나 사진을 넣어보세요' : '샘플 의상이나 이미지를 넣어보세요',
+      tips: [
+        '샘플 이미지를 선택하거나 업로드 버튼으로 넣으세요.',
+        '다른 사이트 이미지를 드래그해도 됩니다.',
+      ],
+    };
+  }
+
+  return {
+    title: type === 'face' ? 'Add a pet sample or photo' : 'Add a sample outfit or image',
+    tips: [
+      'Choose a sample or use the upload button.',
+      'You can also drag an image from another site.',
+    ],
+  };
+};
+
 interface TryOnStudioProps {
   layout?: 'page' | 'modal';
   currentUser: unknown;
@@ -207,6 +227,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [clothDragActive, setClothDragActive] = useState(false);
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
+  const modalFaceGuide = getModalPreviewGuide(lang, 'face');
+  const modalClothGuide = getModalPreviewGuide(lang, 'cloth');
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -338,13 +360,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <div className="card-header">
                 <span className="section-label">{copy.step1Label}</span>
                 <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
-                {isModalLayout && modalCopy?.personCardBody ? <p className="modal-card-description">{modalCopy.personCardBody}</p> : null}
               </div>
               <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
                 <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
                   {copy.chooseSample}
                 </button>
-                <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
+                <button className={`outline-btn ${isModalLayout ? 'primary' : ''}`} disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
                   {copy.uploadMyPhoto}
                 </button>
                 <input
@@ -362,6 +383,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   }}
                 />
               </div>
+              {isModalLayout && modalCopy?.personCardBody ? <p className="modal-input-helper">{modalCopy.personCardBody}</p> : null}
               {copy.faceCopyrightNotice ? <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p> : null}
             </div>
             <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
@@ -411,11 +433,11 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   </>
                 ) : (
                   <EmptyPreviewState
-                    title={copy.facePlaceholderTitle}
-                    tips={isModalLayout ? emptyFaceTips : emptyFaceTips.slice(0, 2)}
+                    title={isModalLayout ? modalFaceGuide.title : copy.facePlaceholderTitle}
+                    tips={isModalLayout ? modalFaceGuide.tips : emptyFaceTips.slice(0, 2)}
                     type="face"
                     badgeLabel={emptyPreviewCopy.faceBadge}
-                    hint={isModalLayout ? copy.uploadMyPhoto : undefined}
+                    hint={undefined}
                   />
                 )}
                 {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
@@ -433,13 +455,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <div className="card-header">
                 <span className="section-label">{copy.step2Label}</span>
                 <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
-                {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-card-description">{modalCopy.garmentCardBody}</p> : null}
               </div>
               <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
                 <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
                   {copy.chooseClothingSample}
                 </button>
-                <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
+                <button className={`outline-btn ${isModalLayout ? 'primary' : ''}`} disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
                   {copy.uploadClothing}
                 </button>
                 <input
@@ -457,6 +478,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   }}
                 />
               </div>
+              {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-input-helper">{modalCopy.garmentCardBody}</p> : null}
               {copy.clothingSafetyNotice ? <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p> : null}
             </div>
             <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
@@ -513,11 +535,11 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   </>
                 ) : (
                   <EmptyPreviewState
-                    title={copy.clothingPlaceholderTitle}
-                    tips={isModalLayout ? emptyClothTips : emptyClothTips.slice(0, 2)}
+                    title={isModalLayout ? modalClothGuide.title : copy.clothingPlaceholderTitle}
+                    tips={isModalLayout ? modalClothGuide.tips : emptyClothTips.slice(0, 2)}
                     type="cloth"
                     badgeLabel={emptyPreviewCopy.styleBadge}
-                    hint={isModalLayout ? copy.uploadClothing : undefined}
+                    hint={undefined}
                   />
                 )}
               </div>

@@ -4112,6 +4112,16 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.7;
   color: var(--text-sub);
 }
+.modal-input-helper {
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--upload-bg));
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-sub);
+}
 .section-label {
   font-size: 12px; font-weight: 800; color: var(--primary);
   text-transform: uppercase; letter-spacing: 1px;
@@ -4385,6 +4395,9 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-sub);
   font-size: 13px;
   line-height: 1.65;
+}
+.modal-input-helper + .upload-guidance-text {
+  margin-top: 10px;
 }
 .result-disclaimer-text {
   max-width: 760px;
@@ -5988,6 +6001,11 @@ a { color: inherit; text-decoration: none; }
     font-size: 12px;
     line-height: 1.45;
   }
+  .modal-input-helper {
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
   .preview-box {
     flex-basis: 108px;
     min-height: 108px;
@@ -6413,6 +6431,7 @@ body {
 
 [data-theme='light'] .content-modal-intro,
 [data-theme='light'] .modal-card-description,
+[data-theme='light'] .modal-input-helper,
 [data-theme='light'] .placeholder,
 [data-theme='light'] .seo-faq-answer,
 [data-theme='light'] .try-modal-list li,
@@ -6471,6 +6490,7 @@ body {
 [data-theme='dark'] .content-modal-article,
 [data-theme='dark'] .content-modal-intro,
 [data-theme='dark'] .modal-card-description,
+[data-theme='dark'] .modal-input-helper,
 [data-theme='dark'] .try-modal-notice,
 [data-theme='dark'] .preview-label,
 [data-theme='dark'] .placeholder,
@@ -6484,6 +6504,7 @@ body {
 
 [data-theme='dark'] .content-modal-intro,
 [data-theme='dark'] .modal-card-description,
+[data-theme='dark'] .modal-input-helper,
 [data-theme='dark'] .placeholder,
 [data-theme='dark'] .seo-faq-answer,
 [data-theme='dark'] .try-modal-list li,
