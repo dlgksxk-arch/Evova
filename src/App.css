@@ -1391,8 +1391,8 @@ a { color: inherit; text-decoration: none; }
 .landing-result-tile {
   position: relative;
   overflow: hidden;
-  flex: 0 1 130px;
-  width: min(100%, 130px);
+  flex: 0 1 152px;
+  width: min(100%, 152px);
   aspect-ratio: 0.98 / 1.18;
   padding: 0;
   border: none;
@@ -1404,17 +1404,18 @@ a { color: inherit; text-decoration: none; }
 }
 
 .landing-result-tile-outer {
-  flex-basis: 152px;
-  width: min(100%, 152px);
+  flex-basis: 188px;
+  width: min(100%, 188px);
 }
 
 .landing-result-tile-inner {
-  flex-basis: 124px;
-  width: min(100%, 124px);
+  flex-basis: 144px;
+  width: min(100%, 144px);
 }
 
 .landing-result-tile:hover {
-  opacity: 0.92;
+  opacity: 0.98;
+  z-index: 3;
 }
 
 .landing-result-tile-media {
@@ -1424,6 +1425,11 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   height: 100%;
   min-height: 0;
+  transition: transform 0.18s ease;
+}
+
+.landing-result-tile:hover .landing-result-tile-media {
+  transform: scale(1.14);
 }
 
 .landing-result-tile img {
@@ -4750,8 +4756,8 @@ a { color: inherit; text-decoration: none; }
   .landing-result-tile-outer,
   .landing-result-tile-inner,
   .landing-result-tile {
-    flex-basis: 104px;
-    width: min(100%, 104px);
+    flex-basis: 122px;
+    width: min(100%, 122px);
   }
   .admin-section-header,
   .admin-user-detail-header,

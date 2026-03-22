@@ -113,29 +113,23 @@ const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_05204666-8bbf-4be8-81a8-180180969593.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0854e4a4-6fec-4823-9601-346aa7177a11.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0adadd8e-7b38-40cf-aff6-7e8712cee369.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0fd8928f-cada-43cc-ae73-eaf620a421b1.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_1e1a1f99-b1b5-47b9-8eb1-25aa4fcc6a16.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0854e4a4-6fec-4823-9601-346aa7177a11.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_3ac94c9f-42f0-48b6-a44b-55444d19d124.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_43f48b66-fc60-4181-9c36-83c43b6d4b45.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_4a0cd15c-fcb0-4e97-a921-fa486ca9bbf2.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_67c8a71d-1de4-486f-9351-e2004b79cb79.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_6fc2255e-2b2f-4ffd-b9cd-268880eebe84.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_79b61e69-ed70-4eb6-ba50-86a1602cc78d.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7aee75d8-b336-48ae-b5f5-f1973f3ff173.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_874b8d8f-4319-4725-8cec-4eca89bb7561.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8c957d59-97bf-403c-a48f-3e6991667b97.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8f84ece8-e5de-45c3-86a8-9b672a0bbc8e.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b96de465-bd4a-4738-adb9-be03b1cf2a2c.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0fd8928f-cada-43cc-ae73-eaf620a421b1.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_4a0cd15c-fcb0-4e97-a921-fa486ca9bbf2.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_6fc2255e-2b2f-4ffd-b9cd-268880eebe84.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7aee75d8-b336-48ae-b5f5-f1973f3ff173.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8c957d59-97bf-403c-a48f-3e6991667b97.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_af34857e-f3ee-4711-9986-94cf04107963.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b7fd69b0-64d8-4944-be4d-eae8fc909e93.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b96de465-bd4a-4738-adb9-be03b1cf2a2c.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_c0e0e103-1d47-4668-b1c5-d51f744aaa9e.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_e268bf36-aabe-4f06-b30d-513c613c339c.png',
-  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_ebd4fdad-00df-4d0c-9682-946ea4345af4.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
-  '/sample/result/hamdeva-tiktok-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7836063a-cccb-47aa-9166-50f610c3fe58.png',
-  '/sample/result/hamdeva-tiktok-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_c198f6e7-c101-4a68-8cf6-381108327ee3.png',
 ] as const;
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
@@ -5650,11 +5644,9 @@ const App: React.FC = () => {
                 <div className="landing-result-stage">
                   <div className="landing-result-row landing-result-row-top">
                     {homeShowcaseTopItems.map((item, index) => (
-                      <button
+                      <div
                         key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
-                        onClick={() => openResultPreviewModal(item.src)}
-                        type="button"
                       >
                         <div className="landing-result-tile-media">
                           <img
@@ -5663,7 +5655,7 @@ const App: React.FC = () => {
                             loading="lazy"
                           />
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
 
@@ -5681,11 +5673,9 @@ const App: React.FC = () => {
 
                   <div className="landing-result-row landing-result-row-bottom">
                     {homeShowcaseBottomItems.map((item, index) => (
-                      <button
+                      <div
                         key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
-                        onClick={() => openResultPreviewModal(item.src)}
-                        type="button"
                       >
                         <div className="landing-result-tile-media">
                           <img
@@ -5694,7 +5684,7 @@ const App: React.FC = () => {
                             loading="lazy"
                           />
                         </div>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
