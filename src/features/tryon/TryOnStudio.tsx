@@ -333,188 +333,196 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     <>
       <div className={`try-layout ${isModalLayout ? 'try-layout-modal' : ''}`}>
         <div className="try-column">
-          <div className="card-header">
-            <span className="section-label">{copy.step1Label}</span>
-            <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
-            {isModalLayout && modalCopy?.personCardBody ? <p className="modal-card-description">{modalCopy.personCardBody}</p> : null}
-          </div>
-          <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
-            <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
-              {copy.chooseSample}
-            </button>
-            {!isModalLayout ? (
-              <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
-                {copy.uploadMyPhoto}
-              </button>
-            ) : null}
-            <input
-              id="p-up"
-              ref={personInputRef}
-              type="file"
-              hidden
-              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-              onClick={(event) => { event.currentTarget.value = ''; }}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
-                  onPersonFileChange(file);
-                }
-              }}
-            />
-          </div>
-          <div
-            className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
-            onClick={() => {
-              if (!isGenerating && !activePersonImage) {
-                personInputRef.current?.click();
-              }
-            }}
-            onKeyDown={(event) => {
-              if (!isGenerating && !activePersonImage && (event.key === 'Enter' || event.key === ' ')) {
-                event.preventDefault();
-                personInputRef.current?.click();
-              }
-            }}
-            onDragEnter={(event) => {
-              handleDragOver(event);
-              setPersonDragActive(true);
-            }}
-            onDragLeave={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                setPersonDragActive(false);
-              }
-            }}
-            onDragOver={handleDragOver}
-            onDrop={(event) => { void handleDrop(event, 'person'); }}
-            role={!activePersonImage ? 'button' : undefined}
-            tabIndex={!activePersonImage ? 0 : -1}
-          >
-            {activePersonImage ? (
-              <>
-                {personPreviewState === 'loading' && (
-                  <div className="preview-overlay">
-                    <span className="spinner"></span>
-                    <span>{personUploadMessage || copy.loadingImage}</span>
-                  </div>
-                )}
-                {personPreviewState === 'error' && <div className="img-error-msg">{copy.imageLoadError}</div>}
-                <img
-                  src={activePersonImage}
-                  alt="Face"
-                  onLoad={() => copy.setPersonPreviewReady()}
-                  onError={() => copy.setPersonPreviewError()}
-                  className={`${selectedSampleUrl ? 'sample-img' : personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
+          <div className={isModalLayout ? 'modal-input-card-layout' : undefined}>
+            <div className={isModalLayout ? 'modal-input-card-main' : undefined}>
+              <div className="card-header">
+                <span className="section-label">{copy.step1Label}</span>
+                <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
+                {isModalLayout && modalCopy?.personCardBody ? <p className="modal-card-description">{modalCopy.personCardBody}</p> : null}
+              </div>
+              <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
+                <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
+                  {copy.chooseSample}
+                </button>
+                <button className="outline-btn" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
+                  {copy.uploadMyPhoto}
+                </button>
+                <input
+                  id="p-up"
+                  ref={personInputRef}
+                  type="file"
+                  hidden
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onClick={(event) => { event.currentTarget.value = ''; }}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onPersonFileChange(file);
+                    }
+                  }}
                 />
-              </>
-            ) : (
-              <EmptyPreviewState
-                title={copy.facePlaceholderTitle}
-                tips={isModalLayout ? emptyFaceTips : emptyFaceTips.slice(0, 2)}
-                type="face"
-                badgeLabel={emptyPreviewCopy.faceBadge}
-                hint={isModalLayout ? copy.uploadMyPhoto : undefined}
-              />
-            )}
-            {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
-            {(personImage || selectedSampleUrl) && (
-              <button className="clear-img-btn" disabled={isGenerating} onClick={onClearPerson} type="button">&times;</button>
-            )}
+              </div>
+              {copy.faceCopyrightNotice ? <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p> : null}
+            </div>
+            <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
+              <div
+                className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
+                onClick={() => {
+                  if (!isGenerating && !activePersonImage) {
+                    personInputRef.current?.click();
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!isGenerating && !activePersonImage && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    personInputRef.current?.click();
+                  }
+                }}
+                onDragEnter={(event) => {
+                  handleDragOver(event);
+                  setPersonDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setPersonDragActive(false);
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDrop={(event) => { void handleDrop(event, 'person'); }}
+                role={!activePersonImage ? 'button' : undefined}
+                tabIndex={!activePersonImage ? 0 : -1}
+              >
+                {activePersonImage ? (
+                  <>
+                    {personPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{personUploadMessage || copy.loadingImage}</span>
+                      </div>
+                    )}
+                    {personPreviewState === 'error' && <div className="img-error-msg">{copy.imageLoadError}</div>}
+                    <img
+                      src={activePersonImage}
+                      alt="Face"
+                      onLoad={() => copy.setPersonPreviewReady()}
+                      onError={() => copy.setPersonPreviewError()}
+                      className={`${selectedSampleUrl ? 'sample-img' : personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
+                    />
+                  </>
+                ) : (
+                  <EmptyPreviewState
+                    title={copy.facePlaceholderTitle}
+                    tips={isModalLayout ? emptyFaceTips : emptyFaceTips.slice(0, 2)}
+                    type="face"
+                    badgeLabel={emptyPreviewCopy.faceBadge}
+                    hint={isModalLayout ? copy.uploadMyPhoto : undefined}
+                  />
+                )}
+                {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
+                {(personImage || selectedSampleUrl) && (
+                  <button className="clear-img-btn" disabled={isGenerating} onClick={onClearPerson} type="button">&times;</button>
+                )}
+              </div>
+            </div>
           </div>
-          {copy.faceCopyrightNotice ? <p className="upload-guidance-text">{copy.faceCopyrightNotice}</p> : null}
         </div>
 
         <div className="try-column">
-          <div className="card-header">
-            <span className="section-label">{copy.step2Label}</span>
-            <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
-            {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-card-description">{modalCopy.garmentCardBody}</p> : null}
-          </div>
-          <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
-            <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
-              {copy.chooseClothingSample}
-            </button>
-            {!isModalLayout ? (
-              <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
-                {copy.uploadClothing}
-              </button>
-            ) : null}
-            <input
-              id="c-up"
-              ref={clothInputRef}
-              type="file"
-              hidden
-              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-              onClick={(event) => { event.currentTarget.value = ''; }}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) {
-                  onClothFileChange(file);
-                }
-              }}
-            />
-          </div>
-          <div
-            className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
-            onClick={() => {
-              if (!isGenerating && !activeClothImage) {
-                clothInputRef.current?.click();
-              }
-            }}
-            onKeyDown={(event) => {
-              if (!isGenerating && !activeClothImage && (event.key === 'Enter' || event.key === ' ')) {
-                event.preventDefault();
-                clothInputRef.current?.click();
-              }
-            }}
-            onDragEnter={(event) => {
-              handleDragOver(event);
-              setClothDragActive(true);
-            }}
-            onDragLeave={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                setClothDragActive(false);
-              }
-            }}
-            onDragOver={handleDragOver}
-            onDrop={(event) => { void handleDrop(event, 'cloth'); }}
-            role={!activeClothImage ? 'button' : undefined}
-            tabIndex={!activeClothImage ? 0 : -1}
-          >
-            {activeClothImage ? (
-              <>
-                {clothPreviewState === 'loading' && (
-                  <div className="preview-overlay">
-                    <span className="spinner"></span>
-                    <span>{clothUploadMessage || copy.loadingImage}</span>
-                  </div>
-                )}
-                {clothPreviewState === 'error' ? (
-                  <div className="img-error-msg">{copy.imageLoadError}</div>
+          <div className={isModalLayout ? 'modal-input-card-layout' : undefined}>
+            <div className={isModalLayout ? 'modal-input-card-main' : undefined}>
+              <div className="card-header">
+                <span className="section-label">{copy.step2Label}</span>
+                <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
+                {isModalLayout && modalCopy?.garmentCardBody ? <p className="modal-card-description">{modalCopy.garmentCardBody}</p> : null}
+              </div>
+              <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
+                <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
+                  {copy.chooseClothingSample}
+                </button>
+                <button className="outline-btn" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
+                  {copy.uploadClothing}
+                </button>
+                <input
+                  id="c-up"
+                  ref={clothInputRef}
+                  type="file"
+                  hidden
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onClick={(event) => { event.currentTarget.value = ''; }}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onClothFileChange(file);
+                    }
+                  }}
+                />
+              </div>
+              {copy.clothingSafetyNotice ? <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p> : null}
+            </div>
+            <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
+              <div
+                className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
+                onClick={() => {
+                  if (!isGenerating && !activeClothImage) {
+                    clothInputRef.current?.click();
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!isGenerating && !activeClothImage && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    clothInputRef.current?.click();
+                  }
+                }}
+                onDragEnter={(event) => {
+                  handleDragOver(event);
+                  setClothDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setClothDragActive(false);
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDrop={(event) => { void handleDrop(event, 'cloth'); }}
+                role={!activeClothImage ? 'button' : undefined}
+                tabIndex={!activeClothImage ? 0 : -1}
+              >
+                {activeClothImage ? (
+                  <>
+                    {clothPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{clothUploadMessage || copy.loadingImage}</span>
+                      </div>
+                    )}
+                    {clothPreviewState === 'error' ? (
+                      <div className="img-error-msg">{copy.imageLoadError}</div>
+                    ) : (
+                      <img
+                        src={activeClothImage}
+                        alt="Cloth"
+                        className={clothPreviewState === 'ready' ? 'is-visible' : ''}
+                        onLoad={() => copy.setClothPreviewReady()}
+                        onError={() => copy.setClothPreviewError()}
+                      />
+                    )}
+                    {selectedClothSampleUrl && activeClothImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
+                    {(clothImage || selectedClothSampleUrl) && (
+                      <button className="clear-img-btn" disabled={isGenerating} onClick={onClearCloth} type="button">&times;</button>
+                    )}
+                  </>
                 ) : (
-                  <img
-                    src={activeClothImage}
-                    alt="Cloth"
-                    className={clothPreviewState === 'ready' ? 'is-visible' : ''}
-                    onLoad={() => copy.setClothPreviewReady()}
-                    onError={() => copy.setClothPreviewError()}
+                  <EmptyPreviewState
+                    title={copy.clothingPlaceholderTitle}
+                    tips={isModalLayout ? emptyClothTips : emptyClothTips.slice(0, 2)}
+                    type="cloth"
+                    badgeLabel={emptyPreviewCopy.styleBadge}
+                    hint={isModalLayout ? copy.uploadClothing : undefined}
                   />
                 )}
-                {selectedClothSampleUrl && activeClothImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
-                {(clothImage || selectedClothSampleUrl) && (
-                  <button className="clear-img-btn" disabled={isGenerating} onClick={onClearCloth} type="button">&times;</button>
-                )}
-              </>
-            ) : (
-              <EmptyPreviewState
-                title={copy.clothingPlaceholderTitle}
-                tips={isModalLayout ? emptyClothTips : emptyClothTips.slice(0, 2)}
-                type="cloth"
-                badgeLabel={emptyPreviewCopy.styleBadge}
-                hint={isModalLayout ? copy.uploadClothing : undefined}
-              />
-            )}
+              </div>
+            </div>
           </div>
-          {copy.clothingSafetyNotice ? <p className="upload-guidance-text">{copy.clothingSafetyNotice}</p> : null}
         </div>
       </div>
 

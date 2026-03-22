@@ -12,7 +12,36 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_VISIBLE_ROWS = 7;
+const HISTORY_PAGE_SIZE = 21;
+
+const getHistoryPagerCopy = (locale: string) => {
+  if (locale.startsWith('ko')) {
+    return {
+      previous: '이전',
+      next: '다음',
+      summary: (current: number, total: number) => `${current} / ${total} 페이지`,
+    };
+  }
+  if (locale.startsWith('ja')) {
+    return {
+      previous: '前へ',
+      next: '次へ',
+      summary: (current: number, total: number) => `${current} / ${total} ページ`,
+    };
+  }
+  if (locale.startsWith('zh')) {
+    return {
+      previous: '上一页',
+      next: '下一页',
+      summary: (current: number, total: number) => `第 ${current} / ${total} 页`,
+    };
+  }
+  return {
+    previous: 'Previous',
+    next: 'Next',
+    summary: (current: number, total: number) => `Page ${current} / ${total}`,
+  };
+};
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -220,15 +249,15 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
-  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isImageReady, setIsImageReady] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const loadingStartedAtRef = useRef(0);
   const historyCopy = getHistoryCopy(locale);
+  const pagerCopy = getHistoryPagerCopy(locale);
   const getPersonLabel = (item: GenerationRecord) => getResolvedPersonLabel(item, historyCopy);
   const getGarmentLabel = (item: GenerationRecord) => getResolvedGarmentLabel(item, historyCopy);
   const previewCardStyle: React.CSSProperties = {
@@ -252,7 +281,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
-      setViewportWidth(window.innerWidth);
     };
 
     window.addEventListener('resize', handleResize);
@@ -287,28 +315,19 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
         return (getTimestampMillis(b.createdAt) ?? 0) - (getTimestampMillis(a.createdAt) ?? 0);
       })
   ), [items]);
-
-  const columnCount = useMemo(() => {
-    if (viewportWidth <= 520) {
-      return 1;
-    }
-    if (viewportWidth <= 768) {
-      return 2;
-    }
-    return 6;
-  }, [viewportWidth]);
-
-  const visibleRows = useMemo(() => {
-    const rows: GenerationRecord[][] = [];
-    for (let index = 0; index < visibleItems.length; index += columnCount) {
-      rows.push(visibleItems.slice(index, index + columnCount));
-    }
-    return rows;
-  }, [visibleItems, columnCount]);
+  const pageCount = Math.max(1, Math.ceil(visibleItems.length / HISTORY_PAGE_SIZE));
+  const pagedItems = useMemo(
+    () => visibleItems.slice(currentPage * HISTORY_PAGE_SIZE, (currentPage + 1) * HISTORY_PAGE_SIZE),
+    [currentPage, visibleItems],
+  );
 
   const hasVisibleItems = visibleItems.length > 0;
   const isSelectedItemPreserved = Boolean(selectedItem && isPreservedItem(selectedItem));
   const canArchiveSelectedItem = Boolean(selectedItem && (!isSelectedItemPreserved && preservedCount < maxPreserved));
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, Math.max(0, pageCount - 1)));
+  }, [pageCount]);
 
   const resetExpandedPanel = () => {
     setSelectedItem(null);
@@ -487,16 +506,16 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   };
 
   useEffect(() => {
-    if (!pendingArchiveSelectionId || !scrollContainerRef.current) {
+    if (!pendingArchiveSelectionId) {
       return;
     }
 
-    const preservedItem = visibleItems.find((item) => item.id === pendingArchiveSelectionId);
-    if (!preservedItem || !isPreservedItem(preservedItem)) {
+    const preservedItemIndex = visibleItems.findIndex((item) => item.id === pendingArchiveSelectionId && isPreservedItem(item));
+    if (preservedItemIndex < 0) {
       return;
     }
 
-    scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    setCurrentPage(Math.floor(preservedItemIndex / HISTORY_PAGE_SIZE));
     setPendingArchiveSelectionId(null);
   }, [pendingArchiveSelectionId, visibleItems]);
 
@@ -521,50 +540,60 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       <p className="history-guide-copy">{copy.historyGuide}</p>
       {!hasVisibleItems ? <p>{copy.historyEmpty}</p> : null}
       {hasVisibleItems ? (
-        <div
-          ref={scrollContainerRef}
-          className="creation-history-scroll"
-          style={{
-            '--history-visible-rows': String(HISTORY_VISIBLE_ROWS),
-            '--history-column-count': String(columnCount),
-          } as React.CSSProperties}
-        >
-          {visibleRows.map((row, rowIndex) => (
-            <div key={`history-row-${rowIndex}`} className="creation-history-grid">
-                {row.map((item) => {
-                  const isExpanded = selectedItem?.id === item.id;
-                  const itemLabel = `[${formatDateTime(item.createdAt, locale)}]`;
+        <>
+          <div className="creation-history-grid">
+            {pagedItems.map((item) => {
+              const isExpanded = selectedItem?.id === item.id;
+              const itemLabel = `[${formatDateTime(item.createdAt, locale)}]`;
 
-                  return (
-                    <button
-                      key={item.id}
-                      className={`creation-history-card ${isExpanded ? 'is-selected' : ''}`}
-                      onClick={() => handleOpenItem(item)}
-                      type="button"
-                    >
-                      <div className="creation-history-thumbnail">
-                        <img
-                          src={item.imageUrl || ''}
-                          alt={`${itemLabel} ${historyCopy.resultLabel}`}
-                          loading="lazy"
-                        />
-                        {isPreservedItem(item) ? (
-                          <span className="creation-history-thumbnail-badge">{copy.historyArchived}</span>
-                        ) : null}
-                      </div>
-                      <div className="creation-history-card-copy">
-                        <strong>{itemLabel}</strong>
-                        <span>{historyCopy.resultLabel}</span>
-                        {isPreservedItem(item) ? (
-                          <span className="creation-history-badge">{copy.historyArchived}</span>
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-          ))}
-        </div>
+              return (
+                <button
+                  key={item.id}
+                  className={`creation-history-card ${isExpanded ? 'is-selected' : ''}`}
+                  onClick={() => handleOpenItem(item)}
+                  type="button"
+                >
+                  <div className="creation-history-thumbnail">
+                    <img
+                      src={item.imageUrl || ''}
+                      alt={`${itemLabel} ${historyCopy.resultLabel}`}
+                      loading="lazy"
+                    />
+                    {isPreservedItem(item) ? (
+                      <span className="creation-history-thumbnail-badge">{copy.historyArchived}</span>
+                    ) : null}
+                  </div>
+                  <div className="creation-history-card-copy">
+                    <strong>{itemLabel}</strong>
+                    <span>{historyCopy.resultLabel}</span>
+                    {isPreservedItem(item) ? (
+                      <span className="creation-history-badge">{copy.historyArchived}</span>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="creation-history-pagination">
+            <button
+              className="outline-btn auth-inline-btn creation-history-page-btn"
+              disabled={currentPage === 0}
+              onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+              type="button"
+            >
+              {pagerCopy.previous}
+            </button>
+            <span className="creation-history-page-indicator">{pagerCopy.summary(currentPage + 1, pageCount)}</span>
+            <button
+              className="outline-btn auth-inline-btn creation-history-page-btn"
+              disabled={currentPage >= pageCount - 1}
+              onClick={() => setCurrentPage((prev) => Math.min(pageCount - 1, prev + 1))}
+              type="button"
+            >
+              {pagerCopy.next}
+            </button>
+          </div>
+        </>
       ) : null}
 
       {selectedItem ? (
