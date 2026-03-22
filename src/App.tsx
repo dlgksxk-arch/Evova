@@ -54,7 +54,13 @@ import {
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
 import { PUBLIC_LANGUAGE_OPTIONS, isAppSupportedLanguageCode, type LanguageCode } from './constants/languages';
-import { clothSampleOptions, getOutfitPromptHints, getTraditionalOutfitGuides } from './data/clothSamples';
+import {
+  clothSampleOptions,
+  getOutfitPromptHints,
+  getTraditionalOutfitGuides,
+  type ClothSampleCategory,
+  type ClothSampleOption,
+} from './data/clothSamples';
 import { FACE_SAMPLES, getFaceSampleBreed, getPetBreedGuides, type FaceCategory } from './data/faceSamples';
 import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './locales';
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
@@ -157,31 +163,94 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
 ]);
+const getTraditionalSampleCategoryLabel = (category: ClothSampleCategory, lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      female: '전통 여성복',
+      male: '전통 남성복',
+      future: '퓨처 스타일',
+      classic: '클래식 스타일',
+      special: '테마 스타일',
+    }[category];
+  }
+  if (lang === 'ja') {
+    return {
+      female: '伝統女性衣装',
+      male: '伝統男性衣装',
+      future: 'フューチャースタイル',
+      classic: 'クラシックスタイル',
+      special: 'テーマスタイル',
+    }[category];
+  }
+  if (lang === 'zh') {
+    return {
+      female: '传统女装',
+      male: '传统男装',
+      future: '未来风格',
+      classic: '经典风格',
+      special: '主题风格',
+    }[category];
+  }
+  return {
+    female: 'Traditional womenswear',
+    male: 'Traditional menswear',
+    future: 'Future style',
+    classic: 'Classic style',
+    special: 'Theme style',
+  }[category];
+};
+const getTraditionalSampleDisplayLabel = (
+  sample: ClothSampleOption,
+  lang: LanguageCode,
+  fallbackLabel: string,
+) => {
+  if (lang === 'ko') {
+    return sample.label;
+  }
+  const variantNumber = sample.label.match(/(\d+)$/)?.[1];
+  return variantNumber ? `${fallbackLabel} ${variantNumber}` : fallbackLabel;
+};
+const getTraditionalSampleDescription = (
+  lang: LanguageCode,
+  countryLabel: string,
+  categoryLabel: string,
+) => {
+  if (lang === 'ko') {
+    return `${countryLabel} 무드의 ${categoryLabel} 샘플입니다. 색감과 장식, 실루엣 차이를 빠르게 비교하기 좋습니다.`;
+  }
+  if (lang === 'ja') {
+    return `${countryLabel}の雰囲気をもとにした${categoryLabel}サンプルです。配色、装飾、シルエットの違いを手早く見比べられます。`;
+  }
+  if (lang === 'zh') {
+    return `这是一张以${countryLabel}氛围为基础的${categoryLabel}示例，适合快速比较配色、装饰和轮廓差异。`;
+  }
+  return `A ${categoryLabel.toLowerCase()} sample inspired by ${countryLabel}, useful for comparing color, ornament, and silhouette at a glance.`;
+};
 const getHomeShowcaseCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
-      title: '이쁠까? 안이쁠까? 하지말고 입혀봐!',
-      body: '쇼핑몰에서 본 우리 아이 옷. 먼저 가상으로 입혀봐. 입혀보고 사도 돼',
+      title: '실제 결과는 이런 느낌으로 나와요',
+      body: '마음에 드는 무드가 보이면, 바로 우리 아이 사진으로 시작해보세요.',
       imageAltPrefix: '햄데바 펫 피팅 결과 예시',
     };
   }
   if (lang === 'ja') {
     return {
-      title: '最初の画面で「うちの子でも試したい」と思わせたい',
-      body: '説明より先に結果が見えれば、使う理由がすぐに伝わります。実際のペット試着例を増やし、気になった瞬間にそのまま生成へ進める流れにしました。',
+      title: '実際の仕上がりはこんな雰囲気です',
+      body: '気になるムードが見つかったら、そのままうちの子の写真で試せます。',
       imageAltPrefix: 'HAMDEVAペット試着結果例',
     };
   }
   if (lang === 'zh') {
     return {
-      title: '首页就该让人立刻想试试自己家的宠物',
-      body: '先看到结果，用户才会马上产生想象。首页现在铺开更多真实宠物试穿示例，让人一心动就能直接进入生成。',
+      title: '实际效果大概就是这种感觉',
+      body: '看到喜欢的氛围后，就能直接用自己家宠物的照片开始试穿。',
       imageAltPrefix: 'HAMDEVA宠物试穿结果示例',
     };
   }
   return {
-    title: 'The first screen should make people want to try their own pet',
-    body: 'Results need to hit before the explanation does. The homepage now shows a larger wall of real pet fitting examples so visitors can feel the payoff and jump into generation immediately.',
+    title: 'This is the kind of result you can make',
+    body: 'Spot a mood you like, then jump straight into a try-on with your own pet photo.',
     imageAltPrefix: 'HAMDEVA pet fitting result example',
   };
 };
@@ -3358,6 +3427,24 @@ const App: React.FC = () => {
   const petBreedGuides = getPetBreedGuides(lang);
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
+  const traditionalOutfitGuideByCountry = new Map(
+    traditionalOutfitGuides.map((guide) => [guide.country, guide] as const),
+  );
+  const sampleOutfitCards = clothSampleOptions.map((sample) => {
+    const localizedGuide = traditionalOutfitGuideByCountry.get(sample.country);
+    const countryLabel = lang === 'ko'
+      ? sample.countryLabelKo
+      : localizedGuide?.countryLabel ?? sample.countryLabelEn;
+    const categoryLabel = getTraditionalSampleCategoryLabel(sample.category, lang);
+    const baseLabel = localizedGuide?.outfitName ?? sample.countryLabelEn;
+    return {
+      sample,
+      countryLabel,
+      categoryLabel,
+      displayLabel: getTraditionalSampleDisplayLabel(sample, lang, baseLabel),
+      description: getTraditionalSampleDescription(lang, countryLabel, categoryLabel),
+    };
+  });
   const t = uiTranslations[lang];
   const homeShowcaseCopy = getHomeShowcaseCopy(lang);
   const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGES.map((src, index) => ({
@@ -3365,9 +3452,12 @@ const App: React.FC = () => {
     alt: `${homeShowcaseCopy.imageAltPrefix} ${index + 1}`,
     variant: index % 6,
   }));
-  const homeShowcaseRowSplitIndex = Math.ceil(homeShowcaseItems.length / 2);
-  const homeShowcaseTopItems = homeShowcaseItems.slice(0, homeShowcaseRowSplitIndex);
-  const homeShowcaseBottomItems = homeShowcaseItems.slice(homeShowcaseRowSplitIndex);
+  const homeHeroVisualItems = [0, 5, 11]
+    .map((index) => homeShowcaseItems[index])
+    .filter((item): item is (typeof homeShowcaseItems)[number] => Boolean(item));
+  const homePreviewStripItems = [1, 3, 4, 7, 9, 14, 16]
+    .map((index) => homeShowcaseItems[index])
+    .filter((item): item is (typeof homeShowcaseItems)[number] => Boolean(item));
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -3456,12 +3546,6 @@ const App: React.FC = () => {
           : `Plan ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
     : '';
   const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
-  const updateHomeShowcaseHoverPreviewPosition = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const nextX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
-    const clampedX = Math.min(82, Math.max(18, nextX));
-    event.currentTarget.style.setProperty('--sample-hover-x', `${clampedX}%`);
-  };
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -3677,7 +3761,7 @@ const App: React.FC = () => {
         createOrganizationSchema({
           name: 'HAMDEVA',
           url: SITE_URL,
-          logo: `${SITE_URL}/og-image.jpg`,
+          logo: `${SITE_URL}/sample/og/og-image.png`,
           description: 'HAMDEVA is an AI pet fitting platform for dogs and cats.',
           contactEmail: SUPPORT_EMAIL,
           contactType: 'customer support',
@@ -3701,7 +3785,7 @@ const App: React.FC = () => {
         headline: currentPageCopy?.title ?? currentEditorialPage.title,
         url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
         description: currentPageCopy?.description ?? currentEditorialPage.description,
-        image: `${SITE_URL}/og-image.jpg`,
+        image: `${SITE_URL}/sample/og/og-image.png`,
         articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
       })
     : null;
@@ -5367,7 +5451,7 @@ const App: React.FC = () => {
           </div>
           <div className="nav-quick-scroll nav-inline-actions">
             <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
-              {landingContent.hero.primaryButton}
+              {landingContent.hero.compactPrimaryButton}
             </button>
             <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
               {contentLocale.nav['how-it-works']}
@@ -5562,7 +5646,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <section className="hero-section">
+      <section className={`hero-section ${currentPage === 'home' && !sharedResultRouteId ? 'hero-home' : ''}`}>
         <video
           className="bg-video"
           autoPlay
@@ -5586,20 +5670,35 @@ const App: React.FC = () => {
               <p className="hero-sub">{t.adminSubtitle}</p>
             </>
           ) : currentPage === 'home' ? (
-            <>
-              <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
-              <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
-              <p className="hero-sub">{landingContent.hero.subtitle}</p>
-              <p className="hero-detail">{landingContent.hero.body}</p>
-              <div className="hero-cta-group">
-                <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
-                  {landingContent.hero.primaryButton}
-                </button>
-                <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('how-it-works')} type="button">
-                  {landingContent.hero.secondaryButton}
-                </button>
+            <div className="hero-home-layout">
+              <div className="hero-home-copy">
+                <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
+                <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
+                <p className="hero-sub">{landingContent.hero.subtitle}</p>
+                <p className="hero-detail">{landingContent.hero.body}</p>
+                <div className="hero-cta-group">
+                  <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
+                    {landingContent.hero.primaryButton}
+                  </button>
+                  <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                    {landingContent.hero.secondaryButton}
+                  </button>
+                </div>
               </div>
-            </>
+              <div className="hero-home-visual" aria-hidden="true">
+                <div className="hero-home-glow hero-home-glow-primary" />
+                <div className="hero-home-glow hero-home-glow-secondary" />
+                {homeHeroVisualItems.map((item, index) => (
+                  <figure key={`hero-visual-${item.src}`} className={`hero-pet-card hero-pet-card-${index + 1}`}>
+                    <div className="hero-pet-card-media">
+                      <img src={item.src} alt="" loading="lazy" />
+                    </div>
+                  </figure>
+                ))}
+                <div className="hero-visual-orb hero-visual-orb-one" />
+                <div className="hero-visual-orb hero-visual-orb-two" />
+              </div>
+            </div>
           ) : currentPage === 'payment-success' ? (
             <>
               <div className="hero-eyebrow">{t.chargeCredits}</div>
@@ -5646,71 +5745,26 @@ const App: React.FC = () => {
         <>
           <main className="landing-home-shell">
             <section className="section landing-result-showcase-section">
-              <div className="section-inner landing-result-showcase">
-                <div className="landing-result-stage">
-                  <div className="landing-result-row landing-result-row-top">
-                    {homeShowcaseTopItems.map((item, index) => (
-                      <div
-                        key={item.src}
-                        className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
-                        onMouseEnter={updateHomeShowcaseHoverPreviewPosition}
-                        onMouseMove={updateHomeShowcaseHoverPreviewPosition}
-                        onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
-                      >
-                        <div className="landing-result-tile-media">
-                          <img
-                            src={item.src}
-                            alt={item.alt}
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="landing-result-hover-preview" aria-hidden="true">
-                          <img
-                            src={item.src}
-                            alt=""
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                    ))}
+              <div className="section-inner">
+                <div className="landing-result-preview-shell">
+                  <div className="landing-result-preview-copy">
+                    <span className="section-label">{homeShowcaseCopy.title}</span>
+                    <p>{homeShowcaseCopy.body}</p>
                   </div>
-
-                  <article className="landing-result-showcase-copy">
-                    <h2>{homeShowcaseCopy.title}</h2>
-                    <div className="landing-inline-actions landing-result-actions">
-                      <button className="generate-btn" onClick={handleHeroCta} type="button">
-                        {landingContent.hero.primaryButton}
-                      </button>
-                      <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
-                        {landingContent.sampleInfo.button}
-                      </button>
-                    </div>
-                  </article>
-
-                  <div className="landing-result-row landing-result-row-bottom">
-                    {homeShowcaseBottomItems.map((item, index) => (
-                      <div
+                  <div className="landing-result-preview-grid">
+                    {homePreviewStripItems.map((item, index) => (
+                      <article
                         key={item.src}
-                        className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
-                        onMouseEnter={updateHomeShowcaseHoverPreviewPosition}
-                        onMouseMove={updateHomeShowcaseHoverPreviewPosition}
-                        onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
+                        className={`landing-preview-card ${index === 1 || index === 4 ? 'is-featured' : ''}`}
                       >
-                        <div className="landing-result-tile-media">
+                        <div className="landing-preview-card-media">
                           <img
                             src={item.src}
                             alt={item.alt}
                             loading="lazy"
                           />
                         </div>
-                        <div className="landing-result-hover-preview" aria-hidden="true">
-                          <img
-                            src={item.src}
-                            alt=""
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                 </div>
@@ -5912,23 +5966,24 @@ const App: React.FC = () => {
                   <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
                   <p>{landingContent.sampleOutfits.catalogBody}</p>
                 </article>
-                <div className="sample-outfit-thumbnail-grid">
-                  {traditionalOutfitGuides.map((guide) => (
-                    <button
-                      key={guide.id}
-                      className="sample-outfit-thumbnail"
-                      onClick={() => openOutfitGuide(guide.id)}
-                      type="button"
+                <div className="sample-outfit-card-grid">
+                  {sampleOutfitCards.map(({ sample, countryLabel, categoryLabel, displayLabel, description }) => (
+                    <article
+                      key={sample.id}
+                      className="sample-outfit-card"
                     >
-                      <div className="sample-outfit-thumbnail-image">
-                        <img src={guide.image} alt={guide.outfitName} loading="lazy" />
+                      <div className="sample-outfit-card-image">
+                        <img src={sample.image} alt={displayLabel} loading="lazy" />
                       </div>
-                      <div className="sample-outfit-thumbnail-copy">
-                        <span className="sample-outfit-country-pill">{guide.countryLabel}</span>
-                        <strong>{guide.outfitName}</strong>
-                        <p>{guide.summary}</p>
+                      <div className="sample-outfit-card-copy">
+                        <div className="sample-outfit-card-header">
+                          <span className="sample-outfit-country-pill">{countryLabel}</span>
+                          <span className="sample-outfit-card-category">{categoryLabel}</span>
+                        </div>
+                        <strong>{displayLabel}</strong>
+                        <p>{description}</p>
                       </div>
-                    </button>
+                    </article>
                   ))}
                 </div>
               </>

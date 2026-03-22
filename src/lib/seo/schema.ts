@@ -150,7 +150,7 @@ export const createArticleSchema = (config: ArticleSchemaConfig) => {
       url: 'https://hamdeva.com',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://hamdeva.com/og-image.jpg',
+        url: 'https://hamdeva.com/sample/og/og-image.png',
       },
     },
   };
