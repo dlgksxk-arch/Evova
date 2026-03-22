@@ -5655,6 +5655,13 @@ const App: React.FC = () => {
                             loading="lazy"
                           />
                         </div>
+                        <div className="landing-result-hover-preview" aria-hidden="true">
+                          <img
+                            src={item.src}
+                            alt=""
+                            loading="lazy"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -5681,6 +5688,13 @@ const App: React.FC = () => {
                           <img
                             src={item.src}
                             alt={item.alt}
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="landing-result-hover-preview" aria-hidden="true">
+                          <img
+                            src={item.src}
+                            alt=""
                             loading="lazy"
                           />
                         </div>

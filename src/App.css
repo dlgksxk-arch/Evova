@@ -1391,8 +1391,8 @@ a { color: inherit; text-decoration: none; }
 .landing-result-tile {
   position: relative;
   overflow: hidden;
-  flex: 0 1 152px;
-  width: min(100%, 152px);
+  flex: 0 1 168px;
+  width: min(100%, 168px);
   aspect-ratio: 0.98 / 1.18;
   padding: 0;
   border: none;
@@ -1404,13 +1404,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .landing-result-tile-outer {
-  flex-basis: 188px;
-  width: min(100%, 188px);
+  flex-basis: 208px;
+  width: min(100%, 208px);
 }
 
 .landing-result-tile-inner {
-  flex-basis: 144px;
-  width: min(100%, 144px);
+  flex-basis: 158px;
+  width: min(100%, 158px);
 }
 
 .landing-result-tile:hover {
@@ -1432,6 +1432,33 @@ a { color: inherit; text-decoration: none; }
   transform: scale(1.14);
 }
 
+.landing-result-hover-preview {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 12px);
+  width: clamp(180px, 15vw, 240px);
+  aspect-ratio: 0.94 / 1.18;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(255, 251, 246, 0.96);
+  box-shadow: 0 28px 46px rgba(24, 13, 4, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px) scale(0.92);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 24;
+}
+
+.landing-result-hover-preview img {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  background: linear-gradient(180deg, rgba(255, 247, 240, 0.98), rgba(244, 233, 222, 0.92));
+}
+
 .landing-result-tile img {
   width: 100%;
   height: 100%;
@@ -1442,27 +1469,35 @@ a { color: inherit; text-decoration: none; }
 }
 
 .landing-result-tile-variant-0 {
-  transform: translateY(-10px) rotate(-7deg) scale(1.08);
+  transform: translateY(-12px) rotate(-8deg) scale(1.1);
 }
 
 .landing-result-tile-variant-1 {
-  transform: translateY(10px) rotate(5deg) scale(0.94);
+  transform: translateY(12px) rotate(6deg) scale(0.93);
 }
 
 .landing-result-tile-variant-2 {
-  transform: translateY(-18px) rotate(-3deg) scale(1.18);
+  transform: translateY(-20px) rotate(-4deg) scale(1.24);
 }
 
 .landing-result-tile-variant-3 {
-  transform: translateY(12px) rotate(8deg) scale(0.9);
+  transform: translateY(14px) rotate(9deg) scale(0.88);
 }
 
 .landing-result-tile-variant-4 {
-  transform: translateY(-4px) rotate(4deg) scale(1.04);
+  transform: translateY(-5px) rotate(5deg) scale(1.08);
 }
 
 .landing-result-tile-variant-5 {
-  transform: translateY(18px) rotate(-8deg) scale(0.98);
+  transform: translateY(20px) rotate(-9deg) scale(0.96);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-result-tile:hover .landing-result-hover-preview,
+  .landing-result-tile:focus-within .landing-result-hover-preview {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
 .landing-preview-copy {
@@ -4756,8 +4791,8 @@ a { color: inherit; text-decoration: none; }
   .landing-result-tile-outer,
   .landing-result-tile-inner,
   .landing-result-tile {
-    flex-basis: 122px;
-    width: min(100%, 122px);
+    flex-basis: 134px;
+    width: min(100%, 134px);
   }
   .admin-section-header,
   .admin-user-detail-header,
@@ -5469,6 +5504,9 @@ a { color: inherit; text-decoration: none; }
   .landing-result-tile-inner {
     flex-basis: calc(33.333% - 8px);
     width: calc(33.333% - 8px);
+  }
+  .landing-result-hover-preview {
+    display: none;
   }
   .content-modal .country-card {
     padding: 14px;
