@@ -3556,6 +3556,7 @@ const App: React.FC = () => {
   const loginComingSoonLabel = `${t.login} (${t.comingSoon})`;
   const googleLoginComingSoonLabel = `${t.googleLogin} (${t.comingSoon})`;
   const headerAccountLabel = currentUser ? t.myPage : t.login;
+  const mobileHeaderAccountLabel = currentUser ? 'MY' : t.login;
   const headerCreditLabel = lang === 'ko'
     ? `남은 크레딧 ${currentCredits}`
     : lang === 'ja'
@@ -5557,10 +5558,14 @@ const App: React.FC = () => {
                 }}
                 type="button"
               >
-                {headerAccountLabel}
+                {mobileHeaderAccountLabel}
               </button>
               {currentUser && headerAccountMenuOpen && (
                 <div className="user-menu-dropdown header-account-dropdown">
+                  <div className="header-account-dropdown-meta">
+                    <span>{headerSubscriptionLabel}</span>
+                    <strong>{headerCreditLabel}</strong>
+                  </div>
                   <button
                     className="header-account-dropdown-link"
                     onClick={openMyPageModal}
@@ -5673,6 +5678,21 @@ const App: React.FC = () => {
               ))}
             </div>
             <div className="mobile-menu-divider" />
+            {currentUser && (
+              <>
+                <div className="mobile-nav-section mobile-nav-credits">
+                  <div className="mobile-credit-row">
+                    <span>{t.subscriptionPlanLabel}</span>
+                    <strong>{t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}</strong>
+                  </div>
+                  <div className="mobile-credit-row">
+                    <span>{lang === 'ko' ? '보유 크레딧' : lang === 'ja' ? '保有クレジット' : lang === 'zh' ? '当前积分' : 'Credits'}</span>
+                    <strong>{currentCredits}</strong>
+                  </div>
+                </div>
+                <div className="mobile-menu-divider" />
+              </>
+            )}
             <div className="mobile-nav-section mobile-nav-actions">
               {currentUser && (
                 <button
