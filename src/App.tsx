@@ -151,9 +151,8 @@ const getHomeShowcaseCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
       eyebrow: 'SEE THE TRANSFORMATION',
-      title: '첫 화면에서 “우리 애도 해보고 싶다”가 들어야 하죠',
-      body: '설명보다 먼저 결과가 보여야 바로 상상이 됩니다. 실제 펫 피팅 예시를 더 넓게 펼쳐두고, 마음에 드는 순간 바로 생성으로 이어지게 바꿨습니다.',
-      chips: ['실제 결과 먼저', '스크롤 멈추는 비주얼', '바로 업로드 시작'],
+      title: '이쁠까? 안이쁠까? 하지말고 입혀봐!',
+      body: '쇼핑몰에서 본 우리 아이 옷. 먼저 가상으로 입혀봐. 입혀보고 사도 돼',
       items: [
         { title: '아머 판타지', tag: 'Fantasy', alt: '터콰이즈 아머 스타일의 프렌치불독 펫 피팅 결과' },
         { title: '한복 나이트', tag: 'Hanbok', alt: '짙은 남색 한복 스타일의 코기 펫 피팅 결과' },
@@ -171,7 +170,6 @@ const getHomeShowcaseCopy = (lang: LanguageCode) => {
       eyebrow: 'SEE THE TRANSFORMATION',
       title: '最初の画面で「うちの子でも試したい」と思わせたい',
       body: '説明より先に結果が見えれば、使う理由がすぐに伝わります。実際のペット試着例を増やし、気になった瞬間にそのまま生成へ進める流れにしました。',
-      chips: ['実際の結果を先に', '目を止めるビジュアル', 'すぐにアップロード開始'],
       items: [
         { title: 'アーマー ファンタジー', tag: 'Fantasy', alt: 'ターコイズのアーマースタイルを着たフレンチブルドッグのペット試着結果' },
         { title: '韓服ナイト', tag: 'Hanbok', alt: '濃紺の韓服スタイルを着たコーギーのペット試着結果' },
@@ -189,7 +187,6 @@ const getHomeShowcaseCopy = (lang: LanguageCode) => {
       eyebrow: 'SEE THE TRANSFORMATION',
       title: '首页就该让人立刻想试试自己家的宠物',
       body: '先看到结果，用户才会马上产生想象。首页现在铺开更多真实宠物试穿示例，让人一心动就能直接进入生成。',
-      chips: ['先看真实结果', '让人停下来的画面', '马上开始上传'],
       items: [
         { title: '机甲幻想', tag: 'Fantasy', alt: '穿着青绿色盔甲风格服装的法斗宠物试穿结果' },
         { title: '夜色韩服', tag: 'Hanbok', alt: '穿着深蓝韩服风格服装的柯基宠物试穿结果' },
@@ -206,7 +203,6 @@ const getHomeShowcaseCopy = (lang: LanguageCode) => {
     eyebrow: 'SEE THE TRANSFORMATION',
     title: 'The first screen should make people want to try their own pet',
     body: 'Results need to hit before the explanation does. The homepage now shows a larger wall of real pet fitting examples so visitors can feel the payoff and jump into generation immediately.',
-    chips: ['Real results first', 'Scroll-stopping visuals', 'Upload and generate fast'],
     items: [
       { title: 'Armor Fantasy', tag: 'Fantasy', alt: 'French bulldog pet fitting result in a turquoise armor outfit' },
       { title: 'Hanbok Night', tag: 'Hanbok', alt: 'Corgi pet fitting result in a dark hanbok outfit' },
@@ -3394,6 +3390,12 @@ const App: React.FC = () => {
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
   const homeShowcaseCopy = getHomeShowcaseCopy(lang);
+  const homeShowcaseItems = homeShowcaseCopy.items.map((item, index) => ({
+    ...item,
+    src: HOME_SHOWCASE_RESULT_IMAGES[index],
+  }));
+  const homeShowcaseTopItems = homeShowcaseItems.slice(0, 4);
+  const homeShowcaseBottomItems = homeShowcaseItems.slice(4, 8);
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -5667,45 +5669,57 @@ const App: React.FC = () => {
           <main className="landing-home-shell">
             <section className="section landing-result-showcase-section">
               <div className="section-inner landing-result-showcase">
-                <article className="landing-result-showcase-copy">
-                  <span className="howto-visual-eyebrow">{homeShowcaseCopy.eyebrow}</span>
-                  <h2>{homeShowcaseCopy.title}</h2>
-                  <p>{homeShowcaseCopy.body}</p>
-                  <div className="landing-result-chip-row">
-                    {homeShowcaseCopy.chips.map((chip) => (
-                      <span key={chip} className="landing-result-chip">{chip}</span>
+                <div className="landing-result-stage">
+                  <div className="landing-result-row landing-result-row-top">
+                    {homeShowcaseTopItems.map((item, index) => (
+                      <button
+                        key={item.title}
+                        className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
+                        onClick={handleHeroCta}
+                        type="button"
+                      >
+                        <div className="landing-result-tile-media">
+                          <img
+                            src={item.src}
+                            alt={item.alt}
+                            loading="lazy"
+                          />
+                        </div>
+                      </button>
                     ))}
                   </div>
-                  <div className="landing-inline-actions landing-result-actions">
-                    <button className="generate-btn" onClick={handleHeroCta} type="button">
-                      {landingContent.hero.primaryButton}
-                    </button>
-                    <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
-                      {landingContent.sampleInfo.button}
-                    </button>
+
+                  <article className="landing-result-showcase-copy">
+                    <h2>{homeShowcaseCopy.title}</h2>
+                    <p>{homeShowcaseCopy.body}</p>
+                    <div className="landing-inline-actions landing-result-actions">
+                      <button className="generate-btn" onClick={handleHeroCta} type="button">
+                        {landingContent.hero.primaryButton}
+                      </button>
+                      <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                        {landingContent.sampleInfo.button}
+                      </button>
+                    </div>
+                  </article>
+
+                  <div className="landing-result-row landing-result-row-bottom">
+                    {homeShowcaseBottomItems.map((item, index) => (
+                      <button
+                        key={item.title}
+                        className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
+                        onClick={handleHeroCta}
+                        type="button"
+                      >
+                        <div className="landing-result-tile-media">
+                          <img
+                            src={item.src}
+                            alt={item.alt}
+                            loading="lazy"
+                          />
+                        </div>
+                      </button>
+                    ))}
                   </div>
-                </article>
-                <div className="landing-result-mosaic">
-                  {homeShowcaseCopy.items.map((item, index) => (
-                    <button
-                      key={item.title}
-                      className="landing-result-tile"
-                      onClick={handleHeroCta}
-                      type="button"
-                    >
-                      <div className="landing-result-tile-media">
-                        <img
-                          src={HOME_SHOWCASE_RESULT_IMAGES[index]}
-                          alt={item.alt}
-                          loading="lazy"
-                        />
-                      </div>
-                      <div className="landing-result-tile-copy">
-                        <span>{item.tag}</span>
-                        <strong>{item.title}</strong>
-                      </div>
-                    </button>
-                  ))}
                 </div>
               </div>
             </section>
