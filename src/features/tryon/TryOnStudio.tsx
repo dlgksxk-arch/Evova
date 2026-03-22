@@ -725,9 +725,15 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </div>
           <div className="try-modal-right-column">
             <div className="action-section action-section-card try-modal-result-card">
-              {actionSectionContentNode}
-              {previewPanelNode}
-              {resultFollowupNode}
+              <div className="try-modal-result-layout">
+                <div className="try-modal-result-main">
+                  {actionSectionContentNode}
+                  {resultFollowupNode}
+                </div>
+                <div className="try-modal-result-preview">
+                  {previewPanelNode}
+                </div>
+              </div>
             </div>
           </div>
           {shareSidebarNode ? <div className="try-modal-share-column">{shareSidebarNode}</div> : null}

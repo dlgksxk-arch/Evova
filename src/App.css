@@ -4081,13 +4081,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .try-layout-modal .try-column {
-  padding: 24px;
-  gap: 16px;
+  padding: 18px;
+  gap: 14px;
 }
 
 .modal-input-card-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) 188px;
   gap: 14px;
   align-items: stretch;
 }
@@ -4095,7 +4095,7 @@ a { color: inherit; text-decoration: none; }
 .modal-input-card-main {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -4103,6 +4103,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: stretch;
   justify-content: stretch;
+  min-width: 0;
 }
 
 .card-header { margin-bottom: 4px; }
@@ -4132,6 +4133,13 @@ a { color: inherit; text-decoration: none; }
 .try-actions-compact {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.try-layout-modal .outline-btn,
+.try-layout-modal .generate-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 13px;
 }
 .try-actions-helper {
   margin: -4px 0 0;
@@ -4175,11 +4183,15 @@ a { color: inherit; text-decoration: none; }
 }
 
 .try-layout-modal .preview-box {
-  flex: 0 0 248px;
+  flex: 0 0 188px;
   width: 100%;
-  min-height: 248px;
+  min-height: 188px;
   max-height: none;
-  padding: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 18px;
 }
 .preview-box.is-clickable {
   cursor: pointer;
@@ -4198,6 +4210,9 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 0 4px rgba(255, 77, 184, 0.14), var(--shadow-md);
 }
 .preview-box.has-image { border: none; background: #000; }
+.try-layout-modal .preview-box.has-image {
+  background: transparent;
+}
 .preview-box.has-image.drag-active {
   border: 1px solid rgba(255,255,255,0.34);
   background: #111;
@@ -4208,6 +4223,10 @@ a { color: inherit; text-decoration: none; }
   object-fit: contain;
   opacity: 0;
   transition: opacity 0.2s ease;
+}
+.try-layout-modal .preview-box img {
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-alt) 92%, #fff);
 }
 .preview-box img.is-visible { opacity: 1; }
 
@@ -4256,6 +4275,15 @@ a { color: inherit; text-decoration: none; }
     radial-gradient(circle at left bottom, var(--guide-orb-blue), transparent 36%),
     var(--guide-card-bg);
   box-shadow: 0 12px 24px rgba(44,24,16,0.05);
+}
+
+.try-layout-modal .empty-preview {
+  gap: 8px;
+  padding: 10px 2px 10px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .empty-preview-face {
   border: 1px solid var(--guide-border-face);
@@ -4319,6 +4347,18 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.55;
   text-align: center;
   box-shadow: var(--shadow-sm);
+}
+
+.try-layout-modal .empty-preview-hint {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-sub);
+  justify-content: flex-start;
+  text-align: left;
 }
 .img-error-msg {
   padding: 24px;
@@ -4414,7 +4454,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .credit-cost-text-compact {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   color: var(--text);
   font-weight: 700;
 }
@@ -5084,12 +5124,12 @@ a { color: inherit; text-decoration: none; }
 .try-modal-workspace {
   display: grid;
   grid-template-columns: minmax(320px, 392px) minmax(0, 1fr);
-  gap: 20px;
+  gap: 16px;
   align-items: start;
 }
 
 .try-modal-workspace.has-share-column {
-  grid-template-columns: minmax(320px, 392px) minmax(340px, 1fr) 128px;
+  grid-template-columns: minmax(320px, 392px) minmax(0, 1fr) 120px;
 }
 
 .try-modal-left-column,
@@ -5103,13 +5143,13 @@ a { color: inherit; text-decoration: none; }
 
 .try-modal-left-column .try-layout {
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 12px;
   margin-bottom: 0;
 }
 
 .try-modal-left-column .modal-input-card-layout {
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 188px;
+  gap: 14px;
 }
 
 .try-modal-left-column .modal-input-card-preview {
@@ -5122,13 +5162,33 @@ a { color: inherit; text-decoration: none; }
 
 .try-modal-result-card {
   display: grid;
-  gap: 14px;
+  gap: 0;
   text-align: left;
+}
+
+.try-modal-result-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.try-modal-result-main {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.try-modal-result-preview {
+  min-width: 0;
 }
 
 .try-modal-result-card .result-preview-panel {
   max-width: none;
-  min-height: 440px;
+  min-height: 330px;
+  border: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--surface-alt) 74%, white);
 }
 
 .try-modal-share-column .result-showcase-layout-actions {
@@ -5139,6 +5199,23 @@ a { color: inherit; text-decoration: none; }
   position: sticky;
   top: 8px;
   gap: 8px;
+}
+
+.try-modal-share-column .result-share-sidebar-grid {
+  grid-template-columns: 1fr;
+}
+
+.try-modal-share-column .result-action-btn,
+.try-modal-share-column .download-btn,
+.try-modal-share-column .share-platform-btn {
+  min-height: 40px;
+  padding: 10px 8px;
+  border-radius: 14px;
+}
+
+.try-modal-share-column .share-platform-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .result-followup-shell {
@@ -5157,6 +5234,21 @@ a { color: inherit; text-decoration: none; }
   max-height: 86vh;
   display: flex; flex-direction: column; padding: 34px;
   box-shadow: var(--shadow-lg); animation: modalScale 0.25s ease;
+}
+
+.account-modal.tryon-modal-shell {
+  max-width: min(1420px, calc(100vw - 20px)) !important;
+  max-height: 88vh;
+}
+
+.tryon-modal-shell .account-modal-header {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+}
+
+.tryon-modal-shell .account-modal-body {
+  max-height: calc(88vh - 92px);
+  overflow: hidden;
 }
 
 @keyframes modalScale {
@@ -7908,6 +8000,10 @@ body {
     gap: 12px;
   }
 
+  .tryon-modal-shell .account-modal-body {
+    overflow-y: auto;
+  }
+
   .hero-section {
     padding: 88px 12px 10px;
   }
@@ -8005,6 +8101,12 @@ body {
     flex-basis: 178px;
     min-height: 178px;
     max-height: none;
+  }
+
+  .try-modal-left-column .modal-input-card-layout,
+  .try-modal-result-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .preview-box {
@@ -8222,6 +8324,13 @@ body {
   .try-layout-modal .preview-box {
     min-height: 168px;
     max-height: none;
+  }
+
+  .try-layout-modal .outline-btn,
+  .try-layout-modal .generate-btn {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 12px;
   }
 
   .empty-preview {
