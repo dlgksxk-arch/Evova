@@ -94,6 +94,8 @@ const getModalPreviewGuide = (lang: LanguageCode, type: 'face' | 'cloth') => {
 const getGenerationPanelCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
+      idleTitle: '생성 결과가 여기에 표시됩니다',
+      idleBody: '사진과 의상을 고른 뒤 생성하기를 누르면 같은 창에서 바로 결과를 볼 수 있어요.',
       title: '이미지 생성 중',
       stageGenerating: '반려동물과 의상을 분석하고 있어요',
       stageRendering: '결과 이미지를 정리하고 있어요',
@@ -103,6 +105,8 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
   }
 
   return {
+    idleTitle: 'Your result will appear here',
+    idleBody: 'Pick a pet photo and outfit, then generate to see the preview in this same frame.',
     title: 'Generating preview',
     stageGenerating: 'Analyzing your pet and outfit',
     stageRendering: 'Finishing the result image',
@@ -344,34 +348,76 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     </>
   );
 
-  const resultNode = finalImageSrc ? (
-    <div id="result-area" className={`results-section ${isModalLayout ? 'results-section-modal' : ''}`}>
-      <h2 className="section-heading">{isModalLayout ? modalCopy?.resultTitle ?? copy.resultTitle : copy.resultTitle}</h2>
-      <div className={`result-showcase-layout ${isModalLayout ? 'is-modal' : ''}`}>
-        <div className="composite-result">
-          {resultPreviewState === 'loading' && (
-            <div className="preview-overlay result-overlay">
-              <span className="spinner"></span>
-              <span>{copy.renderingResult}</span>
+  const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
+  const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
+
+  const previewPanelNode = (
+    <div id="result-area" className={`result-preview-panel ${isModalLayout ? 'is-modal' : ''}`}>
+      {isPreviewReady && finalImageSrc ? (
+        <img
+          src={finalImageSrc}
+          alt="Result"
+          className="result-preview-panel-image is-visible is-zoomable"
+          onLoad={() => copy.setResultPreviewReady()}
+          onError={() => copy.setResultPreviewError()}
+          onClick={() => {
+            onOpenResultPreview(finalImageSrc);
+          }}
+        />
+      ) : isPreviewGenerating ? (
+        <div className="result-preview-loading" aria-live="polite">
+          <div className="generation-playground-head">
+            <div>
+              <strong>{generationPanelCopy.title}</strong>
+              <p>{finalImageSrc ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating}</p>
             </div>
-          )}
-          {resultPreviewState === 'error' ? (
-            <div className="img-error-msg">{copy.resultDisplayError}</div>
-          ) : (
-            <img
-              src={finalImageSrc}
-              alt="Result"
-              className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
-              onLoad={() => copy.setResultPreviewReady()}
-              onError={() => copy.setResultPreviewError()}
-              onClick={() => {
-                if (resultPreviewState === 'ready') {
-                  onOpenResultPreview(finalImageSrc);
-                }
-              }}
-            />
-          )}
+            <span className="generation-playground-percent">{generationProgress}%</span>
+          </div>
+          <div className="generation-playground-stage" aria-hidden="true">
+            <div className="generation-playground-lane generation-playground-lane-back" />
+            <div className="generation-playground-lane generation-playground-lane-front" />
+            <span className="generation-playground-pet generation-playground-dog">🐶</span>
+            <span className="generation-playground-pet generation-playground-cat">🐱</span>
+            <span className="generation-playground-spark generation-playground-spark-one">✦</span>
+            <span className="generation-playground-spark generation-playground-spark-two">✦</span>
+          </div>
+          <div className="generation-gauge">
+            <div className="generation-gauge-head">
+              <strong>{generationPanelCopy.elapsed}</strong>
+              <span>{generationProgress}%</span>
+            </div>
+            <div className="generation-gauge-track">
+              <div className="generation-gauge-fill" style={{ width: `${generationProgress}%` }} />
+              <div className="generation-gauge-ticks" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+            <div className="generation-gauge-meta">
+              <span>{copy.loadingDetail}</span>
+              <span>{copy.generating}</span>
+            </div>
+          </div>
+          <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
         </div>
+      ) : (
+        <div className="result-preview-placeholder">
+          <div className="result-preview-placeholder-badge">{modalCopy?.resultTitle ?? copy.resultTitle}</div>
+          <strong>{generationPanelCopy.idleTitle}</strong>
+          <p>{generationPanelCopy.idleBody}</p>
+        </div>
+      )}
+      {resultPreviewState === 'error' ? (
+        <div className="img-error-msg result-preview-panel-error">{copy.resultDisplayError}</div>
+      ) : null}
+    </div>
+  );
+
+  const resultNode = isPreviewReady && finalImageSrc ? (
+    <div className={`results-section ${isModalLayout ? 'results-section-modal' : ''}`}>
+      <div className={`result-showcase-layout result-showcase-layout-actions ${isModalLayout ? 'is-modal' : ''}`}>
         <ResultActionsPanel
           imageSrc={finalImageSrc}
           link={shareResultLink}
@@ -660,45 +706,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         )}
         <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
       </div>
-      {(isGenerating || (finalImageSrc && resultPreviewState === 'loading')) ? (
-        <div className={`generation-playground-card ${isModalLayout ? 'is-modal' : ''}`} aria-live="polite">
-          <div className="generation-playground-head">
-            <div>
-              <strong>{generationPanelCopy.title}</strong>
-              <p>{finalImageSrc ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating}</p>
-            </div>
-            <span className="generation-playground-percent">{generationProgress}%</span>
-          </div>
-          <div className="generation-playground-stage" aria-hidden="true">
-            <div className="generation-playground-lane generation-playground-lane-back" />
-            <div className="generation-playground-lane generation-playground-lane-front" />
-            <span className="generation-playground-pet generation-playground-dog">🐶</span>
-            <span className="generation-playground-pet generation-playground-cat">🐱</span>
-            <span className="generation-playground-spark generation-playground-spark-one">✦</span>
-            <span className="generation-playground-spark generation-playground-spark-two">✦</span>
-          </div>
-          <div className="generation-gauge">
-            <div className="generation-gauge-head">
-              <strong>{generationPanelCopy.elapsed}</strong>
-              <span>{generationProgress}%</span>
-            </div>
-            <div className="generation-gauge-track">
-              <div className="generation-gauge-fill" style={{ width: `${generationProgress}%` }} />
-              <div className="generation-gauge-ticks" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-            <div className="generation-gauge-meta">
-              <span>{copy.loadingDetail}</span>
-              <span>{copy.generating}</span>
-            </div>
-          </div>
-          <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
-        </div>
-      ) : null}
+      {previewPanelNode}
       {resultNode}
     </>
   );
