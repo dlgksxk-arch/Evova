@@ -64,21 +64,6 @@ const openShareWindow = (url: string) => {
   window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-const createShareImageFile = async (url: string, item: GenerationRecord): Promise<File> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('SHARE_IMAGE_FETCH_FAILED');
-  }
-
-  const blob = await response.blob();
-  if (!blob.type.startsWith('image/')) {
-    throw new Error('SHARE_IMAGE_INVALID');
-  }
-
-  const extension = inferFileExtension(item);
-  return new File([blob], `hamdeva-history-${item.id}.${extension}`, { type: blob.type });
-};
-
 const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' | 'instagram' | 'link' | 'download') => {
   const commonProps = {
     width: 18,
@@ -223,19 +208,6 @@ const getResolvedGarmentLabel = (item: GenerationRecord, historyCopy: ReturnType
     || (item.garmentPreviewUrl ? historyCopy.savedGarment : '')
     || historyCopy.savedGarment;
 
-const shareImageFile = async (file: File): Promise<boolean> => {
-  if (!navigator.share) {
-    return false;
-  }
-
-  if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
-    return false;
-  }
-
-  await navigator.share({ files: [file] });
-  return true;
-};
-
 const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   items,
   preservedCount,
@@ -254,7 +226,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
-  const [preparedShareFile, setPreparedShareFile] = useState<File | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const selectedPanelRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -367,7 +338,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setIsImageReady(false);
     setZoom(1);
     setShareStatus(null);
-    setPreparedShareFile(null);
   };
 
   const startImageLoading = () => {
@@ -440,90 +410,54 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setSelectedItem(item);
     setZoom(1);
     setShareStatus(null);
-    setPreparedShareFile(null);
     startImageLoading();
   };
 
-  const sharePreparedImageFile = async (targetLabel: string): Promise<boolean> => {
-    if (!preparedShareFile) {
-      setShareStatus(`${targetLabel} ${copy.historyLoading}`.trim());
-      return false;
-    }
+  const getSelectedShareUrl = (): string | null => selectedItem?.imageUrl || null;
 
-    try {
-      const didShare = await shareImageFile(preparedShareFile);
-      if (!didShare) {
-        return false;
-      }
-      setShareStatus(null);
-      return true;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return true;
-      }
-
-      console.error(`Failed to share history image to ${targetLabel}:`, error);
-      setShareStatus(copy.imageNotReady);
-      return false;
-    }
-  };
-
-  const handleShareOnKakao = async () => {
-    if (!selectedItem?.imageUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    if (await sharePreparedImageFile('KakaoTalk')) {
-      return;
-    }
-
-    downloadFile(selectedItem.imageUrl, `hamdeva-kakao-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-    setShareStatus(copy.shareImageSaved);
-  };
-
-  const handleShareOnX = async () => {
-    if (!selectedItem?.imageUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    if (await sharePreparedImageFile('X')) {
-      return;
-    }
-
-    downloadFile(selectedItem.imageUrl, `hamdeva-x-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-    openShareWindow('https://x.com/compose/post');
+  const openShareIntent = (url: string) => {
+    openShareWindow(url);
     setShareStatus(copy.shareUploadOpened);
   };
 
-  const handleShareOnFacebook = async () => {
-    if (!selectedItem?.imageUrl) {
+  const handleShareOnKakao = () => {
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
-    if (await sharePreparedImageFile('Facebook')) {
-      return;
-    }
-
-    downloadFile(selectedItem.imageUrl, `hamdeva-facebook-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-    openShareWindow('https://www.facebook.com/');
-    setShareStatus(copy.shareImageSaved);
+    openShareIntent(`https://story.kakao.com/share?url=${encodeURIComponent(shareUrl)}`);
   };
 
-  const handleShareOnLine = async () => {
-    if (!selectedItem?.imageUrl) {
+  const handleShareOnX = () => {
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
-    if (await sharePreparedImageFile('LINE')) {
+    openShareIntent(`https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('HAMDEVA pet fitting result')}`);
+  };
+
+  const handleShareOnFacebook = () => {
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
+      setShareStatus(copy.imageNotReady);
       return;
     }
 
-    downloadFile(selectedItem.imageUrl, `hamdeva-line-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-    setShareStatus(copy.shareImageSaved);
+    openShareIntent(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
+  };
+
+  const handleShareOnLine = () => {
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    openShareIntent(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`);
   };
 
   const handleInstagramSave = () => {
@@ -559,45 +493,20 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   };
 
   const handleCopySelectedLink = async () => {
-    if (!selectedItem?.imageUrl) {
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
       setShareStatus(copy.imageNotReady);
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(selectedItem.imageUrl);
+      await navigator.clipboard.writeText(shareUrl);
       setShareStatus(copy.linkCopied);
     } catch (error) {
       console.error('Failed to copy history image link:', error);
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!selectedItem?.imageUrl) {
-      setPreparedShareFile(null);
-      return;
-    }
-
-    createShareImageFile(selectedItem.imageUrl, selectedItem)
-      .then((file) => {
-        if (!cancelled) {
-          setPreparedShareFile(file);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.error('Failed to prepare history share file:', error);
-          setPreparedShareFile(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedItem]);
 
   useEffect(() => {
     if (!pendingArchiveSelectionId || !scrollContainerRef.current) {
@@ -757,9 +666,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(150px, 200px) minmax(0, 1fr)',
+                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(148px, 188px) minmax(0, 1fr) 104px',
                         gap: 12,
-                        marginBottom: 12,
                         alignItems: 'stretch',
                       }}
                     >
@@ -856,20 +764,134 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               }}
                             />
                           </div>
+                        </div>
+                        {!isImageLoading ? (
+                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
+                            {copy.historyZoomHint}
+                          </div>
+                        ) : null}
+                      </div>
+                      {!isMobile ? (
+                        <aside
+                          style={{
+                            display: 'grid',
+                            alignContent: 'start',
+                            gap: 8,
+                          }}
+                        >
+                          <button
+                            className="outline-btn auth-inline-btn history-action-btn"
+                            disabled={zoom <= 0.75}
+                            onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+                            type="button"
+                          >
+                            {copy.historyZoomOut}
+                          </button>
+                          <button
+                            className="outline-btn auth-inline-btn history-action-btn"
+                            disabled={zoom === 1}
+                            onClick={() => setZoom(1)}
+                            type="button"
+                          >
+                            {copy.historyZoomReset}
+                          </button>
+                          <button
+                            className="outline-btn auth-inline-btn history-action-btn"
+                            disabled={zoom >= 2}
+                            onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
+                            type="button"
+                          >
+                            {copy.historyZoomIn}
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
+                            {renderSocialIcon('kakao')}
+                            Kakao
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
+                            {renderSocialIcon('x')}
+                            X
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
+                            {renderSocialIcon('facebook')}
+                            Facebook
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
+                            {renderSocialIcon('line')}
+                            LINE
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
+                            {renderSocialIcon('instagram')}
+                            Instagram
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
+                            {renderSocialIcon('tiktok')}
+                            TikTok
+                          </button>
+                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
+                            {renderSocialIcon('link')}
+                            Link
+                          </button>
+                          <button
+                            className="download-btn auth-inline-btn history-action-btn"
+                            disabled={!selectedItem.imageUrl}
+                            onClick={() => {
+                              if (selectedItem.imageUrl) {
+                                downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                              }
+                            }}
+                            type="button"
+                          >
+                            {renderSocialIcon('download')}
+                            {copy.historyDownload}
+                          </button>
+                          {shareStatus ? (
+                            <div style={{ color: 'var(--text-sub)', fontSize: 12, lineHeight: 1.45 }}>
+                              {shareStatus}
+                            </div>
+                          ) : null}
+                        </aside>
+                      ) : (
+                        <div style={{ display: 'grid', gap: 10 }}>
+                          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={zoom <= 0.75}
+                              onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+                              type="button"
+                            >
+                              {copy.historyZoomOut}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={zoom === 1}
+                              onClick={() => setZoom(1)}
+                              type="button"
+                            >
+                              {copy.historyZoomReset}
+                            </button>
+                            <button
+                              className="outline-btn auth-inline-btn"
+                              disabled={zoom >= 2}
+                              onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
+                              type="button"
+                            >
+                              {copy.historyZoomIn}
+                            </button>
+                          </div>
                           <div className="history-actions" style={{ marginTop: 0 }}>
-                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnKakao(); }} type="button">
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
                               {renderSocialIcon('kakao')}
                               Kakao
                             </button>
-                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnX(); }} type="button">
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
                               {renderSocialIcon('x')}
                               X
                             </button>
-                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnFacebook(); }} type="button">
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
                               {renderSocialIcon('facebook')}
                               Facebook
                             </button>
-                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnLine(); }} type="button">
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
                               {renderSocialIcon('line')}
                               LINE
                             </button>
@@ -905,12 +927,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                             </div>
                           ) : null}
                         </div>
-                        {!isImageLoading ? (
-                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
-                            {copy.historyZoomHint}
-                          </div>
-                        ) : null}
-                      </div>
+                      )}
                     </div>
                   </div>
 
