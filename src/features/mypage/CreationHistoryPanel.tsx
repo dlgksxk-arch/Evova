@@ -270,9 +270,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     border: '1px solid var(--border)',
     borderRadius: 16,
     background: 'color-mix(in srgb, var(--surface) 94%, transparent)',
-    padding: 10,
+    padding: 8,
     display: 'grid',
-    gap: 8,
+    gap: 6,
     boxShadow: 'var(--shadow-sm)',
   };
   const previewThumbStyle: React.CSSProperties = {
@@ -693,10 +693,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       <img
                         src={selectedItem.personPreviewUrl}
                         alt={historyCopy.personLabel}
-                        style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto' }}
+                        style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto' }}
                       />
                     ) : (
-                      <div style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                      <div style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
                         {getPersonLabel(selectedItem)}
                       </div>
                     )}
@@ -710,10 +710,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       <img
                         src={selectedItem.garmentPreviewUrl}
                         alt={historyCopy.garmentLabel}
-                        style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto' }}
+                        style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto' }}
                       />
                     ) : (
-                      <div style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                      <div style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
                         {getGarmentLabel(selectedItem)}
                       </div>
                     )}
@@ -738,13 +738,13 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       className="history-selected-image-shell"
                       style={{
                         width: '100%',
-                        overflowX: 'auto',
-                        overflowY: 'visible',
+                        overflow: 'hidden',
                         border: '1px solid var(--border)',
                         borderRadius: 16,
-                        padding: 10,
+                        padding: isMobile ? 8 : 10,
                         background: 'rgba(255,255,255,0.35)',
-                        minHeight: isMobile ? 160 : 320,
+                        height: isMobile ? 'min(42vh, 340px)' : 'min(54vh, 520px)',
+                        minHeight: isMobile ? 180 : 360,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -758,13 +758,16 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         style={{
                           display: 'block',
                           margin: '0 auto',
-                          width: `${zoom * 100}%`,
+                          width: '100%',
                           maxWidth: '100%',
-                          maxHeight: isMobile ? '52vh' : '68vh',
+                          maxHeight: '100%',
                           height: 'auto',
                           objectFit: 'contain',
                           userSelect: 'none',
                           visibility: isImageLoading ? 'hidden' : 'visible',
+                          transform: `scale(${zoom})`,
+                          transformOrigin: 'center center',
+                          transition: 'transform 180ms ease',
                         }}
                       />
                     </div>

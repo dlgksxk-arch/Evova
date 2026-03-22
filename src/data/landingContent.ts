@@ -133,11 +133,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   ko: {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
-      title: '내 강아지,\n오늘 뭐 입혀볼까?',
-      subtitle: '사진만 올리면 귀여운 펫 의상 미리보기를 바로 만들 수 있어요.',
-      body: '강아지와 고양이 사진으로 다양한 의상 스타일을 빠르게 체험해보세요.',
-      compactPrimaryButton: '펫 피팅 시작',
-      primaryButton: '무료로 펫 피팅 시작하기',
+      title: '우리 아이,\n오늘 뭐 입혀볼까? 🐾',
+      subtitle: '사진만 올리면 귀여운 의상 미리보기를 바로 만들 수 있어요.',
+      body: '반려동물 사진으로 다양한 스타일을 빠르게 체험해보세요.',
+      compactPrimaryButton: '🐾 펫 피팅 시작',
+      primaryButton: '🐾 지금 바로 입혀보기 (무료)',
       secondaryButton: '샘플 의상 둘러보기',
     },
     intro: {
@@ -305,11 +305,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   en: {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
-      title: 'What should my pet wear today?',
+      title: 'What should I dress my pet in today? 🐾',
       subtitle: 'Upload a photo and get a cute pet outfit preview right away.',
-      body: 'Try different outfit styles for your dog or cat in just a few taps.',
-      compactPrimaryButton: 'Start Pet Fitting',
-      primaryButton: 'Start Pet Fitting Free',
+      body: 'Try different styles for your pet in just a few taps.',
+      compactPrimaryButton: '🐾 Start Pet Fitting',
+      primaryButton: '🐾 Try It On Now (Free)',
       secondaryButton: 'Browse Sample Outfits',
     },
     intro: {
@@ -474,11 +474,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   ja: {
     hero: {
       eyebrow: 'AI ペットフィッティングサービス',
-      title: '今日はうちの子に\n何を着せてみる？',
+      title: '今日はうちの子、\n何を着せよう？ 🐾',
       subtitle: '写真をアップロードするだけで、かわいいペット衣装プレビューをすぐ作れます。',
-      body: '犬や猫の写真で、いろいろな衣装スタイルを気軽に試してみましょう。',
-      compactPrimaryButton: '試着を始める',
-      primaryButton: '無料でペット試着を始める',
+      body: 'ペットの写真で、いろいろなスタイルをすばやく試してみましょう。',
+      compactPrimaryButton: '🐾 ペット試着スタート',
+      primaryButton: '🐾 今すぐ試してみる（無料）',
       secondaryButton: 'サンプル衣装を見る',
     },
     intro: {
@@ -643,11 +643,11 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   zh: {
     hero: {
       eyebrow: 'AI 宠物试衣服务',
-      title: '今天给我家宝贝\n穿什么？',
+      title: '今天给我家宝贝\n穿什么好呢？ 🐾',
       subtitle: '只要上传照片，就能立刻生成可爱的宠物穿搭预览。',
-      body: '用狗狗和猫咪照片，快速试试不同的服装风格。',
-      compactPrimaryButton: '开始试衣',
-      primaryButton: '免费开始宠物试衣',
+      body: '用宠物照片，快速试试不同的穿搭风格。',
+      compactPrimaryButton: '🐾 开始宠物试衣',
+      primaryButton: '🐾 现在就试穿（免费）',
       secondaryButton: '浏览示例服装',
     },
     intro: {
