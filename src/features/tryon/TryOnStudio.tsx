@@ -76,8 +76,8 @@ const getModalPreviewGuide = (lang: LanguageCode, type: 'face' | 'cloth') => {
     return {
       title: type === 'face' ? '샘플 펫이나 사진을 넣어보세요' : '샘플 의상이나 이미지를 넣어보세요',
       tips: [
-        '샘플 이미지를 선택하거나 업로드 버튼으로 넣으세요.',
-        '다른 사이트 이미지를 드래그해도 됩니다.',
+        '샘플 선택 또는 업로드로 넣으세요.',
+        '다른 사이트 이미지도 드래그할 수 있어요.',
       ],
     };
   }
