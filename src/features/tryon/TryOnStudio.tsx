@@ -274,7 +274,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
     const tick = () => {
       if (finalImageSrc && resultPreviewState === 'loading') {
-        setGenerationProgress(96);
+        const startedAt = generationStartedAt ?? Date.now();
+        const elapsed = Date.now() - startedAt;
+        const settleProgress = Math.min(99, Math.max(94, 94 + Math.round(elapsed / 1200)));
+        setGenerationProgress(settleProgress);
         return;
       }
 
@@ -380,25 +383,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <span className="generation-playground-pet generation-playground-cat">🐱</span>
             <span className="generation-playground-spark generation-playground-spark-one">✦</span>
             <span className="generation-playground-spark generation-playground-spark-two">✦</span>
-          </div>
-          <div className="generation-gauge">
-            <div className="generation-gauge-head">
-              <strong>{generationPanelCopy.elapsed}</strong>
-              <span>{generationProgress}%</span>
-            </div>
-            <div className="generation-gauge-track">
-              <div className="generation-gauge-fill" style={{ width: `${generationProgress}%` }} />
-              <div className="generation-gauge-ticks" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-            <div className="generation-gauge-meta">
-              <span>{copy.loadingDetail}</span>
-              <span>{copy.generating}</span>
-            </div>
           </div>
           <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
         </div>
