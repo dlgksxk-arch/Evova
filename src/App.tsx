@@ -112,14 +112,30 @@ const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const HOME_SHOWCASE_RESULT_IMAGES = [
-  '/home-showcase/pet-look-01.png',
-  '/home-showcase/pet-look-02.png',
-  '/home-showcase/pet-look-03.png',
-  '/home-showcase/pet-look-04.png',
-  '/home-showcase/pet-look-05.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_05204666-8bbf-4be8-81a8-180180969593.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0854e4a4-6fec-4823-9601-346aa7177a11.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0adadd8e-7b38-40cf-aff6-7e8712cee369.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0fd8928f-cada-43cc-ae73-eaf620a421b1.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_1e1a1f99-b1b5-47b9-8eb1-25aa4fcc6a16.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_3ac94c9f-42f0-48b6-a44b-55444d19d124.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_43f48b66-fc60-4181-9c36-83c43b6d4b45.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_4a0cd15c-fcb0-4e97-a921-fa486ca9bbf2.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_67c8a71d-1de4-486f-9351-e2004b79cb79.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_6fc2255e-2b2f-4ffd-b9cd-268880eebe84.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_79b61e69-ed70-4eb6-ba50-86a1602cc78d.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7aee75d8-b336-48ae-b5f5-f1973f3ff173.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_874b8d8f-4319-4725-8cec-4eca89bb7561.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8c957d59-97bf-403c-a48f-3e6991667b97.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8f84ece8-e5de-45c3-86a8-9b672a0bbc8e.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_af34857e-f3ee-4711-9986-94cf04107963.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b7fd69b0-64d8-4944-be4d-eae8fc909e93.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b96de465-bd4a-4738-adb9-be03b1cf2a2c.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_c0e0e103-1d47-4668-b1c5-d51f744aaa9e.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_e268bf36-aabe-4f06-b30d-513c613c339c.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_ebd4fdad-00df-4d0c-9682-946ea4345af4.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
+  '/sample/result/hamdeva-tiktok-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_7836063a-cccb-47aa-9166-50f610c3fe58.png',
+  '/sample/result/hamdeva-tiktok-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_c198f6e7-c101-4a68-8cf6-381108327ee3.png',
 ] as const;
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
@@ -150,69 +166,29 @@ const EDITORIAL_AD_PAGES = new Set<SitePage>([
 const getHomeShowcaseCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
-      eyebrow: 'SEE THE TRANSFORMATION',
       title: '이쁠까? 안이쁠까? 하지말고 입혀봐!',
       body: '쇼핑몰에서 본 우리 아이 옷. 먼저 가상으로 입혀봐. 입혀보고 사도 돼',
-      items: [
-        { title: '아머 판타지', tag: 'Fantasy', alt: '터콰이즈 아머 스타일의 프렌치불독 펫 피팅 결과' },
-        { title: '한복 나이트', tag: 'Hanbok', alt: '짙은 남색 한복 스타일의 코기 펫 피팅 결과' },
-        { title: '민트 세리머니', tag: 'Ceremony', alt: '민트 전통 의상 스타일의 흰 고양이 펫 피팅 결과' },
-        { title: '리본 클래식', tag: 'Ribbon', alt: '검은 의상과 리본을 착용한 코기 펫 피팅 결과' },
-        { title: '블랙 포멀', tag: 'Formal', alt: '블랙 수트 스타일의 골든리트리버 펫 피팅 결과' },
-        { title: '핑크 팝', tag: 'Pop', alt: '핑크 포인트 의상을 착용한 반려동물 펫 피팅 결과' },
-        { title: '스카이 파일럿', tag: 'Playful', alt: '밝은 블루 톤 의상을 착용한 반려동물 펫 피팅 결과' },
-        { title: '로열 프릴', tag: 'Dressy', alt: '프릴 디테일 의상을 착용한 반려동물 펫 피팅 결과' },
-      ],
+      imageAltPrefix: '햄데바 펫 피팅 결과 예시',
     };
   }
   if (lang === 'ja') {
     return {
-      eyebrow: 'SEE THE TRANSFORMATION',
       title: '最初の画面で「うちの子でも試したい」と思わせたい',
       body: '説明より先に結果が見えれば、使う理由がすぐに伝わります。実際のペット試着例を増やし、気になった瞬間にそのまま生成へ進める流れにしました。',
-      items: [
-        { title: 'アーマー ファンタジー', tag: 'Fantasy', alt: 'ターコイズのアーマースタイルを着たフレンチブルドッグのペット試着結果' },
-        { title: '韓服ナイト', tag: 'Hanbok', alt: '濃紺の韓服スタイルを着たコーギーのペット試着結果' },
-        { title: 'ミント セレモニー', tag: 'Ceremony', alt: 'ミント色の伝統衣装を着た白猫のペット試着結果' },
-        { title: 'リボン クラシック', tag: 'Ribbon', alt: '黒い衣装とリボンを着たコーギーのペット試着結果' },
-        { title: 'ブラック フォーマル', tag: 'Formal', alt: 'ブラックスーツスタイルのゴールデンレトリバーのペット試着結果' },
-        { title: 'ピンク ポップ', tag: 'Pop', alt: 'ピンクのポイント衣装を着たペット試着結果' },
-        { title: 'スカイ パイロット', tag: 'Playful', alt: '明るいブルートーン衣装を着たペット試着結果' },
-        { title: 'ロイヤル フリル', tag: 'Dressy', alt: 'フリルディテール衣装を着たペット試着結果' },
-      ],
+      imageAltPrefix: 'HAMDEVAペット試着結果例',
     };
   }
   if (lang === 'zh') {
     return {
-      eyebrow: 'SEE THE TRANSFORMATION',
       title: '首页就该让人立刻想试试自己家的宠物',
       body: '先看到结果，用户才会马上产生想象。首页现在铺开更多真实宠物试穿示例，让人一心动就能直接进入生成。',
-      items: [
-        { title: '机甲幻想', tag: 'Fantasy', alt: '穿着青绿色盔甲风格服装的法斗宠物试穿结果' },
-        { title: '夜色韩服', tag: 'Hanbok', alt: '穿着深蓝韩服风格服装的柯基宠物试穿结果' },
-        { title: '薄荷礼服', tag: 'Ceremony', alt: '穿着薄荷色传统礼服风格服装的白猫宠物试穿结果' },
-        { title: '蝴蝶结经典', tag: 'Ribbon', alt: '穿着黑色服装和蝴蝶结的柯基宠物试穿结果' },
-        { title: '黑色正装', tag: 'Formal', alt: '穿着黑色西装风格服装的金毛宠物试穿结果' },
-        { title: '粉色流行', tag: 'Pop', alt: '穿着粉色点缀服装的宠物试穿结果' },
-        { title: '天空飞行员', tag: 'Playful', alt: '穿着明亮蓝色调服装的宠物试穿结果' },
-        { title: '皇家褶边', tag: 'Dressy', alt: '穿着带褶边细节服装的宠物试穿结果' },
-      ],
+      imageAltPrefix: 'HAMDEVA宠物试穿结果示例',
     };
   }
   return {
-    eyebrow: 'SEE THE TRANSFORMATION',
     title: 'The first screen should make people want to try their own pet',
     body: 'Results need to hit before the explanation does. The homepage now shows a larger wall of real pet fitting examples so visitors can feel the payoff and jump into generation immediately.',
-    items: [
-      { title: 'Armor Fantasy', tag: 'Fantasy', alt: 'French bulldog pet fitting result in a turquoise armor outfit' },
-      { title: 'Hanbok Night', tag: 'Hanbok', alt: 'Corgi pet fitting result in a dark hanbok outfit' },
-      { title: 'Mint Ceremony', tag: 'Ceremony', alt: 'White cat pet fitting result in a mint ceremonial outfit' },
-      { title: 'Ribbon Classic', tag: 'Ribbon', alt: 'Corgi pet fitting result in a black outfit with a ribbon' },
-      { title: 'Black Formal', tag: 'Formal', alt: 'Golden retriever pet fitting result in a black suit outfit' },
-      { title: 'Pink Pop', tag: 'Pop', alt: 'Pet fitting result in a pink accent outfit' },
-      { title: 'Sky Pilot', tag: 'Playful', alt: 'Pet fitting result in a bright blue outfit' },
-      { title: 'Royal Frill', tag: 'Dressy', alt: 'Pet fitting result in a frill-detailed outfit' },
-    ],
+    imageAltPrefix: 'HAMDEVA pet fitting result example',
   };
 };
 const getAboutVisualCopy = (lang: LanguageCode) => {
@@ -3390,12 +3366,13 @@ const App: React.FC = () => {
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
   const t = uiTranslations[lang];
   const homeShowcaseCopy = getHomeShowcaseCopy(lang);
-  const homeShowcaseItems = homeShowcaseCopy.items.map((item, index) => ({
-    ...item,
-    src: HOME_SHOWCASE_RESULT_IMAGES[index],
+  const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGES.map((src, index) => ({
+    src,
+    alt: `${homeShowcaseCopy.imageAltPrefix} ${index + 1}`,
   }));
-  const homeShowcaseTopItems = homeShowcaseItems.slice(0, 4);
-  const homeShowcaseBottomItems = homeShowcaseItems.slice(4, 8);
+  const homeShowcaseRowSplitIndex = Math.ceil(homeShowcaseItems.length / 2);
+  const homeShowcaseTopItems = homeShowcaseItems.slice(0, homeShowcaseRowSplitIndex);
+  const homeShowcaseBottomItems = homeShowcaseItems.slice(homeShowcaseRowSplitIndex);
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -5673,7 +5650,7 @@ const App: React.FC = () => {
                   <div className="landing-result-row landing-result-row-top">
                     {homeShowcaseTopItems.map((item, index) => (
                       <button
-                        key={item.title}
+                        key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
                         onClick={handleHeroCta}
                         type="button"
@@ -5705,7 +5682,7 @@ const App: React.FC = () => {
                   <div className="landing-result-row landing-result-row-bottom">
                     {homeShowcaseBottomItems.map((item, index) => (
                       <button
-                        key={item.title}
+                        key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
                         onClick={handleHeroCta}
                         type="button"
