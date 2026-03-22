@@ -8,7 +8,7 @@ const editorialDataPath = path.join(projectRoot, 'src', 'data', 'editorialPages.
 const englishLocalePath = path.join(projectRoot, 'src', 'locales', 'en.json');
 const supportEmail = 'dlgksxk@gmail.com';
 const siteUrl = 'https://hamdeva.com';
-const defaultOgImage = `${siteUrl}/og-image.jpg`;
+const defaultOgImage = `${siteUrl}/sample/og/ChatGPT%20Image%202026%EB%85%84%203%EC%9B%94%2022%EC%9D%BC%20%EC%98%A4%ED%9B%84%2003_51_13.png`;
 const withBrand = (title) => (title.includes('HAMDEVA') ? title : `${title} | HAMDEVA`);
 const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]*?<!-- HAMDEVA_STRUCTURED_DATA_END -->/;
 
