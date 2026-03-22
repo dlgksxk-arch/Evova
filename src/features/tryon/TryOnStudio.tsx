@@ -386,6 +386,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
+  const displayedGenerationProgress = isPreviewReady ? 100 : Math.max(1, generationProgress - 5);
   const overlayActionsNode = isModalLayout && isPreviewReady && finalImageSrc ? (
     <ResultActionsPanel
       imageSrc={finalImageSrc}
@@ -429,7 +430,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <strong>{generationPanelCopy.title}</strong>
               <p>{finalImageSrc ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating}</p>
             </div>
-            <span className="generation-playground-percent">{generationProgress}%</span>
+            <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
           </div>
           <div className="generation-playground-stage" aria-hidden="true">
             <div className="generation-playground-lane generation-playground-lane-back" />
