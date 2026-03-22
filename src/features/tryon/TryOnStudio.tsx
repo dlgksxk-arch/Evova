@@ -387,27 +387,18 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
   const displayedGenerationProgress = isPreviewReady ? 100 : Math.max(1, generationProgress - 5);
-  const overlayActionsNode = isModalLayout && isPreviewReady && finalImageSrc ? (
-    <ResultActionsPanel
-      imageSrc={finalImageSrc}
-      link={shareResultLink}
-      disableDownload={resultPreviewState !== 'ready'}
-      shareStatus={shareStatus}
-      copy={copy}
-      layout="overlay"
-      showCopy={false}
-      onDownload={onDownloadResult}
-      onShareLink={onShareLink}
-      onCopyLink={onCopyLink}
-      onShareOnKakao={onShareOnKakao}
-      onShareOnLine={onShareOnLine}
-      onShareOnX={onShareOnX}
-      onShareOnFacebook={onShareOnFacebook}
-      onInstagramSave={onInstagramSave}
-      onShareOnTikTok={onShareOnTikTok}
-      onTryAnotherOutfit={onTryAnotherOutfit}
-      onRandomOutfit={onRandomOutfit}
-    />
+  const modalResultUtilityNode = isModalLayout && isPreviewReady && finalImageSrc ? (
+    <>
+      <div className="result-inline-actions">
+        <button className="download-btn result-inline-action-btn" disabled={resultPreviewState !== 'ready'} onClick={() => onDownloadResult(finalImageSrc)} type="button">
+          {copy.downloadImage}
+        </button>
+        <button className="outline-btn result-inline-action-btn" onClick={() => onCopyLink(shareResultLink)} type="button">
+          {copy.copyLink}
+        </button>
+      </div>
+      {shareStatus ? <p className="result-status-text result-status-text-inline">{shareStatus}</p> : null}
+    </>
   ) : null;
 
   const previewPanelNode = (
@@ -449,7 +440,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <p>{generationPanelCopy.idleBody}</p>
         </div>
       )}
-      {overlayActionsNode}
       {resultPreviewState === 'error' ? (
         <div className="img-error-msg result-preview-panel-error">{copy.resultDisplayError}</div>
       ) : null}
@@ -773,6 +763,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 </div>
                 <div className="try-modal-result-preview">
                   {previewPanelNode}
+                  {modalResultUtilityNode}
                 </div>
               </div>
             </div>

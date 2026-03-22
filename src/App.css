@@ -5050,6 +5050,24 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.4;
   text-align: right;
 }
+
+.result-inline-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.result-inline-action-btn {
+  min-height: 42px;
+  width: 100%;
+  border-radius: 14px;
+}
+
+.result-status-text-inline {
+  margin-top: 8px;
+  text-align: center;
+}
 .result-status-text-sidebar {
   margin-top: 0;
   font-size: 12px;
@@ -8028,6 +8046,11 @@ body {
   .try-modal-workspace.has-share-column {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .result-inline-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .try-modal-left-column,
