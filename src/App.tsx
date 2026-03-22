@@ -3369,6 +3369,7 @@ const App: React.FC = () => {
   const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGES.map((src, index) => ({
     src,
     alt: `${homeShowcaseCopy.imageAltPrefix} ${index + 1}`,
+    variant: index % 6,
   }));
   const homeShowcaseRowSplitIndex = Math.ceil(homeShowcaseItems.length / 2);
   const homeShowcaseTopItems = homeShowcaseItems.slice(0, homeShowcaseRowSplitIndex);
@@ -5651,8 +5652,8 @@ const App: React.FC = () => {
                     {homeShowcaseTopItems.map((item, index) => (
                       <button
                         key={item.src}
-                        className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
-                        onClick={handleHeroCta}
+                        className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
+                        onClick={() => openResultPreviewModal(item.src)}
                         type="button"
                       >
                         <div className="landing-result-tile-media">
@@ -5668,7 +5669,6 @@ const App: React.FC = () => {
 
                   <article className="landing-result-showcase-copy">
                     <h2>{homeShowcaseCopy.title}</h2>
-                    <p>{homeShowcaseCopy.body}</p>
                     <div className="landing-inline-actions landing-result-actions">
                       <button className="generate-btn" onClick={handleHeroCta} type="button">
                         {landingContent.hero.primaryButton}
@@ -5683,8 +5683,8 @@ const App: React.FC = () => {
                     {homeShowcaseBottomItems.map((item, index) => (
                       <button
                         key={item.src}
-                        className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'}`}
-                        onClick={handleHeroCta}
+                        className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
+                        onClick={() => openResultPreviewModal(item.src)}
                         type="button"
                       >
                         <div className="landing-result-tile-media">
