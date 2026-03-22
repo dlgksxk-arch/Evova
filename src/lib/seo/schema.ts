@@ -29,6 +29,24 @@ export type WebPageSchemaConfig = {
   pageType?: string;
 };
 
+export type ArticleSchemaConfig = {
+  headline: string;
+  url: string;
+  description?: string;
+  image?: string;
+  articleType?: 'Article' | 'TechArticle';
+};
+
+export type HowToSchemaConfig = {
+  title: string;
+  url: string;
+  description?: string;
+  steps: Array<{
+    name: string;
+    text: string;
+  }>;
+};
+
 export const createFAQPageSchema = (items: FAQItem[]) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -117,4 +135,47 @@ export const createWebPageSchema = (config: WebPageSchemaConfig) => ({
     name: 'HAMDEVA',
     url: 'https://hamdeva.com',
   },
+});
+
+export const createArticleSchema = (config: ArticleSchemaConfig) => {
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': config.articleType ?? 'Article',
+    headline: config.headline,
+    mainEntityOfPage: config.url,
+    url: config.url,
+    publisher: {
+      '@type': 'Organization',
+      name: 'HAMDEVA',
+      url: 'https://hamdeva.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://hamdeva.com/og-image.jpg',
+      },
+    },
+  };
+
+  if (config.description) {
+    schema.description = config.description;
+  }
+
+  if (config.image) {
+    schema.image = [config.image];
+  }
+
+  return schema;
+};
+
+export const createHowToSchema = (config: HowToSchemaConfig) => ({
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: config.title,
+  url: config.url,
+  description: config.description,
+  step: config.steps.map((step, index) => ({
+    '@type': 'HowToStep',
+    position: index + 1,
+    name: step.name,
+    text: step.text,
+  })),
 });

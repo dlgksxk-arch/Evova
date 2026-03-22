@@ -20,13 +20,24 @@ import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
 import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
 import {
+  createArticleSchema,
   createBreadcrumbSchema,
   createFAQPageSchema,
+  createHowToSchema,
   createOrganizationSchema,
   createWebPageSchema,
   createWebSiteSchema,
 } from './lib/seo/schema';
 import {
+  buildSeoMeta,
+  INDEXABLE_PAGES,
+  LEGACY_PAGE_PATHS,
+  PAGE_PATHS,
+  SEO_BASE_URL,
+  syncDocumentHead,
+} from './lib/seo/pageMeta';
+import {
+  FEATURED_EDITORIAL_PAGES,
   getEditorialPage,
   getEditorialPageSummary,
   getEditorialPageTitle,
@@ -94,7 +105,7 @@ const CREDIT_PRODUCTS = [
   { id: 'large_pack', kind: 'extra_credit', label: 'SP Large Pack', paidCredit: 6000, salePriceUsd: 35.9, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
-const SITE_URL = 'https://hamdeva.com';
+const SITE_URL = SEO_BASE_URL;
 const ADSENSE_CLIENT_ID = 'ca-pub-1448821236094477';
 const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
@@ -3105,50 +3116,7 @@ const ShellModal: React.FC<{
   );
 };
 
-const PAGE_PATHS: Record<SitePage, string> = {
-  home: '/',
-  admin: '/admin',
-  about: '/about',
-  'how-it-works': '/how-to-use',
-  'traditional-clothing': '/sample-outfits',
-  'sample-friends': '/sample-friends',
-  countries: '/countries',
-  'fashion-technology': '/fashion-technology',
-  pricing: '/pricing',
-  'virtual-try-on-guide': '/virtual-try-on-guide',
-  'outfit-photo-tips': '/outfit-photo-tips',
-  'ai-fitting-faq': '/ai-fitting-faq',
-  privacy: '/privacy',
-  'refund-policy': '/refund-policy',
-  terms: '/terms',
-  contact: '/contact',
-  board: '/board',
-  'site-management': '/site-management',
-  mypage: '/mypage',
-  'payment-success': '/payment-success',
-  'payment-failed': '/payment-failed',
-};
-const INDEXABLE_PAGES = new Set<SitePage>([
-  'home',
-  'about',
-  'how-it-works',
-  'traditional-clothing',
-  'sample-friends',
-  'fashion-technology',
-  'pricing',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
-  'privacy',
-  'refund-policy',
-  'terms',
-]);
 const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
-const LEGACY_PAGE_PATHS: Record<string, SitePage> = {
-  '/how-it-works': 'how-it-works',
-  '/traditional-clothing': 'traditional-clothing',
-  '/countries': 'traditional-clothing',
-};
 
 const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
   acc[path] = page as SitePage;
@@ -3688,11 +3656,16 @@ const App: React.FC = () => {
     : currentPageCopy
       ? [
           { name: 'Home', url: `${SITE_URL}/` },
-          { name: currentPageCopy.title, url: `${SITE_URL}${PAGE_PATHS[currentPage]}` },
+          { name: currentPageCopy.title ?? 'HAMDEVA', url: `${SITE_URL}${PAGE_PATHS[currentPage]}` },
         ]
       : [];
   const homeStructuredData = currentPage === 'home' && !sharedResultRouteId
     ? [
+        createWebPageSchema({
+          title: contentLocale.meta.homeTitle,
+          url: SITE_URL,
+          description: contentLocale.meta.homeDescription,
+        }),
         createFAQPageSchema(currentHomeFaqItems),
         createBreadcrumbSchema(breadcrumbItems),
         createOrganizationSchema({
@@ -3710,15 +3683,44 @@ const App: React.FC = () => {
         }),
       ]
     : [];
+  const pageSchemaType = currentPage === 'about'
+    ? 'AboutPage'
+    : currentPage === 'contact'
+      ? 'ContactPage'
+      : currentPage === 'traditional-clothing' || currentPage === 'sample-friends'
+        ? 'CollectionPage'
+        : 'WebPage';
+  const articleStructuredData = currentEditorialPage && currentPage !== 'about' && currentPage !== 'how-it-works'
+    ? createArticleSchema({
+        headline: currentPageCopy?.title ?? currentEditorialPage.title,
+        url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
+        description: currentPageCopy?.description ?? currentEditorialPage.description,
+        image: `${SITE_URL}/og-image.jpg`,
+        articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
+      })
+    : null;
+  const howToStructuredData = currentPage === 'how-it-works'
+    ? createHowToSchema({
+        title: currentPageCopy?.title ?? contentLocale.pages['how-it-works'].title,
+        url: `${SITE_URL}${PAGE_PATHS['how-it-works']}`,
+        description: currentPageCopy?.description ?? contentLocale.pages['how-it-works'].description,
+        steps: howItWorksVisualCopy.summaryCards.map((card) => ({
+          name: card.title,
+          text: card.body,
+        })),
+      })
+    : null;
   const pageStructuredData = currentPage !== 'home' && !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage) && currentPageCopy && breadcrumbItems.length > 0
     ? [
         createWebPageSchema({
-          title: currentPageCopy.title,
+          title: currentPageCopy.title ?? 'HAMDEVA',
           url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
           description: currentPageCopy.description,
-          pageType: currentPage === 'about' ? 'AboutPage' : 'WebPage',
+          pageType: pageSchemaType,
         }),
         createBreadcrumbSchema(breadcrumbItems),
+        ...(articleStructuredData ? [articleStructuredData] : []),
+        ...(howToStructuredData ? [howToStructuredData] : []),
         ...(currentFaqItems.length > 0 ? [createFAQPageSchema(currentFaqItems)] : []),
       ]
     : [];
@@ -4101,80 +4103,32 @@ const App: React.FC = () => {
   useEffect(() => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
     const isPreviewHost = isPreviewRuntimeHost(hostname);
-    const isIndexablePage = !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage);
     const isAdSenseEligiblePage = !isPreviewHost && !sharedResultRouteId && ADSENSE_ELIGIBLE_PAGES.has(currentPage);
-    const pageMeta = sharedResultRouteId
-      ? {
-          title: `${t.sharedResultTitle} | HAMDEVA`,
-          description: t.sharedResultDescription,
-        }
-      : currentPage === 'admin'
-        ? {
-            title: `${t.adminTitle} | HAMDEVA`,
-            description: t.adminSubtitle,
-          }
-      : currentPage === 'payment-success'
-        ? {
-            title: `${t.paymentSuccessTitle} | HAMDEVA`,
-            description: paymentStatusMessage || t.paymentVerifying,
-          }
-      : currentPage === 'payment-failed'
-        ? {
-            title: `${t.paymentFailedTitle} | HAMDEVA`,
-            description: t.paymentFailedDescription,
-          }
-      : currentPage === 'home'
-        ? {
-            title: contentLocale.meta.homeTitle,
-            description: contentLocale.meta.homeDescription,
-          }
-        : currentPageCopy ?? {
-            title: 'HAMDEVA',
-            description: 'HAMDEVA content page',
-          };
-    const pageUrl = sharedResultRouteId
-      ? buildSharedResultUrl(sharedResultRouteId)
-      : `${SITE_URL}${PAGE_PATHS[currentPage]}`;
     const pageKeywords = PAGE_KEYWORDS[currentPage] ?? SITE_KEYWORDS;
-    const ogImage = sharedResultRecord?.resultImageUrl || `${SITE_URL}/og-image.jpg`;
-    const robotsContent = isPreviewHost || !isIndexablePage
-      ? 'noindex, nofollow, noarchive, nosnippet'
-      : 'index, follow';
+    const seoMeta = buildSeoMeta({
+      contentLocale,
+      currentPage,
+      currentPageCopy,
+      isPreviewHost,
+      keywords: pageKeywords,
+      lang,
+      pageImageUrl: sharedResultRecord?.resultImageUrl || null,
+      paymentStatusMessage,
+      sharedPageUrl: sharedResultRouteId ? buildSharedResultUrl(sharedResultRouteId) : null,
+      sharedResultRouteId,
+      labels: {
+        adminSubtitle: t.adminSubtitle,
+        adminTitle: t.adminTitle,
+        paymentFailedDescription: t.paymentFailedDescription,
+        paymentFailedTitle: t.paymentFailedTitle,
+        paymentSuccessTitle: t.paymentSuccessTitle,
+        paymentVerifying: t.paymentVerifying,
+        sharedResultDescription: t.sharedResultDescription,
+        sharedResultTitle: t.sharedResultTitle,
+      },
+    });
 
-    document.title = pageMeta.title;
-
-    let descriptionTag = document.querySelector('meta[name="description"]');
-    if (!descriptionTag) {
-      descriptionTag = document.createElement('meta');
-      descriptionTag.setAttribute('name', 'description');
-      document.head.appendChild(descriptionTag);
-    }
-
-    descriptionTag.setAttribute('content', pageMeta.description);
-
-    const upsertMeta = (selector: string, attributes: Record<string, string>) => {
-      let tag = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
-      if (!tag) {
-        tag = document.createElement(attributes.rel ? 'link' : 'meta') as HTMLMetaElement | HTMLLinkElement;
-        document.head.appendChild(tag);
-      }
-
-      Object.entries(attributes).forEach(([key, value]) => {
-        tag?.setAttribute(key, value);
-      });
-    };
-
-    upsertMeta('meta[property="og:title"]', { property: 'og:title', content: pageMeta.title });
-    upsertMeta('meta[property="og:description"]', { property: 'og:description', content: pageMeta.description });
-    upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' });
-    upsertMeta('meta[property="og:url"]', { property: 'og:url', content: pageUrl });
-    upsertMeta('meta[property="og:image"]', { property: 'og:image', content: ogImage });
-    upsertMeta('meta[name="keywords"]', { name: 'keywords', content: pageKeywords });
-    upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
-    upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: pageMeta.title });
-    upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: pageMeta.description });
-    upsertMeta('link[rel="canonical"]', { rel: 'canonical', href: pageUrl });
-    upsertMeta('meta[name="robots"]', { name: 'robots', content: robotsContent });
+    syncDocumentHead(seoMeta);
 
     if (isAdSenseEligiblePage) {
       setAdRequestsPaused(false);
@@ -4184,7 +4138,7 @@ const App: React.FC = () => {
       removeAutoAdsArtifacts();
       removeAdSenseScript();
     }
-  }, [contentLocale, currentPage, currentPageCopy, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
+  }, [contentLocale, currentPage, currentPageCopy, lang, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {
     setSubjectDetectionStatus('detecting');

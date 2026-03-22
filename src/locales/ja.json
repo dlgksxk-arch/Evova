@@ -20,8 +20,8 @@
     "mypage": "マイページ"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Pet Fitting Platform",
-    "homeDescription": "犬や猫の写真をアップロードして、AI でいろいろな衣装をすぐに試せます。共有や保存にも使いやすいペット衣装プレビューを作れます。"
+    "homeTitle": "HAMDEVA | AI ペットフィッティングとバーチャル試着",
+    "homeDescription": "HAMDEVA で犬や猫の写真からペット衣装プレビューを作成できます。衣装画像を追加すると、AI バーチャル試着の結果を数秒で比較できます。"
   },
   "hero_click": "クリッククリック、",
   "hero_space": "仮想フィッティング空間",

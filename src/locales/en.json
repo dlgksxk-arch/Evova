@@ -20,8 +20,8 @@
     "mypage": "My Page"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Pet Fitting Platform",
-    "homeDescription": "Upload your dog or cat photo and try different outfits instantly with AI. Create cute pet outfit previews for sharing, fun, and style ideas."
+    "homeTitle": "HAMDEVA | AI Pet Virtual Fitting & Outfit Preview",
+    "homeDescription": "Upload your dog or cat photo and preview pet outfits with HAMDEVA. Try pet clothes online and generate AI pet fitting previews in seconds."
   },
   "hero_click": "Click Click,",
   "hero_space": "Virtual Fitting Space",
@@ -133,7 +133,7 @@
   "pages": {
     "traditional-clothing": {
       "title": "Sample Outfits",
-      "description": "Browse Hanbok, Kimono, Qipao, Saree, Ao Dai, and other country-based sample outfits for pet outfit preview ideas.",
+      "description": "Explore sample pet outfits and preview ideas for dog and cat clothing styles before creating your own AI fitting results.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -173,8 +173,8 @@
       ]
     },
     "sample-friends": {
-      "title": "Sample Friends",
-      "description": "Browse dog and cat sample images by breed so you can choose a stable reference before you generate a pet outfit preview.",
+      "title": "Sample Pets",
+      "description": "Browse sample pet images and examples used for AI pet fitting and outfit preview demonstrations on HAMDEVA.",
       "sections": [
         {
           "heading": "Breed sample overview",
@@ -224,8 +224,8 @@
       ]
     },
     "how-it-works": {
-      "title": "How It Works",
-      "description": "See how HAMDEVA turns one pet photo and one outfit image into a dog outfit preview or cat outfit preview.",
+      "title": "How to Use HAMDEVA",
+      "description": "See how to upload pet photos, choose outfit images, and get better AI pet fitting results with HAMDEVA.",
       "sections": [
         {
           "heading": "Step 1 – Upload a pet photo",
@@ -263,8 +263,8 @@
       ]
     },
     "fashion-technology": {
-      "title": "Pet Style Guide",
-      "description": "Understand how AI imaging helps compare pet outfit ideas, dog costume looks, and cat costume previews.",
+      "title": "AI Pet Fitting Technology",
+      "description": "Discover the technology behind HAMDEVA’s AI pet fitting, pet photo processing, and outfit preview generation workflow.",
       "sections": [
         {
           "heading": "Technology with reference discipline",
@@ -329,7 +329,7 @@
     },
     "pricing": {
       "title": "Pricing",
-      "description": "Compare HAMDEVA credit packs, pricing, estimated generation counts, and the key billing information for this digital pet fitting service.",
+      "description": "View HAMDEVA pricing, credits, or subscription details for AI pet outfit preview and virtual fitting generation.",
       "sections": [
         {
           "heading": "How credits work",
@@ -378,20 +378,20 @@
       ]
     },
     "virtual-try-on-guide": {
-      "title": "Virtual Try-On Guide",
-      "description": "Learn how to approach AI fitting as a practical comparison workflow."
+      "title": "Pet Virtual Try-On Guide",
+      "description": "Learn the basics of pet virtual try-on, how outfit previews work, and how to get cleaner AI fitting results with HAMDEVA."
     },
     "outfit-photo-tips": {
-      "title": "Outfit Photo Tips",
-      "description": "Use better portraits and garment photos to improve fitting quality."
+      "title": "Pet Photo Tips for Better Outfit Previews",
+      "description": "Get simple tips for taking better dog and cat photos to improve AI pet outfit preview quality on HAMDEVA."
     },
     "ai-fitting-faq": {
-      "title": "AI Fitting FAQ",
-      "description": "Review the most common questions about realism, privacy, and output quality."
+      "title": "AI Pet Fitting FAQ",
+      "description": "Read common questions about pet virtual fitting, supported photos, outfit previews, accuracy, and usage on HAMDEVA."
     },
     "about": {
-      "title": "About",
-      "description": "Read why HAMDEVA exists, how pet outfit previews fit into real planning, and what kind of experience the service is trying to create.",
+      "title": "About HAMDEVA",
+      "description": "Learn how HAMDEVA helps pet owners preview dog and cat outfits online with AI-powered virtual fitting and pet outfit visualization.",
       "sections": [
         {
           "heading": "Why HAMDEVA exists",
@@ -437,7 +437,7 @@
     },
     "privacy": {
       "title": "Privacy Policy",
-      "description": "Understand how HAMDEVA handles uploaded images and AI processing.",
+      "description": "Read the HAMDEVA privacy policy for AI pet fitting, uploaded pet photos, personal data, and service usage information.",
       "sections": [
         {
           "heading": "Uploaded images",
@@ -469,7 +469,7 @@
     },
     "refund-policy": {
       "title": "Refund Policy",
-      "description": "Review when credits may be restored, when payments can be reviewed, and what kinds of digital purchases are generally non-refundable.",
+      "description": "Review the HAMDEVA refund policy for pet virtual fitting credits, payments, and related purchase terms.",
       "sections": [
         {
           "heading": "Credit restoration after failed generation",
@@ -496,7 +496,7 @@
     },
     "terms": {
       "title": "Terms of Service",
-      "description": "Review the core terms, privacy principles, and support information for using HAMDEVA in one place.",
+      "description": "Review the HAMDEVA terms of service for AI pet fitting usage, payments, user responsibilities, and service conditions.",
       "sections": [
         {
           "heading": "User responsibility",
@@ -558,8 +558,8 @@
       ]
     },
     "contact": {
-      "title": "Contact",
-      "description": "Reach HAMDEVA for support, questions, or partnership inquiries.",
+      "title": "Contact HAMDEVA",
+      "description": "Contact HAMDEVA for help with AI pet fitting, outfit preview issues, account questions, and service inquiries.",
       "sections": [
         {
           "heading": "Support",

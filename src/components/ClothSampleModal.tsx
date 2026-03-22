@@ -108,7 +108,7 @@ const ClothSampleModal: React.FC<ClothSampleModalProps> = ({ currentUrl, lang: _
                   )}
                   <img
                     src={sample.image}
-                    alt={`Outfit sample ${index + 1}`}
+                    alt={`${sample.countryLabelEn} outfit sample ${index + 1}`}
                     className={loadedUrls[sample.image] ? 'is-visible' : ''}
                     loading="eager"
                     onError={() => {

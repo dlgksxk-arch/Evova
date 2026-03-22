@@ -20,8 +20,8 @@
     "mypage": "我的页面"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Pet Fitting Platform",
-    "homeDescription": "上传狗狗或猫咪照片，用 AI 立刻尝试不同服装风格。快速生成适合分享、保存和找灵感的宠物穿搭预览。"
+    "homeTitle": "HAMDEVA | AI 宠物试衣与虚拟试穿",
+    "homeDescription": "在 HAMDEVA 上传狗狗或猫咪照片并添加服装图片，即可快速比较 AI 宠物试衣结果与宠物穿搭预览。"
   },
   "hero_click": "点击点击，",
   "hero_space": "虚拟试衣空间",

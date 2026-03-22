@@ -132,8 +132,8 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   ko: {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
-      title: 'HAMDEVA',
-      subtitle: '',
+      title: 'HAMDEVA AI 펫 피팅',
+      subtitle: '반려동물 의상 미리보기',
       body:
         '강아지나 고양이 사진과 의상 이미지로 귀여운 펫 피팅 미리보기를 바로 만들 수 있어요.',
       primaryButton: '펫 피팅 시작',
@@ -307,8 +307,8 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   en: {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
-      title: 'HAMDEVA',
-      subtitle: 'Dress your pet in seconds',
+      title: 'HAMDEVA AI Pet Fitting',
+      subtitle: 'Pet outfit preview',
       body: 'Upload a photo of your dog or cat and instantly try different outfits with AI. HAMDEVA helps you create cute pet outfit previews for fun, sharing, and style inspiration.',
       primaryButton: 'Start Pet Fitting',
       secondaryButton: 'How to Use',
@@ -475,8 +475,8 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   ja: {
     hero: {
       eyebrow: 'AI ペットフィッティングサービス',
-      title: 'HAMDEVA',
-      subtitle: 'ペットの衣装を数秒で試せます。',
+      title: 'HAMDEVA AI ペットフィッティング',
+      subtitle: 'ペット衣装プレビュー',
       body: '犬や猫の写真と衣装画像を使って、AI ですぐにかわいいペット衣装プレビューを作れます。',
       primaryButton: 'ペットフィッティングを始める',
       secondaryButton: '使い方を見る',
@@ -643,8 +643,8 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   zh: {
     hero: {
       eyebrow: 'AI 宠物试衣服务',
-      title: 'HAMDEVA',
-      subtitle: '几秒内给你的宠物换上不同造型',
+      title: 'HAMDEVA AI 宠物试衣',
+      subtitle: '宠物穿搭预览',
       body: '上传狗狗或猫咪照片，再加一张服装图片，就能立刻生成可爱的宠物穿搭预览。',
       primaryButton: '开始宠物试衣',
       secondaryButton: '查看使用方法',
