@@ -298,6 +298,39 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     }
   }, [finalImageSrc, resultPreviewState]);
 
+  useEffect(() => {
+    if (!finalImageSrc || resultPreviewState !== 'loading') {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const preloadImage = new Image();
+
+    preloadImage.onload = () => {
+      if (!cancelled) {
+        copy.setResultPreviewReady();
+      }
+    };
+
+    preloadImage.onerror = () => {
+      if (!cancelled) {
+        copy.setResultPreviewError();
+      }
+    };
+
+    preloadImage.src = finalImageSrc;
+
+    if (preloadImage.complete && preloadImage.naturalWidth > 0) {
+      copy.setResultPreviewReady();
+    }
+
+    return () => {
+      cancelled = true;
+      preloadImage.onload = null;
+      preloadImage.onerror = null;
+    };
+  }, [copy, finalImageSrc, resultPreviewState]);
+
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
