@@ -12,7 +12,7 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_VISIBLE_ROWS = 7;
+const HISTORY_VISIBLE_ROWS = 6;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
