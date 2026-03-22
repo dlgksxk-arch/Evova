@@ -328,7 +328,7 @@ const getStyleGuideVisualCopy = (lang: LanguageCode) => {
     return {
       eyebrow: 'PET STYLE GUIDE',
       title: '반려동물 의상을 고를 때 먼저 보면 좋은 기준',
-      body: '펫 스타일 가이드는 어떤 의상이 사진에서 잘 보이는지, 언제 코트가 필요한지, 어떤 룩이 과해지기 쉬운지를 빠르게 훑어보게 도와주는 페이지입니다.',
+      body: '',
       petLabel: '펫 기준 사진',
       outfitLabel: '의상 기준 이미지',
       resultLabel: '비교용 결과',
@@ -3452,12 +3452,10 @@ const App: React.FC = () => {
     alt: `${homeShowcaseCopy.imageAltPrefix} ${index + 1}`,
     variant: index % 6,
   }));
-  const homeHeroVisualItems = [0, 5, 11]
+  const homeHeroVisualItems = [0, 2, 5, 7, 9, 11, 15]
     .map((index) => homeShowcaseItems[index])
     .filter((item): item is (typeof homeShowcaseItems)[number] => Boolean(item));
-  const homePreviewStripItems = [1, 3, 4, 7, 9, 14, 16]
-    .map((index) => homeShowcaseItems[index])
-    .filter((item): item is (typeof homeShowcaseItems)[number] => Boolean(item));
+  const homePreviewStripItems = homeShowcaseItems.filter((item) => !homeHeroVisualItems.includes(item));
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -3585,7 +3583,7 @@ const App: React.FC = () => {
     ? {
         eyebrow: '실제 화면 기준 안내',
         title: '강아지/고양이 이미지로 바로 따라하는 HAMDEVA 사용 방법',
-        description: '반려동물 사진 업로드, 다른 웹사이트 이미지 드래그 업로드, 생성 후 마이페이지에서 다시 확인하는 흐름을 한 화면에 정리했습니다.',
+        description: '',
         summaryCards: [
           {
             title: '1. 반려동물 사진 준비',
@@ -5755,12 +5753,19 @@ const App: React.FC = () => {
                     {homePreviewStripItems.map((item, index) => (
                       <article
                         key={item.src}
-                        className={`landing-preview-card ${index === 1 || index === 4 ? 'is-featured' : ''}`}
+                        className={`landing-preview-card ${index === 2 || index === 7 ? 'is-featured' : ''}`}
                       >
                         <div className="landing-preview-card-media">
                           <img
                             src={item.src}
                             alt={item.alt}
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="landing-preview-hover" aria-hidden="true">
+                          <img
+                            src={item.src}
+                            alt=""
                             loading="lazy"
                           />
                         </div>
@@ -5956,12 +5961,14 @@ const App: React.FC = () => {
 
             {currentPage === 'traditional-clothing' && (
               <>
-                <article className="page-article">
-                  <h2>{landingContent.sampleOutfits.introTitle}</h2>
-                  {landingContent.sampleOutfits.introParagraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </article>
+                {(landingContent.sampleOutfits.introTitle || landingContent.sampleOutfits.introParagraphs.length > 0) && (
+                  <article className="page-article">
+                    {landingContent.sampleOutfits.introTitle ? <h2>{landingContent.sampleOutfits.introTitle}</h2> : null}
+                    {landingContent.sampleOutfits.introParagraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                )}
                 <article className="page-article">
                   <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
                   <p>{landingContent.sampleOutfits.catalogBody}</p>

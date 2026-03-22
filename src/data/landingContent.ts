@@ -219,11 +219,8 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     sampleOutfits: {
       title: '샘플 의상',
       description: '반려동물에게 어울릴 만한 의상 분위기와 스타일 정보를 살펴보는 페이지입니다.',
-      introTitle: '이 페이지에서는 펫 피팅에 참고할 샘플 의상만 정리해서 확인할 수 있습니다.',
-      introParagraphs: [
-        '각 카드에서는 의상 이름과 분위기, 시각적 특징을 먼저 읽은 뒤 펫 피팅으로 바로 연결할 수 있습니다.',
-        '전통풍 스타일, 행사 룩, 기념 촬영용 코스튬처럼 의상 자체의 분위기 비교에 집중하도록 구성했습니다.',
-      ],
+      introTitle: '',
+      introParagraphs: [],
       breedTitle: '샘플 품종',
       breedBody: '샘플 품종 이미지는 펫 피팅을 시작하기 전에 얼굴 비율과 털 볼륨, 장식 배치를 미리 비교해 보는 기준점으로 활용할 수 있습니다.',
       catalogTitle: '샘플 의상',
