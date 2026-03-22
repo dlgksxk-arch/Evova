@@ -4943,6 +4943,63 @@ a { color: inherit; text-decoration: none; }
 .result-share-sidebar .share-platform-btn span:last-child {
   font-size: 12px;
 }
+.result-action-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.result-action-overlay-grid {
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-action-overlay .share-platform-btn,
+.result-action-overlay .download-btn,
+.result-action-overlay .result-action-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 999px;
+  justify-content: center;
+  border: none;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  color: var(--text);
+}
+
+.result-action-overlay .share-platform-btn span:last-child,
+.result-action-overlay .download-btn span:last-child {
+  display: none;
+}
+
+.result-action-overlay .share-platform-icon {
+  width: 18px;
+  height: 18px;
+  background: transparent;
+}
+
+.result-status-text-overlay {
+  margin-top: 2px;
+  max-width: 160px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: right;
+}
 .result-status-text-sidebar {
   margin-top: 0;
   font-size: 12px;
@@ -5060,10 +5117,6 @@ a { color: inherit; text-decoration: none; }
   align-items: start;
 }
 
-.try-modal-workspace.has-share-column {
-  grid-template-columns: minmax(320px, 392px) minmax(0, 1fr) 172px;
-}
-
 .try-modal-left-column,
 .try-modal-right-column,
 .try-modal-share-column {
@@ -5121,41 +5174,6 @@ a { color: inherit; text-decoration: none; }
   border: none;
   box-shadow: none;
   background: color-mix(in srgb, var(--surface-alt) 74%, white);
-}
-
-.try-modal-share-column .result-showcase-layout-actions {
-  margin-top: 0;
-}
-
-.try-modal-share-column .result-share-sidebar {
-  position: sticky;
-  top: 8px;
-  gap: 8px;
-}
-
-.try-modal-share-column .result-share-sidebar-grid {
-  grid-template-columns: 1fr;
-}
-
-.try-modal-share-column .result-action-btn,
-.try-modal-share-column .download-btn,
-.try-modal-share-column .share-platform-btn {
-  min-height: 40px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  justify-content: flex-start;
-  white-space: nowrap;
-}
-
-.try-modal-share-column .share-platform-icon {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-}
-
-.try-modal-share-column .share-platform-btn span:last-child {
-  display: inline-block;
-  white-space: nowrap;
 }
 
 .result-followup-shell {
@@ -7932,6 +7950,30 @@ body {
 }
 
 @media (max-width: 768px) {
+  .result-action-overlay {
+    top: 8px;
+    right: 8px;
+    gap: 8px;
+  }
+
+  .result-action-overlay-grid {
+    gap: 6px;
+  }
+
+  .result-action-overlay .share-platform-btn,
+  .result-action-overlay .download-btn,
+  .result-action-overlay .result-action-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .result-action-overlay .share-platform-icon {
+    width: 16px;
+    height: 16px;
+  }
+
   .try-modal-workspace,
   .try-modal-workspace.has-share-column {
     grid-template-columns: 1fr;
@@ -8146,6 +8188,15 @@ body {
 }
 
 @media (max-width: 480px) {
+  .result-action-overlay .share-platform-btn,
+  .result-action-overlay .download-btn,
+  .result-action-overlay .result-action-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+  }
+
   .try-modal-workspace,
   .try-modal-workspace.has-share-column {
     gap: 10px;

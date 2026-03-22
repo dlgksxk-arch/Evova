@@ -6,7 +6,7 @@ interface ResultActionsPanelProps {
   disableDownload: boolean;
   shareStatus: string | null;
   copy: Record<string, any>;
-  layout?: 'section' | 'sidebar';
+  layout?: 'section' | 'sidebar' | 'overlay';
   showCopy?: boolean;
   onDownload: (src: string) => void;
   onShareLink: (link: string | null) => void;
@@ -113,7 +113,7 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   onShareOnTikTok,
 }) => {
   const actionGrid = (
-    <div className={`result-action-grid ${layout === 'sidebar' ? 'result-share-sidebar-grid' : 'share-grid-primary'}`}>
+    <div className={`result-action-grid ${layout === 'sidebar' ? 'result-share-sidebar-grid' : layout === 'overlay' ? 'result-action-overlay-grid' : 'share-grid-primary'}`}>
         <button aria-label={copy.share} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => onShareLink(link)} type="button">
           <span aria-hidden="true" className="share-platform-icon">{renderSocialIcon('share')}</span>
           <span>{copy.share}</span>
@@ -164,6 +164,15 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
         ) : null}
         {actionGrid}
         {shareStatus ? <p className="result-status-text result-status-text-sidebar">{shareStatus}</p> : null}
+      </aside>
+    );
+  }
+
+  if (layout === 'overlay') {
+    return (
+      <aside className="result-action-overlay">
+        {actionGrid}
+        {shareStatus ? <p className="result-status-text result-status-text-overlay">{shareStatus}</p> : null}
       </aside>
     );
   }

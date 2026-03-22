@@ -386,6 +386,28 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
+  const overlayActionsNode = isModalLayout && isPreviewReady && finalImageSrc ? (
+    <ResultActionsPanel
+      imageSrc={finalImageSrc}
+      link={shareResultLink}
+      disableDownload={resultPreviewState !== 'ready'}
+      shareStatus={shareStatus}
+      copy={copy}
+      layout="overlay"
+      showCopy={false}
+      onDownload={onDownloadResult}
+      onShareLink={onShareLink}
+      onCopyLink={onCopyLink}
+      onShareOnKakao={onShareOnKakao}
+      onShareOnLine={onShareOnLine}
+      onShareOnX={onShareOnX}
+      onShareOnFacebook={onShareOnFacebook}
+      onInstagramSave={onInstagramSave}
+      onShareOnTikTok={onShareOnTikTok}
+      onTryAnotherOutfit={onTryAnotherOutfit}
+      onRandomOutfit={onRandomOutfit}
+    />
+  ) : null;
 
   const previewPanelNode = (
     <div id="result-area" className={`result-preview-panel ${isModalLayout ? 'is-modal' : ''}`}>
@@ -426,6 +448,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <p>{generationPanelCopy.idleBody}</p>
         </div>
       )}
+      {overlayActionsNode}
       {resultPreviewState === 'error' ? (
         <div className="img-error-msg result-preview-panel-error">{copy.resultDisplayError}</div>
       ) : null}
@@ -736,7 +759,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const studioMainNode = (
     <>
       {isModalLayout ? (
-        <div className={`try-modal-workspace ${shareSidebarNode ? 'has-share-column' : ''}`}>
+        <div className="try-modal-workspace">
           <div className="try-modal-left-column">
             {inputColumnsNode}
           </div>
@@ -753,7 +776,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               </div>
             </div>
           </div>
-          {shareSidebarNode ? <div className="try-modal-share-column">{shareSidebarNode}</div> : null}
         </div>
       ) : (
         <>
