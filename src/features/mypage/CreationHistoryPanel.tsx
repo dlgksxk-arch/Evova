@@ -12,7 +12,7 @@ interface CreationHistoryPanelProps {
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
-const HISTORY_VISIBLE_ROWS = 6;
+const HISTORY_VISIBLE_ROWS = 7;
 
 const getTimestampMillis = (value: unknown): number | null => {
   if (!value || typeof value !== 'object') {
@@ -325,15 +325,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     }
     if (viewportWidth <= 768) {
       return 2;
-    }
-    if (viewportWidth <= 980) {
-      return 3;
-    }
-    if (viewportWidth <= 1200) {
-      return 4;
-    }
-    if (viewportWidth <= 1400) {
-      return 5;
     }
     return 6;
   }, [viewportWidth]);
