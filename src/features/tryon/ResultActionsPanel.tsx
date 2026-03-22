@@ -6,6 +6,8 @@ interface ResultActionsPanelProps {
   disableDownload: boolean;
   shareStatus: string | null;
   copy: Record<string, any>;
+  layout?: 'section' | 'sidebar';
+  showCopy?: boolean;
   onDownload: (src: string) => void;
   onShareLink: (link: string | null) => void;
   onCopyLink: (link: string | null) => void;
@@ -98,6 +100,8 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   disableDownload,
   shareStatus,
   copy,
+  layout = 'section',
+  showCopy = true,
   onDownload,
   onShareLink,
   onCopyLink,
@@ -107,14 +111,9 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
   onShareOnFacebook,
   onInstagramSave,
   onShareOnTikTok,
-}) => (
-  <>
-    <div className="page-article share-section">
-      <div className="share-section-copy">
-        <h3>{copy.shareSectionTitle}</h3>
-        <p>{copy.shareHelperText}</p>
-      </div>
-      <div className="result-action-grid share-grid-primary">
+}) => {
+  const actionGrid = (
+    <div className={`result-action-grid ${layout === 'sidebar' ? 'result-share-sidebar-grid' : 'share-grid-primary'}`}>
         <button aria-label={copy.share} className="outline-btn result-action-btn share-platform-btn utility" onClick={() => onShareLink(link)} type="button">
           <span aria-hidden="true" className="share-platform-icon">{renderSocialIcon('share')}</span>
           <span>{copy.share}</span>
@@ -151,10 +150,38 @@ const ResultActionsPanel: React.FC<ResultActionsPanelProps> = ({
           <span aria-hidden="true" className="share-platform-icon">{renderSocialIcon('link')}</span>
           <span>{copy.copyLink}</span>
         </button>
-      </div>
     </div>
-    {shareStatus && <p className="result-status-text">{shareStatus}</p>}
-  </>
-);
+  );
+
+  if (layout === 'sidebar') {
+    return (
+      <aside className="result-share-sidebar">
+        {showCopy ? (
+          <div className="share-section-copy result-share-sidebar-copy">
+            <h3>{copy.shareSectionTitle}</h3>
+            <p>{copy.shareHelperText}</p>
+          </div>
+        ) : null}
+        {actionGrid}
+        {shareStatus ? <p className="result-status-text result-status-text-sidebar">{shareStatus}</p> : null}
+      </aside>
+    );
+  }
+
+  return (
+    <>
+      <div className="page-article share-section">
+        {showCopy ? (
+          <div className="share-section-copy">
+            <h3>{copy.shareSectionTitle}</h3>
+            <p>{copy.shareHelperText}</p>
+          </div>
+        ) : null}
+        {actionGrid}
+      </div>
+      {shareStatus ? <p className="result-status-text">{shareStatus}</p> : null}
+    </>
+  );
+};
 
 export default ResultActionsPanel;

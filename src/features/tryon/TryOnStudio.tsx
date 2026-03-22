@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { LanguageCode } from '../../constants/languages';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
+import ResultActionsPanel from './ResultActionsPanel';
 
 const EmptyPreviewState: React.FC<{
   title: string;
@@ -263,40 +264,54 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const resultNode = finalImageSrc ? (
     <div id="result-area" className={`results-section ${isModalLayout ? 'results-section-modal' : ''}`}>
       <h2 className="section-heading">{isModalLayout ? modalCopy?.resultTitle ?? copy.resultTitle : copy.resultTitle}</h2>
-      <div className="composite-result">
-        {resultPreviewState === 'loading' && (
-          <div className="preview-overlay result-overlay">
-            <span className="spinner"></span>
-            <span>{copy.renderingResult}</span>
-          </div>
-        )}
-        {resultPreviewState === 'error' ? (
-          <div className="img-error-msg">{copy.resultDisplayError}</div>
-        ) : (
-          <img
-            src={finalImageSrc}
-            alt="Result"
-            className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
-            onLoad={() => copy.setResultPreviewReady()}
-            onError={() => copy.setResultPreviewError()}
-            onClick={() => {
-              if (resultPreviewState === 'ready') {
-                onOpenResultPreview(finalImageSrc);
-              }
-            }}
-          />
-        )}
+      <div className={`result-showcase-layout ${isModalLayout ? 'is-modal' : ''}`}>
+        <div className="composite-result">
+          {resultPreviewState === 'loading' && (
+            <div className="preview-overlay result-overlay">
+              <span className="spinner"></span>
+              <span>{copy.renderingResult}</span>
+            </div>
+          )}
+          {resultPreviewState === 'error' ? (
+            <div className="img-error-msg">{copy.resultDisplayError}</div>
+          ) : (
+            <img
+              src={finalImageSrc}
+              alt="Result"
+              className={`result-preview-image ${resultPreviewState === 'ready' ? 'is-visible is-zoomable' : ''}`}
+              onLoad={() => copy.setResultPreviewReady()}
+              onError={() => copy.setResultPreviewError()}
+              onClick={() => {
+                if (resultPreviewState === 'ready') {
+                  onOpenResultPreview(finalImageSrc);
+                }
+              }}
+            />
+          )}
+        </div>
+        <ResultActionsPanel
+          imageSrc={finalImageSrc}
+          link={shareResultLink}
+          disableDownload={resultPreviewState !== 'ready'}
+          shareStatus={shareStatus}
+          copy={copy}
+          layout="sidebar"
+          showCopy={false}
+          onDownload={onDownloadResult}
+          onShareLink={onShareLink}
+          onCopyLink={onCopyLink}
+          onShareOnKakao={onShareOnKakao}
+          onShareOnLine={onShareOnLine}
+          onShareOnX={onShareOnX}
+          onShareOnFacebook={onShareOnFacebook}
+          onInstagramSave={onInstagramSave}
+          onShareOnTikTok={onShareOnTikTok}
+          onTryAnotherOutfit={onTryAnotherOutfit}
+          onRandomOutfit={onRandomOutfit}
+        />
       </div>
       <div className="page-article">
-        <div className="result-action-grid single-row">
-          <button
-            className="download-btn result-action-btn"
-            disabled={resultPreviewState !== 'ready'}
-            onClick={() => onDownloadResult(finalImageSrc)}
-            type="button"
-          >
-            {copy.downloadImage}
-          </button>
+        <div className="result-action-grid single-row result-followup-actions">
           <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
             {copy.tryAnotherOutfit}
           </button>

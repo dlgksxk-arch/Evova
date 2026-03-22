@@ -666,7 +666,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(148px, 188px) minmax(0, 1fr) 104px',
+                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(148px, 188px) minmax(0, 1fr)',
                         gap: 12,
                         alignItems: 'stretch',
                       }}
@@ -713,7 +713,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                           </span>
                         </div>
                       </div>
-                      <div style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
+                      <div className="history-selected-result-card" style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
                         <strong>{historyCopy.resultLabel}</strong>
                         <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
                           {historyCopy.resultPreview}
@@ -723,15 +723,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                             {copy.historyLoading}
                           </div>
                         ) : null}
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr',
-                            gap: 12,
-                            alignItems: 'stretch',
-                          }}
-                        >
+                        <div className={`history-selected-result-layout ${isMobile ? 'is-mobile' : ''}`}>
                           <div
+                            className="history-selected-image-shell"
                             style={{
                               width: '100%',
                               overflowX: 'auto',
@@ -764,93 +758,88 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               }}
                             />
                           </div>
+                          {!isMobile ? (
+                            <aside className="history-selected-sidebar">
+                              <button
+                                className="outline-btn auth-inline-btn history-action-btn"
+                                disabled={zoom <= 0.75}
+                                onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+                                type="button"
+                              >
+                                {copy.historyZoomOut}
+                              </button>
+                              <button
+                                className="outline-btn auth-inline-btn history-action-btn"
+                                disabled={zoom === 1}
+                                onClick={() => setZoom(1)}
+                                type="button"
+                              >
+                                {copy.historyZoomReset}
+                              </button>
+                              <button
+                                className="outline-btn auth-inline-btn history-action-btn"
+                                disabled={zoom >= 2}
+                                onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
+                                type="button"
+                              >
+                                {copy.historyZoomIn}
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
+                                {renderSocialIcon('kakao')}
+                                Kakao
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
+                                {renderSocialIcon('x')}
+                                X
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
+                                {renderSocialIcon('facebook')}
+                                Facebook
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
+                                {renderSocialIcon('line')}
+                                LINE
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
+                                {renderSocialIcon('instagram')}
+                                Instagram
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
+                                {renderSocialIcon('tiktok')}
+                                TikTok
+                              </button>
+                              <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
+                                {renderSocialIcon('link')}
+                                Link
+                              </button>
+                              <button
+                                className="download-btn auth-inline-btn history-action-btn"
+                                disabled={!selectedItem.imageUrl}
+                                onClick={() => {
+                                  if (selectedItem.imageUrl) {
+                                    downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
+                                  }
+                                }}
+                                type="button"
+                              >
+                                {renderSocialIcon('download')}
+                                {copy.historyDownload}
+                              </button>
+                              {shareStatus ? (
+                                <div className="history-selected-share-status">
+                                  {shareStatus}
+                                </div>
+                              ) : null}
+                            </aside>
+                          ) : null}
                         </div>
                         {!isImageLoading ? (
-                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
+                          <div className="history-selected-zoom-hint" style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
                             {copy.historyZoomHint}
                           </div>
                         ) : null}
                       </div>
-                      {!isMobile ? (
-                        <aside
-                          style={{
-                            display: 'grid',
-                            alignContent: 'start',
-                            gap: 8,
-                          }}
-                        >
-                          <button
-                            className="outline-btn auth-inline-btn history-action-btn"
-                            disabled={zoom <= 0.75}
-                            onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
-                            type="button"
-                          >
-                            {copy.historyZoomOut}
-                          </button>
-                          <button
-                            className="outline-btn auth-inline-btn history-action-btn"
-                            disabled={zoom === 1}
-                            onClick={() => setZoom(1)}
-                            type="button"
-                          >
-                            {copy.historyZoomReset}
-                          </button>
-                          <button
-                            className="outline-btn auth-inline-btn history-action-btn"
-                            disabled={zoom >= 2}
-                            onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
-                            type="button"
-                          >
-                            {copy.historyZoomIn}
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
-                            {renderSocialIcon('kakao')}
-                            Kakao
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
-                            {renderSocialIcon('x')}
-                            X
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
-                            {renderSocialIcon('facebook')}
-                            Facebook
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
-                            {renderSocialIcon('line')}
-                            LINE
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
-                            {renderSocialIcon('instagram')}
-                            Instagram
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
-                            {renderSocialIcon('tiktok')}
-                            TikTok
-                          </button>
-                          <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
-                            {renderSocialIcon('link')}
-                            Link
-                          </button>
-                          <button
-                            className="download-btn auth-inline-btn history-action-btn"
-                            disabled={!selectedItem.imageUrl}
-                            onClick={() => {
-                              if (selectedItem.imageUrl) {
-                                downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-                              }
-                            }}
-                            type="button"
-                          >
-                            {renderSocialIcon('download')}
-                            {copy.historyDownload}
-                          </button>
-                          {shareStatus ? (
-                            <div style={{ color: 'var(--text-sub)', fontSize: 12, lineHeight: 1.45 }}>
-                              {shareStatus}
-                            </div>
-                          ) : null}
-                        </aside>
-                      ) : (
+                      {isMobile ? (
                         <div style={{ display: 'grid', gap: 10 }}>
                           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                             <button
@@ -922,12 +911,12 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                             </button>
                           </div>
                           {shareStatus ? (
-                            <div style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                            <div className="history-selected-share-status history-selected-share-status-mobile">
                               {shareStatus}
                             </div>
                           ) : null}
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 

@@ -119,10 +119,12 @@ const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_05204666-8bbf-4be8-81a8-180180969593.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0a339649-fe99-4b71-b4e2-f5187376bd5b.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0adadd8e-7b38-40cf-aff6-7e8712cee369.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0854e4a4-6fec-4823-9601-346aa7177a11.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_3ac94c9f-42f0-48b6-a44b-55444d19d124.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_43f48b66-fc60-4181-9c36-83c43b6d4b45.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_70515cd9-4062-469a-b34b-d9f12fb2b1f8.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_79b61e69-ed70-4eb6-ba50-86a1602cc78d.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_874b8d8f-4319-4725-8cec-4eca89bb7561.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_8f84ece8-e5de-45c3-86a8-9b672a0bbc8e.png',
@@ -135,6 +137,7 @@ const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_af34857e-f3ee-4711-9986-94cf04107963.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_b7fd69b0-64d8-4944-be4d-eae8fc909e93.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_c0e0e103-1d47-4668-b1c5-d51f744aaa9e.png',
+  '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_e128dc5e-1616-4bad-9fa1-59635f411959.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
 ] as const;
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
