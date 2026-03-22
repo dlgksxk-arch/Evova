@@ -3456,6 +3456,12 @@ const App: React.FC = () => {
           : `Plan ${t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free')}`
     : '';
   const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
+  const updateHomeShowcaseHoverPreviewPosition = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const nextX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
+    const clampedX = Math.min(82, Math.max(18, nextX));
+    event.currentTarget.style.setProperty('--sample-hover-x', `${clampedX}%`);
+  };
   const boardUiCopy = lang === 'ko'
     ? {
         boardNoticeTitle: '공지사항',
@@ -5647,6 +5653,9 @@ const App: React.FC = () => {
                       <div
                         key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseTopItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
+                        onMouseEnter={updateHomeShowcaseHoverPreviewPosition}
+                        onMouseMove={updateHomeShowcaseHoverPreviewPosition}
+                        onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
                       >
                         <div className="landing-result-tile-media">
                           <img
@@ -5683,6 +5692,9 @@ const App: React.FC = () => {
                       <div
                         key={item.src}
                         className={`landing-result-tile ${index === 0 || index === homeShowcaseBottomItems.length - 1 ? 'landing-result-tile-outer' : 'landing-result-tile-inner'} landing-result-tile-variant-${item.variant}`}
+                        onMouseEnter={updateHomeShowcaseHoverPreviewPosition}
+                        onMouseMove={updateHomeShowcaseHoverPreviewPosition}
+                        onMouseLeave={(event) => event.currentTarget.style.setProperty('--sample-hover-x', '50%')}
                       >
                         <div className="landing-result-tile-media">
                           <img
