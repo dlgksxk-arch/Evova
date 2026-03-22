@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 type JsonLdValue = Record<string, unknown>;
+const JSON_LD_SELECTOR = 'script[type="application/ld+json"][data-hamdeva-jsonld="managed"]';
 
 interface StructuredDataProps {
   data?: JsonLdValue | JsonLdValue[] | null;
@@ -9,21 +10,32 @@ interface StructuredDataProps {
 const StructuredData: React.FC<StructuredDataProps> = ({ data }) => {
   const items = Array.isArray(data) ? data.filter(Boolean) : data ? [data] : [];
 
-  if (items.length === 0) {
-    return null;
-  }
+  useEffect(() => {
+    const removeManagedScripts = () => {
+      document.head.querySelectorAll(JSON_LD_SELECTOR).forEach((node) => node.remove());
+    };
 
-  return (
-    <>
-      {items.map((item, index) => (
-        <script
-          key={`structured-data-${index}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }}
-        />
-      ))}
-    </>
-  );
+    removeManagedScripts();
+
+    if (items.length === 0) {
+      return removeManagedScripts;
+    }
+
+    const scripts = items.map((item) => {
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.setAttribute('data-hamdeva-jsonld', 'managed');
+      script.textContent = JSON.stringify(item);
+      document.head.appendChild(script);
+      return script;
+    });
+
+    return () => {
+      scripts.forEach((script) => script.remove());
+    };
+  }, [items]);
+
+  return null;
 };
 
 export default StructuredData;

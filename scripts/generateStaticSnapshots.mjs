@@ -10,6 +10,7 @@ const supportEmail = 'dlgksxk@gmail.com';
 const siteUrl = 'https://hamdeva.com';
 const defaultOgImage = `${siteUrl}/og-image.jpg`;
 const withBrand = (title) => (title.includes('HAMDEVA') ? title : `${title} | HAMDEVA`);
+const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]*?<!-- HAMDEVA_STRUCTURED_DATA_END -->/;
 
 const snapshotRoutes = [
   { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
@@ -51,7 +52,11 @@ const escapeHtml = (value) =>
     .replaceAll('"', '&quot;');
 
 const renderJsonLd = (item) =>
-  `<script type="application/ld+json">${JSON.stringify(item)}</script>`;
+  `<script type="application/ld+json" data-hamdeva-jsonld="managed">${JSON.stringify(item)}</script>`;
+
+const renderStructuredDataBlock = (items) => `<!-- HAMDEVA_STRUCTURED_DATA_START -->
+    ${items.map((item) => renderJsonLd(item)).join('\n    ')}
+    <!-- HAMDEVA_STRUCTURED_DATA_END -->`;
 
 const renderFaqSchema = (items) => ({
   '@context': 'https://schema.org',
@@ -361,7 +366,7 @@ const renderStructuredData = (routeKey, page, pageUrl) => {
     structuredData.push(renderFaqSchema(page.faq));
   }
 
-  return structuredData.map((item) => renderJsonLd(item)).join('\n    ');
+  return renderStructuredDataBlock(structuredData);
 };
 
 const renderSitemapXml = (routes, lastModified) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -413,7 +418,7 @@ const main = async () => {
     html = replaceTag(html, /<meta\s+name="twitter:image"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="twitter:image" content="${defaultOgImage}" />`);
     html = replaceTag(html, /<meta\s+name="twitter:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta name="twitter:image:alt" content="HAMDEVA pet fitting preview" />');
     html = replaceTag(html, /<link\s+rel="canonical"\s+href="[\s\S]*?"\s*\/?>/, `<link rel="canonical" href="${pageUrl}" />`);
-    html = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, structuredData);
+    html = html.replace(structuredDataBlockPattern, structuredData);
     html = html.replace('<div id="root"></div>', pageBody);
 
     if (route.path === '/') {
