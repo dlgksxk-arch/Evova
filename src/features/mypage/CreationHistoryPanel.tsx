@@ -264,18 +264,18 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const getGarmentLabel = (item: GenerationRecord) => getResolvedGarmentLabel(item, historyCopy);
   const previewCardStyle: React.CSSProperties = {
     border: '1px solid var(--border)',
-    borderRadius: 18,
+    borderRadius: 16,
     background: 'color-mix(in srgb, var(--surface) 94%, transparent)',
-    padding: 14,
+    padding: 10,
     display: 'grid',
-    gap: 10,
+    gap: 8,
     boxShadow: 'var(--shadow-sm)',
   };
   const previewThumbStyle: React.CSSProperties = {
     width: '100%',
     aspectRatio: '1 / 1',
     objectFit: 'cover',
-    borderRadius: 14,
+    borderRadius: 12,
     border: '1px solid var(--border)',
     background: 'rgba(255,255,255,0.7)',
   };
@@ -678,15 +678,15 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                   className="creation-history-selected-panel"
                   style={{
                     border: '1px solid var(--border)',
-                    borderRadius: 20,
+                    borderRadius: 18,
                     background: 'color-mix(in srgb, var(--surface) 96%, transparent)',
                     boxShadow: 'var(--shadow-sm)',
                     overflow: 'hidden',
-                    marginTop: 18,
-                    marginBottom: 18,
+                    marginTop: 12,
+                    marginBottom: 12,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
                       <strong style={{ display: 'block' }}>
                         [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
@@ -751,22 +751,22 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                       }
                     }}
                     style={{
-                      padding: isMobile ? 16 : 20,
+                      padding: isMobile ? 12 : 16,
                     }}
                   >
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(160px, 220px) minmax(0, 1fr)',
-                        gap: 16,
-                        marginBottom: 16,
+                        gridTemplateColumns: isMobile ? '1fr' : 'minmax(150px, 200px) minmax(0, 1fr)',
+                        gap: 12,
+                        marginBottom: 12,
                         alignItems: 'stretch',
                       }}
                     >
                       <div
                         style={{
                           display: 'grid',
-                          gap: 16,
+                          gap: 12,
                           gridTemplateRows: isMobile ? 'repeat(2, minmax(0, 1fr))' : '1fr 1fr',
                         }}
                       >
@@ -776,10 +776,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                             <img
                               src={selectedItem.personPreviewUrl}
                               alt={historyCopy.personLabel}
-                              style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto' }}
+                              style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto' }}
                             />
                           ) : (
-                            <div style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                            <div style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
                               {getPersonLabel(selectedItem)}
                             </div>
                           )}
@@ -793,10 +793,10 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                             <img
                               src={selectedItem.garmentPreviewUrl}
                               alt={historyCopy.garmentLabel}
-                              style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto' }}
+                              style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto' }}
                             />
                           ) : (
-                            <div style={{ ...previewThumbStyle, maxWidth: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                            <div style={{ ...previewThumbStyle, maxWidth: '58%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
                               {getGarmentLabel(selectedItem)}
                             </div>
                           )}
@@ -830,9 +830,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               overflowY: 'visible',
                               border: '1px solid var(--border)',
                               borderRadius: 16,
-                              padding: 16,
+                              padding: 10,
                               background: 'rgba(255,255,255,0.35)',
-                              minHeight: isMobile ? 140 : 260,
+                              minHeight: isMobile ? 130 : 220,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -856,25 +856,57 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                               }}
                             />
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <div className="history-actions" style={{ marginTop: 0 }}>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnKakao(); }} type="button">
+                              {renderSocialIcon('kakao')}
+                              Kakao
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnX(); }} type="button">
+                              {renderSocialIcon('x')}
+                              X
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnFacebook(); }} type="button">
+                              {renderSocialIcon('facebook')}
+                              Facebook
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareOnLine(); }} type="button">
+                              {renderSocialIcon('line')}
+                              LINE
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
+                              {renderSocialIcon('instagram')}
+                              Instagram
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
+                              {renderSocialIcon('tiktok')}
+                              TikTok
+                            </button>
+                            <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
+                              {renderSocialIcon('link')}
+                              Link
+                            </button>
                             <button
-                              className="download-btn auth-inline-btn"
+                              className="download-btn auth-inline-btn history-action-btn"
                               disabled={!selectedItem.imageUrl}
                               onClick={() => {
                                 if (selectedItem.imageUrl) {
                                   downloadFile(selectedItem.imageUrl, `hamdeva-image-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
                                 }
                               }}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                               type="button"
                             >
                               {renderSocialIcon('download')}
                               {copy.historyDownload}
                             </button>
                           </div>
+                          {shareStatus ? (
+                            <div style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                              {shareStatus}
+                            </div>
+                          ) : null}
                         </div>
                         {!isImageLoading ? (
-                          <div style={{ marginTop: 12, color: 'var(--text-sub)', fontSize: 13 }}>
+                          <div style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
                             {copy.historyZoomHint}
                           </div>
                         ) : null}
@@ -885,9 +917,9 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                   <div
                     style={{
                       display: 'flex',
-                      gap: 12,
+                      gap: 10,
                       justifyContent: isMobile ? 'stretch' : 'flex-end',
-                      padding: '16px 20px',
+                      padding: '12px 16px',
                       borderTop: '1px solid var(--border)',
                       flexWrap: 'wrap',
                     }}
