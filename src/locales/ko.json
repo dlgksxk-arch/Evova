@@ -20,8 +20,8 @@
     "mypage": "마이페이지"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI 펫 피팅과 가상 피팅",
-    "homeDescription": "HAMDEVA에서 강아지나 고양이 사진으로 펫 의상 미리보기를 만들어 보세요. 의상 이미지를 추가하면 AI 가상 피팅 결과를 몇 초 안에 비교할 수 있습니다."
+    "homeTitle": "HAMDEVA (함데바) | 강아지 옷 미리보기, 고양이 옷 입혀보기, AI 펫 피팅",
+    "homeDescription": "HAMDEVA(함데바)는 강아지 옷 미리보기, 고양이 옷 입혀보기, pet fitting을 위한 AI 서비스입니다. 반려동물 사진과 의상 이미지로 가상 피팅 결과를 빠르게 비교해 보세요."
   },
   "hero_click": "클릭클릭,",
   "hero_space": "가상의 피팅공간",
