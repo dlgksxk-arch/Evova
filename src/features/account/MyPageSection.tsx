@@ -121,7 +121,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onNavigateSiteManagement,
   onNavigateTerms: _onNavigateTerms,
   onStartCheckout,
-  formatTimestampLabel: _formatTimestampLabel,
+  formatTimestampLabel,
   historyItems,
   preservedHistoryCount,
   historyPreserveLimit,

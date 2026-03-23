@@ -279,6 +279,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       })
   ), [items]);
   const pageCount = Math.max(1, Math.ceil(visibleItems.length / historyPageSize));
+  const selectedVisibleIndex = selectedItem ? visibleItems.findIndex((item) => item.id === selectedItem.id) : -1;
   const pagedItems = useMemo(
     () => visibleItems.slice(currentPage * historyPageSize, (currentPage + 1) * historyPageSize),
     [currentPage, historyPageSize, visibleItems],
@@ -287,6 +288,8 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const hasVisibleItems = visibleItems.length > 0;
   const isSelectedItemPreserved = Boolean(selectedItem && isPreservedItem(selectedItem));
   const canArchiveSelectedItem = Boolean(selectedItem && (!isSelectedItemPreserved && preservedCount < maxPreserved));
+  const hasPreviousSelectedItem = selectedVisibleIndex > 0;
+  const hasNextSelectedItem = selectedVisibleIndex >= 0 && selectedVisibleIndex < visibleItems.length - 1;
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, Math.max(0, pageCount - 1)));
@@ -393,6 +396,26 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     startImageLoading();
   };
 
+  const navigateSelectedItem = (direction: 'previous' | 'next') => {
+    if (selectedVisibleIndex < 0) {
+      return;
+    }
+
+    const nextIndex = direction === 'previous'
+      ? Math.max(0, selectedVisibleIndex - 1)
+      : Math.min(visibleItems.length - 1, selectedVisibleIndex + 1);
+    const nextItem = visibleItems[nextIndex];
+    if (!nextItem || nextItem.id === selectedItem?.id) {
+      return;
+    }
+
+    setCurrentPage(Math.floor(nextIndex / historyPageSize));
+    setSelectedItem(nextItem);
+    setZoom(1);
+    setShareStatus(null);
+    startImageLoading();
+  };
+
   const getSelectedShareUrl = (): string | null => selectedItem?.imageUrl || null;
 
   const handleCopySelectedLink = async () => {
@@ -433,12 +456,20 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         resetExpandedPanel();
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        navigateSelectedItem('previous');
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        navigateSelectedItem('next');
       }
     };
 
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [selectedItem]);
+  }, [historyPageSize, selectedItem, selectedVisibleIndex, visibleItems]);
 
   return (
     <article className="page-article">
@@ -630,6 +661,27 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                         justifyContent: 'center',
                       }}
                     >
+                      <div className="history-selected-image-nav">
+                        <button
+                          className="outline-btn auth-inline-btn history-image-nav-btn"
+                          disabled={!hasPreviousSelectedItem}
+                          onClick={() => navigateSelectedItem('previous')}
+                          type="button"
+                        >
+                          ‹
+                        </button>
+                        <span className="history-image-nav-indicator">
+                          {selectedVisibleIndex + 1} / {visibleItems.length}
+                        </span>
+                        <button
+                          className="outline-btn auth-inline-btn history-image-nav-btn"
+                          disabled={!hasNextSelectedItem}
+                          onClick={() => navigateSelectedItem('next')}
+                          type="button"
+                        >
+                          ›
+                        </button>
+                      </div>
                       <img
                         alt={copy.resultPreviewAlt}
                         onLoad={finishImageLoading}

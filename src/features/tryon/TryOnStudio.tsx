@@ -62,6 +62,116 @@ const getDroppedImageSource = (dataTransfer: DataTransfer): File | string | null
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const GENERATION_TARGET_MS = 30000;
 const RESULT_SETTLE_MS = 1800;
+const DISPLAY_PROGRESS_TARGET_MS = Math.round(GENERATION_TARGET_MS / 0.95);
+const RACE_PICK_LOCK_PERCENT = 30;
+
+type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
+type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
+type RunnerObstacleOutcome = 'clean' | 'delay' | 'crash';
+
+type RunnerObstacleProfile = Record<RunnerObstacleKey, {
+  outcome: RunnerObstacleOutcome;
+  penalty: number;
+}>;
+
+const RUNNER_OBSTACLES: Array<{
+  key: RunnerObstacleKey;
+  position: number;
+  icon: string;
+  accent: string;
+}> = [
+  { key: 'hurdle', position: 0.14, icon: '▥', accent: '#ff8b5f' },
+  { key: 'mountain', position: 0.31, icon: '⛰', accent: '#8a7fff' },
+  { key: 'river', position: 0.49, icon: '≈', accent: '#4ea7ff' },
+  { key: 'desert', position: 0.68, icon: '☀', accent: '#f7a941' },
+  { key: 'mud', position: 0.82, icon: '●', accent: '#8b5a39' },
+];
+
+const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
+  hurdle: {
+    outcome: Math.random() < 0.28 ? 'crash' : Math.random() < 0.65 ? 'delay' : 'clean',
+    penalty: 0.03 + (Math.random() * 0.022),
+  },
+  mountain: {
+    outcome: Math.random() < 0.22 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
+    penalty: 0.028 + (Math.random() * 0.026),
+  },
+  river: {
+    outcome: Math.random() < 0.26 ? 'crash' : Math.random() < 0.72 ? 'delay' : 'clean',
+    penalty: 0.032 + (Math.random() * 0.026),
+  },
+  desert: {
+    outcome: Math.random() < 0.2 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
+    penalty: 0.026 + (Math.random() * 0.024),
+  },
+  mud: {
+    outcome: Math.random() < 0.3 ? 'crash' : Math.random() < 0.76 ? 'delay' : 'clean',
+    penalty: 0.03 + (Math.random() * 0.028),
+  },
+});
+
+const getRunnerObstacleState = (
+  baseProgress: number,
+  profile: RunnerObstacleProfile,
+  winner: 'dog' | 'cat',
+  runner: 'dog' | 'cat',
+): {
+  progress: number;
+  state: RunnerState;
+  eventKey: RunnerObstacleKey | null;
+} => {
+  let resolvedProgress = baseProgress;
+  let activeState: RunnerState = 'run';
+  let activeKey: RunnerObstacleKey | null = null;
+  let totalPenalty = 0;
+
+  RUNNER_OBSTACLES.forEach((obstacle, index) => {
+    const profileEntry = profile[obstacle.key];
+    if (!profileEntry || profileEntry.outcome === 'clean') {
+      return;
+    }
+
+    const leadBias = runner === winner
+      ? 0.004 * index
+      : -0.003 * index;
+    const obstaclePosition = obstacle.position + leadBias;
+    const activeStart = obstaclePosition - 0.028;
+    const activeEnd = obstaclePosition + profileEntry.penalty + 0.05;
+
+    if (baseProgress < activeStart) {
+      return;
+    }
+
+    if (baseProgress <= activeEnd && activeKey === null) {
+      const phase = clamp((baseProgress - activeStart) / Math.max(0.001, activeEnd - activeStart), 0, 1);
+      const activePenalty = profileEntry.penalty * phase;
+      totalPenalty += activePenalty;
+      activeKey = obstacle.key;
+
+      if (obstacle.key === 'hurdle') {
+        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'jump';
+      } else if (obstacle.key === 'mountain') {
+        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'climb';
+      } else if (obstacle.key === 'river') {
+        activeState = profileEntry.outcome === 'crash' ? 'sink' : 'splash';
+      } else if (obstacle.key === 'desert') {
+        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'run';
+      } else {
+        activeState = profileEntry.outcome === 'crash' ? 'sink' : 'splash';
+      }
+      return;
+    }
+
+    totalPenalty += profileEntry.penalty;
+  });
+
+  resolvedProgress = clamp(baseProgress - totalPenalty, 0.02, 0.97);
+  return {
+    progress: resolvedProgress,
+    state: activeState,
+    eventKey: activeKey,
+  };
+};
 
 type TryOnModalCopy = {
   notice: string;
@@ -104,18 +214,18 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       stageGenerating: '반려동물과 의상을 분석하고 있어요',
       stageRendering: '간식 앞에서 결과 이미지를 마무리하고 있어요',
       elapsed: '진행률',
-      helper: '강아지와 고양이가 오른쪽 간식을 향해 달리고 있어요.',
+      helper: '허들, 산, 강, 사막, 진흙을 지나며 누가 먼저 도착할지 지켜보세요.',
       gameTitle: '누가 먼저 간식에 도착할까요?',
-      gamePrompt: '20% 안에 강아지나 고양이를 골라 보세요.',
-      gameLocked: '20%가 지나 선택이 마감되었어요.',
+      gamePrompt: '30% 안에 강아지나 고양이를 골라 보세요.',
+      gameLocked: '30%가 지나 선택이 마감되었어요.',
       guessDog: '강아지',
       guessCat: '고양이',
       resultCorrect: '정답이에요!',
       resultWrong: '이번엔 빗나갔어요.',
-      resultNoGuess: '이번 라운드는 예측 없이 결과를 공개합니다.',
+      resultNoGuess: '이번 라운드는 예측 없이 100%에서 결과를 공개합니다.',
       winnerDog: '강아지가 먼저 도착했어요.',
       winnerCat: '고양이가 먼저 도착했어요.',
-      winnerCelebrate: '간식을 먹고 만세 하는 중!',
+      winnerCelebrate: '승리 포즈와 간식 세리머니 진행 중!',
     };
   }
 
@@ -126,18 +236,18 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     stageGenerating: 'Analyzing your pet and outfit',
     stageRendering: 'Finishing the result beside the treat line',
     elapsed: 'Progress',
-    helper: 'The dog and cat are racing toward the snack on the right.',
+    helper: 'Watch them race through hurdles, mountains, river, desert, and mud.',
     gameTitle: 'Who reaches the treat first?',
-    gamePrompt: 'Pick dog or cat before 20%.',
-    gameLocked: 'Selection is locked after 20%.',
+    gamePrompt: 'Pick dog or cat before 30%.',
+    gameLocked: 'Selection is locked after 30%.',
     guessDog: 'Dog',
     guessCat: 'Cat',
     resultCorrect: 'Nice guess!',
     resultWrong: 'Not this time.',
-    resultNoGuess: 'No pick this round, revealing the winner now.',
+    resultNoGuess: 'No pick this round, revealing the winner at 100%.',
     winnerDog: 'The dog reached the snack first.',
     winnerCat: 'The cat reached the snack first.',
-    winnerCelebrate: 'Snack time and victory cheer!',
+    winnerCelebrate: 'Victory pose and snack celebration!',
   };
 };
 
@@ -285,6 +395,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     dogBias: 0,
     catBias: 0,
   }));
+  const [runnerObstacleProfiles, setRunnerObstacleProfiles] = useState(() => ({
+    dog: createRunnerObstacleProfile(),
+    cat: createRunnerObstacleProfile(),
+  }));
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
@@ -309,6 +423,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           catPhaseB: Math.random() * Math.PI * 2,
           dogBias: (Math.random() - 0.5) * 0.015,
           catBias: (Math.random() - 0.5) * 0.015,
+        });
+        setRunnerObstacleProfiles({
+          dog: createRunnerObstacleProfile(),
+          cat: createRunnerObstacleProfile(),
         });
         return Date.now();
       });
@@ -344,12 +462,13 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       if (finalImageSrc && resultPreviewState === 'loading') {
         const settlingStartedAt = resultSettlingStartedAt ?? now;
         const settleElapsed = now - settlingStartedAt;
-        const settleProgress = 90 + clamp((settleElapsed / RESULT_SETTLE_MS) * 9, 0, 9);
+        const currentProgress = clamp((elapsed / DISPLAY_PROGRESS_TARGET_MS) * 100, 1, 96);
+        const settleProgress = Math.max(currentProgress, clamp(96 + ((settleElapsed / RESULT_SETTLE_MS) * 3), 96, 99));
         setGenerationProgress(settleProgress);
         return;
       }
 
-      const nextProgress = clamp((elapsed / GENERATION_TARGET_MS) * 90, 1, 90);
+      const nextProgress = clamp((elapsed / DISPLAY_PROGRESS_TARGET_MS) * 100, 1, 99);
       setGenerationProgress(nextProgress);
     };
 
@@ -453,25 +572,31 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
-  const raceProgress = clamp(generationProgress / 90, 0, 1);
-  const isGuessLocked = generationProgress >= 20;
-  const isResultRevealStage = generationProgress >= 90;
-  const isSnackStage = generationProgress >= 95;
+  const raceProgress = clamp(generationProgress / 100, 0, 1);
+  const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
+  const isResultRevealStage = isPreviewReady;
+  const isSnackStage = raceProgress >= 0.95;
   const swingTime = generationElapsedMs / 1000;
   const dogSwing = (Math.sin((swingTime * 2.7) + raceSwingSeed.dogPhaseA) * 0.055) + (Math.sin((swingTime * 5.4) + raceSwingSeed.dogPhaseB) * 0.022) + raceSwingSeed.dogBias;
   const catSwing = (Math.sin((swingTime * 2.45) + raceSwingSeed.catPhaseA) * 0.055) + (Math.sin((swingTime * 5.9) + raceSwingSeed.catPhaseB) * 0.022) + raceSwingSeed.catBias;
-  const winnerEdgeBoost = clamp((raceProgress - 0.72) / 0.28, 0, 1) * 0.045;
+  const winnerEdgeBoost = clamp((raceProgress - 0.7) / 0.3, 0, 1) * 0.05;
   const dogLeadOffset = generationWinner === 'dog' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
   const catLeadOffset = generationWinner === 'cat' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
-  const dogRunnerProgress = isSnackStage ? (generationWinner === 'dog' ? 1 : 0.94) : clamp(raceProgress + dogSwing + dogLeadOffset, 0.02, 0.94);
-  const catRunnerProgress = isSnackStage ? (generationWinner === 'cat' ? 1 : 0.94) : clamp(raceProgress + catSwing + catLeadOffset, 0.02, 0.94);
+  const dogBaseProgress = clamp(raceProgress + dogSwing + dogLeadOffset, 0.02, 0.98);
+  const catBaseProgress = clamp(raceProgress + catSwing + catLeadOffset, 0.02, 0.98);
+  const dogTelemetry = getRunnerObstacleState(dogBaseProgress, runnerObstacleProfiles.dog, generationWinner, 'dog');
+  const catTelemetry = getRunnerObstacleState(catBaseProgress, runnerObstacleProfiles.cat, generationWinner, 'cat');
+  const dogRunnerProgress = isPreviewReady ? (generationWinner === 'dog' ? 1 : 0.964) : dogTelemetry.progress;
+  const catRunnerProgress = isPreviewReady ? (generationWinner === 'cat' ? 1 : 0.964) : catTelemetry.progress;
+  const dogRunnerState: RunnerState = isPreviewReady && generationWinner === 'dog' ? 'celebrate' : dogTelemetry.state;
+  const catRunnerState: RunnerState = isPreviewReady && generationWinner === 'cat' ? 'celebrate' : catTelemetry.state;
   const remainingMs = isPreviewReady
     ? 0
     : finalImageSrc && resultPreviewState === 'loading'
       ? Math.max(0, RESULT_SETTLE_MS - ((resultSettlingStartedAt ? Date.now() - resultSettlingStartedAt : 0)))
-      : Math.max(0, GENERATION_TARGET_MS - generationElapsedMs);
+      : Math.max(0, DISPLAY_PROGRESS_TARGET_MS - generationElapsedMs);
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-  const raceStatusLabel = isSnackStage ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
+  const raceStatusLabel = raceProgress >= 0.82 ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
   const snackLabel = generationWinner === 'dog' ? '🦴' : '🐟';
   const guessResultTone = raceGuess === null ? 'neutral' : raceGuess === generationWinner ? 'correct' : 'wrong';
   const guessResultHeadline = raceGuess === null
@@ -548,13 +673,68 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
             <div className="generation-playground-lane generation-playground-lane-back" />
             <div className="generation-playground-lane generation-playground-lane-front" />
+            <div className="generation-playground-obstacle-row">
+              {RUNNER_OBSTACLES.map((obstacle) => (
+                <span
+                  key={obstacle.key}
+                  className={`generation-playground-obstacle obstacle-${obstacle.key}`}
+                  style={{ ['--obstacle-progress' as string]: `${obstacle.position}` , ['--obstacle-accent' as string]: obstacle.accent }}
+                >
+                  {obstacle.icon}
+                </span>
+              ))}
+            </div>
             <div className="generation-playground-finish-zone">
               <span className="generation-playground-finish-flag">🏁</span>
               <span className="generation-playground-snack">{snackLabel}</span>
               <span className="generation-playground-bowl">🍽️</span>
             </div>
-            <span className={`generation-playground-pet generation-playground-dog ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`} style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>🐶</span>
-            <span className={`generation-playground-pet generation-playground-cat ${generationWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`} style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>🐱</span>
+            <div
+              className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+              style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}
+            >
+              <span className="generation-runner-shadow" />
+              <span className="generation-runner-tail" />
+              <span className="generation-runner-body" />
+              <span className="generation-runner-head">
+                <span className="generation-runner-ear ear-left" />
+                <span className="generation-runner-ear ear-right" />
+                <span className="generation-runner-eye eye-left" />
+                <span className="generation-runner-eye eye-right" />
+                <span className="generation-runner-cheek cheek-left" />
+                <span className="generation-runner-cheek cheek-right" />
+                <span className="generation-runner-nose" />
+              </span>
+              <span className="generation-runner-legs">
+                <span />
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
+            <div
+              className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${generationWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+              style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}
+            >
+              <span className="generation-runner-shadow" />
+              <span className="generation-runner-tail" />
+              <span className="generation-runner-body" />
+              <span className="generation-runner-head">
+                <span className="generation-runner-ear ear-left" />
+                <span className="generation-runner-ear ear-right" />
+                <span className="generation-runner-eye eye-left" />
+                <span className="generation-runner-eye eye-right" />
+                <span className="generation-runner-cheek cheek-left" />
+                <span className="generation-runner-cheek cheek-right" />
+                <span className="generation-runner-nose" />
+              </span>
+              <span className="generation-runner-legs">
+                <span />
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
             {isSnackStage ? (
               <>
                 <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{generationWinner === 'dog' ? '😋' : '🎉'}</span>
@@ -571,7 +751,15 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 <span className="generation-winner-burst generation-winner-burst-two">✦</span>
                 <span className="generation-winner-confetti generation-winner-confetti-one">•</span>
                 <span className="generation-winner-confetti generation-winner-confetti-two">•</span>
-                <span className="generation-winner-animal">{generationWinner === 'dog' ? '🐶' : '🐱'}</span>
+                <span className={`generation-winner-animal is-${generationWinner}`}>
+                  <span className="generation-winner-ear ear-left" />
+                  <span className="generation-winner-ear ear-right" />
+                  <span className="generation-winner-eye eye-left" />
+                  <span className="generation-winner-eye eye-right" />
+                  <span className="generation-winner-cheek cheek-left" />
+                  <span className="generation-winner-cheek cheek-right" />
+                  <span className="generation-winner-nose" />
+                </span>
                 <span className="generation-winner-hands">🙌</span>
               </div>
               <div className="generation-winner-copy">

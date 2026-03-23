@@ -3775,8 +3775,22 @@ const handleAdminUserDetailRequest = async (req: functions.https.Request, res: f
 
 const handleUserPaymentHistoryRequest = async (req: functions.https.Request, res: functions.Response) => {
   const user = await requireAuthenticatedUser(req);
-  const snapshot = await db.collection('payments').where('uid', '==', user.uid).get();
-  const items = snapshot.docs
+  const normalizedEmail = (user.email || '').trim();
+  const candidateEmails = Array.from(new Set([
+    normalizedEmail,
+    normalizedEmail.toLowerCase(),
+  ].filter((value) => Boolean(value))));
+  const snapshots = await Promise.all([
+    db.collection('payments').where('uid', '==', user.uid).get(),
+    ...candidateEmails.map((email) => db.collection('payments').where('email', '==', email).get()),
+  ]);
+  const dedupedDocs = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  snapshots.forEach((snapshot) => {
+    snapshot.docs.forEach((doc) => {
+      dedupedDocs.set(doc.id, doc);
+    });
+  });
+  const items = Array.from(dedupedDocs.values())
     .map((doc) => serializePaymentRecord(doc))
     .sort((left, right) => {
       const leftTime = left.paidAt ?? left.createdAt ?? left.updatedAt ?? 0;
