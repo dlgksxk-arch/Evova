@@ -346,7 +346,7 @@
           "heading": "決済に関するお問い合わせ",
           "paragraphs": [
             "決済やクレジット反映に関するお問い合わせは dlgksxk@gmail.com までご連絡ください。",
-            "カード明細には Paddle が Merchant of Record として表示される場合があります。"
+            "カード明細には Polar が Merchant of Record として表示される場合があります。"
           ]
         }
       ]
@@ -598,7 +598,7 @@
           "heading": "事業者情報と決済",
           "paragraphs": [
             "HAMDEVA は韓国の個人事業者 Masterlink（代表者: Seunghak Lee / イ・スンハク）によって運営されています。",
-            "一部のカード決済では Paddle が Merchant of Record として決済記録に表示される場合があります。"
+            "一部のカード決済では Polar が Merchant of Record として決済記録に表示される場合があります。"
           ]
         }
       ]

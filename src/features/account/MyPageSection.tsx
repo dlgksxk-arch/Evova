@@ -52,6 +52,7 @@ interface MyPageSectionProps {
   products: ReadonlyArray<{
     id: CheckoutProductId;
     kind: 'subscription' | 'extra_credit';
+    code: string;
     label: string;
     salePriceUsd: number;
     comparePriceUsd?: number;
@@ -101,6 +102,13 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
   const formatProductPrice = (product: { salePriceUsd: number; kind: 'subscription' | 'extra_credit' }) =>
     `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
+  const getProductDiscountPercent = (product: { salePriceUsd: number; comparePriceUsd?: number }): number | null => {
+    if (typeof product.comparePriceUsd !== 'number' || product.comparePriceUsd <= product.salePriceUsd) {
+      return null;
+    }
+
+    return Math.round((1 - (product.salePriceUsd / product.comparePriceUsd)) * 100);
+  };
 
   return (
     <div className="mypage-layout">
@@ -172,11 +180,22 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                   const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
                   const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                   return (
-                  <article key={product.id} className={`credit-product-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
+                  <article key={product.id} className={`credit-product-card pricing-tier-card ${product.badge ? 'is-featured' : ''} ${typeof product.comparePriceUsd === 'number' ? 'has-discount-hook' : ''}`}>
                     <div className="credit-plan-copy">
-                      {product.badge ? (
-                        <div className="credit-plan-badges">
-                          <span className="credit-plan-badge accent">{product.badge}</span>
+                      <div className="credit-plan-badges">
+                        <span className="credit-plan-code">{product.code}</span>
+                        {product.badge ? (
+                          <span className={`credit-plan-badge ${product.id === 'starter' ? 'deal' : 'accent'}`}>{product.badge}</span>
+                        ) : null}
+                        {typeof product.comparePriceUsd === 'number' && getProductDiscountPercent(product) ? (
+                          <span className="credit-plan-badge flash">SAVE {getProductDiscountPercent(product)}%</span>
+                        ) : null}
+                      </div>
+                      {typeof product.comparePriceUsd === 'number' ? (
+                        <div className="pricing-hook-panel">
+                          <span className="pricing-hook-kicker">INTRO PRICE</span>
+                          <strong>{`$${product.comparePriceUsd.toFixed(2)} -> $${product.salePriceUsd.toFixed(2)}/month`}</strong>
+                          <p>Starter access is discounted right now.</p>
                         </div>
                       ) : null}
                       <strong>{product.label}</strong>
@@ -212,6 +231,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
                 {products.filter((product) => product.kind === 'extra_credit').map((product) => (
                   <article key={product.id} className="credit-product-card pricing-tier-card pricing-extra-card">
                     <div className="credit-plan-copy">
+                      <div className="credit-plan-badges">
+                        <span className="credit-plan-code">{product.code}</span>
+                      </div>
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {copy.credits}</p>
                       <p className="credit-plan-sale-price">{formatProductPrice(product)}</p>

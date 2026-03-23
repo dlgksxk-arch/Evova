@@ -2938,6 +2938,31 @@ a { color: inherit; text-decoration: none; }
   color: var(--primary-hover);
 }
 
+.credit-plan-badge.deal {
+  background: linear-gradient(135deg, #ff6a3d, #ff2f6d);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(255, 82, 82, 0.28);
+}
+
+.credit-plan-badge.flash {
+  background: rgba(12, 21, 38, 0.08);
+  color: var(--text);
+}
+
+.credit-plan-code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(12, 21, 38, 0.08);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .credit-plan-copy strong {
   color: var(--text);
   font-size: 20px;
@@ -2982,6 +3007,44 @@ a { color: inherit; text-decoration: none; }
 .pricing-tier-card.is-featured {
   border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
   box-shadow: 0 16px 32px rgba(255, 77, 184, 0.12);
+}
+
+.pricing-tier-card.has-discount-hook {
+  border-color: rgba(255, 106, 61, 0.28);
+  background:
+    radial-gradient(circle at top right, rgba(255, 106, 61, 0.22), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 245, 0.98), rgba(255, 240, 234, 0.92));
+  box-shadow: 0 18px 40px rgba(255, 106, 61, 0.16);
+}
+
+.pricing-hook-panel {
+  display: grid;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border: 1px solid rgba(255, 106, 61, 0.18);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 106, 61, 0.12), rgba(255, 47, 109, 0.06));
+}
+
+.pricing-hook-kicker {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c2410c;
+}
+
+.pricing-hook-panel strong {
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.pricing-hook-panel p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 80%, #c2410c);
 }
 
 .pricing-extra-card {
@@ -7366,6 +7429,39 @@ body {
 .app-root.dark .credit-cost-text,
 .app-root.dark .loading-subtext {
   color: var(--text-sub);
+}
+
+[data-theme='dark'] .credit-plan-code,
+[data-theme='dark'] .credit-plan-badge.flash,
+.app-root.dark .credit-plan-code,
+.app-root.dark .credit-plan-badge.flash {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 247, 255, 0.92);
+}
+
+[data-theme='dark'] .pricing-tier-card.has-discount-hook,
+.app-root.dark .pricing-tier-card.has-discount-hook {
+  border-color: rgba(255, 129, 78, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(255, 115, 64, 0.24), transparent 36%),
+    linear-gradient(180deg, rgba(47, 22, 18, 0.96), rgba(31, 17, 22, 0.94));
+  box-shadow: 0 18px 42px rgba(255, 98, 64, 0.18);
+}
+
+[data-theme='dark'] .pricing-hook-panel,
+.app-root.dark .pricing-hook-panel {
+  border-color: rgba(255, 129, 78, 0.24);
+  background: linear-gradient(135deg, rgba(255, 106, 61, 0.2), rgba(255, 47, 109, 0.14));
+}
+
+[data-theme='dark'] .pricing-hook-kicker,
+.app-root.dark .pricing-hook-kicker {
+  color: #ffb38e;
+}
+
+[data-theme='dark'] .pricing-hook-panel p,
+.app-root.dark .pricing-hook-panel p {
+  color: rgba(245, 247, 255, 0.78);
 }
 
 [data-theme='dark'] input,

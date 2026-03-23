@@ -37,9 +37,9 @@ Configured in [`firebase.json`](/home/user/evova/firebase.json):
 - `POST /api/video`
 - `GET /api/video-status`
 - `GET /api/video-content`
-- `POST /api/lemon/checkout`
-- `GET /api/lemon/session`
-- `POST /api/lemon/webhook`
+- `POST /api/polar/checkout`
+- `GET /api/polar/session`
+- `POST /api/polar/webhook`
 
 ## Environment Variables
 
@@ -63,10 +63,16 @@ Frontend Firebase config now fails closed when required values are missing. It n
 - `OPENAI_CLASSIFICATION_MODEL`
 - `GOOGLE_VIDEO_API_KEY`
 - `GOOGLE_VIDEO_MODEL`
-- `LEMONSQUEEZY_API_KEY`
-- `LEMONSQUEEZY_STORE_ID`
-- `LEMONSQUEEZY_WEBHOOK_SECRET`
-- `LEMON_ENV`
+- `POLAR_ACCESS_TOKEN`
+- `POLAR_WEBHOOK_SECRET`
+- `POLAR_ENV`
+- `POLAR_PRODUCT_ID_STARTER`
+- `POLAR_PRODUCT_ID_POPULAR`
+- `POLAR_PRODUCT_ID_PRO`
+- `POLAR_PRODUCT_ID_SMALL_PACK`
+- `POLAR_PRODUCT_ID_BASIC_PACK`
+- `POLAR_PRODUCT_ID_MEDIUM_PACK`
+- `POLAR_PRODUCT_ID_LARGE_PACK`
 - `APP_BASE_URL`
 
 ## Legacy Elements

@@ -5,7 +5,7 @@ Current production baseline:
 - frontend: React + Vite on Cloudflare-managed production deploy
 - backend source of truth: Firebase Functions in `functions/src/index.ts`
 - legacy/local-only stub: `server/index.js`
-- AI/payment stack: OpenAI image + Google Veo video + LemonSqueezy + Firebase Auth/Firestore
+- AI/payment stack: OpenAI image + Google Veo video + Polar + Firebase Auth/Firestore
 
 See:
 
@@ -22,10 +22,16 @@ See:
   - `OPENAI_CLASSIFICATION_MODEL=gpt-4.1-nano`
   - `GOOGLE_VIDEO_API_KEY=...`
   - `GOOGLE_VIDEO_MODEL=veo-3.1-generate-preview`
-  - `LEMONSQUEEZY_API_KEY=...`
-  - `LEMONSQUEEZY_STORE_ID=...`
-  - `LEMONSQUEEZY_WEBHOOK_SECRET=...`
-  - `LEMON_ENV=production`
+  - `POLAR_ACCESS_TOKEN=...`
+  - `POLAR_WEBHOOK_SECRET=...`
+  - `POLAR_ENV=production`
+  - `POLAR_PRODUCT_ID_STARTER=...`
+  - `POLAR_PRODUCT_ID_POPULAR=...`
+  - `POLAR_PRODUCT_ID_PRO=...`
+  - `POLAR_PRODUCT_ID_SMALL_PACK=...`
+  - `POLAR_PRODUCT_ID_BASIC_PACK=...`
+  - `POLAR_PRODUCT_ID_MEDIUM_PACK=...`
+  - `POLAR_PRODUCT_ID_LARGE_PACK=...`
   - `APP_BASE_URL=https://your-domain`
 - Create root `.env` before frontend dev/build and set:
   - `VITE_FIREBASE_API_KEY=...`

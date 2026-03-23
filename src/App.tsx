@@ -92,6 +92,7 @@ type CreditProductKind = 'subscription' | 'extra_credit';
 type CreditProduct = {
   id: CheckoutProductId;
   kind: CreditProductKind;
+  code: string;
   label: string;
   paidCredit: number;
   salePriceUsd: number;
@@ -101,13 +102,13 @@ type CreditProduct = {
   bonusEligible?: boolean;
 };
 const CREDIT_PRODUCTS = [
-  { id: 'starter', kind: 'subscription', label: 'SB Starter', paidCredit: 1000, salePriceUsd: 4.99, comparePriceUsd: 6.9, description: 'Ideal for light use', bonusEligible: true },
-  { id: 'popular', kind: 'subscription', label: 'SB Popular', paidCredit: 3500, salePriceUsd: 20.9, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
-  { id: 'pro', kind: 'subscription', label: 'SB Pro', paidCredit: 7000, salePriceUsd: 39.9, description: 'For heavy and frequent use', bonusEligible: true },
-  { id: 'small_pack', kind: 'extra_credit', label: 'SP Small Pack', paidCredit: 1000, salePriceUsd: 7.9, description: 'Instant extra credits when you need a quick refill' },
-  { id: 'basic_pack', kind: 'extra_credit', label: 'SP Basic Pack', paidCredit: 1500, salePriceUsd: 10.9, description: 'A balanced one-time pack for a little more room' },
-  { id: 'medium_pack', kind: 'extra_credit', label: 'SP Medium Pack', paidCredit: 3000, salePriceUsd: 19.9, description: 'A larger refill for ongoing pet fitting sessions' },
-  { id: 'large_pack', kind: 'extra_credit', label: 'SP Large Pack', paidCredit: 6000, salePriceUsd: 35.9, description: 'Best when you need a big extra credit top-up right away' },
+  { id: 'starter', kind: 'subscription', code: 'SS1', label: 'Starter', paidCredit: 1000, salePriceUsd: 4.9, comparePriceUsd: 6.9, description: 'Ideal for light use', badge: 'Launch Deal', bonusEligible: true },
+  { id: 'popular', kind: 'subscription', code: 'SS2', label: 'Popular', paidCredit: 3500, salePriceUsd: 20.9, description: 'Best for most users', badge: 'Most Popular', bonusEligible: true },
+  { id: 'pro', kind: 'subscription', code: 'SS3', label: 'Pro', paidCredit: 7000, salePriceUsd: 39.9, description: 'For heavy and frequent use', bonusEligible: true },
+  { id: 'small_pack', kind: 'extra_credit', code: 'SP1', label: 'Small Pack', paidCredit: 1000, salePriceUsd: 7.9, description: 'Instant extra credits when you need a quick refill' },
+  { id: 'basic_pack', kind: 'extra_credit', code: 'SP2', label: 'Basic Pack', paidCredit: 1500, salePriceUsd: 10.9, description: 'A balanced one-time pack for a little more room' },
+  { id: 'medium_pack', kind: 'extra_credit', code: 'SP3', label: 'Medium Pack', paidCredit: 3000, salePriceUsd: 19.9, description: 'A larger refill for ongoing pet fitting sessions' },
+  { id: 'large_pack', kind: 'extra_credit', code: 'SP4', label: 'Large Pack', paidCredit: 6000, salePriceUsd: 35.9, description: 'Best when you need a big extra credit top-up right away' },
 ] as const satisfies readonly CreditProduct[];
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 const SITE_URL = SEO_BASE_URL;
@@ -2571,6 +2572,14 @@ const formatTimestampLabel = (value?: Timestamp | null): string => {
 const formatCreditProductPrice = (product: Pick<CreditProduct, 'salePriceUsd' | 'kind'>): string =>
   `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
 
+const getCreditProductDiscountPercent = (product: Pick<CreditProduct, 'salePriceUsd' | 'comparePriceUsd'>): number | null => {
+  if (typeof product.comparePriceUsd !== 'number' || product.comparePriceUsd <= product.salePriceUsd) {
+    return null;
+  }
+
+  return Math.round((1 - (product.salePriceUsd / product.comparePriceUsd)) * 100);
+};
+
 const formatEstimatedCostLabel = (value: number | null | undefined): string =>
   typeof value === 'number' && Number.isFinite(value)
     ? new Intl.NumberFormat('en-US', {
@@ -4830,7 +4839,7 @@ const App: React.FC = () => {
       setMobileMenuOpen(false);
       window.location.href = session.checkoutUrl;
     } catch (error) {
-      console.error('Failed to start LemonSqueezy checkout:', error);
+      console.error('Failed to start Polar checkout:', error);
       const message = error instanceof Error && error.message === 'PAYMENT_NOT_CONFIGURED'
         ? t.paymentConfigError
         : t.paymentConfigError;
@@ -6145,11 +6154,22 @@ const App: React.FC = () => {
                     const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
                     const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                     return (
-                      <article key={`pricing-${product.id}`} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
+                      <article key={`pricing-${product.id}`} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''} ${typeof product.comparePriceUsd === 'number' ? 'has-discount-hook' : ''}`}>
                         <div className="credit-plan-copy">
-                          {product.badge ? (
-                            <div className="credit-plan-badges">
-                              <span className="credit-plan-badge accent">{product.badge}</span>
+                          <div className="credit-plan-badges">
+                            <span className="credit-plan-code">{product.code}</span>
+                            {product.badge ? (
+                              <span className={`credit-plan-badge ${product.id === 'starter' ? 'deal' : 'accent'}`}>{product.badge}</span>
+                            ) : null}
+                            {typeof product.comparePriceUsd === 'number' && getCreditProductDiscountPercent(product) ? (
+                              <span className="credit-plan-badge flash">SAVE {getCreditProductDiscountPercent(product)}%</span>
+                            ) : null}
+                          </div>
+                          {typeof product.comparePriceUsd === 'number' ? (
+                            <div className="pricing-hook-panel">
+                              <span className="pricing-hook-kicker">INTRO PRICE</span>
+                              <strong>{`$${product.comparePriceUsd.toFixed(2)} -> $${product.salePriceUsd.toFixed(2)}/month`}</strong>
+                              <p>Starter access is discounted right now.</p>
                             </div>
                           ) : null}
                           <strong>{product.label}</strong>
@@ -6182,10 +6202,13 @@ const App: React.FC = () => {
                 </article>
                 <div className="credit-plan-grid">
                   {extraCreditProducts.map((product) => (
-                    <article key={`pricing-${product.id}`} className="credit-plan-card pricing-tier-card pricing-extra-card">
-                      <div className="credit-plan-copy">
-                        <strong>{product.label}</strong>
-                        <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
+                  <article key={`pricing-${product.id}`} className="credit-plan-card pricing-tier-card pricing-extra-card">
+                    <div className="credit-plan-copy">
+                      <div className="credit-plan-badges">
+                        <span className="credit-plan-code">{product.code}</span>
+                      </div>
+                      <strong>{product.label}</strong>
+                      <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
                         <p className="credit-plan-sale-price">{formatCreditProductPrice(product)}</p>
                         <p>{pricingUiCopy.descriptionById[product.id]}</p>
                       </div>
@@ -6467,11 +6490,22 @@ const App: React.FC = () => {
                   const isLowerTierDisabled = currentSubscriptionRank > getSubscriptionProductRank(product.id);
                   const isCurrentPlan = isCurrentSubscriptionProduct(userProfile?.subscriptionPlan, product.id);
                   return (
-                  <article key={product.id} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''}`}>
+                  <article key={product.id} className={`credit-plan-card pricing-tier-card ${product.badge ? 'is-featured' : ''} ${typeof product.comparePriceUsd === 'number' ? 'has-discount-hook' : ''}`}>
                     <div className="credit-plan-copy">
-                      {product.badge ? (
-                        <div className="credit-plan-badges">
-                          <span className="credit-plan-badge accent">{product.badge}</span>
+                      <div className="credit-plan-badges">
+                        <span className="credit-plan-code">{product.code}</span>
+                        {product.badge ? (
+                          <span className={`credit-plan-badge ${product.id === 'starter' ? 'deal' : 'accent'}`}>{product.badge}</span>
+                        ) : null}
+                        {typeof product.comparePriceUsd === 'number' && getCreditProductDiscountPercent(product) ? (
+                          <span className="credit-plan-badge flash">SAVE {getCreditProductDiscountPercent(product)}%</span>
+                        ) : null}
+                      </div>
+                      {typeof product.comparePriceUsd === 'number' ? (
+                        <div className="pricing-hook-panel">
+                          <span className="pricing-hook-kicker">INTRO PRICE</span>
+                          <strong>{`$${product.comparePriceUsd.toFixed(2)} -> $${product.salePriceUsd.toFixed(2)}/month`}</strong>
+                          <p>Starter access is discounted right now.</p>
                         </div>
                       ) : null}
                       <strong>{product.label}</strong>
@@ -6507,6 +6541,9 @@ const App: React.FC = () => {
                 {extraCreditProducts.map((product) => (
                   <article key={product.id} className="credit-plan-card pricing-tier-card pricing-extra-card">
                     <div className="credit-plan-copy">
+                      <div className="credit-plan-badges">
+                        <span className="credit-plan-code">{product.code}</span>
+                      </div>
                       <strong>{product.label}</strong>
                       <p className="pricing-card-credits">{product.paidCredit.toLocaleString()} {t.credits}</p>
                       <p className="credit-plan-sale-price">{formatCreditProductPrice(product)}</p>

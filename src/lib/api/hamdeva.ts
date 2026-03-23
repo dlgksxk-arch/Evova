@@ -22,8 +22,8 @@ const apiUrl = (path: string): string => `${API_BASE_URL}${path}`;
 const TRYON_ENDPOINT = apiUrl('/api/tryon');
 const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
 const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
-const LEMON_CHECKOUT_ENDPOINT = apiUrl('/api/lemon/checkout');
-const LEMON_SESSION_ENDPOINT = apiUrl('/api/lemon/session');
+const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
+const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
 const SHARE_IMAGE_ENDPOINT = apiUrl('/api/share-image');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
@@ -158,7 +158,7 @@ export const callCreateCheckoutSession = async (payload: {
   productId: CheckoutProductId;
   uid?: string;
 }): Promise<CheckoutSessionResponse> => {
-  const res = await fetch(LEMON_CHECKOUT_ENDPOINT, {
+  const res = await fetch(POLAR_CHECKOUT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export const callCheckoutSessionStatus = async (payload: {
   sessionId?: string | null;
 }): Promise<CheckoutSessionStatusResponse> => {
   const query = payload.sessionId ? `?sessionId=${encodeURIComponent(payload.sessionId)}` : '';
-  const res = await fetch(`${LEMON_SESSION_ENDPOINT}${query}`, {
+  const res = await fetch(`${POLAR_SESSION_ENDPOINT}${query}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${payload.authToken}`,

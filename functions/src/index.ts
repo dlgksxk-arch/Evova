@@ -1,7 +1,7 @@
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
-import { createHmac, timingSafeEqual } from 'crypto';
 import sharp from 'sharp';
+import { Webhook } from 'standardwebhooks';
 
 const FIREBASE_STORAGE_BUCKET =
   process.env['FIREBASE_STORAGE_BUCKET']?.trim()
@@ -63,7 +63,7 @@ const GENERATED_HISTORY_IMAGE_WIDTH = 960;
 const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
 const MAX_ARCHIVED_CREATIONS = 5;
-const LEMON_PROVIDER = 'lemon';
+const POLAR_PROVIDER = 'polar';
 const PAYMENT_CURRENCY = 'usd';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
@@ -83,8 +83,8 @@ const ADMIN_EMAILS = new Set(['dlgksxk@gmail.com']);
 const PAYMENT_PRODUCTS = {
   starter: {
     id: 'starter',
-    amountCents: 499,
-    amountUsd: 4.99,
+    amountCents: 490,
+    amountUsd: 4.9,
     currency: PAYMENT_CURRENCY,
     paidCredit: 1000,
     name: 'HAMDEVA SB Starter',
@@ -372,7 +372,7 @@ type CreditTransactionType =
   | 'admin_gift';
 type PaymentProductId = keyof typeof PAYMENT_PRODUCTS;
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'canceled';
-type PaymentProvider = 'lemon';
+type PaymentProvider = 'polar';
 type OpenAIKeySource = 'env' | 'config' | 'missing';
 type OpenAIKeyState = {
   key: string;
@@ -534,33 +534,37 @@ type ShareImageUploadRequest = {
   image?: string;
   requestId?: string;
 };
-type LemonCheckoutRecord = {
+type PolarCheckoutRecord = {
   id?: string;
-  attributes?: {
-    url?: string;
+  created_at?: string;
+  modified_at?: string;
+  status?: string;
+  url?: string;
+  success_url?: string | null;
+  return_url?: string | null;
+  amount?: number;
+  total_amount?: number;
+  currency?: string;
+  product_id?: string | null;
+  checkout_id?: string | null;
+  external_customer_id?: string | null;
+  customer_email?: string | null;
+  metadata?: Record<string, unknown>;
+  customer?: {
+    id?: string;
+    email?: string;
+    external_id?: string;
+    metadata?: Record<string, unknown>;
+  };
+  product?: {
+    id?: string;
+    name?: string;
+    metadata?: Record<string, unknown>;
   };
 };
-type LemonOrderRecord = {
-  id?: string | number;
-  attributes?: {
-    identifier?: string | number;
-    status?: string;
-    user_email?: string;
-    currency?: string;
-    total?: string | number;
-    created_at?: string;
-    updated_at?: string;
-    first_order_item?: {
-      product_id?: string | number;
-      variant_id?: string | number;
-    };
-  };
-};
-type LemonWebhookEvent = {
-  meta?: {
-    event_name?: string;
-    custom_data?: Record<string, unknown>;
-  };
+type PolarWebhookEvent = {
+  type?: string;
+  timestamp?: string;
   data?: Record<string, unknown>;
 };
 
@@ -751,65 +755,58 @@ const getGoogleVideoApiKey = (): string => {
   return typeof apiKey === 'string' ? apiKey.trim() : '';
 };
 
-const LEMON_VARIANT_IDS: Record<PaymentProductId, string> = {
-  starter: '1425369',
-  popular: '1425372',
-  pro: '1425382',
-  small_pack: '1425386',
-  basic_pack: (process.env['LEMON_VARIANT_ID_BASIC_PACK'] ?? '').trim(),
-  medium_pack: '1425388',
-  large_pack: '1425391',
+const POLAR_PRODUCT_IDS: Record<PaymentProductId, string> = {
+  starter: (process.env['POLAR_PRODUCT_ID_STARTER'] ?? '').trim(),
+  popular: (process.env['POLAR_PRODUCT_ID_POPULAR'] ?? '').trim(),
+  pro: (process.env['POLAR_PRODUCT_ID_PRO'] ?? '').trim(),
+  small_pack: (process.env['POLAR_PRODUCT_ID_SMALL_PACK'] ?? '').trim(),
+  basic_pack: (process.env['POLAR_PRODUCT_ID_BASIC_PACK'] ?? '').trim(),
+  medium_pack: (process.env['POLAR_PRODUCT_ID_MEDIUM_PACK'] ?? '').trim(),
+  large_pack: (process.env['POLAR_PRODUCT_ID_LARGE_PACK'] ?? '').trim(),
 };
 
-const getLemonApiKey = (): string => {
-  const envKey = process.env['LEMONSQUEEZY_API_KEY'] ?? process.env['LEMON_API_KEY'];
+const getPolarAccessToken = (): string => {
+  const envKey = process.env['POLAR_ACCESS_TOKEN'] ?? process.env['POLAR_API_KEY'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.lemon?.api_key;
+  const configKey = functions.config()?.polar?.access_token ?? functions.config()?.polar?.api_key;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const getLemonStoreId = (): string => {
-  const envValue = process.env['LEMONSQUEEZY_STORE_ID'] ?? process.env['LEMON_STORE_ID'];
-  if (typeof envValue === 'string' && envValue.trim()) {
-    return envValue.trim();
-  }
-
-  const configValue = functions.config()?.lemon?.store_id;
-  return typeof configValue === 'string' ? configValue.trim() : '';
-};
-
-const getLemonApiBaseUrl = (): string => 'https://api.lemonsqueezy.com/v1';
-
-const getLemonWebhookSecret = (): string => {
-  const envKey = process.env['LEMONSQUEEZY_WEBHOOK_SECRET'] ?? process.env['LEMON_WEBHOOK_SECRET'];
+const getPolarWebhookSecret = (): string => {
+  const envKey = process.env['POLAR_WEBHOOK_SECRET'];
   if (typeof envKey === 'string' && envKey.trim()) {
     return envKey.trim();
   }
 
-  const configKey = functions.config()?.lemon?.webhook_secret;
+  const configKey = functions.config()?.polar?.webhook_secret;
   return typeof configKey === 'string' ? configKey.trim() : '';
 };
 
-const getLemonEnvironment = (): 'production' | 'sandbox' => {
-  const value = (process.env['LEMON_ENV'] ?? functions.config()?.lemon?.environment ?? 'production').toString().trim().toLowerCase();
+const getPolarEnvironment = (): 'production' | 'sandbox' => {
+  const value = (process.env['POLAR_ENV'] ?? functions.config()?.polar?.environment ?? 'production').toString().trim().toLowerCase();
   return value === 'sandbox' ? 'sandbox' : 'production';
 };
 
-const getLemonVariantId = (productId: PaymentProductId): string => (
-  LEMON_VARIANT_IDS[productId] || ''
+const getPolarApiBaseUrl = (): string => (
+  getPolarEnvironment() === 'sandbox'
+    ? 'https://sandbox-api.polar.sh/v1'
+    : 'https://api.polar.sh/v1'
 );
 
-const requireLemonConfig = (): { apiKey: string; storeId: string } => {
-  const apiKey = getLemonApiKey();
-  const storeId = getLemonStoreId();
-  if (!apiKey || !storeId) {
+const getPolarProductId = (productId: PaymentProductId): string => (
+  POLAR_PRODUCT_IDS[productId] || ''
+);
+
+const requirePolarAccessToken = (): string => {
+  const accessToken = getPolarAccessToken();
+  if (!accessToken) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
-  return { apiKey, storeId };
+  return accessToken;
 };
 
 const roundEstimatedCost = (value: number): number =>
@@ -2638,13 +2635,13 @@ const getCheckoutSessionStatus = async (
 ): Promise<PaymentSessionStatusResult> => {
   const userSnapshotPromise = db.collection('users').doc(user.uid).get();
   const paymentSnapshotPromise = sessionId
-    ? db.collection('payments').doc(buildPaymentDocId(LEMON_PROVIDER, sessionId)).get()
+    ? db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, sessionId)).get()
     : db.collection('payments')
         .where('uid', '==', user.uid)
         .limit(20)
         .get()
         .then((snapshot) => sortPaymentDocsByUpdatedAtDesc(snapshot.docs)
-          .find((doc) => doc.data()?.provider === LEMON_PROVIDER) ?? null);
+          .find((doc) => doc.data()?.provider === POLAR_PROVIDER) ?? null);
 
   const [paymentSnapshotLike, userSnapshot] = await Promise.all([
     paymentSnapshotPromise,
@@ -2677,7 +2674,7 @@ const getCheckoutSessionStatus = async (
   let normalizedStatus = normalizePaymentStatusForClient(storedStatus || 'pending');
 
   if (normalizedStatus === 'pending') {
-    const reconciledPaymentId = await syncPendingPaymentWithLemonOrder({
+    const reconciledPaymentId = await syncPendingPaymentWithPolarCheckout({
       user,
       pendingPaymentId: paymentSnapshot.id,
       pendingPaymentData: paymentData,
@@ -2685,7 +2682,7 @@ const getCheckoutSessionStatus = async (
 
     if (reconciledPaymentId) {
       const [reconciledPaymentSnapshot, refreshedUserSnapshot] = await Promise.all([
-        db.collection('payments').doc(buildPaymentDocId(LEMON_PROVIDER, reconciledPaymentId)).get(),
+        db.collection('payments').doc(buildPaymentDocId(POLAR_PROVIDER, reconciledPaymentId)).get(),
         db.collection('users').doc(user.uid).get(),
       ]);
 
@@ -2707,7 +2704,7 @@ const getCheckoutSessionStatus = async (
 
     const matchedPaidDoc = sortPaymentDocsByUpdatedAtDesc(latestPaidSnapshot.docs).find((doc) => {
       const data = doc.data();
-      if (data?.provider !== LEMON_PROVIDER || data?.status !== 'paid') {
+      if (data?.provider !== POLAR_PROVIDER || data?.status !== 'paid') {
         return false;
       }
 
@@ -2754,73 +2751,42 @@ const handleCreateCheckoutSessionRequest = async (req: functions.https.Request, 
     return;
   }
 
-  const { apiKey, storeId } = requireLemonConfig();
+  const accessToken = requirePolarAccessToken();
   const product = getPaymentProduct(productId);
-  const variantId = getLemonVariantId(productId);
-  if (!variantId) {
+  const polarProductId = getPolarProductId(productId);
+  if (!polarProductId) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
   const successUrl = `${process.env['APP_BASE_URL']?.trim() || 'https://hamdeva.com'}/payment-success`;
-  const response = await fetch(`${getLemonApiBaseUrl()}/checkouts`, {
+  const returnUrl = `${process.env['APP_BASE_URL']?.trim() || 'https://hamdeva.com'}/payment-failed`;
+  const response = await fetch(`${getPolarApiBaseUrl()}/checkouts`, {
     method: 'POST',
     headers: {
-      Accept: 'application/vnd.api+json',
-      'Content-Type': 'application/vnd.api+json',
-      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
-      data: {
-        type: 'checkouts',
-        attributes: {
-          checkout_data: {
-            email: user.email,
-            custom: {
-              uid: user.uid,
-              productId: product.id,
-              paidCredit: String(product.paidCredit),
-            },
-          },
-          checkout_options: {
-            embed: false,
-            media: true,
-            logo: true,
-            desc: true,
-          },
-          product_options: {
-            redirect_url: successUrl,
-            receipt_button_text: 'Return to HAMDEVA',
-            receipt_link_url: successUrl,
-          },
-          test_mode: getLemonEnvironment() === 'sandbox',
-        },
-        relationships: {
-          store: {
-            data: {
-              type: 'stores',
-              id: storeId,
-            },
-          },
-          variant: {
-            data: {
-              type: 'variants',
-              id: variantId,
-            },
-          },
-        },
+      products: [polarProductId],
+      success_url: successUrl,
+      return_url: returnUrl,
+      customer_email: user.email,
+      external_customer_id: user.uid,
+      metadata: {
+        uid: user.uid,
+        productId: product.id,
+        paidCredit: String(product.paidCredit),
       },
     }),
   });
-  const payload = await response.json().catch(() => ({})) as { data?: LemonCheckoutRecord };
-  const checkoutData = getObjectValue(payload.data, payload);
-  const checkout = checkoutData as LemonCheckoutRecord;
-  const checkoutUrl = getStringValue(checkout.attributes?.url, getObjectValue(checkoutData.attributes).url);
+  const checkout = await response.json().catch(() => ({})) as PolarCheckoutRecord;
+  const checkoutUrl = getStringValue(checkout.url);
   const checkoutId = getStringValue(checkout.id);
   if (!response.ok || !checkoutId || !checkoutUrl) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
   await upsertPendingPayment({
-    provider: LEMON_PROVIDER,
+    provider: POLAR_PROVIDER,
     providerPaymentId: checkoutId,
     uid: user.uid,
     productId,
@@ -2934,129 +2900,8 @@ const handleSharePreviewRequest = async (req: functions.https.Request, res: func
 const getStringValue = (...values: unknown[]): string =>
   values.find((value) => typeof value === 'string' && value.trim()) as string || '';
 
-const getStringLikeValue = (...values: unknown[]): string => {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim();
-    }
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return String(value);
-    }
-  }
-  return '';
-};
-
 const getObjectValue = (...values: unknown[]): Record<string, unknown> =>
   (values.find((value) => value !== null && typeof value === 'object' && !Array.isArray(value)) as Record<string, unknown> | undefined) ?? {};
-
-const getArrayValue = (...values: unknown[]): unknown[] =>
-  (values.find((value) => Array.isArray(value)) as unknown[] | undefined) ?? [];
-
-const getWebhookCustomData = (
-  event: LemonWebhookEvent,
-  data: Record<string, unknown>,
-  attributes: Record<string, unknown>,
-): Record<string, unknown> => getObjectValue(
-  event.meta?.custom_data,
-  getObjectValue(getObjectValue(data.meta).custom_data),
-  getObjectValue(attributes.custom_data),
-  getObjectValue(getObjectValue(attributes.checkout_data).custom),
-);
-
-const getWebhookEventName = (
-  event: LemonWebhookEvent,
-  headers: Record<string, string>,
-  data: Record<string, unknown>,
-  attributes: Record<string, unknown>,
-): string => getStringValue(
-  headers['x-event-name'],
-  headers['x-event-type'],
-  event.meta?.event_name,
-  getObjectValue(data.meta).event_name,
-  attributes.event_name,
-).trim().toLowerCase();
-
-const listRecentLemonOrdersByEmail = async (email: string): Promise<LemonOrderRecord[]> => {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!normalizedEmail) {
-    return [];
-  }
-
-  const { apiKey, storeId } = requireLemonConfig();
-  const url = new URL(`${getLemonApiBaseUrl()}/orders`);
-  url.searchParams.set('filter[store_id]', storeId);
-  url.searchParams.set('filter[user_email]', normalizedEmail);
-  url.searchParams.set('page[size]', '10');
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      Accept: 'application/vnd.api+json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
-
-  if (!response.ok) {
-    functions.logger.error('Failed to fetch Lemon orders', {
-      status: response.status,
-      email: normalizedEmail,
-    });
-    return [];
-  }
-
-  const payload = await response.json().catch(() => ({})) as { data?: LemonOrderRecord[] };
-  return Array.isArray(payload.data) ? payload.data : [];
-};
-
-const getRecentPaidLemonOrder = async (params: {
-  email: string;
-  expectedProductId?: PaymentProductId;
-  createdAfterMillis?: number;
-  createdBeforeMillis?: number;
-}): Promise<LemonOrderRecord | null> => {
-  const orders = await listRecentLemonOrdersByEmail(params.email);
-  const createdAfterMillis = params.createdAfterMillis ?? 0;
-  const createdBeforeMillis = params.createdBeforeMillis ?? Number.MAX_SAFE_INTEGER;
-
-  const candidates = orders
-    .map((order) => {
-      const attributes = getObjectValue(order.attributes);
-      const firstOrderItem = getObjectValue(attributes.first_order_item);
-      const variantId = getStringLikeValue(firstOrderItem.variant_id);
-      const productId = params.expectedProductId
-        ?? (variantId ? getProductIdFromLemonVariantId(variantId) : null);
-      const status = getStringValue(attributes.status).trim().toLowerCase();
-      const updatedAtMillis = toTimestampMillis(attributes.updated_at) ?? 0;
-      const createdAtMillis = toTimestampMillis(attributes.created_at) ?? 0;
-
-      return {
-        order,
-        productId,
-        status,
-        updatedAtMillis,
-        createdAtMillis,
-      };
-    })
-    .filter((candidate) => {
-      if (candidate.status !== 'paid') {
-        return false;
-      }
-
-      if (params.expectedProductId && candidate.productId !== params.expectedProductId) {
-        return false;
-      }
-
-      const candidateEventMillis = candidate.createdAtMillis || candidate.updatedAtMillis;
-      return candidateEventMillis >= createdAfterMillis && candidateEventMillis <= createdBeforeMillis;
-    })
-    .sort((a, b) => {
-      const aMillis = a.createdAtMillis || a.updatedAtMillis || 0;
-      const bMillis = b.createdAtMillis || b.updatedAtMillis || 0;
-      return aMillis - bMillis;
-    });
-
-  return candidates[0]?.order ?? null;
-};
 
 const findMatchingPendingPaymentDocId = async (params: {
   uid: string;
@@ -3072,7 +2917,7 @@ const findMatchingPendingPaymentDocId = async (params: {
   const candidates = sortPaymentDocsByUpdatedAtDesc(snapshot.docs)
     .filter((doc) => {
       const data = doc.data();
-      if (data?.provider !== LEMON_PROVIDER || data?.productId !== params.productId) {
+      if (data?.provider !== POLAR_PROVIDER || data?.productId !== params.productId) {
         return false;
       }
 
@@ -3099,7 +2944,7 @@ const findMatchingPendingPaymentDocId = async (params: {
       const data = doc.data() ?? {};
       return data.providerPaymentId === preferredCheckoutSessionId
         || data.checkoutSessionId === preferredCheckoutSessionId
-        || doc.id === buildPaymentDocId(LEMON_PROVIDER, preferredCheckoutSessionId);
+        || doc.id === buildPaymentDocId(POLAR_PROVIDER, preferredCheckoutSessionId);
     });
     if (preferredDoc) {
       return preferredDoc.id;
@@ -3107,74 +2952,6 @@ const findMatchingPendingPaymentDocId = async (params: {
   }
 
   return candidates[0]?.id ?? null;
-};
-
-const syncPendingPaymentWithLemonOrder = async (params: {
-  user: AuthenticatedUser;
-  pendingPaymentId: string;
-  pendingPaymentData: Record<string, unknown>;
-}): Promise<string | null> => {
-  const expectedProductId = isPaymentProductId(params.pendingPaymentData.productId)
-    ? params.pendingPaymentData.productId
-    : undefined;
-  const pendingCreatedAtMillis = toTimestampMillis(params.pendingPaymentData.createdAt) ?? Date.now() - (1000 * 60 * 30);
-  const matchedOrder = await getRecentPaidLemonOrder({
-    email: params.user.email,
-    expectedProductId,
-    createdAfterMillis: Math.max(0, pendingCreatedAtMillis - (1000 * 60 * 2)),
-    createdBeforeMillis: pendingCreatedAtMillis + (1000 * 60 * 30),
-  });
-
-  if (!matchedOrder) {
-    return null;
-  }
-
-  const attributes = getObjectValue(matchedOrder.attributes);
-  const firstOrderItem = getObjectValue(attributes.first_order_item);
-  const variantId = getStringLikeValue(firstOrderItem.variant_id);
-  const resolvedProductId = expectedProductId ?? (variantId ? getProductIdFromLemonVariantId(variantId) : null);
-  const providerPaymentId = getStringLikeValue(matchedOrder.id, attributes.identifier);
-
-  if (!providerPaymentId || !resolvedProductId) {
-    functions.logger.error('Lemon order match missing payment context', {
-      uid: params.user.uid,
-      providerPaymentId,
-      resolvedProductId,
-    });
-    return null;
-  }
-
-  functions.logger.info('Reconciling pending Lemon payment with paid order', {
-    uid: params.user.uid,
-    pendingPaymentId: params.pendingPaymentId,
-    providerOrderId: providerPaymentId,
-    resolvedProductId,
-  });
-
-  await fulfillCreditPurchase({
-    provider: LEMON_PROVIDER,
-    providerPaymentId: params.pendingPaymentId,
-    uid: params.user.uid,
-    productId: resolvedProductId,
-    providerOrderId: providerPaymentId,
-    checkoutSessionId: params.pendingPaymentId,
-    amount: (() => {
-      const rawAmount = typeof attributes.total === 'number'
-        ? attributes.total
-        : typeof attributes.total === 'string'
-          ? Number.parseFloat(attributes.total)
-          : Number.NaN;
-      return Number.isFinite(rawAmount) ? rawAmount / 100 : null;
-    })(),
-    currency: getStringValue(attributes.currency),
-    paidAt: getStringValue(attributes.created_at, attributes.updated_at),
-    rawPayload: {
-      source: 'session_status_reconcile',
-      lemonOrder: matchedOrder,
-    },
-  });
-
-  return params.pendingPaymentId;
 };
 
 const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymentId: string): Promise<{ uid: string; productId: PaymentProductId } | null> => {
@@ -3190,8 +2967,8 @@ const getStoredPaymentContext = async (provider: PaymentProvider, providerPaymen
   };
 };
 
-const getProductIdFromLemonVariantId = (variantId: string): PaymentProductId | null => {
-  const entry = Object.entries(LEMON_VARIANT_IDS).find(([, value]) => value === variantId);
+const getProductIdFromPolarProductId = (polarProductId: string): PaymentProductId | null => {
+  const entry = Object.entries(POLAR_PRODUCT_IDS).find(([, value]) => value === polarProductId);
   if (!entry) {
     return null;
   }
@@ -3223,162 +3000,279 @@ const getUserContextFromEmail = async (email: string): Promise<{ uid: string } |
   return { uid: matchedDoc.id };
 };
 
-const verifyLemonWebhookSignature = (rawPayload: string, signatureHeader: string, webhookSecret: string): boolean => {
+const getPolarAmountUsd = (...values: unknown[]): number | null => {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value / 100;
+    }
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed / 100;
+      }
+    }
+  }
+  return null;
+};
+
+const getPolarCheckoutSession = async (checkoutId: string): Promise<PolarCheckoutRecord | null> => {
+  const normalizedCheckoutId = checkoutId.trim();
+  if (!normalizedCheckoutId) {
+    return null;
+  }
+
+  const accessToken = requirePolarAccessToken();
+  const response = await fetch(`${getPolarApiBaseUrl()}/checkouts/${encodeURIComponent(normalizedCheckoutId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    functions.logger.error('Failed to fetch Polar checkout session', {
+      checkoutId: normalizedCheckoutId,
+      status: response.status,
+    });
+    return null;
+  }
+
+  return await response.json().catch(() => null) as PolarCheckoutRecord | null;
+};
+
+const resolvePolarProductId = (
+  data: Record<string, unknown>,
+  contextFromPayment?: { uid: string; productId: PaymentProductId } | null,
+): PaymentProductId | null => {
+  const metadata = getObjectValue(data.metadata);
+  const product = getObjectValue(data.product);
+  const productMetadata = getObjectValue(product.metadata);
+  const explicitProductId = getStringValue(
+    metadata.productId,
+    productMetadata.productId,
+    contextFromPayment?.productId,
+  );
+  if (isPaymentProductId(explicitProductId)) {
+    return explicitProductId;
+  }
+
+  const polarProductId = getStringValue(data.product_id, product.id);
+  return polarProductId ? getProductIdFromPolarProductId(polarProductId) : null;
+};
+
+const syncPendingPaymentWithPolarCheckout = async (params: {
+  user: AuthenticatedUser;
+  pendingPaymentId: string;
+  pendingPaymentData: Record<string, unknown>;
+}): Promise<string | null> => {
+  const checkoutId = getStringValue(
+    params.pendingPaymentData.checkoutSessionId,
+    params.pendingPaymentData.providerPaymentId,
+    params.pendingPaymentId,
+  );
+  const checkout = checkoutId ? await getPolarCheckoutSession(checkoutId) : null;
+  if (!checkout) {
+    return null;
+  }
+
+  const normalizedStatus = normalizePaymentStatusForClient(getStringValue(checkout.status).toLowerCase());
+  if (normalizedStatus === 'failed') {
+    await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId: params.pendingPaymentId, status: 'failed' });
+    return null;
+  }
+
+  if (normalizedStatus !== 'success') {
+    return null;
+  }
+
+  const resolvedProductId = isPaymentProductId(params.pendingPaymentData.productId)
+    ? params.pendingPaymentData.productId
+    : resolvePolarProductId(checkout as unknown as Record<string, unknown>);
+  if (!resolvedProductId) {
+    functions.logger.error('Polar checkout reconciliation missing product context', {
+      uid: params.user.uid,
+      checkoutId,
+    });
+    return null;
+  }
+
+  await fulfillCreditPurchase({
+    provider: POLAR_PROVIDER,
+    providerPaymentId: params.pendingPaymentId,
+    uid: params.user.uid,
+    productId: resolvedProductId,
+    checkoutSessionId: checkoutId,
+    amount: getPolarAmountUsd(checkout.total_amount, checkout.amount),
+    currency: getStringValue(checkout.currency),
+    paidAt: getStringValue(checkout.modified_at, checkout.created_at),
+    rawPayload: {
+      source: 'session_status_reconcile',
+      polarCheckout: checkout,
+    },
+  });
+
+  return params.pendingPaymentId;
+};
+
+const setUserSubscriptionState = async (params: {
+  uid: string;
+  isSubscribed: boolean;
+  subscriptionPlan: SubscriptionPlan;
+  email?: string;
+}): Promise<void> => {
+  const userRef = db.collection('users').doc(params.uid);
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(userRef);
+    const currentData = snapshot.data();
+    const email = params.email
+      || (typeof currentData?.email === 'string' ? currentData.email : '');
+    const currentAccount = normalizeUserAccount(email, currentData);
+    const nextAccount: UserAccount = {
+      ...currentAccount,
+      isSubscribed: params.isSubscribed,
+      subscriptionPlan: params.isSubscribed ? params.subscriptionPlan : 'free',
+      credits: currentAccount.dailyCredit + currentAccount.paidCredit,
+    };
+    transaction.set(
+      userRef,
+      buildUserAccountPayload(nextAccount, email || currentAccount.email, {
+        setCreatedAt: !snapshot.exists,
+      }),
+      { merge: true },
+    );
+  });
+};
+
+const verifyPolarWebhookPayload = (rawPayload: string, headers: Record<string, string>, webhookSecret: string): PolarWebhookEvent => {
+  const normalizedHeaders = {
+    'webhook-id': headers['webhook-id'],
+    'webhook-timestamp': headers['webhook-timestamp'],
+    'webhook-signature': headers['webhook-signature'],
+  };
+
   try {
-    const expected = createHmac('sha256', webhookSecret).update(rawPayload).digest('hex');
-    const expectedBuffer = Buffer.from(expected, 'hex');
-    const candidateBuffer = Buffer.from(signatureHeader, 'hex');
-    return candidateBuffer.length === expectedBuffer.length && timingSafeEqual(candidateBuffer, expectedBuffer);
+    return new Webhook(webhookSecret).verify(rawPayload, normalizedHeaders) as PolarWebhookEvent;
   } catch {
-    return false;
+    return new Webhook(webhookSecret, { format: 'raw' }).verify(rawPayload, normalizedHeaders) as PolarWebhookEvent;
   }
 };
 
-const handleLemonWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
+const handlePolarWebhookRequest = async (req: functions.https.Request, res: functions.Response) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
-  const webhookSecret = getLemonWebhookSecret();
+  const webhookSecret = getPolarWebhookSecret();
   if (!webhookSecret) {
     throw new Error(PAYMENT_CONFIG_ERROR);
   }
 
   const rawPayload = req.rawBody.toString('utf8');
   const headers = getRequestStringHeaders(req);
-  const signatureHeader = headers['x-signature'];
-  if (!signatureHeader) {
+  if (!headers['webhook-id'] || !headers['webhook-timestamp'] || !headers['webhook-signature']) {
     res.status(400).json({ error: 'MISSING_SIGNATURE' });
     return;
   }
 
-  if (!verifyLemonWebhookSignature(rawPayload, signatureHeader, webhookSecret)) {
-    functions.logger.error('LemonSqueezy webhook signature verification failed');
-    res.status(400).json({ error: 'INVALID_SIGNATURE' });
-    return;
-  }
-
-  const event = JSON.parse(rawPayload) as LemonWebhookEvent;
-  const data = getObjectValue(event.data);
-  const attributes = getObjectValue(data.attributes);
-  const customData = getWebhookCustomData(event, data, attributes);
-  const providerPaymentId = getStringLikeValue(
-    attributes.order_id,
-    getObjectValue(attributes.order).id,
-    data.id,
-  );
-  const contextFromPayment = providerPaymentId ? await getStoredPaymentContext(LEMON_PROVIDER, providerPaymentId) : null;
-  const firstOrderItem = getObjectValue(attributes.first_order_item);
-  const firstOrderItemVariant = getObjectValue(firstOrderItem.variant);
-  const firstOrderItemProduct = getObjectValue(firstOrderItem.product);
-  const orderItems = getArrayValue(attributes.order_items, attributes.items);
-  const firstArrayItem = getObjectValue(orderItems[0]);
-  const firstArrayItemVariant = getObjectValue(firstArrayItem.variant);
-  const buyerEmail = getStringValue(
-    customData.email,
-    attributes.user_email,
-    attributes.customer_email,
-    attributes.email,
-    getObjectValue(attributes.customer).email,
-    getObjectValue(attributes.user).email,
-  ).trim().toLowerCase();
-  const variantId = getStringLikeValue(
-    customData.variantId,
-    firstOrderItem.variant_id,
-    firstOrderItemVariant.id,
-    firstArrayItem.variant_id,
-    firstArrayItemVariant.id,
-    attributes.variant_id,
-    getObjectValue(attributes.variant).id,
-  );
-  const productIdFromVariant = variantId ? getProductIdFromLemonVariantId(variantId) : null;
-  const userContextFromEmail = buyerEmail ? await getUserContextFromEmail(buyerEmail) : null;
-  const uid = getStringValue(customData.uid, contextFromPayment?.uid, userContextFromEmail?.uid);
-  const rawProductId = getStringValue(
-    customData.productId,
-    contextFromPayment?.productId,
-    productIdFromVariant,
-    attributes.product_id,
-    firstOrderItem.product_id,
-    firstOrderItemProduct.id,
-  );
-  const eventType = getWebhookEventName(event, headers, data, attributes);
-  const isCompletedEvent = eventType === 'order_created'
-    || eventType === 'subscription_created'
-    || eventType === 'subscription_payment_success'
-    || eventType === 'subscription_payment_recovered'
-    || eventType === 'order_paid';
-  const isFailedEvent = eventType === 'subscription_payment_failed';
-  const isCanceledEvent = eventType === 'subscription_cancelled' || eventType === 'subscription_expired';
-
   try {
-    if (isCompletedEvent) {
-      if (!providerPaymentId || !uid || !isPaymentProductId(rawProductId)) {
-        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
+    const event = verifyPolarWebhookPayload(rawPayload, headers, webhookSecret);
+    const eventType = getStringValue(event.type).trim().toLowerCase();
+    const data = getObjectValue(event.data);
+    const customer = getObjectValue(data.customer);
+    const checkoutId = getStringValue(data.checkout_id);
+    const orderId = getStringValue(data.id);
+    const contextFromCheckout = checkoutId ? await getStoredPaymentContext(POLAR_PROVIDER, checkoutId) : null;
+    const contextFromOrder = orderId ? await getStoredPaymentContext(POLAR_PROVIDER, orderId) : null;
+    const contextFromPayment = contextFromCheckout ?? contextFromOrder;
+    const buyerEmail = getStringValue(
+      customer.email,
+      data.customer_email,
+      data.email,
+    ).trim().toLowerCase();
+    const userContextFromEmail = buyerEmail ? await getUserContextFromEmail(buyerEmail) : null;
+    const uid = getStringValue(
+      customer.external_id,
+      data.external_customer_id,
+      getObjectValue(customer.metadata).uid,
+      getObjectValue(data.metadata).uid,
+      contextFromPayment?.uid,
+      userContextFromEmail?.uid,
+    );
+    const resolvedProductId = resolvePolarProductId(data, contextFromPayment);
+
+    if (eventType === 'order.paid') {
+      const targetPaymentId = checkoutId || orderId;
+      if (!targetPaymentId || !uid || !resolvedProductId) {
+        throw new Error('INVALID_POLAR_PAYMENT_CONTEXT');
       }
 
       const webhookCreatedAtMillis = toTimestampMillis(
-        getStringValue(attributes.created_at, attributes.updated_at),
+        getStringValue(event.timestamp, data.created_at, data.modified_at),
       ) ?? Date.now();
-      const checkoutSessionId = getStringValue(
-        customData.checkoutSessionId,
-        customData.checkoutId,
-        customData.checkout_id,
-      );
       const matchedPendingPaymentId = contextFromPayment
-        ? buildPaymentDocId(LEMON_PROVIDER, providerPaymentId)
+        ? buildPaymentDocId(POLAR_PROVIDER, targetPaymentId)
         : await findMatchingPendingPaymentDocId({
           uid,
-          productId: rawProductId,
+          productId: resolvedProductId,
           orderCreatedAtMillis: webhookCreatedAtMillis,
-          preferredCheckoutSessionId: checkoutSessionId || undefined,
+          preferredCheckoutSessionId: checkoutId || undefined,
         });
-      const targetPaymentId = matchedPendingPaymentId ?? providerPaymentId;
+      const paymentDocId = matchedPendingPaymentId ?? targetPaymentId;
 
-      functions.logger.info('Processing Lemon completed payment event', {
+      functions.logger.info('Processing Polar paid order event', {
         eventType,
         uid,
-        providerOrderId: providerPaymentId,
-        targetPaymentId,
-        productId: rawProductId,
+        providerOrderId: orderId || null,
+        targetPaymentId: paymentDocId,
+        checkoutId: checkoutId || null,
+        productId: resolvedProductId,
       });
 
       await fulfillCreditPurchase({
-        provider: LEMON_PROVIDER,
-        providerPaymentId: targetPaymentId,
+        provider: POLAR_PROVIDER,
+        providerPaymentId: paymentDocId,
         uid,
-        productId: rawProductId,
-        providerOrderId: providerPaymentId,
-        checkoutSessionId: checkoutSessionId || matchedPendingPaymentId || null,
-        amount: (() => {
-          const rawAmount = typeof attributes.total === 'number'
-            ? attributes.total
-            : typeof attributes.total === 'string'
-              ? Number.parseFloat(attributes.total)
-              : Number.NaN;
-          return Number.isFinite(rawAmount) ? rawAmount / 100 : null;
-        })(),
-        currency: getStringValue(attributes.currency, attributes.currency_code),
-        paidAt: getStringValue(attributes.created_at, attributes.updated_at),
+        productId: resolvedProductId,
+        providerOrderId: orderId || null,
+        checkoutSessionId: checkoutId || matchedPendingPaymentId || null,
+        amount: getPolarAmountUsd(data.total_amount, data.amount),
+        currency: getStringValue(data.currency),
+        paidAt: getStringValue(event.timestamp, data.created_at, data.modified_at),
         rawPayload: event,
       });
-    } else if (isFailedEvent) {
-      if (!providerPaymentId) {
-        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
+    } else if (eventType === 'checkout.updated') {
+      const providerPaymentId = checkoutId || orderId;
+      const status = getStringValue(data.status).trim().toLowerCase();
+      if (providerPaymentId && (status === 'expired' || status === 'failed')) {
+        await markPaymentStatus({ provider: POLAR_PROVIDER, providerPaymentId, status: 'failed' });
       }
-      await markPaymentStatus({ provider: LEMON_PROVIDER, providerPaymentId, status: 'failed' });
-    } else if (isCanceledEvent) {
-      if (!providerPaymentId) {
-        throw new Error('INVALID_LEMON_PAYMENT_CONTEXT');
+    } else if (eventType === 'subscription.revoked') {
+      if (!uid) {
+        throw new Error('INVALID_POLAR_SUBSCRIPTION_CONTEXT');
       }
-      await markPaymentStatus({ provider: LEMON_PROVIDER, providerPaymentId, status: 'canceled' });
+      await setUserSubscriptionState({
+        uid,
+        isSubscribed: false,
+        subscriptionPlan: 'free',
+        email: buyerEmail,
+      });
+    } else if (eventType === 'subscription.active' && uid && resolvedProductId && (
+      resolvedProductId === 'starter'
+      || resolvedProductId === 'popular'
+      || resolvedProductId === 'pro'
+    )) {
+      await setUserSubscriptionState({
+        uid,
+        isSubscribed: true,
+        subscriptionPlan: getSubscriptionPlanForProduct(resolvedProductId),
+        email: buyerEmail,
+      });
     }
 
     res.json({ received: true });
   } catch (error) {
-    functions.logger.error('LemonSqueezy webhook processing failed', {
-      eventType,
+    functions.logger.error('Polar webhook processing failed', {
       message: error instanceof Error ? error.message : 'unknown',
       error,
     });
@@ -4762,12 +4656,12 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/lemon/webhook') {
-      await handleLemonWebhookRequest(req, res);
+    if (normalizedPath === '/polar/webhook') {
+      await handlePolarWebhookRequest(req, res);
       return;
     }
 
-    if (normalizedPath === '/lemon/checkout') {
+    if (normalizedPath === '/polar/checkout') {
       try {
         await handleCreateCheckoutSessionRequest(req, res);
       } catch (error) {
@@ -4776,7 +4670,7 @@ export const api = functions
       return;
     }
 
-    if (normalizedPath === '/lemon/session') {
+    if (normalizedPath === '/polar/session') {
       try {
         await handleCheckoutSessionStatusRequest(req, res);
       } catch (error) {
