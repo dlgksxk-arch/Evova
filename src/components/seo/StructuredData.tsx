@@ -15,6 +15,18 @@ const StructuredData: React.FC<StructuredDataProps> = ({ data }) => {
       document.head.querySelectorAll(JSON_LD_SELECTOR).forEach((node) => node.remove());
     };
 
+    const nextPayloads = items.map((item) => JSON.stringify(item));
+    const existingPayloads = Array.from(document.head.querySelectorAll<HTMLScriptElement>(JSON_LD_SELECTOR))
+      .map((node) => node.textContent?.trim() ?? '')
+      .filter(Boolean);
+
+    const hasSameStructuredData = existingPayloads.length === nextPayloads.length
+      && existingPayloads.every((payload, index) => payload === nextPayloads[index]);
+
+    if (hasSameStructuredData) {
+      return undefined;
+    }
+
     removeManagedScripts();
 
     if (items.length === 0) {
