@@ -64,6 +64,7 @@ const GENERATION_TARGET_MS = 30000;
 const RESULT_SETTLE_MS = 1800;
 const DISPLAY_PROGRESS_TARGET_MS = Math.round(GENERATION_TARGET_MS / 0.95);
 const RACE_PICK_LOCK_PERCENT = 30;
+const RACE_RESULT_REVEAL_PERCENT = 70;
 
 type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
 type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
@@ -222,7 +223,7 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       guessCat: '고양이',
       resultCorrect: '정답이에요!',
       resultWrong: '이번엔 빗나갔어요.',
-      resultNoGuess: '이번 라운드는 예측 없이 100%에서 결과를 공개합니다.',
+      resultNoGuess: '이번 라운드는 예측 없이 결과를 먼저 공개합니다.',
       winnerDog: '강아지가 먼저 도착했어요.',
       winnerCat: '고양이가 먼저 도착했어요.',
       winnerCelebrate: '승리 포즈와 간식 세리머니 진행 중!',
@@ -244,7 +245,7 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     guessCat: 'Cat',
     resultCorrect: 'Nice guess!',
     resultWrong: 'Not this time.',
-    resultNoGuess: 'No pick this round, revealing the winner at 100%.',
+    resultNoGuess: 'No pick this round, revealing the winner early.',
     winnerDog: 'The dog reached the snack first.',
     winnerCat: 'The cat reached the snack first.',
     winnerCelebrate: 'Victory pose and snack celebration!',
@@ -574,7 +575,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
   const raceProgress = clamp(generationProgress / 100, 0, 1);
   const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
-  const isResultRevealStage = isPreviewReady;
+  const isResultRevealStage = isPreviewReady || generationProgress >= RACE_RESULT_REVEAL_PERCENT;
   const isSnackStage = raceProgress >= 0.95;
   const swingTime = generationElapsedMs / 1000;
   const dogSwing = (Math.sin((swingTime * 2.7) + raceSwingSeed.dogPhaseA) * 0.055) + (Math.sin((swingTime * 5.4) + raceSwingSeed.dogPhaseB) * 0.022) + raceSwingSeed.dogBias;
@@ -651,7 +652,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </div>
             <div className="generation-race-pick-actions">
               <button
-                className={`generation-race-pick-btn ${raceGuess === 'dog' ? 'is-selected' : ''}`}
+                className={`generation-race-pick-btn ${raceGuess === 'dog' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'dog' ? 'is-cta' : ''}`}
                 disabled={isGuessLocked}
                 onClick={() => setRaceGuess('dog')}
                 type="button"
@@ -660,7 +661,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 <span>{generationPanelCopy.guessDog}</span>
               </button>
               <button
-                className={`generation-race-pick-btn ${raceGuess === 'cat' ? 'is-selected' : ''}`}
+                className={`generation-race-pick-btn ${raceGuess === 'cat' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'cat' ? 'is-cta' : ''}`}
                 disabled={isGuessLocked}
                 onClick={() => setRaceGuess('cat')}
                 type="button"
@@ -693,46 +694,50 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
               style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}
             >
-              <span className="generation-runner-shadow" />
-              <span className="generation-runner-tail" />
-              <span className="generation-runner-body" />
-              <span className="generation-runner-head">
-                <span className="generation-runner-ear ear-left" />
-                <span className="generation-runner-ear ear-right" />
-                <span className="generation-runner-eye eye-left" />
-                <span className="generation-runner-eye eye-right" />
-                <span className="generation-runner-cheek cheek-left" />
-                <span className="generation-runner-cheek cheek-right" />
-                <span className="generation-runner-nose" />
-              </span>
-              <span className="generation-runner-legs">
-                <span />
-                <span />
-                <span />
-                <span />
+              <span className="generation-runner-visual">
+                <span className="generation-runner-shadow" />
+                <span className="generation-runner-tail" />
+                <span className="generation-runner-body" />
+                <span className="generation-runner-head">
+                  <span className="generation-runner-ear ear-left" />
+                  <span className="generation-runner-ear ear-right" />
+                  <span className="generation-runner-eye eye-left" />
+                  <span className="generation-runner-eye eye-right" />
+                  <span className="generation-runner-cheek cheek-left" />
+                  <span className="generation-runner-cheek cheek-right" />
+                  <span className="generation-runner-nose" />
+                </span>
+                <span className="generation-runner-legs">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </span>
               </span>
             </div>
             <div
               className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${generationWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
               style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}
             >
-              <span className="generation-runner-shadow" />
-              <span className="generation-runner-tail" />
-              <span className="generation-runner-body" />
-              <span className="generation-runner-head">
-                <span className="generation-runner-ear ear-left" />
-                <span className="generation-runner-ear ear-right" />
-                <span className="generation-runner-eye eye-left" />
-                <span className="generation-runner-eye eye-right" />
-                <span className="generation-runner-cheek cheek-left" />
-                <span className="generation-runner-cheek cheek-right" />
-                <span className="generation-runner-nose" />
-              </span>
-              <span className="generation-runner-legs">
-                <span />
-                <span />
-                <span />
-                <span />
+              <span className="generation-runner-visual">
+                <span className="generation-runner-shadow" />
+                <span className="generation-runner-tail" />
+                <span className="generation-runner-body" />
+                <span className="generation-runner-head">
+                  <span className="generation-runner-ear ear-left" />
+                  <span className="generation-runner-ear ear-right" />
+                  <span className="generation-runner-eye eye-left" />
+                  <span className="generation-runner-eye eye-right" />
+                  <span className="generation-runner-cheek cheek-left" />
+                  <span className="generation-runner-cheek cheek-right" />
+                  <span className="generation-runner-nose" />
+                </span>
+                <span className="generation-runner-legs">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </span>
               </span>
             </div>
             {isSnackStage ? (
