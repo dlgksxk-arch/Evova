@@ -105,6 +105,17 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       stageRendering: '간식 앞에서 결과 이미지를 마무리하고 있어요',
       elapsed: '진행률',
       helper: '강아지와 고양이가 오른쪽 간식을 향해 달리고 있어요.',
+      gameTitle: '누가 먼저 간식에 도착할까요?',
+      gamePrompt: '20% 안에 강아지나 고양이를 골라 보세요.',
+      gameLocked: '20%가 지나 선택이 마감되었어요.',
+      guessDog: '강아지',
+      guessCat: '고양이',
+      resultCorrect: '정답이에요!',
+      resultWrong: '이번엔 빗나갔어요.',
+      resultNoGuess: '이번 라운드는 예측 없이 결과를 공개합니다.',
+      winnerDog: '강아지가 먼저 도착했어요.',
+      winnerCat: '고양이가 먼저 도착했어요.',
+      winnerCelebrate: '간식을 먹고 만세 하는 중!',
     };
   }
 
@@ -116,6 +127,17 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     stageRendering: 'Finishing the result beside the treat line',
     elapsed: 'Progress',
     helper: 'The dog and cat are racing toward the snack on the right.',
+    gameTitle: 'Who reaches the treat first?',
+    gamePrompt: 'Pick dog or cat before 20%.',
+    gameLocked: 'Selection is locked after 20%.',
+    guessDog: 'Dog',
+    guessCat: 'Cat',
+    resultCorrect: 'Nice guess!',
+    resultWrong: 'Not this time.',
+    resultNoGuess: 'No pick this round, revealing the winner now.',
+    winnerDog: 'The dog reached the snack first.',
+    winnerCat: 'The cat reached the snack first.',
+    winnerCelebrate: 'Snack time and victory cheer!',
   };
 };
 
@@ -254,6 +276,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
   const [resultSettlingStartedAt, setResultSettlingStartedAt] = useState<number | null>(null);
   const [generationWinner, setGenerationWinner] = useState<'dog' | 'cat'>('dog');
+  const [raceGuess, setRaceGuess] = useState<'dog' | 'cat' | null>(null);
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
@@ -270,6 +293,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         setGenerationWinner(Math.random() < 0.5 ? 'dog' : 'cat');
         setResultSettlingStartedAt(null);
         setGenerationElapsedMs(0);
+        setRaceGuess(null);
         return Date.now();
       });
       return;
@@ -278,6 +302,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     setGenerationStartedAt(null);
     setGenerationElapsedMs(0);
     setResultSettlingStartedAt(null);
+    setRaceGuess(null);
     setGenerationProgress(finalImageSrc && resultPreviewState === 'ready' ? 100 : 0);
   }, [finalImageSrc, isGenerating, resultPreviewState]);
 
@@ -303,12 +328,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       if (finalImageSrc && resultPreviewState === 'loading') {
         const settlingStartedAt = resultSettlingStartedAt ?? now;
         const settleElapsed = now - settlingStartedAt;
-        const settleProgress = 95 + clamp((settleElapsed / RESULT_SETTLE_MS) * 4, 0, 4);
+        const settleProgress = 90 + clamp((settleElapsed / RESULT_SETTLE_MS) * 9, 0, 9);
         setGenerationProgress(settleProgress);
         return;
       }
 
-      const nextProgress = clamp((elapsed / GENERATION_TARGET_MS) * 95, 1, 95);
+      const nextProgress = clamp((elapsed / GENERATION_TARGET_MS) * 90, 1, 90);
       setGenerationProgress(nextProgress);
     };
 
@@ -412,7 +437,9 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
-  const raceProgress = clamp(generationProgress / 95, 0, 1);
+  const raceProgress = clamp(generationProgress / 90, 0, 1);
+  const isGuessLocked = generationProgress >= 20;
+  const isResultRevealStage = generationProgress >= 90;
   const isSnackStage = generationProgress >= 95;
   const dogLeadOffset = generationWinner === 'dog' ? 0.02 : -0.01;
   const catLeadOffset = generationWinner === 'cat' ? 0.02 : -0.01;
@@ -426,6 +453,13 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
   const raceStatusLabel = isSnackStage ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
   const snackLabel = generationWinner === 'dog' ? '🦴' : '🐟';
+  const guessResultTone = raceGuess === null ? 'neutral' : raceGuess === generationWinner ? 'correct' : 'wrong';
+  const guessResultHeadline = raceGuess === null
+    ? generationPanelCopy.resultNoGuess
+    : raceGuess === generationWinner
+      ? generationPanelCopy.resultCorrect
+      : generationPanelCopy.resultWrong;
+  const guessResultBody = generationWinner === 'dog' ? generationPanelCopy.winnerDog : generationPanelCopy.winnerCat;
   const modalResultUtilityNode = isModalLayout && isPreviewReady && finalImageSrc ? (
     <>
       <div className="result-inline-actions">
@@ -465,6 +499,32 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <span className="generation-playground-timer">{copy.generationRemainingLabel}: {remainingSeconds}s</span>
             </div>
           </div>
+          <div className="generation-race-pick-panel">
+            <div className="generation-race-pick-copy">
+              <strong>{generationPanelCopy.gameTitle}</strong>
+              <p>{isGuessLocked ? generationPanelCopy.gameLocked : generationPanelCopy.gamePrompt}</p>
+            </div>
+            <div className="generation-race-pick-actions">
+              <button
+                className={`generation-race-pick-btn ${raceGuess === 'dog' ? 'is-selected' : ''}`}
+                disabled={isGuessLocked}
+                onClick={() => setRaceGuess('dog')}
+                type="button"
+              >
+                <span>🐶</span>
+                <span>{generationPanelCopy.guessDog}</span>
+              </button>
+              <button
+                className={`generation-race-pick-btn ${raceGuess === 'cat' ? 'is-selected' : ''}`}
+                disabled={isGuessLocked}
+                onClick={() => setRaceGuess('cat')}
+                type="button"
+              >
+                <span>🐱</span>
+                <span>{generationPanelCopy.guessCat}</span>
+              </button>
+            </div>
+          </div>
           <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
             <div className="generation-playground-lane generation-playground-lane-back" />
             <div className="generation-playground-lane generation-playground-lane-front" />
@@ -484,6 +544,23 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <span className="generation-playground-spark generation-playground-spark-one">✦</span>
             <span className="generation-playground-spark generation-playground-spark-two">✦</span>
           </div>
+          {isResultRevealStage ? (
+            <div className={`generation-winner-spotlight is-${guessResultTone}`}>
+              <div className={`generation-winner-visual is-${generationWinner}`}>
+                <span className="generation-winner-burst generation-winner-burst-one">✦</span>
+                <span className="generation-winner-burst generation-winner-burst-two">✦</span>
+                <span className="generation-winner-confetti generation-winner-confetti-one">•</span>
+                <span className="generation-winner-confetti generation-winner-confetti-two">•</span>
+                <span className="generation-winner-animal">{generationWinner === 'dog' ? '🐶' : '🐱'}</span>
+                <span className="generation-winner-hands">🙌</span>
+              </div>
+              <div className="generation-winner-copy">
+                <strong>{guessResultHeadline}</strong>
+                <p>{guessResultBody}</p>
+                <small>{generationPanelCopy.winnerCelebrate}</small>
+              </div>
+            </div>
+          ) : null}
           <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
         </div>
       ) : (
