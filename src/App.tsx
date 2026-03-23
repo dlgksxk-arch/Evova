@@ -17,6 +17,7 @@ import TryOnStudio from './features/tryon/TryOnStudio';
 import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 import { useCreditBootstrap } from './hooks/useCreditBootstrap';
 import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
+import type { PaymentStatusDetails } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
 import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
 import {
@@ -117,6 +118,7 @@ const ADSENSE_SCRIPT_SRC = `https://pagead2.googlesyndication.com/pagead/js/adsb
 const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
+const PAYMENT_PENDING_PLAN_STORAGE_KEY = 'HAMDEVA-pending-payment-plan';
 const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_05204666-8bbf-4be8-81a8-180180969593.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0a339649-fe99-4b71-b4e2-f5187376bd5b.png',
@@ -670,8 +672,6 @@ const translations = {
     loginForFree: '회원가입 시 300 크레딧이 한 번 지급됩니다.',
     credits: '크레딧',
     currentCredits: (n: number) => `현재 보유 크레딧: ${n}`,
-    dailyCreditLabel: '무료 크레딧',
-    paidCreditLabel: '유료 크레딧',
     totalCreditLabel: '총 크레딧',
     generationCost: '1회 생성 = 100 크레딧',
     generationCostDetailed: (n: number) => `1회 생성 = ${n} 크레딧`,
@@ -684,8 +684,8 @@ const translations = {
     duplicateRequestBlocked: '이미 생성 요청이 처리 중입니다. 잠시 후 다시 시도해 주세요.',
     todayDailyRewardGranted: '',
     todayDailyRewardAlreadyClaimed: '',
-    subscriptionBonusGranted: (n: number) => `구독 보너스 ${n} 크레딧이 추가 지급되었습니다.`,
-    signupBonusGranted: (n: number) => `회원가입 보너스 ${n} 크레딧이 지급되었습니다.`,
+    subscriptionBonusGranted: (n: number) => `${n} 크레딧이 추가 지급되었습니다.`,
+    signupBonusGranted: (n: number) => `${n} 크레딧이 지급되었습니다.`,
     viewSubscription: '구독 보기',
     creditCheck: '크레딧 확인',
     subscriptionPlanLabel: '구독 플랜',
@@ -694,11 +694,14 @@ const translations = {
     siteCreditCostLabel: '생성 비용',
     authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
     chargeCredits: '결제',
-    chargeDescription: '무료 크레딧이 먼저 사용되고, 부족하면 유료 크레딧이 차감됩니다.',
+    chargeDescription: '필요한 크레딧만큼 차감되며, 결제 후 바로 반영됩니다.',
     purchaseNow: '구매하기',
     paymentRedirecting: '결제창으로 이동 중...',
     paymentSuccessTitle: '결제가 완료되었습니다',
-    paymentSuccessReady: '결제가 확인되어 유료 크레딧이 지급되었습니다.',
+    paymentSuccessReady: '결제가 확인되어 크레딧이 반영되었습니다.',
+    paymentCreditsAddedLabel: '충전된 크레딧',
+    paymentCreditsAddedValue: (n: number) => `+${n.toLocaleString()} 크레딧`,
+    paymentSubscriptionChangedLabel: '변경된 구독 플랜',
     paymentFailedTitle: '결제가 완료되지 않았습니다',
     paymentFailedDescription: '결제가 취소되었거나 실패했습니다. 다시 시도해 주세요.',
     paymentVerifying: '결제 확인 중입니다. 잠시만 기다려 주세요.',
@@ -992,8 +995,6 @@ const translations = {
     loginForFree: 'Get 300 credits once when you sign up.',
     credits: 'Credits',
     currentCredits: (n: number) => `Current credits: ${n}`,
-    dailyCreditLabel: 'Free credits',
-    paidCreditLabel: 'Paid credits',
     totalCreditLabel: 'Total credits',
     generationCost: '1 generation = 100 credits',
     generationCostDetailed: (n: number) => `1 generation = ${n} credits`,
@@ -1006,8 +1007,8 @@ const translations = {
     duplicateRequestBlocked: 'A generation request is already being processed. Please try again shortly.',
     todayDailyRewardGranted: '',
     todayDailyRewardAlreadyClaimed: '',
-    subscriptionBonusGranted: (n: number) => `${n} subscription bonus credits were added.`,
-    signupBonusGranted: (n: number) => `${n} sign-up bonus credits were added.`,
+    subscriptionBonusGranted: (n: number) => `${n} credits were added.`,
+    signupBonusGranted: (n: number) => `${n} credits were added.`,
     viewSubscription: 'View subscription',
     creditCheck: 'Check credits',
     subscriptionPlanLabel: 'Subscription plan',
@@ -1016,11 +1017,14 @@ const translations = {
     siteCreditCostLabel: 'Generation cost',
     authSignupCreditsHint: 'Sign up and get 300 credits',
     chargeCredits: 'Pay',
-    chargeDescription: 'Free credits are used first. Paid credits are used only when the free balance is insufficient.',
+    chargeDescription: 'Credits are deducted as needed, and purchased credits appear right away.',
     purchaseNow: 'Purchase',
     paymentRedirecting: 'Opening checkout...',
     paymentSuccessTitle: 'Payment completed',
-    paymentSuccessReady: 'Your payment was verified and paid credits were added.',
+    paymentSuccessReady: 'Your payment was verified and credits were added.',
+    paymentCreditsAddedLabel: 'Added credits',
+    paymentCreditsAddedValue: (n: number) => `+${n.toLocaleString()} credits`,
+    paymentSubscriptionChangedLabel: 'Updated subscription',
     paymentFailedTitle: 'Payment not completed',
     paymentFailedDescription: 'The payment was canceled or failed. Please try again.',
     paymentVerifying: 'Verifying your payment. Please wait a moment.',
@@ -1338,6 +1342,9 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     creditCheck: '查看积分',
     subscriptionPlanLabel: '订阅方案',
     subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
+    paymentCreditsAddedLabel: '新增积分',
+    paymentCreditsAddedValue: (n: number) => `+${n.toLocaleString()} 积分`,
+    paymentSubscriptionChangedLabel: '变更后的订阅',
     adminNav: '管理',
     adminTitle: '管理员页面',
     adminSubtitle: '在一个页面中查看核心运营指标与最近活动。',
@@ -1509,6 +1516,9 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     creditCheck: 'クレジット確認',
     subscriptionPlanLabel: '購読プラン',
     subscriptionPlanValue: (plan: string) => plan === 'pro' ? 'PRO' : plan === 'popular' ? 'POPULAR' : plan === 'starter' ? 'STARTER' : 'FREE',
+    paymentCreditsAddedLabel: '追加されたクレジット',
+    paymentCreditsAddedValue: (n: number) => `+${n.toLocaleString()} クレジット`,
+    paymentSubscriptionChangedLabel: '変更後の購読プラン',
     adminNav: '管理',
     adminTitle: '管理者ページ',
     adminSubtitle: '運営指標と最近の活動を一画面で確認できます。',
@@ -3409,6 +3419,7 @@ const App: React.FC = () => {
   const [resultUsedCreditType, setResultUsedCreditType] = useState<CreditKind | null>(null);
   const [isStartingCheckout, setIsStartingCheckout] = useState<CheckoutProductId | null>(null);
   const [paymentStatusMessage, setPaymentStatusMessage] = useState<string | null>(null);
+  const [paymentStatusDetails, setPaymentStatusDetails] = useState<PaymentStatusDetails | null>(null);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('HAMDEVA-dark') === 'true');
   const [currentPage, setCurrentPage] = useState<SitePage>(() => getPageFromLocation(window.location.pathname, window.location.hash));
   const [routeSearch, setRouteSearch] = useState(() => window.location.search);
@@ -3544,15 +3555,13 @@ const App: React.FC = () => {
     ? `${getFirebaseDisabledMessage(firebaseDisabledBaseMessage)}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
   const currentCredits = userProfile?.credits ?? 0;
-  const currentDailyCredit = userProfile?.dailyCredit ?? 0;
-  const currentPaidCredit = userProfile?.paidCredit ?? 0;
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
   const guideSampleCat = FACE_SAMPLES.cat[0];
   const guideFixedPet = '/howto-fixed/step-1-pet.jpg';
   const guideFixedCloth = '/howto-fixed/step-2-outfit.jpg';
   const guideFixedResult = '/howto-fixed/step-3-result.jpg';
   const guideSampleCloth = guideFixedCloth;
-  const canAffordGeneration = currentDailyCredit >= GENERATION_COST || currentPaidCredit >= GENERATION_COST;
+  const canAffordGeneration = currentCredits >= GENERATION_COST;
   const isHistoryPreserved = (item: Pick<GenerationRecord, 'preservedAt' | 'preservedUntil'>) => {
     const preservedAt = getTimestampMillis(item.preservedAt);
     if (typeof preservedAt === 'number') {
@@ -3880,6 +3889,7 @@ const App: React.FC = () => {
   usePaymentSessionStatus({
     currentPage,
     currentUser,
+    currentUserProfile: userProfile,
     paymentSessionId,
     statusMessages: {
       verifying: t.paymentVerifying,
@@ -3888,6 +3898,7 @@ const App: React.FC = () => {
       verifyFailed: t.paymentVerifyFailed,
     },
     setPaymentStatusMessage,
+    setPaymentStatusDetails,
     setUserProfile,
   });
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
@@ -4815,6 +4826,7 @@ const App: React.FC = () => {
     }
 
     setIsStartingCheckout(productId);
+    setPaymentStatusDetails(null);
     try {
       const authToken = await currentUser.getIdToken();
       const session = await callCreateCheckoutSession({
@@ -4831,6 +4843,7 @@ const App: React.FC = () => {
         if (session.sessionId) {
           window.sessionStorage.setItem(PAYMENT_PENDING_SESSION_STORAGE_KEY, session.sessionId);
         }
+        window.sessionStorage.setItem(PAYMENT_PENDING_PLAN_STORAGE_KEY, userProfile?.subscriptionPlan ?? 'free');
       } catch {
         // Ignore storage failures and continue to checkout.
       }
@@ -5429,8 +5442,6 @@ const App: React.FC = () => {
     finalImageSrc,
     creditNotice,
     currentCredits,
-    currentDailyCredit,
-    currentPaidCredit,
     canAffordGeneration,
     generationCost: GENERATION_COST,
     resultWatermarkApplied,
@@ -6300,8 +6311,6 @@ const App: React.FC = () => {
                 <article className="page-article">
                   <h3>{t.siteCreditsLabel}</h3>
                   <p>{t.totalCreditLabel}: {currentCredits}</p>
-                  <p>{t.dailyCreditLabel}: {currentDailyCredit}</p>
-                  <p>{t.paidCreditLabel}: {currentPaidCredit}</p>
                 </article>
                 <article className="page-article">
                   <h3>{t.siteCreditCostLabel}</h3>
@@ -6314,8 +6323,8 @@ const App: React.FC = () => {
               <PaymentStatusPage
                 title={t.paymentSuccessTitle}
                 description={paymentStatusMessage === t.paymentSuccessReady ? t.paymentSuccessReady : ''}
-                dailyCredit={currentDailyCredit}
-                paidCredit={currentPaidCredit}
+                credits={currentCredits}
+                details={paymentStatusDetails}
                 copy={t}
                 status={
                   paymentStatusMessage === t.paymentSuccessReady
@@ -6335,8 +6344,8 @@ const App: React.FC = () => {
               <PaymentStatusPage
                 title={t.paymentFailedTitle}
                 description={t.paymentFailedDescription}
-                dailyCredit={currentDailyCredit}
-                paidCredit={currentPaidCredit}
+                credits={currentCredits}
+                details={null}
                 copy={t}
                 status="failed"
                 primaryLabel={t.goToMyPage}
@@ -6396,8 +6405,6 @@ const App: React.FC = () => {
               <MyPageSection
                 currentUser={currentUser}
                 userProfile={userProfile}
-                currentDailyCredit={currentDailyCredit}
-                currentPaidCredit={currentPaidCredit}
                 currentCredits={currentCredits}
                 locale={lang}
                 historyItems={historyItems}

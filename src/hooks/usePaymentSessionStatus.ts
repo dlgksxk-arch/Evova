@@ -7,17 +7,27 @@ import { normalizeUserProfile } from '../lib/profile';
 import type { UserProfile } from '../types/hamdeva';
 
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
+const PAYMENT_PENDING_PLAN_STORAGE_KEY = 'HAMDEVA-pending-payment-plan';
+
+export type PaymentStatusDetails = {
+  addedPaidCredit: number | null;
+  previousSubscriptionPlan: UserProfile['subscriptionPlan'] | null;
+  nextSubscriptionPlan: UserProfile['subscriptionPlan'] | null;
+};
 
 export const usePaymentSessionStatus = ({
   currentPage,
   currentUser,
+  currentUserProfile,
   paymentSessionId,
   statusMessages,
   setPaymentStatusMessage,
+  setPaymentStatusDetails,
   setUserProfile,
 }: {
   currentPage: SitePage;
   currentUser: User | null;
+  currentUserProfile: UserProfile | null;
   paymentSessionId: string | null;
   statusMessages: {
     verifying: string;
@@ -26,6 +36,7 @@ export const usePaymentSessionStatus = ({
     verifyFailed: string;
   };
   setPaymentStatusMessage: Dispatch<SetStateAction<string | null>>;
+  setPaymentStatusDetails: Dispatch<SetStateAction<PaymentStatusDetails | null>>;
   setUserProfile: Dispatch<SetStateAction<UserProfile | null>>;
 }) => {
   useEffect(() => {
@@ -71,8 +82,20 @@ export const usePaymentSessionStatus = ({
     const clearPendingSessionId = () => {
       try {
         window.sessionStorage.removeItem(PAYMENT_PENDING_SESSION_STORAGE_KEY);
+        window.sessionStorage.removeItem(PAYMENT_PENDING_PLAN_STORAGE_KEY);
       } catch {
         // Ignore storage cleanup failures.
+      }
+    };
+
+    const getPendingSubscriptionPlan = (): UserProfile['subscriptionPlan'] | null => {
+      try {
+        const storedPlan = window.sessionStorage.getItem(PAYMENT_PENDING_PLAN_STORAGE_KEY);
+        return storedPlan === 'starter' || storedPlan === 'popular' || storedPlan === 'pro' || storedPlan === 'free'
+          ? storedPlan
+          : null;
+      } catch {
+        return null;
       }
     };
 
@@ -107,6 +130,13 @@ export const usePaymentSessionStatus = ({
 
         if (response.status === 'success') {
           clearScheduledReload();
+          const previousSubscriptionPlan = getPendingSubscriptionPlan() ?? currentUserProfile?.subscriptionPlan ?? null;
+          const nextSubscriptionPlan = response.subscriptionPlan ?? currentUserProfile?.subscriptionPlan ?? null;
+          setPaymentStatusDetails({
+            addedPaidCredit: typeof response.paidCredit === 'number' ? response.paidCredit : null,
+            previousSubscriptionPlan,
+            nextSubscriptionPlan,
+          });
           clearPendingSessionId();
           try {
             const bootstrapResponse = await callCreditBootstrap(currentUser);
@@ -131,6 +161,7 @@ export const usePaymentSessionStatus = ({
         if (response.status === 'failed') {
           clearScheduledReload();
           clearPendingSessionId();
+          setPaymentStatusDetails(null);
           setPaymentStatusMessage(statusMessages.failed);
           return;
         }
@@ -143,6 +174,7 @@ export const usePaymentSessionStatus = ({
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to verify payment session:', error);
+          setPaymentStatusDetails(null);
           setPaymentStatusMessage(statusMessages.verifyFailed);
         }
       }
@@ -161,8 +193,10 @@ export const usePaymentSessionStatus = ({
   }, [
     currentPage,
     currentUser,
+    currentUserProfile?.subscriptionPlan,
     paymentSessionId,
     setPaymentStatusMessage,
+    setPaymentStatusDetails,
     setUserProfile,
     statusMessages.failed,
     statusMessages.success,

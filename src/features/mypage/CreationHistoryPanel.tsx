@@ -95,11 +95,7 @@ const inferFileExtension = (item: GenerationRecord): string => {
   return match?.[1] || 'png';
 };
 
-const openShareWindow = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer');
-};
-
-const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' | 'instagram' | 'link' | 'download') => {
+const renderSocialIcon = (kind: 'link' | 'download') => {
   const commonProps = {
     width: 18,
     height: 18,
@@ -110,47 +106,6 @@ const renderSocialIcon = (kind: 'kakao' | 'x' | 'facebook' | 'line' | 'tiktok' |
   } as const;
 
   switch (kind) {
-    case 'kakao':
-      return (
-        <svg {...commonProps}>
-          <path d="M12 4C7.03 4 3 7.13 3 11c0 2.45 1.62 4.61 4.07 5.86L6 20l3.83-2.1c.7.13 1.42.2 2.17.2 4.97 0 9-3.13 9-7s-4.03-7-9-7Z" fill="#FEE500" stroke="#3B1E1E" strokeWidth="1.3" strokeLinejoin="round"/>
-          <path d="M9 9.2v4.6M9 11.5l3.8-2.3M12.8 11.5 9 13.8M15.2 9.2v4.6" stroke="#3B1E1E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      );
-    case 'x':
-      return (
-        <svg {...commonProps}>
-          <path d="M5 4.5h3.2l4.1 5.5 4.8-5.5H20l-6.4 7.2L20 20h-3.2l-4.5-6-5.2 6H4l6.9-7.8L5 4.5Z" fill="currentColor"/>
-        </svg>
-      );
-    case 'facebook':
-      return (
-        <svg {...commonProps}>
-          <path d="M13.3 20v-6.7h2.2l.4-2.6h-2.6V9.1c0-.75.2-1.27 1.28-1.27H16V5.5c-.24-.03-1.07-.1-2.02-.1-2 0-3.38 1.22-3.38 3.47v1.93H8.4v2.6h2.2V20h2.7Z" fill="currentColor"/>
-        </svg>
-      );
-    case 'line':
-      return (
-        <svg {...commonProps}>
-          <path d="M20.5 10.9c0-4-3.83-7.2-8.5-7.2s-8.5 3.2-8.5 7.2c0 3.58 3.04 6.58 7.15 7.13L9.8 21l3.2-2.9h.01c4.22-.45 7.49-3.49 7.49-7.2Z" fill="#06C755"/>
-          <path d="M8 12.2V9.4M9.9 12.2H8M12.1 12.2V9.4m0 2.8h1.9M16.1 12.2V9.4m0 2.8 1.9-2.8m0 2.8V9.4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      );
-    case 'tiktok':
-      return (
-        <svg {...commonProps}>
-          <path d="M14.9 4c.5 1.6 1.8 3 3.5 3.8v2.4a6.76 6.76 0 0 1-3.4-1v5.5a4.7 4.7 0 1 1-4.7-4.7c.32 0 .63.03.93.1v2.5a2.16 2.16 0 1 0 1.54 2.07V4h2.23Z" fill="currentColor"/>
-          <path d="M12.4 4v10.67a2.16 2.16 0 1 1-1.54-2.07V10.1a4.7 4.7 0 1 0 4.7 4.57V9.17a6.76 6.76 0 0 0 3.4 1V7.8A5.92 5.92 0 0 1 15.5 4h-3.1Z" fill="#25F4EE" fillOpacity=".55"/>
-        </svg>
-      );
-    case 'instagram':
-      return (
-        <svg {...commonProps}>
-          <rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="1.8"/>
-          <circle cx="12" cy="12" r="3.6" stroke="currentColor" strokeWidth="1.8"/>
-          <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/>
-        </svg>
-      );
     case 'link':
       return (
         <svg {...commonProps}>
@@ -440,83 +395,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
   const getSelectedShareUrl = (): string | null => selectedItem?.imageUrl || null;
 
-  const openShareIntent = (url: string) => {
-    openShareWindow(url);
-    setShareStatus(copy.shareUploadOpened);
-  };
-
-  const handleShareOnKakao = () => {
-    const shareUrl = getSelectedShareUrl();
-    if (!shareUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    openShareIntent(`https://story.kakao.com/share?url=${encodeURIComponent(shareUrl)}`);
-  };
-
-  const handleShareOnX = () => {
-    const shareUrl = getSelectedShareUrl();
-    if (!shareUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    openShareIntent(`https://x.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent('HAMDEVA pet fitting result')}`);
-  };
-
-  const handleShareOnFacebook = () => {
-    const shareUrl = getSelectedShareUrl();
-    if (!shareUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    openShareIntent(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
-  };
-
-  const handleShareOnLine = () => {
-    const shareUrl = getSelectedShareUrl();
-    if (!shareUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    openShareIntent(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`);
-  };
-
-  const handleInstagramSave = () => {
-    if (!selectedItem?.imageUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    try {
-      downloadFile(selectedItem.imageUrl, `hamdeva-instagram-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-      openShareWindow('https://www.instagram.com/');
-      setShareStatus(copy.shareUploadOpened);
-    } catch (error) {
-      console.error('Failed to save history image for Instagram:', error);
-      setShareStatus(copy.imageNotReady);
-    }
-  };
-
-  const handleShareOnTikTok = () => {
-    if (!selectedItem?.imageUrl) {
-      setShareStatus(copy.imageNotReady);
-      return;
-    }
-
-    try {
-      downloadFile(selectedItem.imageUrl, `hamdeva-tiktok-${selectedItem.id}.${inferFileExtension(selectedItem)}`);
-      openShareWindow('https://www.tiktok.com/upload');
-      setShareStatus(copy.shareUploadOpened);
-    } catch (error) {
-      console.error('Failed to prepare history image for TikTok:', error);
-      setShareStatus(copy.imageNotReady);
-    }
-  };
-
   const handleCopySelectedLink = async () => {
     const shareUrl = getSelectedShareUrl();
     if (!shareUrl) {
@@ -775,30 +653,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                     </div>
                     {!isMobile ? (
                       <aside className="history-selected-sidebar">
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
-                          {renderSocialIcon('kakao')}
-                          Kakao
-                        </button>
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
-                          {renderSocialIcon('x')}
-                          X
-                        </button>
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
-                          {renderSocialIcon('facebook')}
-                          Facebook
-                        </button>
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
-                          {renderSocialIcon('line')}
-                          LINE
-                        </button>
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
-                          {renderSocialIcon('instagram')}
-                          Instagram
-                        </button>
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
-                          {renderSocialIcon('tiktok')}
-                          TikTok
-                        </button>
                         <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
                           {renderSocialIcon('link')}
                           Link
@@ -830,30 +684,6 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 {isMobile ? (
                   <div className="history-modal-mobile-actions">
                     <div className="history-actions" style={{ marginTop: 0 }}>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnKakao} type="button">
-                        {renderSocialIcon('kakao')}
-                        Kakao
-                      </button>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnX} type="button">
-                        {renderSocialIcon('x')}
-                        X
-                      </button>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnFacebook} type="button">
-                        {renderSocialIcon('facebook')}
-                        Facebook
-                      </button>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnLine} type="button">
-                        {renderSocialIcon('line')}
-                        LINE
-                      </button>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleInstagramSave} type="button">
-                        {renderSocialIcon('instagram')}
-                        Instagram
-                      </button>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={handleShareOnTikTok} type="button">
-                        {renderSocialIcon('tiktok')}
-                        TikTok
-                      </button>
                       <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
                         {renderSocialIcon('link')}
                         Link

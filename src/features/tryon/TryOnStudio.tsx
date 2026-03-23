@@ -136,8 +136,6 @@ interface TryOnStudioProps {
   finalImageSrc: string | null;
   creditNotice: string | null;
   currentCredits: number;
-  currentDailyCredit: number;
-  currentPaidCredit: number;
   canAffordGeneration: boolean;
   generationCost: number;
   resultWatermarkApplied: boolean;
@@ -208,8 +206,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   finalImageSrc,
   creditNotice,
   currentCredits,
-  currentDailyCredit,
-  currentPaidCredit,
   canAffordGeneration,
   generationCost,
   resultWatermarkApplied,
@@ -362,7 +358,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     <>
       {(!isModalLayout || !currentUser) && (
         <div className="usage-bar">
-          {currentUser ? `${copy.dailyCreditLabel}: ${currentDailyCredit} / ${copy.paidCreditLabel}: ${currentPaidCredit}` : copy.loginForFree}
+          {currentUser ? copy.currentCredits(currentCredits) : copy.loginForFree}
         </div>
       )}
       {(!isModalLayout || !currentUser) && creditNotice && <div className="credit-notice-banner">{creditNotice}</div>}
@@ -710,7 +706,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         ) : (
           <>
             <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
-            <p className="credit-balance-text">{copy.dailyCreditLabel}: {currentDailyCredit} · {copy.paidCreditLabel}: {currentPaidCredit}</p>
+            <p className="credit-balance-text">{copy.currentCredits(currentCredits)}</p>
           </>
         )}
         <button

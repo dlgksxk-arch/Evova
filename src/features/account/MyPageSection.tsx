@@ -39,8 +39,6 @@ const isCurrentSubscriptionProduct = (plan: UserProfile['subscriptionPlan'] | un
 interface MyPageSectionProps {
   currentUser: User | null;
   userProfile: UserProfile | null;
-  currentDailyCredit: number;
-  currentPaidCredit: number;
   currentCredits: number;
   locale: string;
   historyItems: GenerationRecord[];
@@ -76,8 +74,6 @@ interface MyPageSectionProps {
 const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
   userProfile,
-  currentDailyCredit,
-  currentPaidCredit,
   currentCredits,
   locale,
   isFirebaseConfigured,
@@ -142,14 +138,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
             <div className="credit-balance-card">
               <span>{copy.totalCreditLabel}</span>
               <strong>{currentCredits}</strong>
-            </div>
-            <div className="credit-balance-card">
-              <span>{copy.dailyCreditLabel}</span>
-              <strong>{currentDailyCredit}</strong>
-            </div>
-            <div className="credit-balance-card">
-              <span>{copy.paidCreditLabel}</span>
-              <strong>{currentPaidCredit}</strong>
             </div>
           </div>
         </article>
