@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import './App.css';
 import AuthModal from './components/AuthModal';
@@ -3218,9 +3219,10 @@ const ShellModal: React.FC<{
   subtitle?: string;
   className?: string;
   backdropClassName?: string;
+  usePortal?: boolean;
   onClose: () => void;
   children: React.ReactNode;
-}> = ({ title, subtitle, className = '', backdropClassName = '', onClose, children }) => {
+}> = ({ title, subtitle, className = '', backdropClassName = '', usePortal = false, onClose, children }) => {
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -3232,7 +3234,7 @@ const ShellModal: React.FC<{
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  return (
+  const modalNode = (
     <div className={`modal-backdrop ${backdropClassName}`.trim()} onClick={onClose}>
       <div className={`auth-modal account-modal ${className}`.trim()} onClick={(event) => event.stopPropagation()}>
         <div className="modal-header account-modal-header">
@@ -3248,6 +3250,12 @@ const ShellModal: React.FC<{
       </div>
     </div>
   );
+
+  if (usePortal && typeof document !== 'undefined') {
+    return createPortal(modalNode, document.body);
+  }
+
+  return modalNode;
 };
 
 const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
@@ -6671,6 +6679,7 @@ const App: React.FC = () => {
           title={t.resultTitle}
           backdropClassName="result-preview-backdrop"
           className="result-preview-shell"
+          usePortal
           onClose={closeResultPreviewModal}
         >
           {!resultPreviewModalLoading && resultPreviewModalSrc && (

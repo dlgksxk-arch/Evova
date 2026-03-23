@@ -68,8 +68,8 @@ const OBSTACLE_JUMP_WINDOW = 0.04;
 const OBSTACLE_CRASH_FREEZE_PROGRESS = 2000 / DISPLAY_PROGRESS_TARGET_MS;
 
 type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
-type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
-type RunnerObstacleOutcome = 'clean' | 'delay' | 'crash';
+type RunnerState = 'run' | 'jump' | 'tumble' | 'sink' | 'celebrate';
+type RunnerObstacleOutcome = 'clean' | 'crash';
 
 type RunnerObstacleProfile = Record<RunnerObstacleKey, {
   outcome: RunnerObstacleOutcome;
@@ -131,11 +131,11 @@ const getRunnerObstacleState = (
   let resolvedProgress = baseProgress;
   let activeState: RunnerState = 'run';
   let activeKey: RunnerObstacleKey | null = null;
-  let totalPenalty = 0;
+  let totalAdjustment = 0;
 
   RUNNER_OBSTACLES.forEach((obstacle, index) => {
     const profileEntry = profile[obstacle.key];
-    if (!profileEntry || profileEntry.outcome === 'clean') {
+    if (!profileEntry) {
       return;
     }
 
@@ -155,26 +155,28 @@ const getRunnerObstacleState = (
       const phase = clamp((baseProgress - activeStart) / Math.max(0.001, OBSTACLE_JUMP_WINDOW), 0, 1);
       activeKey = obstacle.key;
       activeState = 'jump';
-      resolvedProgress = clamp((obstaclePosition - 0.016) + (phase * 0.03) - totalPenalty, 0.02, 0.97);
+      resolvedProgress = clamp((obstaclePosition - 0.016) + (phase * 0.036) - totalAdjustment, 0.02, 0.97);
       return;
     }
 
     if (profileEntry.outcome === 'crash' && baseProgress <= crashFreezeEnd && activeKey === null) {
       activeKey = obstacle.key;
       activeState = obstacle.key === 'river' || obstacle.key === 'mud' ? 'sink' : 'tumble';
-      totalPenalty += baseProgress - jumpEnd;
-      resolvedProgress = clamp(obstaclePosition + 0.012 - totalPenalty, 0.02, 0.97);
+      totalAdjustment += baseProgress - jumpEnd;
+      resolvedProgress = clamp(obstaclePosition + 0.012 - totalAdjustment, 0.02, 0.97);
       return;
     }
 
     if (profileEntry.outcome === 'crash' && baseProgress > crashFreezeEnd) {
-      totalPenalty += OBSTACLE_CRASH_FREEZE_PROGRESS;
+      totalAdjustment += profileEntry.penalty;
       return;
     }
+
+    totalAdjustment -= profileEntry.penalty;
   });
 
   if (activeKey === null) {
-    resolvedProgress = clamp(baseProgress - totalPenalty, 0.02, 0.97);
+    resolvedProgress = clamp(baseProgress - totalAdjustment, 0.02, 0.97);
   }
   return {
     progress: resolvedProgress,
