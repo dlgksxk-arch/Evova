@@ -93,23 +93,23 @@ const WINNER_FINISH_PERCENT = 80;
 
 const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
   hurdle: {
-    outcome: Math.random() < 0.32 ? 'crash' : 'clean',
+    outcome: Math.random() < 0.3 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   mountain: {
-    outcome: Math.random() < 0.24 ? 'crash' : 'clean',
+    outcome: Math.random() < 0.3 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   river: {
-    outcome: Math.random() < 0.28 ? 'crash' : 'clean',
+    outcome: Math.random() < 0.3 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   desert: {
-    outcome: Math.random() < 0.2 ? 'crash' : 'clean',
+    outcome: Math.random() < 0.3 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   mud: {
-    outcome: Math.random() < 0.34 ? 'crash' : 'clean',
+    outcome: Math.random() < 0.3 ? 'crash' : 'clean',
     penalty: 0.05,
   },
 });
@@ -725,7 +725,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             >
               <span className="generation-runner-visual">
                 <span className="generation-runner-shadow" />
-                <span className="generation-runner-tail" />
                 <span className="generation-runner-body" />
                 <span className="generation-runner-head">
                   <span className="generation-runner-ear ear-left" />
@@ -753,7 +752,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             >
               <span className="generation-runner-visual">
                 <span className="generation-runner-shadow" />
-                <span className="generation-runner-tail" />
                 <span className="generation-runner-body" />
                 <span className="generation-runner-head">
                   <span className="generation-runner-ear ear-left" />
