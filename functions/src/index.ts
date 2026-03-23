@@ -3974,6 +3974,7 @@ const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
   const generationLogs: Array<Record<string, unknown>> = generationSnapshot.docs.map((snapshot) => {
     const data = snapshot.data();
     return {
@@ -3988,19 +3989,34 @@ const buildAdminDashboardPayload = async (user: AuthenticatedUser) => {
   const videoGenerationLogs = generationLogs.filter((item) => item.type === 'video_generation');
   const getCreatedAtMillis = (item: Record<string, unknown>): number =>
     typeof item.createdAt === 'number' && Number.isFinite(item.createdAt) ? item.createdAt : 0;
+  const userRecords = usersSnapshot.docs.map((snapshot) => {
+    const data = snapshot.data();
+    return {
+      id: snapshot.id,
+      createdAt: serializeTimestamp(data.createdAt),
+    };
+  });
   const todayGenerations = imageGenerationLogs.filter((item) => getCreatedAtMillis(item) >= todayStart.getTime());
   const todayVideoGenerations = videoGenerationLogs.filter((item) => getCreatedAtMillis(item) >= todayStart.getTime());
   const recent7DayGenerations = generationLogs.filter((item) => getCreatedAtMillis(item) >= sevenDaysAgo);
+  const recent30DayGenerations = generationLogs.filter((item) => getCreatedAtMillis(item) >= thirtyDaysAgo);
+  const todaySignups = userRecords.filter((item) => getCreatedAtMillis(item) >= todayStart.getTime());
+  const signups7Days = userRecords.filter((item) => getCreatedAtMillis(item) >= sevenDaysAgo);
+  const signups30Days = userRecords.filter((item) => getCreatedAtMillis(item) >= thirtyDaysAgo);
   const getEstimatedCost = (item: any): number => typeof item.estimatedCost === 'number' && Number.isFinite(item.estimatedCost) ? item.estimatedCost : 0;
 
   return {
     summary: {
       users: usersSnapshot.size,
+      signupsToday: todaySignups.length,
+      signups7Days: signups7Days.length,
+      signups30Days: signups30Days.length,
       posts: postsSnapshot.size,
       generations: generationLogs.length,
       sharedResults: sharedResultsSnapshot.docs.filter((snapshot) => snapshot.data().sharedAt).length,
       todayGenerations: todayGenerations.length,
       todayEstimatedCost: todayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
+      recent30DaysEstimatedCost: recent30DayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
       totalEstimatedCost: generationLogs.reduce((sum, item) => sum + getEstimatedCost(item), 0),
       recent7DaysEstimatedCost: recent7DayGenerations.reduce((sum, item) => sum + getEstimatedCost(item), 0),
       totalVideoGenerations: videoGenerationLogs.length,

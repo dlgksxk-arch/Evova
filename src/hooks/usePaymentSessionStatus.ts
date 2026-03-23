@@ -8,11 +8,40 @@ import type { UserProfile } from '../types/hamdeva';
 
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const PAYMENT_PENDING_PLAN_STORAGE_KEY = 'HAMDEVA-pending-payment-plan';
+const PAYMENT_PENDING_PRODUCT_STORAGE_KEY = 'HAMDEVA-pending-payment-product-id';
 
 export type PaymentStatusDetails = {
   addedPaidCredit: number | null;
   previousSubscriptionPlan: UserProfile['subscriptionPlan'] | null;
   nextSubscriptionPlan: UserProfile['subscriptionPlan'] | null;
+};
+
+const getCreditAmountForProduct = (productId: string | null): number | null => {
+  switch (productId) {
+    case 'starter':
+      return 1000;
+    case 'popular':
+      return 3500;
+    case 'pro':
+      return 7000;
+    case 'small_pack':
+      return 1000;
+    case 'basic_pack':
+      return 1500;
+    case 'medium_pack':
+      return 3000;
+    case 'large_pack':
+      return 6000;
+    default:
+      return null;
+  }
+};
+
+const getSubscriptionPlanForProduct = (productId: string | null): UserProfile['subscriptionPlan'] | null => {
+  if (productId === 'starter' || productId === 'popular' || productId === 'pro') {
+    return productId;
+  }
+  return null;
 };
 
 export const usePaymentSessionStatus = ({
@@ -83,6 +112,7 @@ export const usePaymentSessionStatus = ({
       try {
         window.sessionStorage.removeItem(PAYMENT_PENDING_SESSION_STORAGE_KEY);
         window.sessionStorage.removeItem(PAYMENT_PENDING_PLAN_STORAGE_KEY);
+        window.sessionStorage.removeItem(PAYMENT_PENDING_PRODUCT_STORAGE_KEY);
       } catch {
         // Ignore storage cleanup failures.
       }
@@ -94,6 +124,14 @@ export const usePaymentSessionStatus = ({
         return storedPlan === 'starter' || storedPlan === 'popular' || storedPlan === 'pro' || storedPlan === 'free'
           ? storedPlan
           : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getPendingProductId = (): string | null => {
+      try {
+        return window.sessionStorage.getItem(PAYMENT_PENDING_PRODUCT_STORAGE_KEY);
       } catch {
         return null;
       }
@@ -130,10 +168,16 @@ export const usePaymentSessionStatus = ({
 
         if (response.status === 'success') {
           clearScheduledReload();
+          const pendingProductId = getPendingProductId();
           const previousSubscriptionPlan = getPendingSubscriptionPlan() ?? currentUserProfile?.subscriptionPlan ?? null;
-          const nextSubscriptionPlan = response.subscriptionPlan ?? currentUserProfile?.subscriptionPlan ?? null;
+          const nextSubscriptionPlan = response.subscriptionPlan
+            ?? getSubscriptionPlanForProduct(pendingProductId)
+            ?? currentUserProfile?.subscriptionPlan
+            ?? null;
           setPaymentStatusDetails({
-            addedPaidCredit: typeof response.paidCredit === 'number' ? response.paidCredit : null,
+            addedPaidCredit: typeof response.paidCredit === 'number' && response.paidCredit > 0
+              ? response.paidCredit
+              : getCreditAmountForProduct(pendingProductId),
             previousSubscriptionPlan,
             nextSubscriptionPlan,
           });

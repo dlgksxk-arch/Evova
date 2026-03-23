@@ -119,6 +119,7 @@ const ADSENSE_SCRIPT_ID = 'hamdeva-adsense-loader';
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const PAYMENT_PENDING_SESSION_STORAGE_KEY = 'HAMDEVA-pending-payment-session-id';
 const PAYMENT_PENDING_PLAN_STORAGE_KEY = 'HAMDEVA-pending-payment-plan';
+const PAYMENT_PENDING_PRODUCT_STORAGE_KEY = 'HAMDEVA-pending-payment-product-id';
 const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_05204666-8bbf-4be8-81a8-180180969593.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_0a339649-fe99-4b71-b4e2-f5187376bd5b.png',
@@ -4844,6 +4845,7 @@ const App: React.FC = () => {
           window.sessionStorage.setItem(PAYMENT_PENDING_SESSION_STORAGE_KEY, session.sessionId);
         }
         window.sessionStorage.setItem(PAYMENT_PENDING_PLAN_STORAGE_KEY, userProfile?.subscriptionPlan ?? 'free');
+        window.sessionStorage.setItem(PAYMENT_PENDING_PRODUCT_STORAGE_KEY, productId);
       } catch {
         // Ignore storage failures and continue to checkout.
       }

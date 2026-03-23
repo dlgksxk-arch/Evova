@@ -105,6 +105,8 @@ const formatCompactDuration = (value?: number | null): string => {
   return `${Math.max(1, minutes)}m`;
 };
 
+const formatMetricValue = (value: number): string => value.toLocaleString();
+
 const renderDetailValue = (
   label: string,
   value: React.ReactNode,
@@ -378,6 +380,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         : activityLogsState;
 
   const purchaseHistory = activeDetailUser?.purchaseHistory ?? [];
+  const summaryRows = [
+    {
+      label: copy.adminUsersSection ?? '가입자',
+      values: [
+        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(adminSummary.signupsToday) },
+        { label: copy.admin7DaysLabel ?? '7일', value: formatMetricValue(adminSummary.signups7Days) },
+        { label: copy.admin30DaysLabel ?? '30일', value: formatMetricValue(adminSummary.signups30Days) },
+        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(adminSummary.users) },
+      ],
+    },
+    {
+      label: copy.adminGenerationSection ?? '생성',
+      values: [
+        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(adminSummary.todayGenerations) },
+        { label: copy.admin7DaysLabel ?? '7일', value: '-' },
+        { label: copy.admin30DaysLabel ?? '30일', value: '-' },
+        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(adminSummary.generations) },
+      ],
+    },
+    {
+      label: copy.adminEstimatedCost ?? '예상 비용',
+      values: [
+        { label: copy.adminTodayLabel ?? '오늘', value: copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost) },
+        { label: copy.admin7DaysLabel ?? '7일', value: copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost) },
+        { label: copy.admin30DaysLabel ?? '30일', value: copy.formatEstimatedCostLabel(adminSummary.recent30DaysEstimatedCost) },
+        { label: copy.adminTotalLabel ?? '총', value: copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost) },
+      ],
+    },
+    {
+      label: copy.adminSystemSection ?? '운영',
+      values: [
+        { label: copy.adminTotalPosts ?? '게시글', value: formatMetricValue(adminSummary.posts) },
+        { label: copy.adminTotalSharedResults ?? '공유', value: formatMetricValue(adminSummary.sharedResults) },
+        { label: copy.adminTodayVideoGenerations ?? '오늘 영상', value: formatMetricValue(adminSummary.todayVideoGenerations) },
+        { label: copy.adminTotalVideoGenerations ?? '총 영상', value: formatMetricValue(adminSummary.totalVideoGenerations) },
+      ],
+    },
+  ];
 
   const openUserModal = () => {
     setIsUserModalOpen(true);
@@ -585,7 +625,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <>
       <div className="admin-layout">
-        <article className="page-article">
+        <article className="page-article admin-sheet-card">
           <div className="admin-section-header">
             <div>
               <h2>{copy.adminTitle}</h2>
@@ -604,23 +644,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </p>
           ) : null}
         </article>
-        <div className="management-grid admin-summary-grid">
-          <article className="page-article admin-stat-card"><h3>{copy.adminTotalUsers}</h3><p>{adminSummary.users}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTotalPosts}</h3><p>{adminSummary.posts}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTotalGenerations}</h3><p>{adminSummary.generations}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTotalSharedResults}</h3><p>{adminSummary.sharedResults}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTodayGenerations}</h3><p>{adminSummary.todayGenerations}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTodayEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost)}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminTotalEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost)}</p></article>
-          <article className="page-article admin-stat-card"><h3>{copy.adminRecent7DaysEstimatedCost}</h3><p>{copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost)}</p></article>
-        </div>
-        <article className="page-article">
-          <h3>{copy.adminSystemSection}</h3>
-          <p>{copy.siteVersionLabel}: {appVersion}</p>
-          <p>{copy.siteFirebaseLabel}: {isFirebaseConfigured ? copy.siteFirebaseReady : copy.siteFirebaseBlocked}</p>
-          <p>{copy.siteCreditCostLabel}: {copy.generationCost}</p>
+        <article className="page-article admin-sheet-card">
+          <div className="admin-section-header compact">
+            <div>
+              <h3>{copy.adminDashboard ?? '대시보드 요약'}</h3>
+              <p className="admin-section-helper">{copy.adminSummarySheetHint ?? '오늘, 7일, 30일, 누적 기준으로 핵심 운영 지표를 한 번에 봅니다.'}</p>
+            </div>
+          </div>
+          <div className="admin-summary-sheet">
+            <div className="admin-summary-sheet-head">
+              <span>{copy.adminMetricLabel ?? '지표'}</span>
+              <span>{copy.adminTodayLabel ?? '오늘'}</span>
+              <span>{copy.admin7DaysLabel ?? '7일'}</span>
+              <span>{copy.admin30DaysLabel ?? '30일'}</span>
+              <span>{copy.adminTotalLabel ?? '총'}</span>
+            </div>
+            {summaryRows.map((row) => (
+              <div key={row.label} className="admin-summary-sheet-row">
+                <span className="admin-summary-metric">{row.label}</span>
+                {row.values.map((cell) => (
+                  <span key={`${row.label}-${cell.label}`} className="admin-summary-value">
+                    <strong>{cell.value}</strong>
+                    <small>{cell.label}</small>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
         </article>
-        <article className="page-article">
+        <article className="page-article admin-sheet-card">
+          <div className="admin-system-strip">
+            <span>{copy.siteVersionLabel}: <strong>{appVersion}</strong></span>
+            <span>{copy.siteFirebaseLabel}: <strong>{isFirebaseConfigured ? copy.siteFirebaseReady : copy.siteFirebaseBlocked}</strong></span>
+            <span>{copy.siteCreditCostLabel}: <strong>{copy.generationCost}</strong></span>
+          </div>
+        </article>
+        <article className="page-article admin-sheet-card">
           <div className="admin-section-header">
             <div>
               <h3>{copy.adminUsersSection}</h3>
@@ -645,7 +704,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
           </div>
         </article>
-        <article className="page-article">
+        <article className="page-article admin-sheet-card">
           <h3>{copy.adminBoardSection}</h3>
           <div className="admin-table">
             <div className="admin-table-head admin-board-head">
@@ -664,7 +723,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )) : <p>{copy.boardNoticeEmpty}</p>}
           </div>
         </article>
-        <article className="page-article">
+        <article className="page-article admin-sheet-card">
           <h3>{copy.adminRecentPosts}</h3>
           <div className="admin-table">
             <div className="admin-table-head admin-board-head">

@@ -4,11 +4,15 @@ import { auth } from '../firebase';
 
 export type AdminSummary = {
   users: number;
+  signupsToday: number;
+  signups7Days: number;
+  signups30Days: number;
   posts: number;
   generations: number;
   sharedResults: number;
   todayGenerations: number;
   todayEstimatedCost: number;
+  recent30DaysEstimatedCost: number;
   totalEstimatedCost: number;
   recent7DaysEstimatedCost: number;
   totalVideoGenerations: number;
@@ -18,11 +22,15 @@ export type AdminSummary = {
 
 const EMPTY_SUMMARY: AdminSummary = {
   users: 0,
+  signupsToday: 0,
+  signups7Days: 0,
+  signups30Days: 0,
   posts: 0,
   generations: 0,
   sharedResults: 0,
   todayGenerations: 0,
   todayEstimatedCost: 0,
+  recent30DaysEstimatedCost: 0,
   totalEstimatedCost: 0,
   recent7DaysEstimatedCost: 0,
   totalVideoGenerations: 0,
