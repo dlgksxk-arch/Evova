@@ -582,9 +582,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const raceFinishPercent = Math.min(85, 70 + (crashDelayCount * 3));
   const raceProgress = clamp(generationProgress / raceFinishPercent, 0, 1);
   const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
-  const isRaceFinished = generationProgress >= raceFinishPercent;
-  const isResultRevealStage = isRaceFinished || isPreviewReady;
-  const isSnackStage = isRaceFinished || isPreviewReady;
   const winnerEdgeBoost = clamp((raceProgress - 0.72) / 0.18, 0, 1) * 0.032;
   const dogLeadOffset = generationWinner === 'dog' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
   const catLeadOffset = generationWinner === 'cat' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
@@ -592,32 +589,41 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const catBaseProgress = clamp((raceProgress * 0.94) + raceSwingSeed.catBias + catLeadOffset, 0.02, 0.98);
   const dogTelemetry = getRunnerObstacleState(dogBaseProgress, runnerObstacleProfiles.dog, generationWinner, 'dog');
   const catTelemetry = getRunnerObstacleState(catBaseProgress, runnerObstacleProfiles.cat, generationWinner, 'cat');
-  const isWinnerAtFinish = generationProgress >= Math.min(WINNER_FINISH_PERCENT, raceFinishPercent);
+  const finishLineProgress = 0.985;
+  const firstFinisher = dogTelemetry.progress >= finishLineProgress && dogTelemetry.progress >= catTelemetry.progress
+    ? 'dog'
+    : catTelemetry.progress >= finishLineProgress
+      ? 'cat'
+      : null;
+  const raceWinner = firstFinisher ?? generationWinner;
+  const isRaceFinished = Boolean(firstFinisher) || generationProgress >= raceFinishPercent;
+  const isResultRevealStage = isRaceFinished || isPreviewReady;
+  const isSnackStage = isRaceFinished || isPreviewReady;
   const dogRunnerProgress = isPreviewReady
-    ? (generationWinner === 'dog' ? 1 : 0.964)
+    ? (raceWinner === 'dog' ? 1 : 0.964)
     : isRaceFinished
-      ? (generationWinner === 'dog' ? 1 : clamp(dogTelemetry.progress, 0.78, 0.93))
+      ? (raceWinner === 'dog' ? 1 : clamp(dogTelemetry.progress, 0.78, 0.93))
       : dogTelemetry.progress;
   const catRunnerProgress = isPreviewReady
-    ? (generationWinner === 'cat' ? 1 : 0.964)
+    ? (raceWinner === 'cat' ? 1 : 0.964)
     : isRaceFinished
-      ? (generationWinner === 'cat' ? 1 : clamp(catTelemetry.progress, 0.78, 0.93))
+      ? (raceWinner === 'cat' ? 1 : clamp(catTelemetry.progress, 0.78, 0.93))
       : catTelemetry.progress;
-  const dogRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && generationWinner === 'dog'))
+  const dogRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && raceWinner === 'dog'))
     ? 'celebrate'
     : dogTelemetry.state;
-  const catRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && generationWinner === 'cat'))
+  const catRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && raceWinner === 'cat'))
     ? 'celebrate'
     : catTelemetry.state;
   const raceStatusLabel = isRaceFinished ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
-  const snackLabel = generationWinner === 'dog' ? '🦴' : '🐟';
-  const guessResultTone = raceGuess === null ? 'neutral' : raceGuess === generationWinner ? 'correct' : 'wrong';
+  const snackLabel = raceWinner === 'dog' ? '🦴' : '🐟';
+  const guessResultTone = raceGuess === null ? 'neutral' : raceGuess === raceWinner ? 'correct' : 'wrong';
   const guessResultHeadline = raceGuess === null
     ? generationPanelCopy.resultNoGuess
-    : raceGuess === generationWinner
+    : raceGuess === raceWinner
       ? generationPanelCopy.resultCorrect
       : generationPanelCopy.resultWrong;
-  const guessResultBody = generationWinner === 'dog' ? generationPanelCopy.winnerDog : generationPanelCopy.winnerCat;
+  const guessResultBody = raceWinner === 'dog' ? generationPanelCopy.winnerDog : generationPanelCopy.winnerCat;
   const modalResultUtilityNode = isModalLayout && isPreviewReady && finalImageSrc ? (
     <>
       <div className="result-inline-actions">
@@ -682,7 +688,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               </button>
             </div>
           </div>
-          <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
+          <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${raceWinner}`} aria-hidden="true">
             <div className="generation-playground-track">
               <div className="generation-track-lane generation-track-lane-dog">
                 <span className="generation-track-lane-label">DOG</span>
@@ -720,7 +726,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <span className="generation-playground-snack">{snackLabel}</span>
             </div>
             <div
-              className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+              className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${raceWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
               style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}
             >
               <span className="generation-runner-visual">
@@ -747,7 +753,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               </span>
             </div>
             <div
-              className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${generationWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+              className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${raceWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
               style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}
             >
               <span className="generation-runner-visual">
@@ -775,8 +781,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </div>
             {isSnackStage ? (
               <>
-                <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{generationWinner === 'dog' ? '😋' : '🎉'}</span>
-                <span className="generation-playground-reaction generation-playground-reaction-cat is-visible" style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>{generationWinner === 'cat' ? '😋' : '🎉'}</span>
+                <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{raceWinner === 'dog' ? '😋' : '🎉'}</span>
+                <span className="generation-playground-reaction generation-playground-reaction-cat is-visible" style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>{raceWinner === 'cat' ? '😋' : '🎉'}</span>
               </>
             ) : null}
             <span className="generation-playground-spark generation-playground-spark-one">✦</span>
@@ -784,12 +790,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </div>
           {isResultRevealStage ? (
             <div className={`generation-winner-spotlight is-${guessResultTone}`}>
-              <div className={`generation-winner-visual is-${generationWinner}`}>
+              <div className={`generation-winner-visual is-${raceWinner}`}>
                 <span className="generation-winner-burst generation-winner-burst-one">✦</span>
                 <span className="generation-winner-burst generation-winner-burst-two">✦</span>
                 <span className="generation-winner-confetti generation-winner-confetti-one">•</span>
                 <span className="generation-winner-confetti generation-winner-confetti-two">•</span>
-                <span className={`generation-winner-animal is-${generationWinner}`}>
+                <span className={`generation-winner-animal is-${raceWinner}`}>
                   <span className="generation-winner-ear ear-left" />
                   <span className="generation-winner-ear ear-right" />
                   <span className="generation-winner-eye eye-left" />

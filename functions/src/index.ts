@@ -226,6 +226,7 @@ Core identity rules:
 - keep the same eye shape, muzzle length, nose shape, ear shape, forehead area, fur colors, fur markings, and overall head silhouette
 - the result must stay fully canine from head to toe, never human or humanoid
 - show only real dog facial anatomy and real dog limbs
+- the dog must have exactly four legs, anatomically correct, with two front legs and two hind legs
 - keep dog front paws and hind paws clearly dog-like and consistent with the same dog identity
 - do not generate any human face, human skin, human lips, human nose, human teeth styling, human hands, human feet, fingers, toes, or mixed anatomy
 
@@ -271,6 +272,8 @@ Strict negatives:
 - no fingers or toes
 - no mixed anatomy
 - no missing paws
+- no extra legs
+- no missing legs
 - no duplicate subject
 - no collage
 - no cartoon styling
@@ -290,6 +293,7 @@ Core identity rules:
 - keep the same eye shape, nose shape, muzzle area, ear shape, whisker pad, fur colors, fur markings, and overall head silhouette
 - the result must stay fully feline from head to toe, never human or humanoid
 - show only real cat facial anatomy and real cat limbs
+- the cat must have exactly four legs, anatomically correct, with two front legs and two hind legs
 - keep cat front paws and hind paws clearly cat-like and consistent with the same cat identity
 - do not generate any human face, human skin, human lips, human nose, human teeth styling, human hands, human feet, fingers, toes, or mixed anatomy
 
@@ -335,6 +339,8 @@ Strict negatives:
 - no fingers or toes
 - no mixed anatomy
 - no missing paws
+- no extra legs
+- no missing legs
 - no duplicate subject
 - no collage
 - no cartoon styling
