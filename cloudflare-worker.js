@@ -1,4 +1,9 @@
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
+const LEGACY_REDIRECTS = new Map([
+  ['/tryon', '/'],
+  ['/how-it-works', '/how-to-use'],
+  ['/countries', '/sample-outfits'],
+]);
 const NON_INDEXABLE_PATHS = new Set([
   '/board',
   '/contact',
@@ -42,11 +47,24 @@ const applyRobotsHeader = (request, response) => {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const normalizedPath = normalizePathname(url.pathname);
     const isApiRequest = url.pathname.startsWith('/api/');
     const isLegacyTryOnRequest = url.pathname === '/generateTryOn';
     const acceptsHtml = request.headers.get('accept')?.includes('text/html') ?? false;
     const isNavigationRequest = (request.method === 'GET' || request.method === 'HEAD') && acceptsHtml;
     const isStaticAssetRequest = /\.[a-z0-9]+$/i.test(url.pathname);
+
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 301);
+    }
+
+    if (isNavigationRequest && LEGACY_REDIRECTS.has(normalizedPath)) {
+      const redirectUrl = new URL(request.url);
+      redirectUrl.pathname = LEGACY_REDIRECTS.get(normalizedPath);
+      redirectUrl.search = '';
+      return Response.redirect(redirectUrl.toString(), 301);
+    }
 
     // Preflight handling
     if (request.method === 'OPTIONS') {
