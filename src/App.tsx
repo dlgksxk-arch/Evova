@@ -31,6 +31,7 @@ import {
 } from './lib/seo/schema';
 import {
   buildSeoMeta,
+  getCanonicalPageUrl,
   INDEXABLE_PAGES,
   LEGACY_PAGE_PATHS,
   PAGE_PATHS,
@@ -696,6 +697,18 @@ const translations = {
     authSignupCreditsHint: '회원가입 시 300 크레딧 지급',
     chargeCredits: '결제',
     chargeDescription: '필요한 크레딧만큼 차감되며, 결제 후 바로 반영됩니다.',
+    paymentHistoryButton: '내 결제 이력',
+    paymentHistoryTitle: '내 결제 이력',
+    paymentHistorySubtitle: '최근 결제 내역과 지급된 크레딧을 확인할 수 있습니다.',
+    paymentHistoryHint: '최신 결제 20건까지 표시합니다.',
+    paymentHistoryLoading: '결제 이력을 불러오는 중입니다...',
+    paymentHistoryLoadFailed: '결제 이력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    paymentHistoryEmpty: '아직 결제 이력이 없습니다.',
+    paymentHistoryDateLabel: '결제일',
+    paymentHistoryProductLabel: '상품',
+    paymentHistoryAmountLabel: '결제 금액',
+    paymentHistoryCreditsLabel: '지급 크레딧',
+    paymentHistoryStatusLabel: '상태',
     purchaseNow: '구매하기',
     paymentRedirecting: '결제창으로 이동 중...',
     paymentSuccessTitle: '결제가 완료되었습니다',
@@ -1019,6 +1032,18 @@ const translations = {
     authSignupCreditsHint: 'Sign up and get 300 credits',
     chargeCredits: 'Pay',
     chargeDescription: 'Credits are deducted as needed, and purchased credits appear right away.',
+    paymentHistoryButton: 'My Payments',
+    paymentHistoryTitle: 'My Payment History',
+    paymentHistorySubtitle: 'Review recent purchases and the credits delivered to your account.',
+    paymentHistoryHint: 'Shows up to your latest 20 payments.',
+    paymentHistoryLoading: 'Loading your payment history...',
+    paymentHistoryLoadFailed: 'Could not load your payment history. Please try again later.',
+    paymentHistoryEmpty: 'No payment history yet.',
+    paymentHistoryDateLabel: 'Date',
+    paymentHistoryProductLabel: 'Product',
+    paymentHistoryAmountLabel: 'Amount',
+    paymentHistoryCreditsLabel: 'Credits',
+    paymentHistoryStatusLabel: 'Status',
     purchaseNow: 'Purchase',
     paymentRedirecting: 'Opening checkout...',
     paymentSuccessTitle: 'Payment completed',
@@ -3789,18 +3814,18 @@ const App: React.FC = () => {
   const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
   const currentFaqItems = getFaqItemsForPage(currentPage, currentEditorialPage?.faq);
   const breadcrumbItems = currentPage === 'home'
-    ? [{ name: 'Home', url: `${SITE_URL}/` }]
+    ? [{ name: 'Home', url: getCanonicalPageUrl('home') }]
     : currentPageCopy
       ? [
-          { name: 'Home', url: `${SITE_URL}/` },
-          { name: currentPageCopy.title ?? 'HAMDEVA', url: `${SITE_URL}${PAGE_PATHS[currentPage]}` },
+          { name: 'Home', url: getCanonicalPageUrl('home') },
+          { name: currentPageCopy.title ?? 'HAMDEVA', url: getCanonicalPageUrl(currentPage) },
         ]
       : [];
   const homeStructuredData = currentPage === 'home' && !sharedResultRouteId
     ? [
         createWebPageSchema({
           title: contentLocale.meta.homeTitle,
-          url: SITE_URL,
+          url: getCanonicalPageUrl('home'),
           description: contentLocale.meta.homeDescription,
         }),
         createFAQPageSchema(currentHomeFaqItems),
@@ -3830,7 +3855,7 @@ const App: React.FC = () => {
   const articleStructuredData = currentEditorialPage && currentPage !== 'about' && currentPage !== 'how-it-works'
     ? createArticleSchema({
         headline: currentPageCopy?.title ?? currentEditorialPage.title,
-        url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
+        url: getCanonicalPageUrl(currentPage),
         description: currentPageCopy?.description ?? currentEditorialPage.description,
         image: `${SITE_URL}/sample/og/og-image.png`,
         articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
@@ -3839,7 +3864,7 @@ const App: React.FC = () => {
   const howToStructuredData = currentPage === 'how-it-works'
     ? createHowToSchema({
         title: currentPageCopy?.title ?? contentLocale.pages['how-it-works'].title,
-        url: `${SITE_URL}${PAGE_PATHS['how-it-works']}`,
+        url: getCanonicalPageUrl('how-it-works'),
         description: currentPageCopy?.description ?? contentLocale.pages['how-it-works'].description,
         steps: howItWorksVisualCopy.summaryCards.map((card) => ({
           name: card.title,
@@ -3851,7 +3876,7 @@ const App: React.FC = () => {
     ? [
         createWebPageSchema({
           title: currentPageCopy.title ?? 'HAMDEVA',
-          url: `${SITE_URL}${PAGE_PATHS[currentPage]}`,
+          url: getCanonicalPageUrl(currentPage),
           description: currentPageCopy.description,
           pageType: pageSchemaType,
         }),

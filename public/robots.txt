@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+
+# Private or utility routes
 Disallow: /admin
 Disallow: /board
 Disallow: /mypage
@@ -9,4 +11,5 @@ Disallow: /payment-failed
 Disallow: /result/
 Disallow: /api/
 Disallow: /generateTryOn
+
 Sitemap: https://hamdeva.com/sitemap.xml

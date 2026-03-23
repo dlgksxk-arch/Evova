@@ -106,6 +106,8 @@ const formatCompactDuration = (value?: number | null): string => {
 };
 
 const formatMetricValue = (value: number): string => value.toLocaleString();
+const getSafeMetricNumber = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0;
 
 const renderDetailValue = (
   label: string,
@@ -298,13 +300,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     isOpen: isUserModalOpen,
   });
   const {
-    updateUser: updatePageUser,
-  } = useAdminUserList({
-    currentUser,
-    enabled: isAdminUser,
-    isOpen: isAdminUser,
-  });
-  const {
     userDetail,
     setUserDetail,
     loading: userDetailLoading,
@@ -384,37 +379,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     {
       label: copy.adminUsersSection ?? '가입자',
       values: [
-        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(adminSummary.signupsToday) },
-        { label: copy.admin7DaysLabel ?? '7일', value: formatMetricValue(adminSummary.signups7Days) },
-        { label: copy.admin30DaysLabel ?? '30일', value: formatMetricValue(adminSummary.signups30Days) },
-        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(adminSummary.users) },
+        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(getSafeMetricNumber(adminSummary.signupsToday)) },
+        { label: copy.admin7DaysLabel ?? '7일', value: formatMetricValue(getSafeMetricNumber(adminSummary.signups7Days)) },
+        { label: copy.admin30DaysLabel ?? '30일', value: formatMetricValue(getSafeMetricNumber(adminSummary.signups30Days)) },
+        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(getSafeMetricNumber(adminSummary.users)) },
       ],
     },
     {
       label: copy.adminGenerationSection ?? '생성',
       values: [
-        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(adminSummary.todayGenerations) },
+        { label: copy.adminTodayLabel ?? '오늘', value: formatMetricValue(getSafeMetricNumber(adminSummary.todayGenerations)) },
         { label: copy.admin7DaysLabel ?? '7일', value: '-' },
         { label: copy.admin30DaysLabel ?? '30일', value: '-' },
-        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(adminSummary.generations) },
+        { label: copy.adminTotalLabel ?? '총', value: formatMetricValue(getSafeMetricNumber(adminSummary.generations)) },
       ],
     },
     {
       label: copy.adminEstimatedCost ?? '예상 비용',
       values: [
-        { label: copy.adminTodayLabel ?? '오늘', value: copy.formatEstimatedCostLabel(adminSummary.todayEstimatedCost) },
-        { label: copy.admin7DaysLabel ?? '7일', value: copy.formatEstimatedCostLabel(adminSummary.recent7DaysEstimatedCost) },
-        { label: copy.admin30DaysLabel ?? '30일', value: copy.formatEstimatedCostLabel(adminSummary.recent30DaysEstimatedCost) },
-        { label: copy.adminTotalLabel ?? '총', value: copy.formatEstimatedCostLabel(adminSummary.totalEstimatedCost) },
+        { label: copy.adminTodayLabel ?? '오늘', value: copy.formatEstimatedCostLabel(getSafeMetricNumber(adminSummary.todayEstimatedCost)) },
+        { label: copy.admin7DaysLabel ?? '7일', value: copy.formatEstimatedCostLabel(getSafeMetricNumber(adminSummary.recent7DaysEstimatedCost)) },
+        { label: copy.admin30DaysLabel ?? '30일', value: copy.formatEstimatedCostLabel(getSafeMetricNumber(adminSummary.recent30DaysEstimatedCost)) },
+        { label: copy.adminTotalLabel ?? '총', value: copy.formatEstimatedCostLabel(getSafeMetricNumber(adminSummary.totalEstimatedCost)) },
       ],
     },
     {
       label: copy.adminSystemSection ?? '운영',
       values: [
-        { label: copy.adminTotalPosts ?? '게시글', value: formatMetricValue(adminSummary.posts) },
-        { label: copy.adminTotalSharedResults ?? '공유', value: formatMetricValue(adminSummary.sharedResults) },
-        { label: copy.adminTodayVideoGenerations ?? '오늘 영상', value: formatMetricValue(adminSummary.todayVideoGenerations) },
-        { label: copy.adminTotalVideoGenerations ?? '총 영상', value: formatMetricValue(adminSummary.totalVideoGenerations) },
+        { label: copy.adminTotalPosts ?? '게시글', value: formatMetricValue(getSafeMetricNumber(adminSummary.posts)) },
+        { label: copy.adminTotalSharedResults ?? '공유', value: formatMetricValue(getSafeMetricNumber(adminSummary.sharedResults)) },
+        { label: copy.adminTodayVideoGenerations ?? '오늘 영상', value: formatMetricValue(getSafeMetricNumber(adminSummary.todayVideoGenerations)) },
+        { label: copy.adminTotalVideoGenerations ?? '총 영상', value: formatMetricValue(getSafeMetricNumber(adminSummary.totalVideoGenerations)) },
       ],
     },
   ];
@@ -474,7 +469,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const updatedUser = await submitGift(giftTarget.uid);
       updateUser(updatedUser);
-      updatePageUser(updatedUser);
       if (selectedUserId === updatedUser.uid) {
         setUserDetail(updatedUser);
       }

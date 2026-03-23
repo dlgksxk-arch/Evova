@@ -56,6 +56,61 @@ export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = {
   '/tryon': 'home',
 };
 
+const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description: string }>> = {
+  about: {
+    title: 'About HAMDEVA',
+    description: 'Learn how HAMDEVA helps pet owners preview dog and cat outfits online with AI-powered virtual fitting and pet outfit visualization.',
+  },
+  'how-it-works': {
+    title: 'How to Use HAMDEVA',
+    description: 'See how to upload pet photos, choose outfit images, and get better AI pet fitting results with HAMDEVA.',
+  },
+  'traditional-clothing': {
+    title: 'Pet Outfit Samples',
+    description: 'Browse sample pet outfit styles, traditional clothing references, and visual ideas before you create a HAMDEVA fitting preview.',
+  },
+  'sample-friends': {
+    title: 'Pet Sample Friends',
+    description: 'Preview HAMDEVA sample dogs and cats to understand how pet fitting inputs and saved examples are structured.',
+  },
+  'fashion-technology': {
+    title: 'AI Pet Fitting Technology',
+    description: 'Discover the technology behind HAMDEVA’s AI pet fitting, pet photo processing, and outfit preview generation workflow.',
+  },
+  pricing: {
+    title: 'Pricing',
+    description: 'View HAMDEVA pricing, credits, and subscription details for AI pet outfit preview and virtual fitting generation.',
+  },
+  'virtual-try-on-guide': {
+    title: 'Pet Virtual Try-On Guide',
+    description: 'Learn the basics of pet virtual try-on, how outfit previews work, and how to get cleaner AI fitting results with HAMDEVA.',
+  },
+  'outfit-photo-tips': {
+    title: 'Pet Photo Tips for Better Outfit Previews',
+    description: 'Get simple tips for taking better dog and cat photos to improve AI pet outfit preview quality on HAMDEVA.',
+  },
+  'ai-fitting-faq': {
+    title: 'AI Pet Fitting FAQ',
+    description: 'Read common questions about pet virtual fitting, supported photos, outfit previews, accuracy, and usage on HAMDEVA.',
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    description: 'Read the HAMDEVA privacy policy for AI pet fitting, uploaded pet photos, personal data, and service usage information.',
+  },
+  'refund-policy': {
+    title: 'Refund Policy',
+    description: 'Review the HAMDEVA refund policy for pet virtual fitting credits, payments, and related purchase terms.',
+  },
+  terms: {
+    title: 'Terms of Service',
+    description: 'Review the HAMDEVA terms of service for AI pet fitting usage, payments, user responsibilities, and service conditions.',
+  },
+  contact: {
+    title: 'Contact HAMDEVA',
+    description: 'Contact HAMDEVA for help with AI pet fitting, outfit preview issues, account questions, and service inquiries.',
+  },
+};
+
 type PageCopy = {
   title?: string;
   description?: string;
@@ -105,7 +160,7 @@ const OG_LOCALE_BY_LANG: Partial<Record<LanguageCode, string>> = {
 const withBrand = (title: string): string =>
   title.includes(SEO_SITE_NAME) ? title : `${title} | ${SEO_SITE_NAME}`;
 
-const getCanonicalUrl = (page: SitePage): string => `${SEO_BASE_URL}${PAGE_PATHS[page]}`;
+export const getCanonicalPageUrl = (page: SitePage): string => `${SEO_BASE_URL}${PAGE_PATHS[page]}`;
 
 export const buildSeoMeta = ({
   contentLocale,
@@ -120,6 +175,7 @@ export const buildSeoMeta = ({
   sharedResultRouteId,
   labels,
 }: BuildSeoMetaParams): SeoMeta => {
+  const pageFallbackMeta = PAGE_META_FALLBACKS[currentPage];
   const pageMeta = sharedResultRouteId
     ? {
         title: `${labels.sharedResultTitle} | ${SEO_SITE_NAME}`,
@@ -146,13 +202,13 @@ export const buildSeoMeta = ({
                 description: contentLocale.meta.homeDescription,
               }
             : {
-                title: currentPageCopy?.title ? withBrand(currentPageCopy.title) : SEO_SITE_NAME,
-                description: currentPageCopy?.description || `${SEO_SITE_NAME} content page`,
+                title: withBrand(currentPageCopy?.title ?? pageFallbackMeta?.title ?? SEO_SITE_NAME),
+                description: currentPageCopy?.description ?? pageFallbackMeta?.description ?? `${SEO_SITE_NAME} content page`,
               };
 
   const url = sharedResultRouteId && sharedPageUrl
     ? sharedPageUrl
-    : getCanonicalUrl(currentPage);
+    : getCanonicalPageUrl(currentPage);
   const isIndexablePage = !sharedResultRouteId && INDEXABLE_PAGES.has(currentPage);
 
   return {

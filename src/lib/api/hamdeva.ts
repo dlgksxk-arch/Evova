@@ -26,6 +26,7 @@ const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
 const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
 const SHARE_IMAGE_ENDPOINT = apiUrl('/api/share-image');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
+const USER_PAYMENT_HISTORY_ENDPOINT = apiUrl('/api/payments/me');
 const ADMIN_USERS_ENDPOINT = apiUrl('/api/admin/users');
 const ADMIN_USER_DETAIL_ENDPOINT = apiUrl('/api/admin/users/detail');
 const ADMIN_USER_GIFT_ENDPOINT = apiUrl('/api/admin/users/gift');
@@ -278,6 +279,29 @@ export const deleteCreation = async (authToken: string, creationId: string): Pro
   if (!res.ok) {
     throw await parseApiError(res);
   }
+};
+
+export const callUserPaymentHistory = async (payload: {
+  authToken: string;
+}): Promise<PaymentLogRecord[]> => {
+  const res = await fetch(USER_PAYMENT_HISTORY_ENDPOINT, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  const data = await res.json() as {
+    items?: PaymentLogRecord[];
+  };
+
+  return Array.isArray(data.items)
+    ? data.items.map((item) => normalizeTimestampFields(item, ['paidAt', 'createdAt', 'updatedAt']))
+    : [];
 };
 
 const toTimestampLike = (value: unknown) => (

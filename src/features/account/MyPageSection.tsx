@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
-import type { CheckoutProductId, GenerationRecord, UserProfile } from '../../types/hamdeva';
+import { callUserPaymentHistory } from '../../lib/api/hamdeva';
+import type { CheckoutProductId, GenerationRecord, PaymentLogRecord, UserProfile } from '../../types/hamdeva';
 import CreationHistoryPanel from '../mypage/CreationHistoryPanel';
 
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
@@ -71,6 +72,41 @@ interface MyPageSectionProps {
   onDeleteHistoryItem: (item: GenerationRecord) => void;
 }
 
+const MyPageModalFrame: React.FC<{
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ title, subtitle, onClose, children }) => {
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="auth-modal account-modal mypage-modal-shell mypage-payment-history-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header account-modal-header">
+          <div>
+            <h3>{title}</h3>
+            {subtitle ? <p className="modal-subtitle">{subtitle}</p> : null}
+          </div>
+          <button className="close-btn" onClick={onClose} type="button">
+            &times;
+          </button>
+        </div>
+        <div className="account-modal-body">{children}</div>
+      </div>
+    </div>
+  );
+};
+
 const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
   userProfile,
@@ -94,8 +130,14 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   onDownloadHistoryItem: _onDownloadHistoryItem,
   onDeleteHistoryItem,
 }) => {
+  const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentLogRecord[]>([]);
+  const [paymentHistoryLoading, setPaymentHistoryLoading] = useState(false);
+  const [paymentHistoryError, setPaymentHistoryError] = useState<string | null>(null);
+  const [paymentHistoryLoaded, setPaymentHistoryLoaded] = useState(false);
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
   const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
+  const productLabelMap = useMemo(() => new Map(products.map((product) => [product.id, product.label])), [products]);
   const formatProductPrice = (product: { salePriceUsd: number; kind: 'subscription' | 'extra_credit' }) =>
     `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
   const getProductDiscountPercent = (product: { salePriceUsd: number; comparePriceUsd?: number }): number | null => {
@@ -104,6 +146,42 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
     }
 
     return Math.round((1 - (product.salePriceUsd / product.comparePriceUsd)) * 100);
+  };
+  const formatPaymentAmount = (item: PaymentLogRecord): string => {
+    if (typeof item.amount === 'number' && Number.isFinite(item.amount)) {
+      return `${item.amount.toFixed(2)} ${(item.currency || 'USD').toUpperCase()}`;
+    }
+    if (typeof item.amountCents === 'number' && Number.isFinite(item.amountCents)) {
+      return `${(item.amountCents / 100).toFixed(2)} ${(item.currency || 'USD').toUpperCase()}`;
+    }
+    return '-';
+  };
+  const getPaymentProductLabel = (item: PaymentLogRecord): string => {
+    const productId = typeof item.productId === 'string' ? item.productId : '';
+    return (productLabelMap.get(productId as CheckoutProductId) || productId || '-').toString();
+  };
+  const loadPaymentHistory = async (force = false) => {
+    if (!currentUser || (paymentHistoryLoaded && !force)) {
+      return;
+    }
+
+    setPaymentHistoryLoading(true);
+    setPaymentHistoryError(null);
+
+    try {
+      const authToken = await currentUser.getIdToken();
+      const items = await callUserPaymentHistory({ authToken });
+      setPaymentHistory(items);
+      setPaymentHistoryLoaded(true);
+      setPaymentHistoryLoading(false);
+    } catch (error) {
+      setPaymentHistoryLoading(false);
+      setPaymentHistoryError(error instanceof Error ? error.message : copy.paymentHistoryLoadFailed);
+    }
+  };
+  const openPaymentHistory = () => {
+    setIsPaymentHistoryOpen(true);
+    void loadPaymentHistory();
   };
 
   return (
@@ -128,11 +206,16 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               <h2>{copy.myPage}</h2>
               <p className="admin-section-helper">{copy.currentCredits(currentCredits)}</p>
             </div>
-            {isAdminUser ? (
-              <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">
-                {copy.adminTitle ?? copy.siteManagementTitle ?? '관리자 페이지'}
+            <div className="credit-cta-actions">
+              <button className="outline-btn auth-inline-btn" onClick={openPaymentHistory} type="button">
+                {copy.paymentHistoryButton}
               </button>
-            ) : null}
+              {isAdminUser ? (
+                <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">
+                  {copy.adminTitle ?? copy.siteManagementTitle ?? '관리자 페이지'}
+                </button>
+              ) : null}
+            </div>
           </div>
           <div className="credit-balance-grid">
             <div className="credit-balance-card">
@@ -142,6 +225,55 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           </div>
         </article>
       )}
+      {currentUser && isPaymentHistoryOpen ? (
+        <MyPageModalFrame
+          title={copy.paymentHistoryTitle}
+          subtitle={copy.paymentHistorySubtitle}
+          onClose={() => setIsPaymentHistoryOpen(false)}
+        >
+          <div className="mypage-payment-history-shell">
+            <div className="admin-section-header compact">
+              <div>
+                <h4>{copy.paymentHistoryTitle}</h4>
+                <p className="admin-section-helper">{copy.paymentHistoryHint}</p>
+              </div>
+              <button
+                className="outline-btn auth-inline-btn"
+                disabled={paymentHistoryLoading}
+                onClick={() => { void loadPaymentHistory(true); }}
+                type="button"
+              >
+                {copy.refresh}
+              </button>
+            </div>
+            {paymentHistoryError ? <p className="admin-error-banner">{paymentHistoryError}</p> : null}
+            {paymentHistoryLoading ? <p className="admin-loading-banner">{copy.paymentHistoryLoading}</p> : null}
+            {!paymentHistoryLoading && paymentHistory.length > 0 ? (
+              <div className="admin-user-history-table mypage-payment-history-table">
+                <div className="admin-user-history-head">
+                  <span>{copy.paymentHistoryDateLabel}</span>
+                  <span>{copy.paymentHistoryProductLabel}</span>
+                  <span>{copy.paymentHistoryAmountLabel}</span>
+                  <span>{copy.paymentHistoryCreditsLabel}</span>
+                  <span>{copy.paymentHistoryStatusLabel}</span>
+                </div>
+                {paymentHistory.map((item) => (
+                  <div key={item.id} className="admin-user-history-row mypage-payment-history-row">
+                    <span>{formatTimestampLabel(item.paidAt || item.createdAt)}</span>
+                    <span>{getPaymentProductLabel(item)}</span>
+                    <span>{formatPaymentAmount(item)}</span>
+                    <span>{typeof item.paidCredit === 'number' ? item.paidCredit.toLocaleString() : '-'}</span>
+                    <span>{item.status || '-'}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {!paymentHistoryLoading && paymentHistory.length === 0 ? (
+              <p className="admin-empty-state compact">{copy.paymentHistoryEmpty}</p>
+            ) : null}
+          </div>
+        </MyPageModalFrame>
+      ) : null}
       {currentUser && (
         <CreationHistoryPanel
           items={historyItems}

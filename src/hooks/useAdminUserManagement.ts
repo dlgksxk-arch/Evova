@@ -37,6 +37,7 @@ export const useAdminUserList = ({
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [loadedQuery, setLoadedQuery] = useState<string | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -47,13 +48,22 @@ export const useAdminUserList = ({
   }, [query]);
 
   useEffect(() => {
-    if (!enabled || !isOpen || !currentUser) {
+    if (!enabled || !currentUser) {
       setUsers([]);
       setLoading(false);
       setLoadingMore(false);
       setError(null);
       setNextCursor(null);
       setHasMore(false);
+      setLoadedQuery(null);
+      return;
+    }
+
+    if (!isOpen) {
+      return;
+    }
+
+    if (loadedQuery === debouncedQuery) {
       return;
     }
 
@@ -78,6 +88,7 @@ export const useAdminUserList = ({
         setUsers(response.users);
         setNextCursor(response.nextCursor);
         setHasMore(response.hasMore);
+        setLoadedQuery(debouncedQuery);
         setLoading(false);
       } catch (error) {
         if (cancelled) {
@@ -94,7 +105,7 @@ export const useAdminUserList = ({
     return () => {
       cancelled = true;
     };
-  }, [currentUser, debouncedQuery, enabled, isOpen]);
+  }, [currentUser, debouncedQuery, enabled, isOpen, loadedQuery]);
 
   const loadMore = async () => {
     if (!currentUser || !enabled || !isOpen || !hasMore || !nextCursor || debouncedQuery) {
@@ -140,6 +151,7 @@ export const useAdminUserList = ({
       setUsers(response.users);
       setNextCursor(response.nextCursor);
       setHasMore(response.hasMore);
+      setLoadedQuery(debouncedQuery);
       setLoading(false);
     } catch (error) {
       setLoading(false);

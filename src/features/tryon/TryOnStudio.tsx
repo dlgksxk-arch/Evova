@@ -59,6 +59,10 @@ const getDroppedImageSource = (dataTransfer: DataTransfer): File | string | null
   return null;
 };
 
+const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const GENERATION_TARGET_MS = 30000;
+const RESULT_SETTLE_MS = 1800;
+
 type TryOnModalCopy = {
   notice: string;
   personCardTitle: string;
@@ -98,9 +102,9 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       idleBody: '사진과 의상을 고른 뒤 생성하기를 누르면 같은 창에서 바로 결과를 볼 수 있어요.',
       title: '이미지 생성 중',
       stageGenerating: '반려동물과 의상을 분석하고 있어요',
-      stageRendering: '결과 이미지를 정리하고 있어요',
+      stageRendering: '간식 앞에서 결과 이미지를 마무리하고 있어요',
       elapsed: '진행률',
-      helper: '강아지와 고양이가 뛰어노는 동안 결과를 만들고 있어요.',
+      helper: '강아지와 고양이가 오른쪽 간식을 향해 달리고 있어요.',
     };
   }
 
@@ -109,9 +113,9 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     idleBody: 'Pick a pet photo and outfit, then generate to see the preview in this same frame.',
     title: 'Generating preview',
     stageGenerating: 'Analyzing your pet and outfit',
-    stageRendering: 'Finishing the result image',
+    stageRendering: 'Finishing the result beside the treat line',
     elapsed: 'Progress',
-    helper: 'Your dog and cat are running while the preview is being prepared.',
+    helper: 'The dog and cat are racing toward the snack on the right.',
   };
 };
 
@@ -247,6 +251,9 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [clothDragActive, setClothDragActive] = useState(false);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [generationElapsedMs, setGenerationElapsedMs] = useState(0);
+  const [resultSettlingStartedAt, setResultSettlingStartedAt] = useState<number | null>(null);
+  const [generationWinner, setGenerationWinner] = useState<'dog' | 'cat'>('dog');
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
@@ -255,13 +262,32 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   useEffect(() => {
     if (isGenerating) {
-      setGenerationStartedAt((prev) => prev ?? Date.now());
+      setGenerationStartedAt((prev) => {
+        if (prev !== null) {
+          return prev;
+        }
+
+        setGenerationWinner(Math.random() < 0.5 ? 'dog' : 'cat');
+        setResultSettlingStartedAt(null);
+        setGenerationElapsedMs(0);
+        return Date.now();
+      });
       return;
     }
 
     setGenerationStartedAt(null);
+    setGenerationElapsedMs(0);
+    setResultSettlingStartedAt(null);
     setGenerationProgress(finalImageSrc && resultPreviewState === 'ready' ? 100 : 0);
   }, [finalImageSrc, isGenerating, resultPreviewState]);
+
+  useEffect(() => {
+    if (!isGenerating || !finalImageSrc || resultPreviewState !== 'loading' || resultSettlingStartedAt !== null) {
+      return;
+    }
+
+    setResultSettlingStartedAt(Date.now());
+  }, [finalImageSrc, isGenerating, resultPreviewState, resultSettlingStartedAt]);
 
   useEffect(() => {
     if (!isGenerating && !(finalImageSrc && resultPreviewState === 'loading')) {
@@ -269,24 +295,27 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     }
 
     const tick = () => {
+      const now = Date.now();
+      const startedAt = generationStartedAt ?? now;
+      const elapsed = now - startedAt;
+      setGenerationElapsedMs(elapsed);
+
       if (finalImageSrc && resultPreviewState === 'loading') {
-        const startedAt = generationStartedAt ?? Date.now();
-        const elapsed = Date.now() - startedAt;
-        const settleProgress = Math.min(99, Math.max(94, 94 + Math.round(elapsed / 1200)));
+        const settlingStartedAt = resultSettlingStartedAt ?? now;
+        const settleElapsed = now - settlingStartedAt;
+        const settleProgress = 95 + clamp((settleElapsed / RESULT_SETTLE_MS) * 4, 0, 4);
         setGenerationProgress(settleProgress);
         return;
       }
 
-      const startedAt = generationStartedAt ?? Date.now();
-      const elapsed = Date.now() - startedAt;
-      const nextProgress = Math.min(92, Math.max(6, Math.round((elapsed / 30000) * 92)));
+      const nextProgress = clamp((elapsed / GENERATION_TARGET_MS) * 95, 1, 95);
       setGenerationProgress(nextProgress);
     };
 
     tick();
-    const timer = window.setInterval(tick, 180);
+    const timer = window.setInterval(tick, 120);
     return () => window.clearInterval(timer);
-  }, [finalImageSrc, generationStartedAt, isGenerating, resultPreviewState]);
+  }, [finalImageSrc, generationStartedAt, isGenerating, resultSettlingStartedAt, resultPreviewState]);
 
   useEffect(() => {
     if (finalImageSrc && resultPreviewState === 'ready') {
@@ -382,7 +411,21 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
-  const displayedGenerationProgress = isPreviewReady ? 100 : Math.max(1, generationProgress - 5);
+  const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
+  const raceProgress = clamp(generationProgress / 95, 0, 1);
+  const isSnackStage = generationProgress >= 95;
+  const dogLeadOffset = generationWinner === 'dog' ? 0.02 : -0.01;
+  const catLeadOffset = generationWinner === 'cat' ? 0.02 : -0.01;
+  const dogRunnerProgress = isSnackStage ? (generationWinner === 'dog' ? 1 : 0.94) : clamp(raceProgress + dogLeadOffset, 0.02, 0.94);
+  const catRunnerProgress = isSnackStage ? (generationWinner === 'cat' ? 1 : 0.94) : clamp(raceProgress + catLeadOffset, 0.02, 0.94);
+  const remainingMs = isPreviewReady
+    ? 0
+    : finalImageSrc && resultPreviewState === 'loading'
+      ? Math.max(0, RESULT_SETTLE_MS - ((resultSettlingStartedAt ? Date.now() - resultSettlingStartedAt : 0)))
+      : Math.max(0, GENERATION_TARGET_MS - generationElapsedMs);
+  const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const raceStatusLabel = isSnackStage ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
+  const snackLabel = generationWinner === 'dog' ? '🦴' : '🐟';
   const modalResultUtilityNode = isModalLayout && isPreviewReady && finalImageSrc ? (
     <>
       <div className="result-inline-actions">
@@ -415,15 +458,29 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className="generation-playground-head">
             <div>
               <strong>{generationPanelCopy.title}</strong>
-              <p>{finalImageSrc ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating}</p>
+              <p>{raceStatusLabel}</p>
             </div>
-            <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
+            <div className="generation-playground-meta">
+              <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
+              <span className="generation-playground-timer">{copy.generationRemainingLabel}: {remainingSeconds}s</span>
+            </div>
           </div>
-          <div className="generation-playground-stage" aria-hidden="true">
+          <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
             <div className="generation-playground-lane generation-playground-lane-back" />
             <div className="generation-playground-lane generation-playground-lane-front" />
-            <span className="generation-playground-pet generation-playground-dog">🐶</span>
-            <span className="generation-playground-pet generation-playground-cat">🐱</span>
+            <div className="generation-playground-finish-zone">
+              <span className="generation-playground-finish-flag">🏁</span>
+              <span className="generation-playground-snack">{snackLabel}</span>
+              <span className="generation-playground-bowl">🍽️</span>
+            </div>
+            <span className={`generation-playground-pet generation-playground-dog ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`} style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>🐶</span>
+            <span className={`generation-playground-pet generation-playground-cat ${generationWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`} style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>🐱</span>
+            {isSnackStage ? (
+              <>
+                <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{generationWinner === 'dog' ? '😋' : '🎉'}</span>
+                <span className="generation-playground-reaction generation-playground-reaction-cat is-visible" style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>{generationWinner === 'cat' ? '😋' : '🎉'}</span>
+              </>
+            ) : null}
             <span className="generation-playground-spark generation-playground-spark-one">✦</span>
             <span className="generation-playground-spark generation-playground-spark-two">✦</span>
           </div>
@@ -720,6 +777,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
               <span className="pet-runner-track" aria-hidden="true">
                 <span className="pet-runner pet-runner-dog">🐶</span>
                 <span className="pet-runner pet-runner-cat">🐱</span>
+                <span className="pet-runner-snack">{snackLabel}</span>
               </span>
               <span>{copy.generating}</span>
             </span>

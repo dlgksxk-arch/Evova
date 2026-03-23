@@ -3773,6 +3773,21 @@ const handleAdminUserDetailRequest = async (req: functions.https.Request, res: f
   res.json({ user: detail });
 };
 
+const handleUserPaymentHistoryRequest = async (req: functions.https.Request, res: functions.Response) => {
+  const user = await requireAuthenticatedUser(req);
+  const snapshot = await db.collection('payments').where('uid', '==', user.uid).get();
+  const items = snapshot.docs
+    .map((doc) => serializePaymentRecord(doc))
+    .sort((left, right) => {
+      const leftTime = left.paidAt ?? left.createdAt ?? left.updatedAt ?? 0;
+      const rightTime = right.paidAt ?? right.createdAt ?? right.updatedAt ?? 0;
+      return rightTime - leftTime;
+    })
+    .slice(0, 20);
+
+  res.json({ items });
+};
+
 const serializeGenerationRequestRecord = (snapshot: FirebaseFirestore.QueryDocumentSnapshot) => {
   const data = snapshot.data();
   return {
@@ -4598,6 +4613,15 @@ export const api = functions
         const user = await requireAuthenticatedUser(req);
         const payload = await buildAdminDashboardPayload(user);
         res.json(payload);
+      } catch (error) {
+        handleApiError(res, error, 500);
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && normalizedPath === '/payments/me') {
+      try {
+        await handleUserPaymentHistoryRequest(req, res);
       } catch (error) {
         handleApiError(res, error, 500);
       }

@@ -41,6 +41,27 @@ const EMPTY_SUMMARY: AdminSummary = {
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
 const ADMIN_DASHBOARD_ENDPOINT = `${API_BASE_URL}/api/admin/dashboard`;
 
+const normalizeSummaryNumber = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+const normalizeAdminSummary = (summary?: Partial<AdminSummary> | null): AdminSummary => ({
+  users: normalizeSummaryNumber(summary?.users),
+  signupsToday: normalizeSummaryNumber(summary?.signupsToday),
+  signups7Days: normalizeSummaryNumber(summary?.signups7Days),
+  signups30Days: normalizeSummaryNumber(summary?.signups30Days),
+  posts: normalizeSummaryNumber(summary?.posts),
+  generations: normalizeSummaryNumber(summary?.generations),
+  sharedResults: normalizeSummaryNumber(summary?.sharedResults),
+  todayGenerations: normalizeSummaryNumber(summary?.todayGenerations),
+  todayEstimatedCost: normalizeSummaryNumber(summary?.todayEstimatedCost),
+  recent30DaysEstimatedCost: normalizeSummaryNumber(summary?.recent30DaysEstimatedCost),
+  totalEstimatedCost: normalizeSummaryNumber(summary?.totalEstimatedCost),
+  recent7DaysEstimatedCost: normalizeSummaryNumber(summary?.recent7DaysEstimatedCost),
+  totalVideoGenerations: normalizeSummaryNumber(summary?.totalVideoGenerations),
+  todayVideoGenerations: normalizeSummaryNumber(summary?.todayVideoGenerations),
+  estimatedVideoCost: normalizeSummaryNumber(summary?.estimatedVideoCost),
+});
+
 export const useAdminDashboardData = ({
   db: _db,
   enabled,
@@ -99,7 +120,7 @@ export const useAdminDashboardData = ({
         return;
       }
 
-      setAdminSummary(payload.summary ?? EMPTY_SUMMARY);
+      setAdminSummary(normalizeAdminSummary(payload.summary));
       setAdminLoading(false);
       setAdminError(null);
     };
@@ -108,6 +129,7 @@ export const useAdminDashboardData = ({
       if (!cancelled) {
         console.error('Failed to load admin data:', error);
         setAdminLoading(false);
+        setAdminSummary(EMPTY_SUMMARY);
         setAdminError(error instanceof Error ? error.message : 'ADMIN_DASHBOARD_FETCH_FAILED');
       }
     });
