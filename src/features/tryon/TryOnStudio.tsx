@@ -64,6 +64,8 @@ const GENERATION_TARGET_MS = 30000;
 const RESULT_SETTLE_MS = 1800;
 const DISPLAY_PROGRESS_TARGET_MS = Math.round(GENERATION_TARGET_MS / 0.95);
 const RACE_PICK_LOCK_PERCENT = 50;
+const OBSTACLE_JUMP_WINDOW = 0.04;
+const OBSTACLE_CRASH_FREEZE_PROGRESS = 2000 / DISPLAY_PROGRESS_TARGET_MS;
 
 type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
 type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
@@ -91,23 +93,23 @@ const WINNER_FINISH_PERCENT = 80;
 
 const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
   hurdle: {
-    outcome: Math.random() < 0.28 ? 'crash' : Math.random() < 0.65 ? 'delay' : 'clean',
+    outcome: Math.random() < 0.32 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   mountain: {
-    outcome: Math.random() < 0.22 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
+    outcome: Math.random() < 0.24 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   river: {
-    outcome: Math.random() < 0.26 ? 'crash' : Math.random() < 0.72 ? 'delay' : 'clean',
+    outcome: Math.random() < 0.28 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   desert: {
-    outcome: Math.random() < 0.2 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
+    outcome: Math.random() < 0.2 ? 'crash' : 'clean',
     penalty: 0.05,
   },
   mud: {
-    outcome: Math.random() < 0.3 ? 'crash' : Math.random() < 0.76 ? 'delay' : 'clean',
+    outcome: Math.random() < 0.34 ? 'crash' : 'clean',
     penalty: 0.05,
   },
 });
@@ -142,30 +144,38 @@ const getRunnerObstacleState = (
       : -0.003 * index;
     const obstaclePosition = obstacle.position + leadBias;
     const activeStart = obstaclePosition - 0.028;
-    const activeEnd = obstaclePosition + profileEntry.penalty + 0.05;
+    const jumpEnd = obstaclePosition + 0.012;
+    const crashFreezeEnd = jumpEnd + OBSTACLE_CRASH_FREEZE_PROGRESS;
 
     if (baseProgress < activeStart) {
       return;
     }
 
-    if (baseProgress <= activeEnd && activeKey === null) {
-      const phase = clamp((baseProgress - activeStart) / Math.max(0.001, activeEnd - activeStart), 0, 1);
-      const activePenalty = profileEntry.penalty * phase;
-      totalPenalty += activePenalty;
+    if (baseProgress <= jumpEnd && activeKey === null) {
+      const phase = clamp((baseProgress - activeStart) / Math.max(0.001, OBSTACLE_JUMP_WINDOW), 0, 1);
       activeKey = obstacle.key;
-
-      if (profileEntry.outcome === 'crash') {
-        activeState = obstacle.key === 'river' || obstacle.key === 'mud' ? 'sink' : 'tumble';
-      } else {
-        activeState = 'jump';
-      }
+      activeState = 'jump';
+      resolvedProgress = clamp((obstaclePosition - 0.016) + (phase * 0.03) - totalPenalty, 0.02, 0.97);
       return;
     }
 
-    totalPenalty += profileEntry.penalty;
+    if (profileEntry.outcome === 'crash' && baseProgress <= crashFreezeEnd && activeKey === null) {
+      activeKey = obstacle.key;
+      activeState = obstacle.key === 'river' || obstacle.key === 'mud' ? 'sink' : 'tumble';
+      totalPenalty += baseProgress - jumpEnd;
+      resolvedProgress = clamp(obstaclePosition + 0.012 - totalPenalty, 0.02, 0.97);
+      return;
+    }
+
+    if (profileEntry.outcome === 'crash' && baseProgress > crashFreezeEnd) {
+      totalPenalty += OBSTACLE_CRASH_FREEZE_PROGRESS;
+      return;
+    }
   });
 
-  resolvedProgress = clamp(baseProgress - totalPenalty, 0.02, 0.97);
+  if (activeKey === null) {
+    resolvedProgress = clamp(baseProgress - totalPenalty, 0.02, 0.97);
+  }
   return {
     progress: resolvedProgress,
     state: activeState,
