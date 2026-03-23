@@ -4,9 +4,9 @@ import sharp from 'sharp';
 import { Webhook } from 'standardwebhooks';
 
 const FIREBASE_STORAGE_BUCKET =
-  process.env['FIREBASE_STORAGE_BUCKET']?.trim()
+  process.env['APP_STORAGE_BUCKET']?.trim()
   || process.env['VITE_FIREBASE_STORAGE_BUCKET']?.trim()
-  || 'hamdeva.appspot.com';
+  || 'hamdeva.firebasestorage.app';
 
 admin.initializeApp({
   storageBucket: FIREBASE_STORAGE_BUCKET,

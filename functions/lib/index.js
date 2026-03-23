@@ -41,9 +41,9 @@ const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
 const sharp_1 = __importDefault(require("sharp"));
 const standardwebhooks_1 = require("standardwebhooks");
-const FIREBASE_STORAGE_BUCKET = process.env['FIREBASE_STORAGE_BUCKET']?.trim()
+const FIREBASE_STORAGE_BUCKET = process.env['APP_STORAGE_BUCKET']?.trim()
     || process.env['VITE_FIREBASE_STORAGE_BUCKET']?.trim()
-    || 'hamdeva.appspot.com';
+    || 'hamdeva.firebasestorage.app';
 admin.initializeApp({
     storageBucket: FIREBASE_STORAGE_BUCKET,
 });
