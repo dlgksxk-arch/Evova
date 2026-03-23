@@ -83,8 +83,8 @@ const RUNNER_OBSTACLES: Array<{
   { key: 'hurdle', position: 0.14, icon: '▥', accent: '#ff8b5f' },
   { key: 'mountain', position: 0.31, icon: '⛰', accent: '#8a7fff' },
   { key: 'river', position: 0.49, icon: '≈', accent: '#4ea7ff' },
-  { key: 'desert', position: 0.68, icon: '☀', accent: '#f7a941' },
-  { key: 'mud', position: 0.82, icon: '●', accent: '#8b5a39' },
+  { key: 'desert', position: 0.64, icon: '🏜', accent: '#f7a941' },
+  { key: 'mud', position: 0.79, icon: '🟫', accent: '#8b5a39' },
 ];
 
 const WINNER_FINISH_PERCENT = 80;
@@ -92,23 +92,23 @@ const WINNER_FINISH_PERCENT = 80;
 const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
   hurdle: {
     outcome: Math.random() < 0.28 ? 'crash' : Math.random() < 0.65 ? 'delay' : 'clean',
-    penalty: 0.03 + (Math.random() * 0.022),
+    penalty: 0.05,
   },
   mountain: {
     outcome: Math.random() < 0.22 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
-    penalty: 0.028 + (Math.random() * 0.026),
+    penalty: 0.05,
   },
   river: {
     outcome: Math.random() < 0.26 ? 'crash' : Math.random() < 0.72 ? 'delay' : 'clean',
-    penalty: 0.032 + (Math.random() * 0.026),
+    penalty: 0.05,
   },
   desert: {
     outcome: Math.random() < 0.2 ? 'crash' : Math.random() < 0.7 ? 'delay' : 'clean',
-    penalty: 0.026 + (Math.random() * 0.024),
+    penalty: 0.05,
   },
   mud: {
     outcome: Math.random() < 0.3 ? 'crash' : Math.random() < 0.76 ? 'delay' : 'clean',
-    penalty: 0.03 + (Math.random() * 0.028),
+    penalty: 0.05,
   },
 });
 
@@ -706,7 +706,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <div className="generation-playground-finish-zone">
               <span className="generation-playground-finish-flag">🏁</span>
               <span className="generation-playground-snack">{snackLabel}</span>
-              <span className="generation-playground-bowl">🍽️</span>
             </div>
             <div
               className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${generationWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
