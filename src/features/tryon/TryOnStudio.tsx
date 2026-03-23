@@ -87,6 +87,8 @@ const RUNNER_OBSTACLES: Array<{
   { key: 'mud', position: 0.82, icon: '●', accent: '#8b5a39' },
 ];
 
+const WINNER_FINISH_PERCENT = 80;
+
 const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
   hurdle: {
     outcome: Math.random() < 0.28 ? 'crash' : Math.random() < 0.65 ? 'delay' : 'clean',
@@ -148,16 +150,10 @@ const getRunnerObstacleState = (
       totalPenalty += activePenalty;
       activeKey = obstacle.key;
 
-      if (obstacle.key === 'hurdle') {
-        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'jump';
-      } else if (obstacle.key === 'mountain') {
-        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'climb';
-      } else if (obstacle.key === 'river') {
-        activeState = profileEntry.outcome === 'crash' ? 'sink' : 'splash';
-      } else if (obstacle.key === 'desert') {
-        activeState = profileEntry.outcome === 'crash' ? 'tumble' : 'run';
+      if (profileEntry.outcome === 'crash') {
+        activeState = obstacle.key === 'river' || obstacle.key === 'mud' ? 'sink' : 'tumble';
       } else {
-        activeState = profileEntry.outcome === 'crash' ? 'sink' : 'splash';
+        activeState = 'run';
       }
       return;
     }
@@ -576,20 +572,30 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
   const isResultRevealStage = isPreviewReady;
   const isSnackStage = isPreviewReady;
-  const swingTime = generationElapsedMs / 1000;
-  const dogSwing = (Math.sin((swingTime * 2.7) + raceSwingSeed.dogPhaseA) * 0.055) + (Math.sin((swingTime * 5.4) + raceSwingSeed.dogPhaseB) * 0.022) + raceSwingSeed.dogBias;
-  const catSwing = (Math.sin((swingTime * 2.45) + raceSwingSeed.catPhaseA) * 0.055) + (Math.sin((swingTime * 5.9) + raceSwingSeed.catPhaseB) * 0.022) + raceSwingSeed.catBias;
-  const winnerEdgeBoost = clamp((raceProgress - 0.7) / 0.3, 0, 1) * 0.05;
+  const winnerEdgeBoost = clamp((raceProgress - 0.62) / 0.18, 0, 1) * 0.035;
   const dogLeadOffset = generationWinner === 'dog' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
   const catLeadOffset = generationWinner === 'cat' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
-  const dogBaseProgress = clamp(raceProgress + dogSwing + dogLeadOffset, 0.02, 0.98);
-  const catBaseProgress = clamp(raceProgress + catSwing + catLeadOffset, 0.02, 0.98);
+  const dogBaseProgress = clamp((raceProgress * 0.94) + raceSwingSeed.dogBias + dogLeadOffset, 0.02, 0.98);
+  const catBaseProgress = clamp((raceProgress * 0.94) + raceSwingSeed.catBias + catLeadOffset, 0.02, 0.98);
   const dogTelemetry = getRunnerObstacleState(dogBaseProgress, runnerObstacleProfiles.dog, generationWinner, 'dog');
   const catTelemetry = getRunnerObstacleState(catBaseProgress, runnerObstacleProfiles.cat, generationWinner, 'cat');
-  const dogRunnerProgress = isPreviewReady ? (generationWinner === 'dog' ? 1 : 0.964) : dogTelemetry.progress;
-  const catRunnerProgress = isPreviewReady ? (generationWinner === 'cat' ? 1 : 0.964) : catTelemetry.progress;
-  const dogRunnerState: RunnerState = isPreviewReady && generationWinner === 'dog' ? 'celebrate' : dogTelemetry.state;
-  const catRunnerState: RunnerState = isPreviewReady && generationWinner === 'cat' ? 'celebrate' : catTelemetry.state;
+  const isWinnerAtFinish = generationProgress >= WINNER_FINISH_PERCENT;
+  const dogRunnerProgress = isPreviewReady
+    ? (generationWinner === 'dog' ? 1 : 0.964)
+    : isWinnerAtFinish
+      ? (generationWinner === 'dog' ? 1 : clamp(dogTelemetry.progress, 0.78, 0.93))
+      : dogTelemetry.progress;
+  const catRunnerProgress = isPreviewReady
+    ? (generationWinner === 'cat' ? 1 : 0.964)
+    : isWinnerAtFinish
+      ? (generationWinner === 'cat' ? 1 : clamp(catTelemetry.progress, 0.78, 0.93))
+      : catTelemetry.progress;
+  const dogRunnerState: RunnerState = (isPreviewReady || (isWinnerAtFinish && generationWinner === 'dog'))
+    ? 'celebrate'
+    : dogTelemetry.state;
+  const catRunnerState: RunnerState = (isPreviewReady || (isWinnerAtFinish && generationWinner === 'cat'))
+    ? 'celebrate'
+    : catTelemetry.state;
   const remainingMs = isPreviewReady
     ? 0
     : finalImageSrc && resultPreviewState === 'loading'
@@ -721,7 +727,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   <span className="generation-runner-eye eye-right" />
                   <span className="generation-runner-cheek cheek-left" />
                   <span className="generation-runner-cheek cheek-right" />
+                  <span className="generation-runner-muzzle" />
                   <span className="generation-runner-nose" />
+                  <span className="generation-runner-whiskers whisker-left" />
+                  <span className="generation-runner-whiskers whisker-right" />
                 </span>
                 <span className="generation-runner-legs">
                   <span />
@@ -746,7 +755,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                   <span className="generation-runner-eye eye-right" />
                   <span className="generation-runner-cheek cheek-left" />
                   <span className="generation-runner-cheek cheek-right" />
+                  <span className="generation-runner-muzzle" />
                   <span className="generation-runner-nose" />
+                  <span className="generation-runner-whiskers whisker-left" />
+                  <span className="generation-runner-whiskers whisker-right" />
                 </span>
                 <span className="generation-runner-legs">
                   <span />
