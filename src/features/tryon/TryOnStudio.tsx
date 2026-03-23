@@ -277,6 +277,14 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [resultSettlingStartedAt, setResultSettlingStartedAt] = useState<number | null>(null);
   const [generationWinner, setGenerationWinner] = useState<'dog' | 'cat'>('dog');
   const [raceGuess, setRaceGuess] = useState<'dog' | 'cat' | null>(null);
+  const [raceSwingSeed, setRaceSwingSeed] = useState(() => ({
+    dogPhaseA: 0,
+    dogPhaseB: 0,
+    catPhaseA: 0,
+    catPhaseB: 0,
+    dogBias: 0,
+    catBias: 0,
+  }));
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
@@ -294,6 +302,14 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         setResultSettlingStartedAt(null);
         setGenerationElapsedMs(0);
         setRaceGuess(null);
+        setRaceSwingSeed({
+          dogPhaseA: Math.random() * Math.PI * 2,
+          dogPhaseB: Math.random() * Math.PI * 2,
+          catPhaseA: Math.random() * Math.PI * 2,
+          catPhaseB: Math.random() * Math.PI * 2,
+          dogBias: (Math.random() - 0.5) * 0.015,
+          catBias: (Math.random() - 0.5) * 0.015,
+        });
         return Date.now();
       });
       return;
@@ -441,10 +457,14 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isGuessLocked = generationProgress >= 20;
   const isResultRevealStage = generationProgress >= 90;
   const isSnackStage = generationProgress >= 95;
-  const dogLeadOffset = generationWinner === 'dog' ? 0.02 : -0.01;
-  const catLeadOffset = generationWinner === 'cat' ? 0.02 : -0.01;
-  const dogRunnerProgress = isSnackStage ? (generationWinner === 'dog' ? 1 : 0.94) : clamp(raceProgress + dogLeadOffset, 0.02, 0.94);
-  const catRunnerProgress = isSnackStage ? (generationWinner === 'cat' ? 1 : 0.94) : clamp(raceProgress + catLeadOffset, 0.02, 0.94);
+  const swingTime = generationElapsedMs / 1000;
+  const dogSwing = (Math.sin((swingTime * 2.7) + raceSwingSeed.dogPhaseA) * 0.055) + (Math.sin((swingTime * 5.4) + raceSwingSeed.dogPhaseB) * 0.022) + raceSwingSeed.dogBias;
+  const catSwing = (Math.sin((swingTime * 2.45) + raceSwingSeed.catPhaseA) * 0.055) + (Math.sin((swingTime * 5.9) + raceSwingSeed.catPhaseB) * 0.022) + raceSwingSeed.catBias;
+  const winnerEdgeBoost = clamp((raceProgress - 0.72) / 0.28, 0, 1) * 0.045;
+  const dogLeadOffset = generationWinner === 'dog' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
+  const catLeadOffset = generationWinner === 'cat' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
+  const dogRunnerProgress = isSnackStage ? (generationWinner === 'dog' ? 1 : 0.94) : clamp(raceProgress + dogSwing + dogLeadOffset, 0.02, 0.94);
+  const catRunnerProgress = isSnackStage ? (generationWinner === 'cat' ? 1 : 0.94) : clamp(raceProgress + catSwing + catLeadOffset, 0.02, 0.94);
   const remainingMs = isPreviewReady
     ? 0
     : finalImageSrc && resultPreviewState === 'loading'
