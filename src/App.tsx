@@ -3833,7 +3833,7 @@ const App: React.FC = () => {
         createOrganizationSchema({
           name: 'HAMDEVA',
           url: SITE_URL,
-          logo: `${SITE_URL}/sample/og/og-image.png`,
+          logo: `${SITE_URL}/sample/og-image.png`,
           description: 'HAMDEVA is an AI pet fitting platform for dogs and cats.',
           contactEmail: SUPPORT_EMAIL,
           contactType: 'customer support',
@@ -3857,7 +3857,7 @@ const App: React.FC = () => {
         headline: currentPageCopy?.title ?? currentEditorialPage.title,
         url: getCanonicalPageUrl(currentPage),
         description: currentPageCopy?.description ?? currentEditorialPage.description,
-        image: `${SITE_URL}/sample/og/og-image.png`,
+        image: `${SITE_URL}/sample/og-image.png`,
         articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
       })
     : null;

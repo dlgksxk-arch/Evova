@@ -3,7 +3,7 @@ import type { ContentLocale, SitePage } from '../../locales';
 
 export const SEO_BASE_URL = 'https://hamdeva.com';
 export const SEO_SITE_NAME = 'HAMDEVA';
-export const SEO_DEFAULT_OG_IMAGE_URL = `${SEO_BASE_URL}/sample/og/og-image.png`;
+export const SEO_DEFAULT_OG_IMAGE_URL = `${SEO_BASE_URL}/sample/og-image.png`;
 export const SEO_DEFAULT_OG_IMAGE_ALT = 'HAMDEVA pet fitting preview';
 export const SEO_INDEX_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 export const SEO_NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
