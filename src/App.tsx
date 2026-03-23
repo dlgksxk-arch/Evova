@@ -3217,9 +3217,10 @@ const ShellModal: React.FC<{
   title: string;
   subtitle?: string;
   className?: string;
+  backdropClassName?: string;
   onClose: () => void;
   children: React.ReactNode;
-}> = ({ title, subtitle, className = '', onClose, children }) => {
+}> = ({ title, subtitle, className = '', backdropClassName = '', onClose, children }) => {
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -3232,7 +3233,7 @@ const ShellModal: React.FC<{
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className={`modal-backdrop ${backdropClassName}`.trim()} onClick={onClose}>
       <div className={`auth-modal account-modal ${className}`.trim()} onClick={(event) => event.stopPropagation()}>
         <div className="modal-header account-modal-header">
           <div>
@@ -3484,11 +3485,14 @@ const App: React.FC = () => {
   const [resultPreviewModalSrc, setResultPreviewModalSrc] = useState<string | null>(null);
   const [resultPreviewModalLoading, setResultPreviewModalLoading] = useState(false);
   const [resultPreviewZoom, setResultPreviewZoom] = useState(1);
+  const [resultPreviewOffset, setResultPreviewOffset] = useState({ x: 0, y: 0 });
+  const [isResultPreviewDragging, setIsResultPreviewDragging] = useState(false);
   const [isSocialInAppBrowser, setIsSocialInAppBrowser] = useState(false);
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
   const generationLockRef = useRef(false);
+  const resultPreviewDragOriginRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   
   const lang = normalizeLanguageCode(i18next.resolvedLanguage ?? i18next.language);
   const contentLocale = getContentLocale(lang);
@@ -4152,6 +4156,8 @@ const App: React.FC = () => {
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
     setResultPreviewZoom(1);
+    setResultPreviewOffset({ x: 0, y: 0 });
+    setIsResultPreviewDragging(false);
   }, [currentPage]);
   useEffect(() => {
     if (currentUser) {
@@ -4934,6 +4940,8 @@ const App: React.FC = () => {
     setResultPreviewModalSrc(null);
     setResultPreviewModalLoading(false);
     setResultPreviewZoom(1);
+    setResultPreviewOffset({ x: 0, y: 0 });
+    setIsResultPreviewDragging(false);
   };
   const openResultPreviewModal = (src: string) => {
     if (resultPreviewModalSrc?.startsWith('blob:')) {
@@ -4941,8 +4949,47 @@ const App: React.FC = () => {
     }
     setResultPreviewModalLoading(false);
     setResultPreviewZoom(1);
+    setResultPreviewOffset({ x: 0, y: 0 });
+    setIsResultPreviewDragging(false);
     setResultPreviewModalSrc(src);
     setShowResultPreviewModal(true);
+  };
+  const updateResultPreviewZoom = (updater: (prev: number) => number) => {
+    setResultPreviewZoom((prev) => {
+      const next = updater(prev);
+      if (next <= 1) {
+        setResultPreviewOffset({ x: 0, y: 0 });
+      }
+      return next;
+    });
+  };
+  const startResultPreviewDrag = (clientX: number, clientY: number) => {
+    if (resultPreviewZoom <= 1) {
+      return;
+    }
+
+    resultPreviewDragOriginRef.current = {
+      x: clientX,
+      y: clientY,
+      offsetX: resultPreviewOffset.x,
+      offsetY: resultPreviewOffset.y,
+    };
+    setIsResultPreviewDragging(true);
+  };
+  const moveResultPreviewDrag = (clientX: number, clientY: number) => {
+    const origin = resultPreviewDragOriginRef.current;
+    if (!origin || resultPreviewZoom <= 1) {
+      return;
+    }
+
+    setResultPreviewOffset({
+      x: origin.offsetX + (clientX - origin.x),
+      y: origin.offsetY + (clientY - origin.y),
+    });
+  };
+  const endResultPreviewDrag = () => {
+    resultPreviewDragOriginRef.current = null;
+    setIsResultPreviewDragging(false);
   };
   const handleOpenHistoryItem = async (item: GenerationRecord) => {
     if (item.imageUrl) {
@@ -6622,6 +6669,7 @@ const App: React.FC = () => {
       {showResultPreviewModal && (
         <ShellModal
           title={t.resultTitle}
+          backdropClassName="result-preview-backdrop"
           className="result-preview-shell"
           onClose={closeResultPreviewModal}
         >
@@ -6630,7 +6678,7 @@ const App: React.FC = () => {
               <button
                 className="outline-btn result-preview-zoom-btn"
                 disabled={resultPreviewZoom <= 0.6}
-                onClick={() => setResultPreviewZoom((prev) => Math.max(0.6, Number((prev - 0.2).toFixed(2))))}
+                onClick={() => updateResultPreviewZoom((prev) => Math.max(0.6, Number((prev - 0.2).toFixed(2))))}
                 type="button"
               >
                 {t.resultPreviewZoomOut}
@@ -6639,7 +6687,7 @@ const App: React.FC = () => {
               <button
                 className="outline-btn result-preview-zoom-btn"
                 disabled={resultPreviewZoom >= 3}
-                onClick={() => setResultPreviewZoom((prev) => Math.min(3, Number((prev + 0.2).toFixed(2))))}
+                onClick={() => updateResultPreviewZoom((prev) => Math.min(3, Number((prev + 0.2).toFixed(2))))}
                 type="button"
               >
                 {t.resultPreviewZoomIn}
@@ -6651,12 +6699,45 @@ const App: React.FC = () => {
               <p>{t.resultPreviewLoading}</p>
             ) : resultPreviewModalSrc ? (
               <div className="result-preview-scroll">
-                <div className="result-preview-image-stage">
+                <div
+                  className={`result-preview-image-stage ${resultPreviewZoom > 1 ? 'is-draggable' : ''} ${isResultPreviewDragging ? 'is-dragging' : ''}`}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    startResultPreviewDrag(event.clientX, event.clientY);
+                  }}
+                  onMouseMove={(event) => {
+                    if (!isResultPreviewDragging) {
+                      return;
+                    }
+                    event.preventDefault();
+                    moveResultPreviewDrag(event.clientX, event.clientY);
+                  }}
+                  onMouseUp={endResultPreviewDrag}
+                  onMouseLeave={endResultPreviewDrag}
+                  onTouchStart={(event) => {
+                    const touch = event.touches[0];
+                    if (!touch) {
+                      return;
+                    }
+                    startResultPreviewDrag(touch.clientX, touch.clientY);
+                  }}
+                  onTouchMove={(event) => {
+                    const touch = event.touches[0];
+                    if (!touch) {
+                      return;
+                    }
+                    moveResultPreviewDrag(touch.clientX, touch.clientY);
+                  }}
+                  onTouchEnd={endResultPreviewDrag}
+                >
                   <img
                     className="result-preview-modal-image"
                     src={resultPreviewModalSrc}
                     alt={t.resultPreviewAlt}
-                    style={{ width: `${resultPreviewZoom * 100}%` }}
+                    draggable={false}
+                    style={{
+                      transform: `translate(${resultPreviewOffset.x}px, ${resultPreviewOffset.y}px) scale(${resultPreviewZoom})`,
+                    }}
                   />
                 </div>
               </div>
