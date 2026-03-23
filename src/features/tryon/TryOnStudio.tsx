@@ -64,7 +64,6 @@ const GENERATION_TARGET_MS = 30000;
 const RESULT_SETTLE_MS = 1800;
 const DISPLAY_PROGRESS_TARGET_MS = Math.round(GENERATION_TARGET_MS / 0.95);
 const RACE_PICK_LOCK_PERCENT = 30;
-const RACE_RESULT_REVEAL_PERCENT = 70;
 
 type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
 type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
@@ -223,7 +222,7 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       guessCat: '고양이',
       resultCorrect: '정답이에요!',
       resultWrong: '이번엔 빗나갔어요.',
-      resultNoGuess: '이번 라운드는 예측 없이 결과를 먼저 공개합니다.',
+      resultNoGuess: '이번 라운드는 레이스가 끝난 뒤 결과를 공개합니다.',
       winnerDog: '강아지가 먼저 도착했어요.',
       winnerCat: '고양이가 먼저 도착했어요.',
       winnerCelebrate: '승리 포즈와 간식 세리머니 진행 중!',
@@ -245,7 +244,7 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     guessCat: 'Cat',
     resultCorrect: 'Nice guess!',
     resultWrong: 'Not this time.',
-    resultNoGuess: 'No pick this round, revealing the winner early.',
+    resultNoGuess: 'No pick this round, revealing the winner after the race.',
     winnerDog: 'The dog reached the snack first.',
     winnerCat: 'The cat reached the snack first.',
     winnerCelebrate: 'Victory pose and snack celebration!',
@@ -575,8 +574,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
   const raceProgress = clamp(generationProgress / 100, 0, 1);
   const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
-  const isResultRevealStage = isPreviewReady || generationProgress >= RACE_RESULT_REVEAL_PERCENT;
-  const isSnackStage = raceProgress >= 0.95;
+  const isResultRevealStage = isPreviewReady;
+  const isSnackStage = isPreviewReady;
   const swingTime = generationElapsedMs / 1000;
   const dogSwing = (Math.sin((swingTime * 2.7) + raceSwingSeed.dogPhaseA) * 0.055) + (Math.sin((swingTime * 5.4) + raceSwingSeed.dogPhaseB) * 0.022) + raceSwingSeed.dogBias;
   const catSwing = (Math.sin((swingTime * 2.45) + raceSwingSeed.catPhaseA) * 0.055) + (Math.sin((swingTime * 5.9) + raceSwingSeed.catPhaseB) * 0.022) + raceSwingSeed.catBias;
@@ -672,18 +671,35 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </div>
           </div>
           <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
-            <div className="generation-playground-lane generation-playground-lane-back" />
-            <div className="generation-playground-lane generation-playground-lane-front" />
-            <div className="generation-playground-obstacle-row">
-              {RUNNER_OBSTACLES.map((obstacle) => (
-                <span
-                  key={obstacle.key}
-                  className={`generation-playground-obstacle obstacle-${obstacle.key}`}
-                  style={{ ['--obstacle-progress' as string]: `${obstacle.position}` , ['--obstacle-accent' as string]: obstacle.accent }}
-                >
-                  {obstacle.icon}
-                </span>
-              ))}
+            <div className="generation-playground-track">
+              <div className="generation-track-lane generation-track-lane-dog">
+                <div className="generation-track-rail" />
+                <div className="generation-track-obstacles">
+                  {RUNNER_OBSTACLES.map((obstacle) => (
+                    <span
+                      key={`dog-${obstacle.key}`}
+                      className={`generation-track-obstacle obstacle-${obstacle.key} ${dogTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
+                      style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
+                    >
+                      {obstacle.icon}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="generation-track-lane generation-track-lane-cat">
+                <div className="generation-track-rail" />
+                <div className="generation-track-obstacles">
+                  {RUNNER_OBSTACLES.map((obstacle) => (
+                    <span
+                      key={`cat-${obstacle.key}`}
+                      className={`generation-track-obstacle obstacle-${obstacle.key} ${catTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
+                      style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
+                    >
+                      {obstacle.icon}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="generation-playground-finish-zone">
               <span className="generation-playground-finish-flag">🏁</span>

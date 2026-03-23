@@ -5086,61 +5086,77 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid color-mix(in srgb, var(--primary) 10%, var(--border));
 }
 
-.generation-playground-lane {
+.generation-playground-track {
   position: absolute;
   left: 8%;
   right: 18%;
-  border-bottom: 4px dashed rgba(241, 128, 79, 0.28);
+  top: 18px;
+  bottom: 18px;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
-.generation-playground-lane-back {
-  top: 43%;
+.generation-track-lane {
+  position: relative;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08)),
+    linear-gradient(90deg, rgba(255, 197, 150, 0.2), rgba(255, 232, 213, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
 }
 
-.generation-playground-lane-front {
-  top: 76%;
+.generation-track-rail {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  border-bottom: 4px dashed rgba(241, 128, 79, 0.32);
+  transform: translateY(-50%);
 }
 
-.generation-playground-obstacle-row {
+.generation-track-obstacles {
   position: absolute;
   inset: 0;
 }
 
-.generation-playground-obstacle {
+.generation-track-obstacle {
   position: absolute;
-  left: calc(8% + (var(--obstacle-progress, 0) * 72%));
-  transform: translateX(-50%);
+  left: calc(2% + (var(--obstacle-progress, 0) * 86%));
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--obstacle-accent, #ff8b5f);
   text-shadow: 0 8px 18px rgba(20, 25, 44, 0.12);
+  filter: saturate(0.94);
 }
 
-.generation-playground-obstacle.obstacle-hurdle {
-  top: 49%;
+.generation-track-obstacle.is-active {
+  animation: generation-obstacle-pulse 0.78s ease-in-out infinite;
+}
+
+.generation-track-obstacle.obstacle-hurdle {
   font-size: 22px;
 }
 
-.generation-playground-obstacle.obstacle-mountain {
-  top: 22%;
+.generation-track-obstacle.obstacle-mountain {
   font-size: 30px;
 }
 
-.generation-playground-obstacle.obstacle-river {
-  top: 79%;
+.generation-track-obstacle.obstacle-river {
   font-size: 28px;
   letter-spacing: -3px;
 }
 
-.generation-playground-obstacle.obstacle-desert {
-  top: 22%;
+.generation-track-obstacle.obstacle-desert {
   font-size: 24px;
 }
 
-.generation-playground-obstacle.obstacle-mud {
-  top: 79%;
+.generation-track-obstacle.obstacle-mud {
   font-size: 28px;
 }
 
@@ -5161,11 +5177,11 @@ a { color: inherit; text-decoration: none; }
 }
 
 .generation-playground-dog {
-  top: 18%;
+  top: 25%;
 }
 
 .generation-playground-cat {
-  top: 52%;
+  top: 62%;
 }
 
 .generation-runner-shadow {
@@ -5729,9 +5745,27 @@ a { color: inherit; text-decoration: none; }
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+[data-theme='dark'] .generation-track-lane,
+.app-root.dark .generation-track-lane {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+    linear-gradient(90deg, rgba(255, 170, 112, 0.08), rgba(91, 129, 255, 0.05));
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-theme='dark'] .generation-track-rail,
+.app-root.dark .generation-track-rail {
+  border-bottom-color: rgba(255, 176, 109, 0.36);
+}
+
 [data-theme='dark'] .generation-playground-helper,
 .app-root.dark .generation-playground-helper {
   color: var(--text-on-dark);
+}
+
+@keyframes generation-obstacle-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.86; }
+  50% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
 }
 
 @keyframes generation-tail-wag {
