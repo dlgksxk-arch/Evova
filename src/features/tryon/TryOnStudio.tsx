@@ -63,7 +63,7 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
 const GENERATION_TARGET_MS = 30000;
 const RESULT_SETTLE_MS = 1800;
 const DISPLAY_PROGRESS_TARGET_MS = Math.round(GENERATION_TARGET_MS / 0.95);
-const RACE_PICK_LOCK_PERCENT = 30;
+const RACE_PICK_LOCK_PERCENT = 50;
 
 type RunnerObstacleKey = 'hurdle' | 'mountain' | 'river' | 'desert' | 'mud';
 type RunnerState = 'run' | 'jump' | 'climb' | 'splash' | 'tumble' | 'sink' | 'celebrate';
@@ -112,6 +112,10 @@ const createRunnerObstacleProfile = (): RunnerObstacleProfile => ({
   },
 });
 
+const getRunnerCrashCount = (profile: RunnerObstacleProfile): number => Object.values(profile)
+  .filter((entry) => entry.outcome === 'crash')
+  .length;
+
 const getRunnerObstacleState = (
   baseProgress: number,
   profile: RunnerObstacleProfile,
@@ -153,7 +157,7 @@ const getRunnerObstacleState = (
       if (profileEntry.outcome === 'crash') {
         activeState = obstacle.key === 'river' || obstacle.key === 'mud' ? 'sink' : 'tumble';
       } else {
-        activeState = 'run';
+        activeState = 'jump';
       }
       return;
     }
@@ -212,8 +216,8 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
       elapsed: '진행률',
       helper: '허들, 산, 강, 사막, 진흙을 지나며 누가 먼저 도착할지 지켜보세요.',
       gameTitle: '누가 먼저 간식에 도착할까요?',
-      gamePrompt: '30% 안에 강아지나 고양이를 골라 보세요.',
-      gameLocked: '30%가 지나 선택이 마감되었어요.',
+      gamePrompt: '50% 안에 강아지나 고양이를 골라 보세요.',
+      gameLocked: '50%가 지나 선택이 마감되었어요.',
       guessDog: '강아지',
       guessCat: '고양이',
       resultCorrect: '정답이에요!',
@@ -234,8 +238,8 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
     elapsed: 'Progress',
     helper: 'Watch them race through hurdles, mountains, river, desert, and mud.',
     gameTitle: 'Who reaches the treat first?',
-    gamePrompt: 'Pick dog or cat before 30%.',
-    gameLocked: 'Selection is locked after 30%.',
+    gamePrompt: 'Pick dog or cat before 50%.',
+    gameLocked: 'Selection is locked after 50%.',
     guessDog: 'Dog',
     guessCat: 'Cat',
     resultCorrect: 'Nice guess!',
@@ -384,10 +388,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const [generationWinner, setGenerationWinner] = useState<'dog' | 'cat'>('dog');
   const [raceGuess, setRaceGuess] = useState<'dog' | 'cat' | null>(null);
   const [raceSwingSeed, setRaceSwingSeed] = useState(() => ({
-    dogPhaseA: 0,
-    dogPhaseB: 0,
-    catPhaseA: 0,
-    catPhaseB: 0,
     dogBias: 0,
     catBias: 0,
   }));
@@ -413,12 +413,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         setGenerationElapsedMs(0);
         setRaceGuess(null);
         setRaceSwingSeed({
-          dogPhaseA: Math.random() * Math.PI * 2,
-          dogPhaseB: Math.random() * Math.PI * 2,
-          catPhaseA: Math.random() * Math.PI * 2,
-          catPhaseB: Math.random() * Math.PI * 2,
-          dogBias: (Math.random() - 0.5) * 0.015,
-          catBias: (Math.random() - 0.5) * 0.015,
+          dogBias: (Math.random() - 0.5) * 0.01,
+          catBias: (Math.random() - 0.5) * 0.01,
         });
         setRunnerObstacleProfiles({
           dog: createRunnerObstacleProfile(),
@@ -568,41 +564,40 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
-  const raceProgress = clamp(generationProgress / 100, 0, 1);
+  const dogCrashCount = Math.min(5, getRunnerCrashCount(runnerObstacleProfiles.dog));
+  const catCrashCount = Math.min(5, getRunnerCrashCount(runnerObstacleProfiles.cat));
+  const crashDelayCount = Math.min(5, Math.max(dogCrashCount, catCrashCount));
+  const raceFinishPercent = Math.min(85, 70 + (crashDelayCount * 3));
+  const raceProgress = clamp(generationProgress / raceFinishPercent, 0, 1);
   const isGuessLocked = generationProgress >= RACE_PICK_LOCK_PERCENT;
-  const isResultRevealStage = isPreviewReady;
-  const isSnackStage = isPreviewReady;
-  const winnerEdgeBoost = clamp((raceProgress - 0.62) / 0.18, 0, 1) * 0.035;
+  const isRaceFinished = generationProgress >= raceFinishPercent;
+  const isResultRevealStage = isRaceFinished || isPreviewReady;
+  const isSnackStage = isRaceFinished || isPreviewReady;
+  const winnerEdgeBoost = clamp((raceProgress - 0.72) / 0.18, 0, 1) * 0.032;
   const dogLeadOffset = generationWinner === 'dog' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
   const catLeadOffset = generationWinner === 'cat' ? winnerEdgeBoost : -winnerEdgeBoost * 0.8;
   const dogBaseProgress = clamp((raceProgress * 0.94) + raceSwingSeed.dogBias + dogLeadOffset, 0.02, 0.98);
   const catBaseProgress = clamp((raceProgress * 0.94) + raceSwingSeed.catBias + catLeadOffset, 0.02, 0.98);
   const dogTelemetry = getRunnerObstacleState(dogBaseProgress, runnerObstacleProfiles.dog, generationWinner, 'dog');
   const catTelemetry = getRunnerObstacleState(catBaseProgress, runnerObstacleProfiles.cat, generationWinner, 'cat');
-  const isWinnerAtFinish = generationProgress >= WINNER_FINISH_PERCENT;
+  const isWinnerAtFinish = generationProgress >= Math.min(WINNER_FINISH_PERCENT, raceFinishPercent);
   const dogRunnerProgress = isPreviewReady
     ? (generationWinner === 'dog' ? 1 : 0.964)
-    : isWinnerAtFinish
+    : isRaceFinished
       ? (generationWinner === 'dog' ? 1 : clamp(dogTelemetry.progress, 0.78, 0.93))
       : dogTelemetry.progress;
   const catRunnerProgress = isPreviewReady
     ? (generationWinner === 'cat' ? 1 : 0.964)
-    : isWinnerAtFinish
+    : isRaceFinished
       ? (generationWinner === 'cat' ? 1 : clamp(catTelemetry.progress, 0.78, 0.93))
       : catTelemetry.progress;
-  const dogRunnerState: RunnerState = (isPreviewReady || (isWinnerAtFinish && generationWinner === 'dog'))
+  const dogRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && generationWinner === 'dog'))
     ? 'celebrate'
     : dogTelemetry.state;
-  const catRunnerState: RunnerState = (isPreviewReady || (isWinnerAtFinish && generationWinner === 'cat'))
+  const catRunnerState: RunnerState = (isPreviewReady || (isRaceFinished && generationWinner === 'cat'))
     ? 'celebrate'
     : catTelemetry.state;
-  const remainingMs = isPreviewReady
-    ? 0
-    : finalImageSrc && resultPreviewState === 'loading'
-      ? Math.max(0, RESULT_SETTLE_MS - ((resultSettlingStartedAt ? Date.now() - resultSettlingStartedAt : 0)))
-      : Math.max(0, DISPLAY_PROGRESS_TARGET_MS - generationElapsedMs);
-  const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
-  const raceStatusLabel = raceProgress >= 0.82 ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
+  const raceStatusLabel = isRaceFinished ? generationPanelCopy.stageRendering : generationPanelCopy.stageGenerating;
   const snackLabel = generationWinner === 'dog' ? '🦴' : '🐟';
   const guessResultTone = raceGuess === null ? 'neutral' : raceGuess === generationWinner ? 'correct' : 'wrong';
   const guessResultHeadline = raceGuess === null
@@ -647,7 +642,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </div>
             <div className="generation-playground-meta">
               <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
-              <span className="generation-playground-timer">{copy.generationRemainingLabel}: {remainingSeconds}s</span>
             </div>
           </div>
           <div className="generation-race-pick-panel">
@@ -679,6 +673,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${generationWinner}`} aria-hidden="true">
             <div className="generation-playground-track">
               <div className="generation-track-lane generation-track-lane-dog">
+                <span className="generation-track-lane-label">DOG</span>
                 <div className="generation-track-rail" />
                 <div className="generation-track-obstacles">
                   {RUNNER_OBSTACLES.map((obstacle) => (
@@ -693,6 +688,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                 </div>
               </div>
               <div className="generation-track-lane generation-track-lane-cat">
+                <span className="generation-track-lane-label">CAT</span>
                 <div className="generation-track-rail" />
                 <div className="generation-track-obstacles">
                   {RUNNER_OBSTACLES.map((obstacle) => (
