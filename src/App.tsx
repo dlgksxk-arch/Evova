@@ -3395,18 +3395,18 @@ const removeAdSenseScript = (): void => {
 };
 
 const DEFAULT_LANGUAGE: LanguageCode = 'en';
-const SITE_KEYWORDS = 'HAMDEVA, hamdeva, 함데바, pet fitting, AI pet fitting, pet virtual fitting, pet outfit preview, dog outfit preview, cat outfit preview, dog clothes try on, cat clothes try on, pet outfit generator, dog outfit generator, cat outfit generator, pet costume generator, virtual pet try on, dress up your pet, dog costume ideas, cat costume ideas, 반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 강아지 옷 미리보기, 고양이 옷 입혀보기, 강아지옷, 고양이옷, 펫 의상 미리보기, 펫 코디, 펫 코스튬, 반려동물 코디, 강아지 옷 추천, 고양이 옷 추천, 펫 스타일 추천';
+const SITE_KEYWORDS = 'HAMDEVA, hamdeva, pet fitting, AI pet fitting, dog clothes try on, pet outfit generator, pet outfit preview, dog outfit preview, cat clothes try on, virtual pet fitting, dog clothes preview, pet clothes online, dress up your pet, dog costume ideas, cat costume ideas, 반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 강아지 옷 미리보기, 고양이 옷 입혀보기, 강아지옷, 고양이옷, 펫 의상 미리보기';
 const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
-  home: `${SITE_KEYWORDS}, 반려동물 ai 옷입혀보기, 강아지 ai 옷입혀보기, 고양이 ai 옷입혀보기, ai pet outfit, ai dog outfit, ai cat outfit, dog clothes preview, cat clothes preview`,
-  about: `${SITE_KEYWORDS}, 반려동물 옷입혀보기 사이트, 펫 피팅 서비스, pet fitting service, 함데바 소개`,
-  'how-it-works': `${SITE_KEYWORDS}, 반려동물 사진 업로드, 의상 이미지 업로드, 펫 피팅 사용법, pet photo upload, outfit image upload, dog outfit preview steps`,
+  home: `${SITE_KEYWORDS}, ai pet outfit, ai dog outfit, ai cat outfit, compare pet outfits, pet fitting online`,
+  about: `${SITE_KEYWORDS}, pet fitting service, ai pet fitting service, about hamdeva`,
+  'how-it-works': `${SITE_KEYWORDS}, pet photo upload, outfit image upload, how pet fitting works, dog clothes try on steps`,
   'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,
   'sample-friends': `${SITE_KEYWORDS}, 샘플 강아지, 샘플 고양이, 강아지 품종, 고양이 품종, dog breeds, cat breeds, pet sample photo`,
-  'fashion-technology': `${SITE_KEYWORDS}, 펫 스타일 가이드, 반려동물 의상 아이디어, dog outfit ideas, cat outfit ideas`,
-  pricing: `${SITE_KEYWORDS}, 가격, 요금제, 크레딧 가격, pricing, credits, plans, pet fitting price, dog outfit preview price, cat outfit preview price`,
-  'virtual-try-on-guide': `${SITE_KEYWORDS}, 반려동물 가상피팅 가이드, pet virtual try on guide`,
-  'outfit-photo-tips': `${SITE_KEYWORDS}, 반려동물 사진 팁, 의상 사진 팁, pet photo tips, outfit photo tips`,
-  'ai-fitting-faq': `${SITE_KEYWORDS}, 반려동물 옷입혀보기 faq, pet outfit faq, dog outfit faq, cat outfit faq`,
+  'fashion-technology': `${SITE_KEYWORDS}, pet style guide, dog outfit ideas, cat outfit ideas, ai pet fashion`,
+  pricing: `${SITE_KEYWORDS}, pricing, credits, plans, pet fitting price, dog clothes try on price, pet outfit generator price`,
+  'virtual-try-on-guide': `${SITE_KEYWORDS}, pet virtual try on guide, pet fitting guide, dog clothes try on guide`,
+  'outfit-photo-tips': `${SITE_KEYWORDS}, pet photo tips, outfit photo tips, better dog photo for pet fitting`,
+  'ai-fitting-faq': `${SITE_KEYWORDS}, pet fitting faq, pet outfit faq, dog clothes try on faq, ai pet fitting faq`,
 };
 
 const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {

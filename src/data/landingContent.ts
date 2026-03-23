@@ -135,7 +135,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       eyebrow: 'AI Pet Fitting Service',
       title: '우리 아이,\n오늘 뭐 입혀볼까? 🐾',
       subtitle: '사진만 올리면 귀여운 의상 미리보기를 바로 만들 수 있어요.',
-      body: 'HAMDEVA(함데바)에서 강아지 옷 미리보기, 고양이 옷 입혀보기, pet fitting을 빠르게 체험해보세요.',
+      body: 'HAMDEVA에서 AI pet fitting, dog clothes try on, pet outfit generator를 빠르게 체험해보세요.',
       compactPrimaryButton: '🐾 펫 피팅 시작',
       primaryButton: '🐾 지금 바로 입혀보기 (무료)',
       secondaryButton: '샘플 의상 둘러보기',
@@ -143,7 +143,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     intro: {
       title: 'HAMDEVA는 반려동물 사진으로 다양한 의상 분위기를 빠르게 비교해볼 수 있는 AI 서비스입니다.',
       paragraphs: [
-        'HAMDEVA(함데바)는 강아지 옷 미리보기, 고양이 옷 입혀보기, 반려동물 가상 피팅을 찾는 사용자가 가장 먼저 이해하기 쉬운 홈 화면을 목표로 구성되어 있습니다.',
+        'HAMDEVA는 AI pet fitting, dog clothes try on, pet outfit generator를 찾는 사용자가 가장 먼저 이해하기 쉬운 홈 화면을 목표로 구성되어 있습니다.',
         '강아지나 고양이 사진을 올리고 의상 이미지를 더하면, 실제로 구매하거나 촬영하기 전에 어울리는 느낌을 먼저 볼 수 있습니다.',
         '귀여운 일상룩, 시즌 코스튬, 생일 의상, 기념 촬영용 스타일처럼 반려동물에게 어떤 분위기가 잘 맞는지 빠르게 확인할 수 있습니다.',
         '사용 방법에서는 펫 사진 준비법을, 샘플 의상 정보에서는 반려동물에게 어울릴 만한 스타일 아이디어를 이어서 볼 수 있습니다.',
@@ -308,7 +308,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
       eyebrow: 'AI Pet Fitting Service',
       title: 'What should I dress my pet in today? 🐾',
       subtitle: 'Upload a photo and get a cute pet outfit preview right away.',
-      body: 'Use HAMDEVA, also searched as 함데바, for dog outfit preview, cat clothes try on, and pet fitting in a few taps.',
+      body: 'Use HAMDEVA for AI pet fitting, dog clothes try on, and pet outfit generator in a few taps.',
       compactPrimaryButton: '🐾 Start Pet Fitting',
       primaryButton: '🐾 Try It On Now (Free)',
       secondaryButton: 'Browse Sample Outfits',
@@ -316,7 +316,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
     intro: {
       title: 'HAMDEVA helps you preview cute outfits on your dog or cat before you pick a final look.',
       paragraphs: [
-        'HAMDEVA, also searched as 함데바, is built for people looking for dog outfit preview, cat clothes try on, pet outfit preview, and virtual pet fitting.',
+        'HAMDEVA is built for people looking for AI pet fitting, dog clothes try on, pet outfit generator, and pet outfit preview.',
         'Use a pet photo and an outfit image to create a playful fitting preview before you shop, plan a costume, or prepare a themed photo.',
         'It works well for dogs and cats when you want to compare mood, cuteness, and overall styling direction quickly.',
         'Check How It Works for the simple flow and Sample Outfits for more style inspiration.',

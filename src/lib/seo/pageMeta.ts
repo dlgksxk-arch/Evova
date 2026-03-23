@@ -58,12 +58,12 @@ export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = {
 
 const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description: string }>> = {
   about: {
-    title: 'About HAMDEVA (함데바)',
-    description: 'Learn how HAMDEVA (함데바) helps pet owners with dog outfit preview, cat outfit preview, AI pet fitting, and virtual pet fitting.',
+    title: 'About HAMDEVA',
+    description: 'Learn how HAMDEVA helps pet owners with AI pet fitting, dog clothes try on, pet outfit generator, and pet outfit preview.',
   },
   'how-it-works': {
     title: 'How to Use HAMDEVA',
-    description: 'See how to upload pet photos, choose outfit images, and get better dog outfit preview, cat clothes try on, and AI pet fitting results with HAMDEVA.',
+    description: 'See how to upload pet photos, choose outfit images, and get better AI pet fitting, dog clothes try on, and pet outfit preview results with HAMDEVA.',
   },
   'traditional-clothing': {
     title: 'Pet Outfit Samples',
@@ -79,7 +79,7 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
   },
   pricing: {
     title: 'Pricing',
-    description: 'View HAMDEVA pricing, credits, and subscription details for dog outfit preview, cat outfit preview, and AI pet fitting generation.',
+    description: 'View HAMDEVA pricing, credits, and subscription details for AI pet fitting, dog clothes try on, and pet outfit generator usage.',
   },
   'virtual-try-on-guide': {
     title: 'Pet Virtual Try-On Guide',
