@@ -9,7 +9,6 @@ import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
 import type { PaymentStatusDetails } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
 import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
-import seoLandingPages from './data/seoLandingPages.json';
 import {
   createArticleSchema,
   createBreadcrumbSchema,
@@ -36,6 +35,7 @@ import {
   getEditorialUiCopy,
   type EditorialFaqItem,
 } from './lib/editorial';
+import { getSeoLandingPage, getSeoLandingPageEntries } from './lib/seoLandingPages';
 import { getLandingContent } from './data/landingContent';
 import {
   callCreditBootstrap,
@@ -84,26 +84,6 @@ declare global {
 
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
-type SeoLandingPageKey =
-  | 'dog-hanbok'
-  | 'cat-kimono'
-  | 'pet-qipao'
-  | 'pet-saree'
-  | 'maltese-hanbok'
-  | 'shiba-kimono'
-  | 'corgi-qipao'
-  | 'persian-cat-saree'
-  | 'tuxedo-cat-hanbok'
-  | 'poodle-wedding-dress'
-  | 'ragdoll-kimono';
-type SeoLandingPageContent = {
-  title: string;
-  description: string;
-  summary: string;
-  sections: Array<{ heading: string; paragraphs: string[] }>;
-  faq: FAQItem[];
-  relatedPages: SitePage[];
-};
 const APP_VERSION = __APP_VERSION__;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
@@ -3165,8 +3145,8 @@ const getFaqTitle = (page: SitePage, pageTitle?: string): string => {
   }
 };
 
-const getFaqItemsForPage = (page: SitePage, editorialFaq?: EditorialFaqItem[]): FAQItem[] => {
-  const seoLandingPage = getSeoLandingPage(page);
+const getFaqItemsForPage = (page: SitePage, lang: LanguageCode, editorialFaq?: EditorialFaqItem[]): FAQItem[] => {
+  const seoLandingPage = getSeoLandingPage(page, lang);
   if (seoLandingPage) {
     return seoLandingPage.faq;
   }
@@ -3215,7 +3195,7 @@ const getPageCopy = (
   lang: LanguageCode,
   contentLocale: ReturnType<typeof getContentLocale>,
 ) => {
-  const seoLandingPage = getSeoLandingPage(page);
+  const seoLandingPage = getSeoLandingPage(page, lang);
   if (seoLandingPage) {
     return seoLandingPage;
   }
@@ -3451,10 +3431,6 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'outfit-photo-tips': `${SITE_KEYWORDS}, pet photo tips, outfit photo tips, better dog photo for pet fitting`,
   'ai-fitting-faq': `${SITE_KEYWORDS}, pet fitting faq, pet outfit faq, dog clothes try on faq, ai pet fitting faq`,
 };
-const SEO_LANDING_PAGE_MAP = seoLandingPages as Record<SeoLandingPageKey, SeoLandingPageContent>;
-const getSeoLandingPage = (page: SitePage): SeoLandingPageContent | null =>
-  page in SEO_LANDING_PAGE_MAP ? SEO_LANDING_PAGE_MAP[page as SeoLandingPageKey] : null;
-
 const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {
   const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
   return isAppSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
@@ -3555,7 +3531,7 @@ const App: React.FC = () => {
   const petBreedGuides = getPetBreedGuides(lang);
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
-  const featuredSeoLandingCards = (Object.entries(SEO_LANDING_PAGE_MAP) as [SeoLandingPageKey, SeoLandingPageContent][])
+  const featuredSeoLandingCards = getSeoLandingPageEntries(lang)
     .map(([page, entry]) => ({
       page,
       title: entry.title,
@@ -3851,17 +3827,52 @@ const App: React.FC = () => {
     }
   })();
   const editorialUiCopy = getEditorialUiCopy(lang);
+  const seoLandingUiCopy = lang === 'ko'
+    ? {
+        homeLabel: '홈',
+        featuredTitle: '인기 의상 검색 가이드',
+        featuredDescription: '강아지 한복, 고양이 기모노, 반려동물 치파오, 반려동물 사리처럼 더 구체적인 검색을 위한 페이지입니다. 생성 전에 더 강한 가이드로 바로 들어갈 수 있습니다.',
+        sampleTitle: '의도 높은 의상 페이지',
+        sampleDescription: '이 상세 랜딩페이지들은 더 구체적인 검색 유입을 받도록 설계되어 있으며, 검색에서 샘플 선택까지 더 선명한 경로를 제공합니다.',
+        openPage: '페이지 열기',
+      }
+    : lang === 'ja'
+      ? {
+          homeLabel: 'ホーム',
+          featuredTitle: '人気の衣装検索ガイド',
+          featuredDescription: '犬の韓服、猫の着物、ペット旗袍、ペットサリーのような、より具体的な検索向けのページです。生成前に、より明確なガイドへ直接進めます。',
+          sampleTitle: '高意図の衣装ページ',
+          sampleDescription: 'これらの詳細ページは、より具体的な検索流入を想定して作られており、検索からサンプル選択までをより分かりやすくつなぎます。',
+          openPage: 'ページを開く',
+        }
+      : lang === 'zh'
+        ? {
+            homeLabel: '首页',
+            featuredTitle: '热门服装搜索指南',
+            featuredDescription: '这些页面面向更具体的搜索词，例如狗狗韩服、猫咪和服、宠物旗袍和宠物纱丽，让访客在生成前先进入更明确的指导页。',
+            sampleTitle: '高意图服装页面',
+            sampleDescription: '这些详细落地页专门承接更具体的搜索流量，让用户从搜索到示例选择之间的路径更清晰。',
+            openPage: '打开页面',
+          }
+        : {
+            homeLabel: 'Home',
+            featuredTitle: 'Popular Outfit Search Guides',
+            featuredDescription: 'These pages target more specific searches such as dog hanbok, cat kimono, pet qipao, and pet saree so visitors can land on a stronger guide before generating.',
+            sampleTitle: 'High-Intent Outfit Pages',
+            sampleDescription: 'These detailed landing pages are built for more specific searches and give visitors a clearer route from search to sample selection.',
+            openPage: 'Open page',
+          };
   const pricingUiCopy = getPricingUiCopy(lang);
   const subscriptionProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'subscription');
   const extraCreditProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'extra_credit');
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
-  const currentSeoLandingPage = getSeoLandingPage(currentPage);
+  const currentSeoLandingPage = getSeoLandingPage(currentPage, lang);
   const currentEditorialPage = getEditorialPage(currentPage);
   const relatedEditorialCards = currentSeoLandingPage
     ? currentSeoLandingPage.relatedPages
       .filter((page): page is SitePage => page !== currentPage)
       .map((page) => {
-        const seoPage = getSeoLandingPage(page);
+        const seoPage = getSeoLandingPage(page, lang);
         if (seoPage) {
           return {
             page,
@@ -3873,7 +3884,9 @@ const App: React.FC = () => {
         return {
           page,
           title: contentLocale.nav[page as keyof typeof contentLocale.nav] ?? getEditorialPageTitle(page as never),
-          description: getEditorialPageSummary(page as never),
+          description: lang === 'en'
+            ? getEditorialPageSummary(page as never)
+            : ((contentLocale.pages[page as keyof typeof contentLocale.pages] as { description?: string } | undefined)?.description ?? getEditorialPageSummary(page as never)),
         };
       })
     : currentEditorialPage
@@ -3896,12 +3909,12 @@ const App: React.FC = () => {
     confirm: t.logoutConfirmAction,
   };
   const normalizedPathname = window.location.pathname.replace(/\/+$/, '') || '/';
-  const currentFaqItems = getFaqItemsForPage(currentPage, currentEditorialPage?.faq);
+  const currentFaqItems = getFaqItemsForPage(currentPage, lang, currentEditorialPage?.faq);
   const breadcrumbItems = currentPage === 'home'
-    ? [{ name: 'Home', url: getCanonicalPageUrl('home') }]
+    ? [{ name: seoLandingUiCopy.homeLabel, url: getCanonicalPageUrl('home') }]
     : currentPageCopy
       ? [
-          { name: 'Home', url: getCanonicalPageUrl('home') },
+          { name: seoLandingUiCopy.homeLabel, url: getCanonicalPageUrl('home') },
           { name: currentPageCopy.title ?? 'HAMDEVA', url: getCanonicalPageUrl(currentPage) },
         ]
       : [];
@@ -6126,8 +6139,8 @@ const App: React.FC = () => {
             <section className="section editorial-section editorial-related-section">
               <div className="section-inner">
                 <div className="section-copy">
-                  <h2>Popular Outfit Search Guides</h2>
-                  <p>These pages target more specific searches such as dog hanbok, cat kimono, pet qipao, and pet saree so visitors can land on a stronger guide before generating.</p>
+                  <h2>{seoLandingUiCopy.featuredTitle}</h2>
+                  <p>{seoLandingUiCopy.featuredDescription}</p>
                 </div>
                 <div className="compact-card-grid">
                   {featuredSeoLandingCards.map((card) => (
@@ -6135,7 +6148,7 @@ const App: React.FC = () => {
                       <h2>{card.title}</h2>
                       <p>{card.description}</p>
                       <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
-                        Open page
+                        {seoLandingUiCopy.openPage}
                       </button>
                     </article>
                   ))}
@@ -6329,8 +6342,8 @@ const App: React.FC = () => {
                 </div>
                 <section className="section editorial-section editorial-related-section">
                   <div className="section-copy">
-                    <h2>High-Intent Outfit Pages</h2>
-                    <p>These detailed landing pages are built for more specific searches and give visitors a clearer route from search to sample selection.</p>
+                    <h2>{seoLandingUiCopy.sampleTitle}</h2>
+                    <p>{seoLandingUiCopy.sampleDescription}</p>
                   </div>
                   <div className="compact-card-grid">
                     {featuredSeoLandingCards.map((card) => (
@@ -6338,7 +6351,7 @@ const App: React.FC = () => {
                         <h2>{card.title}</h2>
                         <p>{card.description}</p>
                         <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
-                          Open page
+                          {seoLandingUiCopy.openPage}
                         </button>
                       </article>
                     ))}
