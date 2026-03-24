@@ -34,6 +34,7 @@ const ADMIN_GENERATION_LOGS_ENDPOINT = apiUrl('/api/admin/logs/generations');
 const ADMIN_CREDIT_LOGS_ENDPOINT = apiUrl('/api/admin/logs/credits');
 const ADMIN_PAYMENT_LOGS_ENDPOINT = apiUrl('/api/admin/logs/payments');
 const ADMIN_ACTIVITY_LOGS_ENDPOINT = apiUrl('/api/admin/logs/activities');
+const TRYON_FETCH_TIMEOUT_MS = 130_000;
 
 const normalizeGeneratedImage = (image: string, mimeType = 'image/png'): string =>
   image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
@@ -93,7 +94,7 @@ export const callTryOn = async (payload: {
   bodyProfile?: unknown;
 }): Promise<TryOnResponse & { image: string }> => {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 60_000);
+  const timer = window.setTimeout(() => controller.abort(), TRYON_FETCH_TIMEOUT_MS);
 
   try {
     console.info('[HAMDEVA] tryon request', {

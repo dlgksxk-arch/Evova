@@ -407,7 +407,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     dog: createRunnerObstacleProfile(),
     cat: createRunnerObstacleProfile(),
   }));
-  const [useCompactGenerationUi, setUseCompactGenerationUi] = useState(false);
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
@@ -487,26 +486,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       setGenerationProgress(100);
     }
   }, [finalImageSrc, resultPreviewState]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia('(max-width: 768px), (pointer: coarse)');
-    const updateCompactUi = (event?: MediaQueryList | MediaQueryListEvent) => {
-      setUseCompactGenerationUi(event?.matches ?? mediaQuery.matches);
-    };
-
-    updateCompactUi(mediaQuery);
-
-    const onChange = (event: MediaQueryListEvent) => {
-      updateCompactUi(event);
-    };
-
-    mediaQuery.addEventListener('change', onChange);
-    return () => mediaQuery.removeEventListener('change', onChange);
-  }, []);
 
   useEffect(() => {
     if (!finalImageSrc || resultPreviewState !== 'loading') {
@@ -596,7 +575,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const isPreviewGenerating = isGenerating || (Boolean(finalImageSrc) && resultPreviewState === 'loading');
   const isPreviewReady = Boolean(finalImageSrc) && resultPreviewState === 'ready';
-  const shouldUseCompactGenerationUi = useCompactGenerationUi && isPreviewGenerating;
   const displayedGenerationProgress = isPreviewReady ? 100 : clamp(Math.round(generationProgress), 1, 99);
   const dogCrashCount = Math.min(5, getRunnerCrashCount(runnerObstacleProfiles.dog));
   const catCrashCount = Math.min(5, getRunnerCrashCount(runnerObstacleProfiles.cat));
@@ -675,193 +653,169 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         />
       ) : isPreviewGenerating ? (
         <div className="result-preview-loading" aria-live="polite">
-          {shouldUseCompactGenerationUi ? (
-            <div className="generation-compact-card">
-              <div className="generation-compact-head">
-                <div>
-                  <strong>{generationPanelCopy.title}</strong>
-                  <p>{raceStatusLabel}</p>
-                </div>
+          <>
+            <div className="generation-playground-head">
+              <div>
+                <strong>{generationPanelCopy.title}</strong>
+                <p>{raceStatusLabel}</p>
+              </div>
+              <div className="generation-playground-meta">
                 <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
               </div>
-              <div className="generation-compact-progress" aria-hidden="true">
-                <span
-                  className="generation-compact-progress-fill"
-                  style={{ width: `${displayedGenerationProgress}%` }}
-                />
-              </div>
-              <div className="generation-compact-runners" aria-hidden="true">
-                <span className={`generation-compact-runner ${raceWinner === 'dog' ? 'is-leading' : ''}`}>🐶</span>
-                <span className="generation-compact-track" />
-                <span className={`generation-compact-runner ${raceWinner === 'cat' ? 'is-leading' : ''}`}>🐱</span>
-              </div>
-              <p className="generation-compact-helper">{generationPanelCopy.helper}</p>
             </div>
-          ) : (
-            <>
-              <div className="generation-playground-head">
-                <div>
-                  <strong>{generationPanelCopy.title}</strong>
-                  <p>{raceStatusLabel}</p>
-                </div>
-                <div className="generation-playground-meta">
-                  <span className="generation-playground-percent">{displayedGenerationProgress}%</span>
-                </div>
+            <div className="generation-race-pick-panel">
+              <div className="generation-race-pick-copy">
+                <strong>{generationPanelCopy.gameTitle}</strong>
+                <p>{isGuessLocked ? generationPanelCopy.gameLocked : generationPanelCopy.gamePrompt}</p>
               </div>
-              <div className="generation-race-pick-panel">
-                <div className="generation-race-pick-copy">
-                  <strong>{generationPanelCopy.gameTitle}</strong>
-                  <p>{isGuessLocked ? generationPanelCopy.gameLocked : generationPanelCopy.gamePrompt}</p>
-                </div>
-                <div className="generation-race-pick-actions">
-                  <button
-                    className={`generation-race-pick-btn ${raceGuess === 'dog' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'dog' ? 'is-cta' : ''}`}
-                    disabled={isGuessLocked}
-                    onClick={() => setRaceGuess('dog')}
-                    type="button"
-                  >
-                    <span>🐶</span>
-                    <span>{generationPanelCopy.guessDog}</span>
-                  </button>
-                  <button
-                    className={`generation-race-pick-btn ${raceGuess === 'cat' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'cat' ? 'is-cta' : ''}`}
-                    disabled={isGuessLocked}
-                    onClick={() => setRaceGuess('cat')}
-                    type="button"
-                  >
-                    <span>🐱</span>
-                    <span>{generationPanelCopy.guessCat}</span>
-                  </button>
-                </div>
-              </div>
-              <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${raceWinner}`} aria-hidden="true">
-                <div className="generation-playground-track">
-                  <div className="generation-track-lane generation-track-lane-dog">
-                    <span className="generation-track-lane-label">DOG</span>
-                    <div className="generation-track-rail" />
-                    <div className="generation-track-obstacles">
-                      {RUNNER_OBSTACLES.map((obstacle) => (
-                        <span
-                          key={`dog-${obstacle.key}`}
-                          className={`generation-track-obstacle obstacle-${obstacle.key} ${dogTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
-                          style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
-                        >
-                          {obstacle.icon}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="generation-track-lane generation-track-lane-cat">
-                    <span className="generation-track-lane-label">CAT</span>
-                    <div className="generation-track-rail" />
-                    <div className="generation-track-obstacles">
-                      {RUNNER_OBSTACLES.map((obstacle) => (
-                        <span
-                          key={`cat-${obstacle.key}`}
-                          className={`generation-track-obstacle obstacle-${obstacle.key} ${catTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
-                          style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
-                        >
-                          {obstacle.icon}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="generation-playground-finish-zone">
-                  <span className="generation-playground-finish-flag">🏁</span>
-                  <span className="generation-playground-snack">{snackLabel}</span>
-                </div>
-                <div
-                  className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${raceWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
-                  style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}
+              <div className="generation-race-pick-actions">
+                <button
+                  className={`generation-race-pick-btn ${raceGuess === 'dog' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'dog' ? 'is-cta' : ''}`}
+                  disabled={isGuessLocked}
+                  onClick={() => setRaceGuess('dog')}
+                  type="button"
                 >
-                  <span className="generation-runner-visual">
-                    <span className="generation-runner-shadow" />
-                    <span className="generation-runner-body" />
-                    <span className="generation-runner-head">
-                      <span className="generation-runner-ear ear-left" />
-                      <span className="generation-runner-ear ear-right" />
-                      <span className="generation-runner-eye eye-left" />
-                      <span className="generation-runner-eye eye-right" />
-                      <span className="generation-runner-cheek cheek-left" />
-                      <span className="generation-runner-cheek cheek-right" />
-                      <span className="generation-runner-muzzle" />
-                      <span className="generation-runner-nose" />
-                      <span className="generation-runner-whiskers whisker-left" />
-                      <span className="generation-runner-whiskers whisker-right" />
-                    </span>
-                    <span className="generation-runner-legs">
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                    </span>
-                  </span>
-                </div>
-                <div
-                  className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${raceWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
-                  style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}
+                  <span>🐶</span>
+                  <span>{generationPanelCopy.guessDog}</span>
+                </button>
+                <button
+                  className={`generation-race-pick-btn ${raceGuess === 'cat' ? 'is-selected' : ''} ${!isGuessLocked && raceGuess !== 'cat' ? 'is-cta' : ''}`}
+                  disabled={isGuessLocked}
+                  onClick={() => setRaceGuess('cat')}
+                  type="button"
                 >
-                  <span className="generation-runner-visual">
-                    <span className="generation-runner-shadow" />
-                    <span className="generation-runner-body" />
-                    <span className="generation-runner-head">
-                      <span className="generation-runner-ear ear-left" />
-                      <span className="generation-runner-ear ear-right" />
-                      <span className="generation-runner-eye eye-left" />
-                      <span className="generation-runner-eye eye-right" />
-                      <span className="generation-runner-cheek cheek-left" />
-                      <span className="generation-runner-cheek cheek-right" />
-                      <span className="generation-runner-muzzle" />
-                      <span className="generation-runner-nose" />
-                      <span className="generation-runner-whiskers whisker-left" />
-                      <span className="generation-runner-whiskers whisker-right" />
-                    </span>
-                    <span className="generation-runner-legs">
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                    </span>
-                  </span>
-                </div>
-                {isSnackStage ? (
-                  <>
-                    <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{raceWinner === 'dog' ? '😋' : '🎉'}</span>
-                    <span className="generation-playground-reaction generation-playground-reaction-cat is-visible" style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>{raceWinner === 'cat' ? '😋' : '🎉'}</span>
-                  </>
-                ) : null}
-                <span className="generation-playground-spark generation-playground-spark-one">✦</span>
-                <span className="generation-playground-spark generation-playground-spark-two">✦</span>
+                  <span>🐱</span>
+                  <span>{generationPanelCopy.guessCat}</span>
+                </button>
               </div>
-              {isResultRevealStage ? (
-                <div className={`generation-winner-spotlight is-${guessResultTone}`}>
-                  <div className={`generation-winner-visual is-${raceWinner}`}>
-                    <span className="generation-winner-burst generation-winner-burst-one">✦</span>
-                    <span className="generation-winner-burst generation-winner-burst-two">✦</span>
-                    <span className="generation-winner-confetti generation-winner-confetti-one">•</span>
-                    <span className="generation-winner-confetti generation-winner-confetti-two">•</span>
-                    <span className={`generation-winner-animal is-${raceWinner}`}>
-                      <span className="generation-winner-ear ear-left" />
-                      <span className="generation-winner-ear ear-right" />
-                      <span className="generation-winner-eye eye-left" />
-                      <span className="generation-winner-eye eye-right" />
-                      <span className="generation-winner-cheek cheek-left" />
-                      <span className="generation-winner-cheek cheek-right" />
-                      <span className="generation-winner-nose" />
-                    </span>
-                    <span className="generation-winner-hands">🙌</span>
-                  </div>
-                  <div className="generation-winner-copy">
-                    <strong>{guessResultHeadline}</strong>
-                    <p>{guessResultBody}</p>
-                    <small>{generationPanelCopy.winnerCelebrate}</small>
+            </div>
+            <div className={`generation-playground-stage ${isSnackStage ? 'is-snack-stage' : 'is-race-stage'} winner-${raceWinner}`} aria-hidden="true">
+              <div className="generation-playground-track">
+                <div className="generation-track-lane generation-track-lane-dog">
+                  <span className="generation-track-lane-label">DOG</span>
+                  <div className="generation-track-rail" />
+                  <div className="generation-track-obstacles">
+                    {RUNNER_OBSTACLES.map((obstacle) => (
+                      <span
+                        key={`dog-${obstacle.key}`}
+                        className={`generation-track-obstacle obstacle-${obstacle.key} ${dogTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
+                        style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
+                      >
+                        {obstacle.icon}
+                      </span>
+                    ))}
                   </div>
                 </div>
+                <div className="generation-track-lane generation-track-lane-cat">
+                  <span className="generation-track-lane-label">CAT</span>
+                  <div className="generation-track-rail" />
+                  <div className="generation-track-obstacles">
+                    {RUNNER_OBSTACLES.map((obstacle) => (
+                      <span
+                        key={`cat-${obstacle.key}`}
+                        className={`generation-track-obstacle obstacle-${obstacle.key} ${catTelemetry.eventKey === obstacle.key ? 'is-active' : ''}`}
+                        style={{ ['--obstacle-progress' as string]: `${obstacle.position}`, ['--obstacle-accent' as string]: obstacle.accent }}
+                      >
+                        {obstacle.icon}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="generation-playground-finish-zone">
+                <span className="generation-playground-finish-flag">🏁</span>
+                <span className="generation-playground-snack">{snackLabel}</span>
+              </div>
+              <div
+                className={`generation-playground-runner generation-playground-dog state-${dogRunnerState} ${raceWinner === 'dog' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+                style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}
+              >
+                <span className="generation-runner-visual">
+                  <span className="generation-runner-shadow" />
+                  <span className="generation-runner-body" />
+                  <span className="generation-runner-head">
+                    <span className="generation-runner-ear ear-left" />
+                    <span className="generation-runner-ear ear-right" />
+                    <span className="generation-runner-eye eye-left" />
+                    <span className="generation-runner-eye eye-right" />
+                    <span className="generation-runner-cheek cheek-left" />
+                    <span className="generation-runner-cheek cheek-right" />
+                    <span className="generation-runner-muzzle" />
+                    <span className="generation-runner-nose" />
+                    <span className="generation-runner-whiskers whisker-left" />
+                    <span className="generation-runner-whiskers whisker-right" />
+                  </span>
+                  <span className="generation-runner-legs">
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </span>
+              </div>
+              <div
+                className={`generation-playground-runner generation-playground-cat state-${catRunnerState} ${raceWinner === 'cat' && isSnackStage ? 'is-winner' : 'is-runner-up'}`}
+                style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}
+              >
+                <span className="generation-runner-visual">
+                  <span className="generation-runner-shadow" />
+                  <span className="generation-runner-body" />
+                  <span className="generation-runner-head">
+                    <span className="generation-runner-ear ear-left" />
+                    <span className="generation-runner-ear ear-right" />
+                    <span className="generation-runner-eye eye-left" />
+                    <span className="generation-runner-eye eye-right" />
+                    <span className="generation-runner-cheek cheek-left" />
+                    <span className="generation-runner-cheek cheek-right" />
+                    <span className="generation-runner-muzzle" />
+                    <span className="generation-runner-nose" />
+                    <span className="generation-runner-whiskers whisker-left" />
+                    <span className="generation-runner-whiskers whisker-right" />
+                  </span>
+                  <span className="generation-runner-legs">
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </span>
+              </div>
+              {isSnackStage ? (
+                <>
+                  <span className="generation-playground-reaction generation-playground-reaction-dog is-visible" style={{ ['--runner-progress' as string]: `${dogRunnerProgress}` }}>{raceWinner === 'dog' ? '😋' : '🎉'}</span>
+                  <span className="generation-playground-reaction generation-playground-reaction-cat is-visible" style={{ ['--runner-progress' as string]: `${catRunnerProgress}` }}>{raceWinner === 'cat' ? '😋' : '🎉'}</span>
+                </>
               ) : null}
-              <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
-            </>
-          )}
+              <span className="generation-playground-spark generation-playground-spark-one">✦</span>
+              <span className="generation-playground-spark generation-playground-spark-two">✦</span>
+            </div>
+            {isResultRevealStage ? (
+              <div className={`generation-winner-spotlight is-${guessResultTone}`}>
+                <div className={`generation-winner-visual is-${raceWinner}`}>
+                  <span className="generation-winner-burst generation-winner-burst-one">✦</span>
+                  <span className="generation-winner-burst generation-winner-burst-two">✦</span>
+                  <span className="generation-winner-confetti generation-winner-confetti-one">•</span>
+                  <span className="generation-winner-confetti generation-winner-confetti-two">•</span>
+                  <span className={`generation-winner-animal is-${raceWinner}`}>
+                    <span className="generation-winner-ear ear-left" />
+                    <span className="generation-winner-ear ear-right" />
+                    <span className="generation-winner-eye eye-left" />
+                    <span className="generation-winner-eye eye-right" />
+                    <span className="generation-winner-cheek cheek-left" />
+                    <span className="generation-winner-cheek cheek-right" />
+                    <span className="generation-winner-nose" />
+                  </span>
+                  <span className="generation-winner-hands">🙌</span>
+                </div>
+                <div className="generation-winner-copy">
+                  <strong>{guessResultHeadline}</strong>
+                  <p>{guessResultBody}</p>
+                  <small>{generationPanelCopy.winnerCelebrate}</small>
+                </div>
+              </div>
+            ) : null}
+            <p className="generation-playground-helper">{generationPanelCopy.helper}</p>
+          </>
         </div>
       ) : (
         <div className="result-preview-placeholder">

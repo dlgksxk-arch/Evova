@@ -10169,16 +10169,19 @@ body {
 
   .try-layout-modal .outline-btn,
   .try-layout-modal .generate-btn {
-    min-height: 44px;
-    padding: 0 12px;
+    min-height: 48px;
+    padding: 10px 12px;
     font-size: 12px;
     border-radius: 15px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
   }
 
   .try-layout-modal .preview-box {
-    flex-basis: 112px;
-    min-height: 112px;
-    max-height: 112px;
+    flex-basis: 104px;
+    min-height: 104px;
+    max-height: 104px;
     padding: 0;
     border-radius: 16px;
     background: color-mix(in srgb, var(--surface-alt) 72%, white);
@@ -10280,6 +10283,14 @@ body {
     line-height: 1.4;
   }
 
+  .result-preview-panel.is-modal .result-preview-panel-image {
+    width: calc(100% - 20px);
+    max-width: none;
+    height: calc(100% - 20px);
+    margin: 10px;
+    border-radius: 18px;
+  }
+
   .result-preview-panel,
   .result-preview-placeholder,
   .result-preview-loading,
@@ -10302,7 +10313,27 @@ body {
   }
 
   .generation-playground-stage {
-    min-height: 156px;
+    min-height: 172px;
+  }
+
+  .generation-playground-track {
+    left: 6%;
+    right: 16%;
+    gap: 14px;
+  }
+
+  .generation-playground-finish-zone {
+    width: 66px;
+  }
+
+  .generation-playground-snack {
+    font-size: 28px;
+  }
+
+  .generation-race-pick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .generation-race-pick-panel {
@@ -10317,12 +10348,21 @@ body {
   .generation-race-pick-btn {
     flex: 1 1 0;
     justify-content: center;
+    min-height: 44px;
+    padding: 9px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .generation-playground-runner {
+    width: 74px;
+    height: 46px;
   }
 }
 
 @media (max-width: 480px) {
   .try-modal-left-column .modal-input-card-layout {
-    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-columns: minmax(0, 1fr) 88px;
     gap: 10px;
   }
 
@@ -10333,9 +10373,9 @@ body {
   }
 
   .try-layout-modal .preview-box {
-    flex-basis: 96px;
-    min-height: 96px;
-    max-height: 96px;
+    flex-basis: 88px;
+    min-height: 88px;
+    max-height: 88px;
   }
 
   .try-layout-modal .empty-preview {
@@ -10386,6 +10426,13 @@ body {
     justify-content: flex-start;
     min-height: 30px;
     padding: 0 10px;
+  }
+
+  .result-preview-panel.is-modal .result-preview-panel-image {
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    margin: 8px;
+    border-radius: 14px;
   }
 
   .result-preview-panel,
@@ -10459,14 +10506,60 @@ body {
   }
 
   .generation-playground-stage {
-    min-height: 148px;
+    min-height: 162px;
     margin-bottom: 12px;
     border-radius: 18px;
   }
 
+  .generation-playground-track {
+    left: 5%;
+    right: 14%;
+    top: 14px;
+    bottom: 14px;
+    gap: 12px;
+  }
+
+  .generation-track-lane-label {
+    top: 6px;
+    left: 8px;
+    min-height: 20px;
+    padding: 0 7px;
+    font-size: 9px;
+  }
+
+  .generation-playground-finish-zone {
+    top: 10px;
+    right: 8px;
+    bottom: 10px;
+    width: 56px;
+    border-radius: 14px;
+  }
+
+  .generation-playground-finish-flag {
+    font-size: 16px;
+  }
+
+  .generation-playground-snack {
+    font-size: 24px;
+  }
+
   .generation-playground-runner {
-    width: 62px;
+    width: 64px;
     height: 40px;
+  }
+
+  .generation-race-pick-copy strong {
+    font-size: 13px;
+  }
+
+  .generation-race-pick-copy p {
+    font-size: 11px;
+  }
+
+  .generation-race-pick-btn {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 11px;
   }
 
   .generation-gauge {
@@ -10499,7 +10592,7 @@ body {
   }
 }
 
-@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) {
   .pet-runner,
   .generation-race-pick-btn.is-cta,
   .generation-track-obstacle.is-active,

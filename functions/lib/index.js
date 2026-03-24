@@ -74,6 +74,7 @@ const VIDEO_FAILURE_LIMIT_REACHED_MESSAGE = '오늘 영상 생성 실패 횟수 
 const INVALID_VIDEO_DIALOGUE_ERROR = 'INVALID_VIDEO_DIALOGUE';
 const INVALID_VIDEO_DIALOGUE_MESSAGE = 'Dialogue is required and can use any language, spaces, and ! ? , . only, up to 30 characters.';
 const DUPLICATE_GENERATION_WINDOW_MS = 30000;
+const ACTIVE_PROCESSING_LOCK_WINDOW_MS = 10 * 60000;
 const GENERATION_COST = 100;
 const VIDEO_GENERATION_COST = 1500;
 const VIDEO_NOT_ENOUGH_CREDITS_MESSAGE = `영상 생성에는 ${VIDEO_GENERATION_COST} 크레딧이 필요합니다.`;
@@ -1065,6 +1066,17 @@ const isRecentTimestamp = (value, windowMs = DUPLICATE_GENERATION_WINDOW_MS) => 
     }
     return Date.now() - value.toDate().getTime() < windowMs;
 };
+const isActiveGenerationLock = (lockData) => {
+    const lastAttemptAt = lockData?.updatedAt ?? lockData?.startedAt;
+    const lockStatus = typeof lockData?.status === 'string' ? lockData.status : 'charged';
+    if (lockStatus === 'processing') {
+        return isRecentTimestamp(lastAttemptAt, ACTIVE_PROCESSING_LOCK_WINDOW_MS);
+    }
+    if (lockStatus === 'charged') {
+        return isRecentTimestamp(lastAttemptAt, DUPLICATE_GENERATION_WINDOW_MS);
+    }
+    return false;
+};
 const beginChargedRequest = async (user, requestId, options) => {
     if (!requestId) {
         throw new Error(DUPLICATE_REQUEST_ERROR);
@@ -1102,10 +1114,7 @@ const beginChargedRequest = async (user, requestId, options) => {
         }
         if (generationLockSnapshot.exists) {
             const lockData = generationLockSnapshot.data();
-            const lastAttemptAt = lockData?.updatedAt ?? lockData?.startedAt;
-            const lockStatus = typeof lockData?.status === 'string' ? lockData.status : 'charged';
-            const shouldBlockDuplicate = lockStatus === 'charged' || lockStatus === 'processing';
-            if (shouldBlockDuplicate && isRecentTimestamp(lastAttemptAt)) {
+            if (isActiveGenerationLock(lockData)) {
                 throw new Error(DUPLICATE_REQUEST_ERROR);
             }
         }
@@ -3186,6 +3195,17 @@ const handleTryOnRequest = async (req, res, label) => {
         return;
     }
     try {
+        await markChargedRequestInProgress(user, requestId, 'generationLocks', {
+            type: 'image_generation',
+            subjectType: resolvedSubjectType,
+            personInputLabel: personInputLabel || null,
+            garmentInputLabel: garmentInputLabel || null,
+            personPreviewImage: personPreviewImage || null,
+            garmentPreviewImage: garmentPreviewImage || null,
+            model: OPENAI_IMAGE_MODEL,
+            quality: OPENAI_IMAGE_QUALITY,
+            size: OPENAI_IMAGE_SIZE,
+        });
         const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
         const watermarkApplied = true;
         const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
