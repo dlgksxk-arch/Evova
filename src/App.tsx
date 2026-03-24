@@ -4240,36 +4240,59 @@ const App: React.FC = () => {
 
     mobileMenuCloseRef.current?.focus();
   }, [mobileMenuOpen]);
+  const isBodyInteractionLocked = mobileMenuOpen
+    || showCreditPlanModal
+    || showMyPageModal
+    || showAdminModal
+    || showLogoutConfirmModal
+    || showResultPreviewModal
+    || showContentModal
+    || showTryOnModal
+    || showSampleModal
+    || showClothSampleModal
+    || showAuthModal
+    || Boolean(selectedOutfitGuide)
+    || Boolean(selectedBreedGuide);
   useEffect(() => {
-    if (!mobileMenuOpen) {
-      document.body.style.removeProperty('overflow');
+    if (!isBodyInteractionLocked || typeof window === 'undefined' || typeof document === 'undefined') {
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const scrollY = window.scrollY;
+    const bodyStyle = document.body.style;
+    const htmlStyle = document.documentElement.style;
+    const previousBody = {
+      overflow: bodyStyle.overflow,
+      position: bodyStyle.position,
+      top: bodyStyle.top,
+      left: bodyStyle.left,
+      right: bodyStyle.right,
+      width: bodyStyle.width,
+      touchAction: bodyStyle.touchAction,
+    };
+    const previousHtmlOverflow = htmlStyle.overflow;
+
+    htmlStyle.overflow = 'hidden';
+    bodyStyle.overflow = 'hidden';
+    bodyStyle.position = 'fixed';
+    bodyStyle.top = `-${scrollY}px`;
+    bodyStyle.left = '0';
+    bodyStyle.right = '0';
+    bodyStyle.width = '100%';
+    bodyStyle.touchAction = 'none';
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      htmlStyle.overflow = previousHtmlOverflow;
+      bodyStyle.overflow = previousBody.overflow;
+      bodyStyle.position = previousBody.position;
+      bodyStyle.top = previousBody.top;
+      bodyStyle.left = previousBody.left;
+      bodyStyle.right = previousBody.right;
+      bodyStyle.width = previousBody.width;
+      bodyStyle.touchAction = previousBody.touchAction;
+      window.scrollTo(0, scrollY);
     };
-  }, [mobileMenuOpen]);
-  useEffect(() => {
-    const hasOverlayModal = showCreditPlanModal
-      || showMyPageModal
-      || showAdminModal
-      || showLogoutConfirmModal
-      || showResultPreviewModal;
-    if (!hasOverlayModal) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [showCreditPlanModal, showMyPageModal, showAdminModal, showLogoutConfirmModal, showResultPreviewModal]);
+  }, [isBodyInteractionLocked]);
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 1024) {

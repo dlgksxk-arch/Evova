@@ -6531,7 +6531,20 @@ a { color: inherit; text-decoration: none; }
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.7);
   z-index: 2000; display: flex; align-items: center; justify-content: center;
+  overflow: auto;
+  overscroll-behavior: contain;
   backdrop-filter: blur(4px); padding: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-content,
+.account-modal,
+.account-modal-body,
+.sample-modal-body,
+.content-modal-body,
+.result-preview-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .try-section-modal {
@@ -6647,7 +6660,8 @@ a { color: inherit; text-decoration: none; }
 
 .tryon-modal-shell .account-modal-body {
   max-height: calc(88vh - 92px);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @keyframes modalScale {
