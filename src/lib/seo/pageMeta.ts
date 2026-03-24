@@ -11,6 +11,10 @@ export const SEO_NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
 export const PAGE_PATHS: Record<SitePage, string> = {
   home: '/',
   admin: '/admin',
+  'dog-hanbok': '/dog-hanbok',
+  'cat-kimono': '/cat-kimono',
+  'pet-qipao': '/pet-qipao',
+  'pet-saree': '/pet-saree',
   about: '/about',
   'how-it-works': '/how-to-use',
   'traditional-clothing': '/sample-outfits',
@@ -34,6 +38,10 @@ export const PAGE_PATHS: Record<SitePage, string> = {
 
 export const INDEXABLE_PAGES = new Set<SitePage>([
   'home',
+  'dog-hanbok',
+  'cat-kimono',
+  'pet-qipao',
+  'pet-saree',
   'about',
   'how-it-works',
   'traditional-clothing',
@@ -57,6 +65,22 @@ export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = {
 };
 
 const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description: string }>> = {
+  'dog-hanbok': {
+    title: 'Dog Hanbok Preview Guide',
+    description: 'See how a dog hanbok preview works on HAMDEVA before you generate your own AI pet fitting result with a Korean traditional outfit reference.',
+  },
+  'cat-kimono': {
+    title: 'Cat Kimono Preview Guide',
+    description: 'Explore how a cat kimono preview works on HAMDEVA and compare kimono-inspired pet outfit references before generating your result.',
+  },
+  'pet-qipao': {
+    title: 'Pet Qipao Preview Guide',
+    description: 'Learn how to compare pet qipao references on HAMDEVA and generate a cleaner AI pet fitting preview with a Chinese traditional outfit style.',
+  },
+  'pet-saree': {
+    title: 'Pet Saree Preview Guide',
+    description: 'Use this HAMDEVA guide to compare pet saree references and understand how saree-inspired drape and styling read inside an AI outfit preview.',
+  },
   about: {
     title: 'About HAMDEVA',
     description: 'Learn how HAMDEVA helps pet owners with AI pet fitting, dog clothes try on, pet outfit generator, and pet outfit preview.',

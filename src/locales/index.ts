@@ -17,6 +17,10 @@ type DeepPartial<T> = {
 export type SitePage =
   | 'home'
   | 'admin'
+  | 'dog-hanbok'
+  | 'cat-kimono'
+  | 'pet-qipao'
+  | 'pet-saree'
   | 'traditional-clothing'
   | 'sample-friends'
   | 'countries'
@@ -40,6 +44,10 @@ export type SitePage =
 export const SITE_PAGES: SitePage[] = [
   'home',
   'admin',
+  'dog-hanbok',
+  'cat-kimono',
+  'pet-qipao',
+  'pet-saree',
   'traditional-clothing',
   'sample-friends',
   'countries',

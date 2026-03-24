@@ -5,6 +5,7 @@ const projectRoot = process.cwd();
 const distDir = path.join(projectRoot, 'dist');
 const indexHtmlPath = path.join(distDir, 'index.html');
 const editorialDataPath = path.join(projectRoot, 'src', 'data', 'editorialPages.json');
+const seoLandingPagesPath = path.join(projectRoot, 'src', 'data', 'seoLandingPages.json');
 const englishLocalePath = path.join(projectRoot, 'src', 'locales', 'en.json');
 const supportEmail = 'dlgksxk@gmail.com';
 const siteUrl = 'https://hamdeva.com';
@@ -14,6 +15,10 @@ const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]
 
 const snapshotRoutes = [
   { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
+  { key: 'dog-hanbok', path: '/dog-hanbok', priority: '0.8', changefreq: 'weekly' },
+  { key: 'cat-kimono', path: '/cat-kimono', priority: '0.8', changefreq: 'weekly' },
+  { key: 'pet-qipao', path: '/pet-qipao', priority: '0.8', changefreq: 'weekly' },
+  { key: 'pet-saree', path: '/pet-saree', priority: '0.8', changefreq: 'weekly' },
   { key: 'about', path: '/about', priority: '0.8', changefreq: 'monthly' },
   { key: 'how-it-works', path: '/how-to-use', priority: '0.9', changefreq: 'monthly' },
   { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.9', changefreq: 'weekly' },
@@ -37,6 +42,10 @@ const pageTypeByKey = {
 };
 
 const articlePages = new Set([
+  'dog-hanbok',
+  'cat-kimono',
+  'pet-qipao',
+  'pet-saree',
   'traditional-clothing',
   'fashion-technology',
   'virtual-try-on-guide',
@@ -211,13 +220,17 @@ const buildContactSnapshot = (locale) => ({
   relatedPages: ['about', 'pricing', 'privacy', 'terms'],
 });
 
-const buildSnapshotPage = (key, locale, editorialData) => {
+const buildSnapshotPage = (key, locale, editorialData, seoLandingPages) => {
   if (key === 'home') {
     return buildHomeSnapshot(locale);
   }
 
   if (key === 'contact') {
     return buildContactSnapshot(locale);
+  }
+
+  if (seoLandingPages[key]) {
+    return seoLandingPages[key];
   }
 
   const editorialPage = editorialData.pages[key];
@@ -381,16 +394,18 @@ ${routes.map((route) => `  <url>
 `;
 
 const main = async () => {
-  const [baseHtml, editorialDataRaw, englishLocaleRaw] = await Promise.all([
+  const [baseHtml, editorialDataRaw, seoLandingPagesRaw, englishLocaleRaw] = await Promise.all([
     readFile(indexHtmlPath, 'utf8'),
     readFile(editorialDataPath, 'utf8'),
+    readFile(seoLandingPagesPath, 'utf8'),
     readFile(englishLocalePath, 'utf8'),
   ]);
 
   const editorialData = JSON.parse(editorialDataRaw);
+  const seoLandingPages = JSON.parse(seoLandingPagesRaw);
   const locale = JSON.parse(englishLocaleRaw);
   const routeLookup = new Map(snapshotRoutes.map((route) => [route.key, route]));
-  const pages = new Map(snapshotRoutes.map((route) => [route.key, buildSnapshotPage(route.key, locale, editorialData)]));
+  const pages = new Map(snapshotRoutes.map((route) => [route.key, buildSnapshotPage(route.key, locale, editorialData, seoLandingPages)]));
   const lastModified = new Date().toISOString().slice(0, 10);
 
   for (const route of snapshotRoutes) {

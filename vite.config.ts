@@ -201,6 +201,39 @@ export default defineConfig(({ mode }) => {
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'firebase-vendor'
+            }
+
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/scheduler')) {
+              return 'react-vendor'
+            }
+
+            if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
+              return 'i18n-vendor'
+            }
+
+            if (
+              id.includes('/src/data/landingContent') ||
+              id.includes('/src/data/siteContent') ||
+              id.includes('/src/data/clothSamples') ||
+              id.includes('/src/data/faceSamples') ||
+              id.includes('/src/data/editorialPages') ||
+              id.includes('/src/lib/editorial') ||
+              id.includes('/src/lib/seo/')
+            ) {
+              return 'content-data'
+            }
+
+            return undefined
+          },
+        },
+      },
+    },
     server: {
       fs: {
         allow: ['Z:/HDD2/샘플사진', '..']

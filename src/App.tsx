@@ -1,26 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import './App.css';
-import AuthModal from './components/AuthModal';
-import ClothSampleModal from './components/ClothSampleModal';
-import ContentModal from './components/ContentModal';
-import SampleModal from './components/SampleModal';
-import FAQSection from './components/seo/FAQSection';
 import StructuredData from './components/seo/StructuredData';
-import AdminDashboard from './features/admin/AdminDashboard';
-import MyPageSection from './features/account/MyPageSection';
-import BoardPage from './features/board/BoardPage';
-import HowItWorksVisualGuide from './features/guide/HowItWorksVisualGuide';
-import PaymentStatusPage from './features/payment/PaymentStatusPage';
-import SharedResultSection from './features/shared/SharedResultSection';
-import TryOnStudio from './features/tryon/TryOnStudio';
 import { useAdminDashboardData } from './hooks/useAdminDashboardData';
 import { useCreditBootstrap } from './hooks/useCreditBootstrap';
 import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
 import type { PaymentStatusDetails } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
 import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
+import seoLandingPages from './data/seoLandingPages.json';
 import {
   createArticleSchema,
   createBreadcrumbSchema,
@@ -72,6 +61,19 @@ import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndP
 import { Timestamp, addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
 declare const __APP_VERSION__: string;
 
+const AuthModal = lazy(() => import('./components/AuthModal'));
+const ClothSampleModal = lazy(() => import('./components/ClothSampleModal'));
+const ContentModal = lazy(() => import('./components/ContentModal'));
+const SampleModal = lazy(() => import('./components/SampleModal'));
+const FAQSection = lazy(() => import('./components/seo/FAQSection'));
+const AdminDashboard = lazy(() => import('./features/admin/AdminDashboard'));
+const MyPageSection = lazy(() => import('./features/account/MyPageSection'));
+const BoardPage = lazy(() => import('./features/board/BoardPage'));
+const HowItWorksVisualGuide = lazy(() => import('./features/guide/HowItWorksVisualGuide'));
+const PaymentStatusPage = lazy(() => import('./features/payment/PaymentStatusPage'));
+const SharedResultSection = lazy(() => import('./features/shared/SharedResultSection'));
+const TryOnStudio = lazy(() => import('./features/tryon/TryOnStudio'));
+
 declare global {
   interface Window {
     adsbygoogle?: Array<Record<string, unknown>> & {
@@ -82,6 +84,15 @@ declare global {
 
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
+type SeoLandingPageKey = 'dog-hanbok' | 'cat-kimono' | 'pet-qipao' | 'pet-saree';
+type SeoLandingPageContent = {
+  title: string;
+  description: string;
+  summary: string;
+  sections: Array<{ heading: string; paragraphs: string[] }>;
+  faq: FAQItem[];
+  relatedPages: SitePage[];
+};
 const APP_VERSION = __APP_VERSION__;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
@@ -3144,6 +3155,11 @@ const getFaqTitle = (page: SitePage, pageTitle?: string): string => {
 };
 
 const getFaqItemsForPage = (page: SitePage, editorialFaq?: EditorialFaqItem[]): FAQItem[] => {
+  const seoLandingPage = getSeoLandingPage(page);
+  if (seoLandingPage) {
+    return seoLandingPage.faq;
+  }
+
   switch (page) {
     case 'home':
       return homeFaqs;
@@ -3188,6 +3204,11 @@ const getPageCopy = (
   lang: LanguageCode,
   contentLocale: ReturnType<typeof getContentLocale>,
 ) => {
+  const seoLandingPage = getSeoLandingPage(page);
+  if (seoLandingPage) {
+    return seoLandingPage;
+  }
+
   const editorialPage = getEditorialPage(page);
   const localizedPage = contentLocale.pages[page as keyof typeof contentLocale.pages] as {
     title?: string;
@@ -3398,6 +3419,10 @@ const DEFAULT_LANGUAGE: LanguageCode = 'en';
 const SITE_KEYWORDS = 'HAMDEVA, hamdeva, pet fitting, AI pet fitting, dog clothes try on, pet outfit generator, pet outfit preview, dog outfit preview, cat clothes try on, virtual pet fitting, dog clothes preview, pet clothes online, dress up your pet, dog costume ideas, cat costume ideas, 반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 강아지 옷 미리보기, 고양이 옷 입혀보기, 강아지옷, 고양이옷, 펫 의상 미리보기';
 const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   home: `${SITE_KEYWORDS}, ai pet outfit, ai dog outfit, ai cat outfit, compare pet outfits, pet fitting online`,
+  'dog-hanbok': `${SITE_KEYWORDS}, dog hanbok, korean dog outfit, dog hanbok preview, pet hanbok preview, korean traditional pet outfit`,
+  'cat-kimono': `${SITE_KEYWORDS}, cat kimono, cat kimono preview, pet kimono, japanese pet outfit, kimono cat costume preview`,
+  'pet-qipao': `${SITE_KEYWORDS}, pet qipao, qipao pet preview, chinese pet outfit, pet cheongsam, qipao style pet outfit`,
+  'pet-saree': `${SITE_KEYWORDS}, pet saree, saree pet preview, indian pet outfit, saree style pet outfit, pet sari preview`,
   about: `${SITE_KEYWORDS}, pet fitting service, ai pet fitting service, about hamdeva`,
   'how-it-works': `${SITE_KEYWORDS}, pet photo upload, outfit image upload, how pet fitting works, dog clothes try on steps`,
   'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,
@@ -3408,6 +3433,9 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'outfit-photo-tips': `${SITE_KEYWORDS}, pet photo tips, outfit photo tips, better dog photo for pet fitting`,
   'ai-fitting-faq': `${SITE_KEYWORDS}, pet fitting faq, pet outfit faq, dog clothes try on faq, ai pet fitting faq`,
 };
+const SEO_LANDING_PAGE_MAP = seoLandingPages as Record<SeoLandingPageKey, SeoLandingPageContent>;
+const getSeoLandingPage = (page: SitePage): SeoLandingPageContent | null =>
+  page in SEO_LANDING_PAGE_MAP ? SEO_LANDING_PAGE_MAP[page as SeoLandingPageKey] : null;
 
 const normalizeLanguageCode = (value: string | null | undefined): LanguageCode => {
   const normalized = value?.toLowerCase().split('-')[0] ?? DEFAULT_LANGUAGE;
@@ -3509,6 +3537,12 @@ const App: React.FC = () => {
   const petBreedGuides = getPetBreedGuides(lang);
   const selectedOutfitGuide = traditionalOutfitGuides.find((guide) => guide.id === selectedOutfitGuideId) ?? null;
   const selectedBreedGuide = petBreedGuides.find((guide) => guide.id === selectedBreedGuideId) ?? null;
+  const featuredSeoLandingCards = (Object.entries(SEO_LANDING_PAGE_MAP) as [SeoLandingPageKey, SeoLandingPageContent][])
+    .map(([page, entry]) => ({
+      page,
+      title: entry.title,
+      description: entry.summary,
+    }));
   const traditionalOutfitGuideByCountry = new Map(
     traditionalOutfitGuides.map((guide) => [guide.country, guide] as const),
   );
@@ -3803,8 +3837,28 @@ const App: React.FC = () => {
   const subscriptionProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'subscription');
   const extraCreditProducts = CREDIT_PRODUCTS.filter((product) => product.kind === 'extra_credit');
   const currentPageCopy = getPageCopy(currentPage, lang, contentLocale);
+  const currentSeoLandingPage = getSeoLandingPage(currentPage);
   const currentEditorialPage = getEditorialPage(currentPage);
-  const relatedEditorialCards = currentEditorialPage
+  const relatedEditorialCards = currentSeoLandingPage
+    ? currentSeoLandingPage.relatedPages
+      .filter((page): page is SitePage => page !== currentPage)
+      .map((page) => {
+        const seoPage = getSeoLandingPage(page);
+        if (seoPage) {
+          return {
+            page,
+            title: seoPage.title,
+            description: seoPage.summary,
+          };
+        }
+
+        return {
+          page,
+          title: contentLocale.nav[page as keyof typeof contentLocale.nav] ?? getEditorialPageTitle(page as never),
+          description: getEditorialPageSummary(page as never),
+        };
+      })
+    : currentEditorialPage
     ? Array.from(new Set(currentEditorialPage.relatedPages.map((page) => page === 'countries' ? 'traditional-clothing' : page)))
       .filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== currentPage)
       .map((page) => ({
@@ -3864,11 +3918,11 @@ const App: React.FC = () => {
       : currentPage === 'traditional-clothing' || currentPage === 'sample-friends'
         ? 'CollectionPage'
         : 'WebPage';
-  const articleStructuredData = currentEditorialPage && currentPage !== 'about' && currentPage !== 'how-it-works'
+  const articleStructuredData = (currentEditorialPage || currentSeoLandingPage) && currentPage !== 'about' && currentPage !== 'how-it-works'
     ? createArticleSchema({
-        headline: currentPageCopy?.title ?? currentEditorialPage.title,
+        headline: currentPageCopy?.title ?? currentEditorialPage?.title ?? currentSeoLandingPage?.title ?? 'HAMDEVA',
         url: getCanonicalPageUrl(currentPage),
-        description: currentPageCopy?.description ?? currentEditorialPage.description,
+        description: currentPageCopy?.description ?? currentEditorialPage?.description ?? currentSeoLandingPage?.description ?? '',
         image: `${SITE_URL}/sample/og-image.png`,
         articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
       })
@@ -5614,6 +5668,11 @@ const App: React.FC = () => {
     onOpenResultPreview: openResultPreviewModal,
     getSubjectTypeLabel,
   };
+  const lazyPageFallback = (
+    <article className="page-article">
+      <p>Loading...</p>
+    </article>
+  );
 
   return (
     <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isSocialInAppBrowser ? 'has-social-browser-banner' : ''}`}>
@@ -5930,25 +5989,27 @@ const App: React.FC = () => {
       </section>
 
       {sharedResultRouteId ? (
-        <SharedResultSection
-          loading={sharedResultLoading}
-          error={sharedResultError}
-          record={sharedResultRecord}
-          link={sharedPageLink}
-          copy={t}
-          shareStatus={shareStatus}
-          onTryAnotherOutfit={handleTryAnotherOutfit}
-          onDownloadResult={(src) => { void handleDownloadResult(src); }}
-          onShareLink={(link) => { void handleShareLink(link); }}
-          onCopyLink={(link) => { void handleCopyLink(link); }}
-          onShareOnKakao={(link) => { void handleShareOnKakao(link); }}
-          onShareOnLine={handleShareOnLine}
-          onShareOnX={handleShareOnX}
-          onShareOnFacebook={handleShareOnFacebook}
-          onInstagramSave={(src) => { void handleInstagramSave(src); }}
-          onShareOnTikTok={(src) => { void handleShareOnTikTok(src); }}
-          onRandomOutfit={handleRandomOutfit}
-        />
+        <Suspense fallback={lazyPageFallback}>
+          <SharedResultSection
+            loading={sharedResultLoading}
+            error={sharedResultError}
+            record={sharedResultRecord}
+            link={sharedPageLink}
+            copy={t}
+            shareStatus={shareStatus}
+            onTryAnotherOutfit={handleTryAnotherOutfit}
+            onDownloadResult={(src) => { void handleDownloadResult(src); }}
+            onShareLink={(link) => { void handleShareLink(link); }}
+            onCopyLink={(link) => { void handleCopyLink(link); }}
+            onShareOnKakao={(link) => { void handleShareOnKakao(link); }}
+            onShareOnLine={handleShareOnLine}
+            onShareOnX={handleShareOnX}
+            onShareOnFacebook={handleShareOnFacebook}
+            onInstagramSave={(src) => { void handleInstagramSave(src); }}
+            onShareOnTikTok={(src) => { void handleShareOnTikTok(src); }}
+            onRandomOutfit={handleRandomOutfit}
+          />
+        </Suspense>
       ) : currentPage === 'home' ? (
         <>
           <main className="landing-home-shell">
@@ -6020,37 +6081,59 @@ const App: React.FC = () => {
                 </article>
               </div>
             </section>
+
+            <section className="section editorial-section editorial-related-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>Popular Outfit Search Guides</h2>
+                  <p>These pages target more specific searches such as dog hanbok, cat kimono, pet qipao, and pet saree so visitors can land on a stronger guide before generating.</p>
+                </div>
+                <div className="compact-card-grid">
+                  {featuredSeoLandingCards.map((card) => (
+                    <article key={card.page} className="compact-info-card">
+                      <h2>{card.title}</h2>
+                      <p>{card.description}</p>
+                      <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                        Open page
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
           </main>
         </>
       ) : (
         <main className="section page-shell">
           <div className="section-inner page-layout">
             {currentPage === 'admin' && (
-              <AdminDashboard
-                currentUser={currentUser}
-                userProfile={userProfile}
-                isAdminUser={isAdminUser}
-                adminSummary={adminSummary}
-                adminLoading={adminLoading}
-                adminError={adminError}
-                onRefreshSummary={refreshAdminSummary}
-                appVersion={appVersion}
-                isFirebaseConfigured={isFirebaseConfigured}
-                boardNotices={boardNotices}
-                bbsPosts={bbsPosts}
-                bbsSubmitting={bbsSubmitting}
-                copy={{
-                  ...t,
-                  ...boardUiCopy,
-                  loginComingSoon: loginComingSoonLabel,
-                  generationCost: GENERATION_COST,
-                  formatEstimatedCostLabel,
-                }}
-                onOpenAuth={() => openAuthModal('login')}
-                onGoHome={() => navigateToPage('home')}
-                onDeletePost={(post) => { void handleBbsDelete(post); }}
-                formatTimestampLabel={formatTimestampLabel}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <AdminDashboard
+                  currentUser={currentUser}
+                  userProfile={userProfile}
+                  isAdminUser={isAdminUser}
+                  adminSummary={adminSummary}
+                  adminLoading={adminLoading}
+                  adminError={adminError}
+                  onRefreshSummary={refreshAdminSummary}
+                  appVersion={appVersion}
+                  isFirebaseConfigured={isFirebaseConfigured}
+                  boardNotices={boardNotices}
+                  bbsPosts={bbsPosts}
+                  bbsSubmitting={bbsSubmitting}
+                  copy={{
+                    ...t,
+                    ...boardUiCopy,
+                    loginComingSoon: loginComingSoonLabel,
+                    generationCost: GENERATION_COST,
+                    formatEstimatedCostLabel,
+                  }}
+                  onOpenAuth={() => openAuthModal('login')}
+                  onGoHome={() => navigateToPage('home')}
+                  onDeletePost={(post) => { void handleBbsDelete(post); }}
+                  formatTimestampLabel={formatTimestampLabel}
+                />
+              </Suspense>
             )}
             {currentPage === 'about' && (
               <article className="page-article about-visual-article">
@@ -6203,6 +6286,23 @@ const App: React.FC = () => {
                     </article>
                   ))}
                 </div>
+                <section className="section editorial-section editorial-related-section">
+                  <div className="section-copy">
+                    <h2>High-Intent Outfit Pages</h2>
+                    <p>These detailed landing pages are built for more specific searches and give visitors a clearer route from search to sample selection.</p>
+                  </div>
+                  <div className="compact-card-grid">
+                    {featuredSeoLandingCards.map((card) => (
+                      <article key={`seo-${card.page}`} className="compact-info-card">
+                        <h2>{card.title}</h2>
+                        <p>{card.description}</p>
+                        <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                          Open page
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               </>
             )}
 
@@ -6320,30 +6420,32 @@ const App: React.FC = () => {
             )}
 
             {currentPage === 'board' && (
-              <BoardPage
-                pageTitle={contentLocale.pages.board.title}
-                pageDescription={contentLocale.pages.board.description}
-                notices={boardNotices}
-                posts={bbsPosts}
-                form={bbsForm}
-                noticeForm={noticeForm}
-                status={bbsStatus}
-                noticeStatus={noticeStatus}
-                submitting={bbsSubmitting}
-                noticeSubmitting={noticeSubmitting}
-                editingPostId={editingBbsPostId}
-                isAdminUser={isAdminUser}
-                copy={{ ...t, ...boardUiCopy }}
-                onFormChange={setBbsForm}
-                onNoticeFormChange={setNoticeForm}
-                onSubmit={handleBbsSubmit}
-                onNoticeSubmit={handleBoardNoticeSubmit}
-                onResetEdit={resetBbsEditor}
-                onEditStart={handleBbsEditStart}
-                onDelete={(post) => { void handleBbsDelete(post); }}
-                onDeleteNotice={(notice) => { void handleBoardNoticeDelete(notice); }}
-                formatTimestampLabel={formatTimestampLabel}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <BoardPage
+                  pageTitle={contentLocale.pages.board.title}
+                  pageDescription={contentLocale.pages.board.description}
+                  notices={boardNotices}
+                  posts={bbsPosts}
+                  form={bbsForm}
+                  noticeForm={noticeForm}
+                  status={bbsStatus}
+                  noticeStatus={noticeStatus}
+                  submitting={bbsSubmitting}
+                  noticeSubmitting={noticeSubmitting}
+                  editingPostId={editingBbsPostId}
+                  isAdminUser={isAdminUser}
+                  copy={{ ...t, ...boardUiCopy }}
+                  onFormChange={setBbsForm}
+                  onNoticeFormChange={setNoticeForm}
+                  onSubmit={handleBbsSubmit}
+                  onNoticeSubmit={handleBoardNoticeSubmit}
+                  onResetEdit={resetBbsEditor}
+                  onEditStart={handleBbsEditStart}
+                  onDelete={(post) => { void handleBbsDelete(post); }}
+                  onDeleteNotice={(notice) => { void handleBoardNoticeDelete(notice); }}
+                  formatTimestampLabel={formatTimestampLabel}
+                />
+              </Suspense>
             )}
 
             {currentPage === 'site-management' && !currentUser && (
@@ -6402,39 +6504,43 @@ const App: React.FC = () => {
             )}
 
             {currentPage === 'payment-success' && (
-              <PaymentStatusPage
-                title={t.paymentSuccessTitle}
-                description={paymentStatusMessage === t.paymentSuccessReady ? t.paymentSuccessReady : ''}
-                credits={currentCredits}
-                details={paymentStatusDetails}
-                copy={t}
-                status={
-                  paymentStatusMessage === t.paymentSuccessReady
-                    ? 'success'
-                    : paymentStatusMessage === t.paymentFailedMessage || paymentStatusMessage === t.paymentVerifyFailed
-                      ? 'failed'
-                      : 'pending'
-                }
-                primaryLabel={t.goToMyPage}
-                secondaryLabel={contentLocale.nav.home}
-                onPrimary={() => navigateToPage('mypage')}
-                onSecondary={() => navigateToPage('home')}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <PaymentStatusPage
+                  title={t.paymentSuccessTitle}
+                  description={paymentStatusMessage === t.paymentSuccessReady ? t.paymentSuccessReady : ''}
+                  credits={currentCredits}
+                  details={paymentStatusDetails}
+                  copy={t}
+                  status={
+                    paymentStatusMessage === t.paymentSuccessReady
+                      ? 'success'
+                      : paymentStatusMessage === t.paymentFailedMessage || paymentStatusMessage === t.paymentVerifyFailed
+                        ? 'failed'
+                        : 'pending'
+                  }
+                  primaryLabel={t.goToMyPage}
+                  secondaryLabel={contentLocale.nav.home}
+                  onPrimary={() => navigateToPage('mypage')}
+                  onSecondary={() => navigateToPage('home')}
+                />
+              </Suspense>
             )}
 
             {currentPage === 'payment-failed' && (
-              <PaymentStatusPage
-                title={t.paymentFailedTitle}
-                description={t.paymentFailedDescription}
-                credits={currentCredits}
-                details={null}
-                copy={t}
-                status="failed"
-                primaryLabel={t.goToMyPage}
-                secondaryLabel={contentLocale.nav.home}
-                onPrimary={() => navigateToPage('mypage')}
-                onSecondary={() => navigateToPage('home')}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <PaymentStatusPage
+                  title={t.paymentFailedTitle}
+                  description={t.paymentFailedDescription}
+                  credits={currentCredits}
+                  details={null}
+                  copy={t}
+                  status="failed"
+                  primaryLabel={t.goToMyPage}
+                  secondaryLabel={contentLocale.nav.home}
+                  onPrimary={() => navigateToPage('mypage')}
+                  onSecondary={() => navigateToPage('home')}
+                />
+              </Suspense>
             )}
 
             {currentPage === 'contact' && (
@@ -6484,38 +6590,42 @@ const App: React.FC = () => {
               </>
             )}
             {currentPage === 'mypage' && (
-              <MyPageSection
-                currentUser={currentUser}
-                userProfile={userProfile}
-                currentCredits={currentCredits}
-                locale={lang}
-                historyItems={historyItems}
-                preservedHistoryCount={preservedHistoryCount}
-                historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
-                isFirebaseConfigured={isFirebaseConfigured}
-                firebaseDisabledMessage={firebaseDisabledMessage}
-                isStartingCheckout={isStartingCheckout}
-                products={CREDIT_PRODUCTS}
-                copy={{ ...t, loginComingSoon: loginComingSoonLabel, pricingUi: pricingUiCopy }}
-                onLogin={() => openAuthModal('login')}
-                onNavigateSiteManagement={openAdminModal}
-                onNavigateTerms={() => navigateToPage('terms')}
-                onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
-                formatTimestampLabel={formatTimestampLabel}
-                onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
-                onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
-                onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
-                onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <MyPageSection
+                  currentUser={currentUser}
+                  userProfile={userProfile}
+                  currentCredits={currentCredits}
+                  locale={lang}
+                  historyItems={historyItems}
+                  preservedHistoryCount={preservedHistoryCount}
+                  historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
+                  isFirebaseConfigured={isFirebaseConfigured}
+                  firebaseDisabledMessage={firebaseDisabledMessage}
+                  isStartingCheckout={isStartingCheckout}
+                  products={CREDIT_PRODUCTS}
+                  copy={{ ...t, loginComingSoon: loginComingSoonLabel, pricingUi: pricingUiCopy }}
+                  onLogin={() => openAuthModal('login')}
+                  onNavigateSiteManagement={openAdminModal}
+                  onNavigateTerms={() => navigateToPage('terms')}
+                  onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
+                  formatTimestampLabel={formatTimestampLabel}
+                  onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
+                  onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
+                  onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
+                  onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
+                />
+              </Suspense>
             )}
             {currentPage === 'how-it-works' && (
-              <HowItWorksVisualGuide
-                copy={howItWorksVisualCopy}
-                sampleDogSrc={guideFixedPet}
-                sampleCatSrc={guideSampleCat}
-                sampleClothSrc={guideSampleCloth}
-                resultImageSrc={guideFixedResult}
-              />
+              <Suspense fallback={lazyPageFallback}>
+                <HowItWorksVisualGuide
+                  copy={howItWorksVisualCopy}
+                  sampleDogSrc={guideFixedPet}
+                  sampleCatSrc={guideSampleCat}
+                  sampleClothSrc={guideSampleCloth}
+                  resultImageSrc={guideFixedResult}
+                />
+              </Suspense>
             )}
             {relatedEditorialCards.length > 0 && currentPage !== 'traditional-clothing' && (
               <section className="section editorial-section editorial-related-section">
@@ -6537,7 +6647,9 @@ const App: React.FC = () => {
               </section>
             )}
             {currentFaqItems.length > 0 && currentPage !== 'home' && (
-              <FAQSection title={getFaqTitle(currentPage, currentPageCopy?.title)} items={currentFaqItems} />
+              <Suspense fallback={lazyPageFallback}>
+                <FAQSection title={getFaqTitle(currentPage, currentPageCopy?.title)} items={currentFaqItems} />
+              </Suspense>
             )}
           </div>
         </main>
@@ -6758,13 +6870,15 @@ const App: React.FC = () => {
       )}
 
       {showContentModal && (
-        <ContentModal
-          activeTab={activeContentTab}
-          countryCards={countryShowcaseCards}
-          locale={contentLocale}
-          onClose={() => setShowContentModal(false)}
-          onTabChange={setActiveContentTab}
-        />
+        <Suspense fallback={null}>
+          <ContentModal
+            activeTab={activeContentTab}
+            countryCards={countryShowcaseCards}
+            locale={contentLocale}
+            onClose={() => setShowContentModal(false)}
+            onTabChange={setActiveContentTab}
+          />
+        </Suspense>
       )}
 
       {showTryOnModal && (
@@ -6774,11 +6888,13 @@ const App: React.FC = () => {
           className="tryon-modal-shell"
           onClose={() => setShowTryOnModal(false)}
         >
-          <TryOnStudio
-            {...tryOnStudioProps}
-            layout="modal"
-            modalCopy={landingContent.modal}
-          />
+          <Suspense fallback={lazyPageFallback}>
+            <TryOnStudio
+              {...tryOnStudioProps}
+              layout="modal"
+              modalCopy={landingContent.modal}
+            />
+          </Suspense>
         </ShellModal>
       )}
 
@@ -6911,52 +7027,58 @@ const App: React.FC = () => {
       )}
 
       {showSampleModal && (
-        <SampleModal 
-          currentUrl={selectedSampleUrl ?? activePersonImage}
-          lang={lang}
-          onSelect={(url, category) => {
-            void loadPersonSample(url, category);
-          }}
-          onClose={() => setShowSampleModal(false)}
-        />
+        <Suspense fallback={null}>
+          <SampleModal 
+            currentUrl={selectedSampleUrl ?? activePersonImage}
+            lang={lang}
+            onSelect={(url, category) => {
+              void loadPersonSample(url, category);
+            }}
+            onClose={() => setShowSampleModal(false)}
+          />
+        </Suspense>
       )}
 
       {showClothSampleModal && (
-        <ClothSampleModal
-          currentUrl={selectedClothSampleUrl ?? activeClothImage}
-          lang={lang}
-          onSelect={(url) => {
-            void loadClothSample(url);
-          }}
-          onClose={() => setShowClothSampleModal(false)}
-        />
+        <Suspense fallback={null}>
+          <ClothSampleModal
+            currentUrl={selectedClothSampleUrl ?? activeClothImage}
+            lang={lang}
+            onSelect={(url) => {
+              void loadClothSample(url);
+            }}
+            onClose={() => setShowClothSampleModal(false)}
+          />
+        </Suspense>
       )}
 
       {showAuthModal && (
-        <AuthModal
-          copy={{
-            loginTitle: t.login,
-            signupTitle: t.signup,
-            emailLabel: t.emailLabel,
-            passwordLabel: t.passwordLabel,
-            loginButton: t.login,
-            signupButton: t.signup,
-            googleButton: t.googleLogin,
-            switchToSignup: t.switchToSignup,
-            switchToLogin: t.switchToLogin,
-          }}
-          email={authForm.email}
-          error={authError}
-          isSubmitting={authSubmitting}
-          mode={authMode}
-          password={authForm.password}
-          onClose={() => setShowAuthModal(false)}
-          onEmailChange={(value) => setAuthForm((prev) => ({ ...prev, email: value }))}
-          onGoogleLogin={() => { void handleGoogleLogin(); }}
-          onPasswordChange={(value) => setAuthForm((prev) => ({ ...prev, password: value }))}
-          onSubmit={() => { void handleAuthSubmit(); }}
-          onSwitchMode={(mode) => { setAuthMode(mode); setAuthError(null); }}
-        />
+        <Suspense fallback={null}>
+          <AuthModal
+            copy={{
+              loginTitle: t.login,
+              signupTitle: t.signup,
+              emailLabel: t.emailLabel,
+              passwordLabel: t.passwordLabel,
+              loginButton: t.login,
+              signupButton: t.signup,
+              googleButton: t.googleLogin,
+              switchToSignup: t.switchToSignup,
+              switchToLogin: t.switchToLogin,
+            }}
+            email={authForm.email}
+            error={authError}
+            isSubmitting={authSubmitting}
+            mode={authMode}
+            password={authForm.password}
+            onClose={() => setShowAuthModal(false)}
+            onEmailChange={(value) => setAuthForm((prev) => ({ ...prev, email: value }))}
+            onGoogleLogin={() => { void handleGoogleLogin(); }}
+            onPasswordChange={(value) => setAuthForm((prev) => ({ ...prev, password: value }))}
+            onSubmit={() => { void handleAuthSubmit(); }}
+            onSwitchMode={(mode) => { setAuthMode(mode); setAuthError(null); }}
+          />
+        </Suspense>
       )}
     </div>
   );
