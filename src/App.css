@@ -4481,7 +4481,7 @@ a { color: inherit; text-decoration: none; }
 
 .modal-input-card-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 224px;
+  grid-template-columns: minmax(0, 1fr) 272px;
   gap: 14px;
   align-items: stretch;
 }
@@ -4577,9 +4577,10 @@ a { color: inherit; text-decoration: none; }
 }
 
 .try-layout-modal .preview-box {
-  flex: 0 0 224px;
+  flex: 0 0 272px;
   width: 100%;
-  min-height: 224px;
+  min-height: 272px;
+  aspect-ratio: 1 / 1;
   max-height: none;
   padding: 0;
   border: none;
@@ -6552,7 +6553,7 @@ a { color: inherit; text-decoration: none; }
 
 .try-modal-workspace {
   display: grid;
-  grid-template-columns: minmax(380px, 456px) minmax(0, 1fr);
+  grid-template-columns: minmax(430px, 540px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -6573,7 +6574,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .try-modal-left-column .modal-input-card-layout {
-  grid-template-columns: minmax(0, 1fr) 224px;
+  grid-template-columns: minmax(0, 1fr) 272px;
   gap: 14px;
 }
 
@@ -10148,7 +10149,7 @@ body {
   }
 
   .try-modal-left-column .modal-input-card-layout {
-    grid-template-columns: minmax(0, 1fr) 136px;
+    grid-template-columns: minmax(0, 1fr) 168px;
     gap: 12px;
     align-items: start;
   }
@@ -10179,9 +10180,9 @@ body {
   }
 
   .try-layout-modal .preview-box {
-    flex-basis: 136px;
-    min-height: 136px;
-    max-height: 136px;
+    flex-basis: 168px;
+    min-height: 168px;
+    max-height: 168px;
     padding: 0;
     border-radius: 16px;
     background: color-mix(in srgb, var(--surface-alt) 72%, white);
@@ -10362,7 +10363,7 @@ body {
 
 @media (max-width: 480px) {
   .try-modal-left-column .modal-input-card-layout {
-    grid-template-columns: minmax(0, 1fr) 108px;
+    grid-template-columns: minmax(0, 1fr) 132px;
     gap: 10px;
   }
 
@@ -10373,9 +10374,9 @@ body {
   }
 
   .try-layout-modal .preview-box {
-    flex-basis: 108px;
-    min-height: 108px;
-    max-height: 108px;
+    flex-basis: 132px;
+    min-height: 132px;
+    max-height: 132px;
   }
 
   .try-layout-modal .empty-preview {
