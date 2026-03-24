@@ -24,13 +24,6 @@
           "Use a dog photo with a readable face, stable front or near-front angle, and balanced lighting. Then pair it with a hanbok image where the neckline, ribbon, sleeve cut, and lower-body silhouette are visible without heavy clutter.",
           "After generation, compare whether the result still reads as hanbok at a glance. If the image feels too generic, the usual fix is a stronger outfit reference rather than repeating the same request blindly."
         ]
-      },
-      {
-        "heading": "Why this matters for shoppers and planners",
-        "paragraphs": [
-          "Dog hanbok previews are useful for early comparison, not exact tailoring. They help narrow the visual direction before rental, purchase, or event planning. That lowers uncertainty and gives users a clearer next step.",
-          "For search traffic, this kind of page is valuable because it matches a concrete query with explanatory content, a relevant cultural outfit topic, and a clear route into the generator."
-        ]
       }
     ],
     "faq": [
@@ -44,9 +37,9 @@
       }
     ],
     "relatedPages": [
-      "traditional-clothing",
-      "how-it-works",
-      "sample-friends"
+      "maltese-hanbok",
+      "tuxedo-cat-hanbok",
+      "traditional-clothing"
     ]
   },
   "cat-kimono": {
@@ -74,13 +67,6 @@
           "Cats often look best in a preview when the face, ears, and body posture are easy to read. A balanced, calm photo helps the model keep the feline identity instead of drifting into a generic costume image.",
           "If the cat photo is too dark, too small, or turned too far away, the final result can lose both identity clarity and outfit balance."
         ]
-      },
-      {
-        "heading": "Using the preview for decision-making",
-        "paragraphs": [
-          "A cat kimono preview is useful for comparing styling direction, color mood, and decorative density before you commit to a real outfit choice or themed content plan.",
-          "That makes the page useful both for users and for search visibility, because it directly answers a specific query with practical guidance and an immediate next action."
-        ]
       }
     ],
     "faq": [
@@ -94,9 +80,9 @@
       }
     ],
     "relatedPages": [
-      "traditional-clothing",
-      "sample-friends",
-      "fashion-technology"
+      "shiba-kimono",
+      "ragdoll-kimono",
+      "traditional-clothing"
     ]
   },
   "pet-qipao": {
@@ -124,13 +110,6 @@
           "Choose a pet photo with readable proportions and a clothing image that clearly shows the front design. The cleaner the reference pair, the easier it is to judge silhouette, trim placement, and styling balance in the final result.",
           "This is especially useful when the goal is not novelty but comparison. You want the preview to answer whether the qipao mood and design density feel right."
         ]
-      },
-      {
-        "heading": "Why this page can attract better search traffic",
-        "paragraphs": [
-          "Broad keywords like pet outfit generator are competitive and vague. A page centered on pet qipao is narrower, clearer, and better aligned with visitors who are already looking for a specific look.",
-          "That makes the page a stronger landing surface for long-tail discovery and a better bridge into the actual fitting experience."
-        ]
       }
     ],
     "faq": [
@@ -144,9 +123,9 @@
       }
     ],
     "relatedPages": [
-      "traditional-clothing",
-      "how-it-works",
-      "ai-fitting-faq"
+      "corgi-qipao",
+      "pet-saree",
+      "traditional-clothing"
     ]
   },
   "pet-saree": {
@@ -174,13 +153,6 @@
           "The preview is most useful when you want to compare mood, elegance, and decorative richness before a purchase, a costume plan, or a themed photo concept. It is not a substitute for real-world tailoring or fabric behavior.",
           "Start with a stable pet photo, use a saree reference with visible drape, and compare whether the final image still communicates the same styling direction."
         ]
-      },
-      {
-        "heading": "Search value and user value align here",
-        "paragraphs": [
-          "Long-tail pages work best when they answer one specific question clearly. A pet saree page does that by combining search intent, cultural outfit context, and an immediate path into the generator.",
-          "That is more useful than trying to rank one broad homepage for every outfit term at once."
-        ]
       }
     ],
     "faq": [
@@ -194,9 +166,310 @@
       }
     ],
     "relatedPages": [
+      "persian-cat-saree",
+      "pet-qipao",
+      "traditional-clothing"
+    ]
+  },
+  "maltese-hanbok": {
+    "title": "Maltese Hanbok Preview Guide",
+    "description": "Compare Maltese hanbok outfit ideas on HAMDEVA and see how small white-dog photos pair with Korean traditional outfit references before generation.",
+    "summary": "This page targets visitors searching for Maltese hanbok ideas, small-breed holiday styling, and Korean traditional outfit previews for white dogs.",
+    "sections": [
+      {
+        "heading": "Why Maltese hanbok is a useful long-tail page",
+        "paragraphs": [
+          "People searching for Maltese hanbok are already beyond broad inspiration. They usually want a specific small-breed look for a holiday, photo gift, or family event.",
+          "That makes the query commercially meaningful and easier to satisfy with a focused visual guide instead of a general pet outfit page."
+        ]
+      },
+      {
+        "heading": "What makes Maltese photos work well",
+        "paragraphs": [
+          "Maltese dogs often have bright fur, compact proportions, and round facial framing, so clean lighting matters more than usual. You want the eyes, muzzle, and fur edge to stay readable.",
+          "A stable front-facing image usually preserves identity better than a tiny side-angle photo."
+        ]
+      },
+      {
+        "heading": "How to judge the final hanbok result",
+        "paragraphs": [
+          "Check whether the ribbon placement, skirt volume, and color balance still read as hanbok without swallowing the dog's identity. Small white dogs can lose detail if the outfit image is overly bright.",
+          "A stronger garment reference usually improves the result more than repeated regeneration."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Are Maltese photos harder because of white fur?",
+        "answer": "They can be if the lighting is flat. Clear facial contrast and a readable fur outline help the model keep the dog identity."
+      },
+      {
+        "question": "What colors work well for a Maltese hanbok preview?",
+        "answer": "Mid-tone pink, mint, blue, and ribbon-focused hanbok references often read clearly against white fur."
+      }
+    ],
+    "relatedPages": [
+      "dog-hanbok",
       "traditional-clothing",
-      "fashion-technology",
       "outfit-photo-tips"
+    ]
+  },
+  "shiba-kimono": {
+    "title": "Shiba Kimono Preview Guide",
+    "description": "Use HAMDEVA to compare Shiba kimono styling and see how fox-like dog features pair with kimono-inspired outfit references before generation.",
+    "summary": "This page is for users searching for Shiba kimono ideas, Japanese-style pet outfit previews, or a more structured way to compare kimono references on a medium-size dog.",
+    "sections": [
+      {
+        "heading": "Why Shiba and kimono fit together in search",
+        "paragraphs": [
+          "Shiba dogs are frequently used in Japanese-style visual themes, so the search intent is naturally stronger than a broad costume query. Visitors often already know the aesthetic direction they want.",
+          "That makes this page useful as both a search landing page and a pre-generation planning page."
+        ]
+      },
+      {
+        "heading": "What to preserve in a Shiba kimono preview",
+        "paragraphs": [
+          "The upright ears, fox-like face, and compact athletic body should remain recognizable. At the same time, the outfit still needs to read clearly as kimono through sleeve shape, front overlap, and obi structure.",
+          "Strong references help balance breed identity and garment identity in one frame."
+        ]
+      },
+      {
+        "heading": "How to pick better references",
+        "paragraphs": [
+          "Use a Shiba photo with clear ears and face edges, then pair it with a kimono image that shows the upper body structure instead of a heavily decorated crop.",
+          "That makes it easier to compare whether the final image still feels like a Shiba in kimono rather than a generic dog costume."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Do Shiba features help kimono previews look cleaner?",
+        "answer": "Often yes. Clear ear shape and readable body proportions can make the final silhouette easier to interpret."
+      },
+      {
+        "question": "What kind of kimono reference should I avoid?",
+        "answer": "Avoid tiny, cropped, or cluttered outfit images where the sleeve and obi structure are not readable."
+      }
+    ],
+    "relatedPages": [
+      "cat-kimono",
+      "traditional-clothing",
+      "sample-friends"
+    ]
+  },
+  "corgi-qipao": {
+    "title": "Corgi Qipao Preview Guide",
+    "description": "See how a Corgi qipao preview works on HAMDEVA and compare Chinese-style outfit references on a short-legged dog silhouette before generating.",
+    "summary": "This page targets Corgi qipao searches, breed-specific traditional styling queries, and users who want to test qipao structure on a distinctive body shape.",
+    "sections": [
+      {
+        "heading": "Why Corgi qipao is a practical comparison page",
+        "paragraphs": [
+          "Corgis have a very recognizable body shape, so users often want to know whether a fitted outfit style will still read well on them before buying or planning anything.",
+          "That makes the preview especially useful as a comparison aid rather than a novelty image."
+        ]
+      },
+      {
+        "heading": "What to look for in the result",
+        "paragraphs": [
+          "The qipao collar, front line, and decorative trim should remain visible, but the breed silhouette also needs to stay believable. If the outfit swallows the body shape, the preview becomes less useful.",
+          "Balanced references help preserve both the traditional styling and the Corgi identity."
+        ]
+      },
+      {
+        "heading": "How to improve the input pair",
+        "paragraphs": [
+          "Use a Corgi photo where the torso and face are easy to read, then pair it with a qipao image that clearly shows neckline and front structure.",
+          "This gives the model better cues for silhouette comparison and makes the final image easier to evaluate."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Why is a Corgi-specific page useful?",
+        "answer": "Because the breed has a very distinct body shape, users often want breed-specific styling comparisons rather than a generic pet outfit page."
+      },
+      {
+        "question": "What should I compare after generation?",
+        "answer": "Check whether the collar, trim, and body line still read as qipao while the dog still looks clearly like the same Corgi."
+      }
+    ],
+    "relatedPages": [
+      "pet-qipao",
+      "sample-friends",
+      "how-it-works"
+    ]
+  },
+  "persian-cat-saree": {
+    "title": "Persian Cat Saree Preview Guide",
+    "description": "Compare Persian cat saree styling on HAMDEVA and see how fluffy long-hair cat photos work with saree-inspired outfit references before generation.",
+    "summary": "This page helps users searching for Persian cat saree ideas, fluffy-cat outfit previews, or Indian-style pet outfit references with clearer input guidance.",
+    "sections": [
+      {
+        "heading": "Why Persian cat saree is a meaningful search page",
+        "paragraphs": [
+          "Persian cats have long fur and a distinctive face shape, so users often want to preview decorative outfits before making any purchase or content plan.",
+          "That makes a breed-and-style page more useful than a generic pet saree page alone."
+        ]
+      },
+      {
+        "heading": "What matters with long-hair cat inputs",
+        "paragraphs": [
+          "Long fur can hide body edges, so clear facial visibility and stable lighting matter more. The preview works better when the outline of the cat is still readable.",
+          "A saree reference with visible drape and border detail helps the final image hold onto the styling direction."
+        ]
+      },
+      {
+        "heading": "How to get a cleaner result",
+        "paragraphs": [
+          "Use a cat photo where the face and torso are visible without heavy shadow. Pair it with a saree image that shows drape direction clearly instead of only decorative close-ups.",
+          "The goal is not exact tailoring. It is to compare whether the mood and drape still look right on a Persian cat."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Do fluffy cats make outfit previews harder?",
+        "answer": "They can, because fur hides body edges. Strong lighting and a clear pose help keep the final image readable."
+      },
+      {
+        "question": "What kind of saree image works better here?",
+        "answer": "Use a reference where border detail and drape direction are easy to see at a glance."
+      }
+    ],
+    "relatedPages": [
+      "pet-saree",
+      "sample-friends",
+      "outfit-photo-tips"
+    ]
+  },
+  "tuxedo-cat-hanbok": {
+    "title": "Tuxedo Cat Hanbok Preview Guide",
+    "description": "Preview tuxedo cat hanbok styling on HAMDEVA and compare Korean traditional outfit references on high-contrast black-and-white cat photos.",
+    "summary": "This page targets tuxedo cat hanbok searches, black-and-white cat styling ideas, and users who want a more specific Korean outfit preview guide.",
+    "sections": [
+      {
+        "heading": "Why tuxedo cat hanbok is a strong visual query",
+        "paragraphs": [
+          "Tuxedo cats have strong black-and-white contrast, which makes styling decisions more visible and more emotionally specific. That often leads to higher-intent searches.",
+          "Users want to know whether ribbon colors and traditional silhouettes still read clearly against the coat pattern."
+        ]
+      },
+      {
+        "heading": "What to compare in the result",
+        "paragraphs": [
+          "Look at whether the hanbok ribbon and upper-body structure remain easy to read without fighting the cat's coat contrast. The outfit should feel traditional without overwhelming the face.",
+          "This is especially useful for users planning themed content or a holiday post."
+        ]
+      },
+      {
+        "heading": "How to get cleaner tuxedo cat previews",
+        "paragraphs": [
+          "Use a photo with clean facial visibility and avoid harsh shadows that merge with the coat pattern. A brighter hanbok reference often reads better on a dark-and-light cat.",
+          "The better the contrast balance, the easier it is to judge the final preview."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Do high-contrast coat patterns help or hurt?",
+        "answer": "They can help readability, but only if the photo lighting is clean enough to preserve facial detail."
+      },
+      {
+        "question": "What should I look for in the outfit image?",
+        "answer": "Choose a hanbok reference with visible ribbon, sleeve line, and color separation so it remains readable against black-and-white fur."
+      }
+    ],
+    "relatedPages": [
+      "dog-hanbok",
+      "cat-kimono",
+      "traditional-clothing"
+    ]
+  },
+  "poodle-wedding-dress": {
+    "title": "Poodle Wedding Dress Preview Guide",
+    "description": "Compare poodle wedding dress ideas on HAMDEVA and preview elegant bridal-style pet outfit references before choosing a final look.",
+    "summary": "This page targets poodle wedding dress searches, bridal pet styling ideas, and users planning a cleaner formal look rather than a generic costume.",
+    "sections": [
+      {
+        "heading": "Why bridal-style pet pages can attract intent",
+        "paragraphs": [
+          "Wedding-themed pet outfit searches usually come from users planning a real event, shoot, or gift. That makes the query stronger than a broad novelty costume keyword.",
+          "A poodle-specific page also matches a breed that is commonly styled for decorative and formal looks."
+        ]
+      },
+      {
+        "heading": "What to preserve in a poodle wedding dress preview",
+        "paragraphs": [
+          "The face shape, ear outline, and coat texture should stay recognizable while the outfit still reads clearly as formal bridal styling. If the dog identity gets too generic, the preview becomes less helpful.",
+          "Strong references help preserve both elegance and breed recognition."
+        ]
+      },
+      {
+        "heading": "How to get a cleaner formal result",
+        "paragraphs": [
+          "Use a poodle photo with readable grooming shape and pair it with a wedding-style dress image that shows silhouette rather than only close-up lace detail.",
+          "This gives the model a more stable structure to preserve in the final image."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Is a poodle page useful even though it is not traditional clothing?",
+        "answer": "Yes. It targets a high-intent formal styling query that is more specific and actionable than a broad dog dress search."
+      },
+      {
+        "question": "What kind of reference image works best?",
+        "answer": "A dress reference with visible overall silhouette, skirt line, and neckline usually gives a more useful comparison result."
+      }
+    ],
+    "relatedPages": [
+      "outfit-photo-tips",
+      "sample-friends",
+      "how-it-works"
+    ]
+  },
+  "ragdoll-kimono": {
+    "title": "Ragdoll Kimono Preview Guide",
+    "description": "Preview ragdoll kimono outfit ideas on HAMDEVA and compare Japanese-style pet outfit references on long-hair blue-eyed cat photos.",
+    "summary": "This page targets ragdoll kimono searches, long-hair cat outfit planning, and users who want a clearer Japanese-style preview workflow.",
+    "sections": [
+      {
+        "heading": "Why ragdoll kimono is worth its own page",
+        "paragraphs": [
+          "Ragdoll cats are popular in visual content and have a distinctive calm look, so users often search for specific breed styling instead of generic cat costumes.",
+          "A kimono-themed guide gives them a more useful landing page before they try the generator."
+        ]
+      },
+      {
+        "heading": "What matters with long-hair kimono previews",
+        "paragraphs": [
+          "Long fur can reduce garment edge clarity, so the kimono reference needs very readable upper-body structure. Sleeve shape and front overlap should be visible at a glance.",
+          "The cat photo also needs enough facial clarity so the result still looks like the same ragdoll."
+        ]
+      },
+      {
+        "heading": "How to compare the final image",
+        "paragraphs": [
+          "Judge whether the face remains recognizable first, then check if the kimono silhouette still reads clearly. If the outfit feels too generic, use a more structured kimono reference.",
+          "That makes the preview more useful for choosing a style direction rather than only making a cute image."
+        ]
+      }
+    ],
+    "faq": [
+      {
+        "question": "Do ragdoll cats need different reference choices?",
+        "answer": "Usually yes. Long fur can hide garment shape, so stronger upper-body outfit structure helps."
+      },
+      {
+        "question": "What makes the result more readable?",
+        "answer": "A clear face photo plus a kimono image with visible sleeve and obi structure usually gives a more interpretable result."
+      }
+    ],
+    "relatedPages": [
+      "cat-kimono",
+      "sample-friends",
+      "fashion-technology"
     ]
   }
 }

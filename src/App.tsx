@@ -84,7 +84,18 @@ declare global {
 
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
-type SeoLandingPageKey = 'dog-hanbok' | 'cat-kimono' | 'pet-qipao' | 'pet-saree';
+type SeoLandingPageKey =
+  | 'dog-hanbok'
+  | 'cat-kimono'
+  | 'pet-qipao'
+  | 'pet-saree'
+  | 'maltese-hanbok'
+  | 'shiba-kimono'
+  | 'corgi-qipao'
+  | 'persian-cat-saree'
+  | 'tuxedo-cat-hanbok'
+  | 'poodle-wedding-dress'
+  | 'ragdoll-kimono';
 type SeoLandingPageContent = {
   title: string;
   description: string;
@@ -3423,6 +3434,13 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'cat-kimono': `${SITE_KEYWORDS}, cat kimono, cat kimono preview, pet kimono, japanese pet outfit, kimono cat costume preview`,
   'pet-qipao': `${SITE_KEYWORDS}, pet qipao, qipao pet preview, chinese pet outfit, pet cheongsam, qipao style pet outfit`,
   'pet-saree': `${SITE_KEYWORDS}, pet saree, saree pet preview, indian pet outfit, saree style pet outfit, pet sari preview`,
+  'maltese-hanbok': `${SITE_KEYWORDS}, maltese hanbok, maltese korean outfit, small dog hanbok, white dog hanbok preview`,
+  'shiba-kimono': `${SITE_KEYWORDS}, shiba kimono, shiba inu kimono, japanese dog outfit, shiba outfit preview`,
+  'corgi-qipao': `${SITE_KEYWORDS}, corgi qipao, corgi cheongsam, corgi chinese outfit, short dog qipao preview`,
+  'persian-cat-saree': `${SITE_KEYWORDS}, persian cat saree, fluffy cat saree, cat indian outfit, long hair cat outfit preview`,
+  'tuxedo-cat-hanbok': `${SITE_KEYWORDS}, tuxedo cat hanbok, black and white cat hanbok, cat korean outfit preview`,
+  'poodle-wedding-dress': `${SITE_KEYWORDS}, poodle wedding dress, bridal dog outfit, formal dog dress preview, poodle dress ideas`,
+  'ragdoll-kimono': `${SITE_KEYWORDS}, ragdoll kimono, ragdoll cat kimono, long hair cat kimono preview, cat japanese outfit`,
   about: `${SITE_KEYWORDS}, pet fitting service, ai pet fitting service, about hamdeva`,
   'how-it-works': `${SITE_KEYWORDS}, pet photo upload, outfit image upload, how pet fitting works, dog clothes try on steps`,
   'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,

@@ -15,6 +15,13 @@ export const PAGE_PATHS: Record<SitePage, string> = {
   'cat-kimono': '/cat-kimono',
   'pet-qipao': '/pet-qipao',
   'pet-saree': '/pet-saree',
+  'maltese-hanbok': '/maltese-hanbok',
+  'shiba-kimono': '/shiba-kimono',
+  'corgi-qipao': '/corgi-qipao',
+  'persian-cat-saree': '/persian-cat-saree',
+  'tuxedo-cat-hanbok': '/tuxedo-cat-hanbok',
+  'poodle-wedding-dress': '/poodle-wedding-dress',
+  'ragdoll-kimono': '/ragdoll-kimono',
   about: '/about',
   'how-it-works': '/how-to-use',
   'traditional-clothing': '/sample-outfits',
@@ -42,6 +49,13 @@ export const INDEXABLE_PAGES = new Set<SitePage>([
   'cat-kimono',
   'pet-qipao',
   'pet-saree',
+  'maltese-hanbok',
+  'shiba-kimono',
+  'corgi-qipao',
+  'persian-cat-saree',
+  'tuxedo-cat-hanbok',
+  'poodle-wedding-dress',
+  'ragdoll-kimono',
   'about',
   'how-it-works',
   'traditional-clothing',
@@ -80,6 +94,34 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
   'pet-saree': {
     title: 'Pet Saree Preview Guide',
     description: 'Use this HAMDEVA guide to compare pet saree references and understand how saree-inspired drape and styling read inside an AI outfit preview.',
+  },
+  'maltese-hanbok': {
+    title: 'Maltese Hanbok Preview Guide',
+    description: 'Compare Maltese hanbok outfit ideas on HAMDEVA and see how small white-dog photos pair with Korean traditional outfit references before generation.',
+  },
+  'shiba-kimono': {
+    title: 'Shiba Kimono Preview Guide',
+    description: 'Use HAMDEVA to compare Shiba kimono styling and see how fox-like dog features pair with kimono-inspired outfit references before generation.',
+  },
+  'corgi-qipao': {
+    title: 'Corgi Qipao Preview Guide',
+    description: 'See how a Corgi qipao preview works on HAMDEVA and compare Chinese-style outfit references on a short-legged dog silhouette before generating.',
+  },
+  'persian-cat-saree': {
+    title: 'Persian Cat Saree Preview Guide',
+    description: 'Compare Persian cat saree styling on HAMDEVA and see how fluffy long-hair cat photos work with saree-inspired outfit references before generation.',
+  },
+  'tuxedo-cat-hanbok': {
+    title: 'Tuxedo Cat Hanbok Preview Guide',
+    description: 'Preview tuxedo cat hanbok styling on HAMDEVA and compare Korean traditional outfit references on high-contrast black-and-white cat photos.',
+  },
+  'poodle-wedding-dress': {
+    title: 'Poodle Wedding Dress Preview Guide',
+    description: 'Compare poodle wedding dress ideas on HAMDEVA and preview elegant bridal-style pet outfit references before choosing a final look.',
+  },
+  'ragdoll-kimono': {
+    title: 'Ragdoll Kimono Preview Guide',
+    description: 'Preview ragdoll kimono outfit ideas on HAMDEVA and compare Japanese-style pet outfit references on long-hair blue-eyed cat photos.',
   },
   about: {
     title: 'About HAMDEVA',

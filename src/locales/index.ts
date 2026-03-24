@@ -21,6 +21,13 @@ export type SitePage =
   | 'cat-kimono'
   | 'pet-qipao'
   | 'pet-saree'
+  | 'maltese-hanbok'
+  | 'shiba-kimono'
+  | 'corgi-qipao'
+  | 'persian-cat-saree'
+  | 'tuxedo-cat-hanbok'
+  | 'poodle-wedding-dress'
+  | 'ragdoll-kimono'
   | 'traditional-clothing'
   | 'sample-friends'
   | 'countries'
@@ -48,6 +55,13 @@ export const SITE_PAGES: SitePage[] = [
   'cat-kimono',
   'pet-qipao',
   'pet-saree',
+  'maltese-hanbok',
+  'shiba-kimono',
+  'corgi-qipao',
+  'persian-cat-saree',
+  'tuxedo-cat-hanbok',
+  'poodle-wedding-dress',
+  'ragdoll-kimono',
   'traditional-clothing',
   'sample-friends',
   'countries',
