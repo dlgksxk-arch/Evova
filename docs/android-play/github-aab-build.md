@@ -10,6 +10,8 @@ Play Console 내부 테스트 업로드용 `AAB` 파일은 GitHub에서 만들 �
 
 그 안에 있는 `github-actions-secrets.txt` 값을 아래 4개 GitHub Secrets로 옮기면 됩니다.
 
+`ANDROID_KEY_PASSWORD` 값은 `ANDROID_KEYSTORE_PASSWORD` 와 같아야 합니다.
+
 ## 1. GitHub Secrets 4개 추가
 
 저장소 `Settings > Secrets and variables > Actions` 에 아래 값을 추가합니다.
