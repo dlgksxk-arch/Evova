@@ -133,7 +133,7 @@ const landingContent: Record<SupportedLandingLanguage, LandingContent> = {
   ko: {
     hero: {
       eyebrow: 'AI Pet Fitting Service',
-      title: '우리 아이,\n오늘 뭐 입혀볼까? 🐾',
+      title: '우리 아이 오늘\n뭐 입혀볼까? 🐾',
       subtitle: '사진만 올리면 귀여운 의상 미리보기를 바로 만들 수 있어요.',
       body: 'HAMDEVA에서 AI pet fitting, dog clothes try on, pet outfit generator를 빠르게 체험해보세요.',
       compactPrimaryButton: '🐾 펫 피팅 시작',

@@ -745,12 +745,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                     <span className="generation-runner-whiskers whisker-left" />
                     <span className="generation-runner-whiskers whisker-right" />
                   </span>
-                  <span className="generation-runner-legs">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
-                  </span>
                 </span>
               </div>
               <div
@@ -771,12 +765,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
                     <span className="generation-runner-nose" />
                     <span className="generation-runner-whiskers whisker-left" />
                     <span className="generation-runner-whiskers whisker-right" />
-                  </span>
-                  <span className="generation-runner-legs">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
                   </span>
                 </span>
               </div>

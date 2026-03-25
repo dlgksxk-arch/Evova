@@ -2426,6 +2426,20 @@ const getSubscriptionPlanForProduct = (productId: PaymentProductId): Subscriptio
   return 'free';
 };
 
+const isWatermarkFreeSubscriptionPlan = (plan: SubscriptionPlan): boolean =>
+  plan === 'popular' || plan === 'pro';
+
+const shouldApplyWatermarkForAccount = (account: {
+  subscriptionPlan: SubscriptionPlan;
+  role: AccountRole;
+}): boolean => {
+  if (account.role === 'admin') {
+    return true;
+  }
+
+  return !isWatermarkFreeSubscriptionPlan(account.subscriptionPlan);
+};
+
 const getRequestStringHeaders = (req: functions.https.Request): Record<string, string> =>
   Object.entries(req.headers).reduce<Record<string, string>>((acc, [key, value]) => {
     if (typeof value === 'string') {
@@ -4140,7 +4154,7 @@ const handleTryOnRequest = async (req: functions.https.Request, res: functions.R
     });
 
     const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
-    const watermarkApplied = true;
+    const watermarkApplied = shouldApplyWatermarkForAccount(chargeResult.profile);
     const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
     let creationFilePath: string | null = null;
     let shareImageUrl: string | undefined;

@@ -1802,6 +1802,13 @@ const getSubscriptionPlanForProduct = (productId) => {
     }
     return 'free';
 };
+const isWatermarkFreeSubscriptionPlan = (plan) => plan === 'popular' || plan === 'pro';
+const shouldApplyWatermarkForAccount = (account) => {
+    if (account.role === 'admin') {
+        return true;
+    }
+    return !isWatermarkFreeSubscriptionPlan(account.subscriptionPlan);
+};
 const getRequestStringHeaders = (req) => Object.entries(req.headers).reduce((acc, [key, value]) => {
     if (typeof value === 'string') {
         acc[key] = value;
@@ -3207,7 +3214,7 @@ const handleTryOnRequest = async (req, res, label) => {
             size: OPENAI_IMAGE_SIZE,
         });
         const generatedImage = await requestOpenAIComposite(personImage, garmentImage, resolvedSubjectType, bodyProfile);
-        const watermarkApplied = true;
+        const watermarkApplied = shouldApplyWatermarkForAccount(chargeResult.profile);
         const imageAssets = await buildGeneratedImageAssets(generatedImage.mimeType, generatedImage.data, watermarkApplied);
         let creationFilePath = null;
         let shareImageUrl;

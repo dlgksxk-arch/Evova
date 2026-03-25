@@ -9,10 +9,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/generateStaticSnapshots.mjs",
+    "build:preview": "VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev vite build && node scripts/generateStaticSnapshots.mjs",
     "build:app": "npm run build",
     "cap:sync": "npm run build:app && npx cap sync android",
     "cap:open:android": "npx cap open android",
     "preview": "vite preview",
+    "deploy:preview": "npm run build:preview && npx wrangler deploy",
     "check:i18n": "node scripts/checkLocaleCompleteness.mjs",
     "check:i18n:all": "node scripts/checkLocaleCompleteness.mjs --all",
     "check:i18n:strict": "node scripts/checkLocaleCompleteness.mjs --strict",

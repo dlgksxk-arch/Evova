@@ -209,6 +209,18 @@ const getTraditionalSampleCategoryLabel = (category: ClothSampleCategory, lang: 
     special: 'Theme style',
   }[category];
 };
+const getTraditionalSampleFilterAllLabel = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return '전체';
+  }
+  if (lang === 'ja') {
+    return 'すべて';
+  }
+  if (lang === 'zh') {
+    return '全部';
+  }
+  return 'All';
+};
 const getTraditionalSampleDisplayLabel = (
   sample: ClothSampleOption,
   lang: LanguageCode,
@@ -490,6 +502,30 @@ const getPricingUiCopy = (lang: LanguageCode) => {
     } as Record<CheckoutProductId, string>,
   };
 };
+const isWatermarkFreeSubscriptionPlan = (plan?: SubscriptionPlan | null): boolean =>
+  plan === 'popular' || plan === 'pro';
+
+const getSubscriptionWatermarkNote = (lang: LanguageCode, productId: CheckoutProductId): string => {
+  const watermarkFree = productId === 'popular' || productId === 'pro';
+  if (lang === 'ko') {
+    return watermarkFree
+      ? '이 플랜부터 생성 결과에서 HAMDEVA 워터마크가 제거됩니다.'
+      : '이 플랜 결과에는 HAMDEVA 워터마크가 포함됩니다.';
+  }
+  if (lang === 'ja') {
+    return watermarkFree
+      ? 'このプラン以上では生成結果からHAMDEVAウォーターマークが除去されます。'
+      : 'このプランの生成結果にはHAMDEVAウォーターマークが含まれます。';
+  }
+  if (lang === 'zh') {
+    return watermarkFree
+      ? '从这个方案开始，生成结果将不再带有 HAMDEVA 水印。'
+      : '这个方案生成的结果仍会带有 HAMDEVA 水印。';
+  }
+  return watermarkFree
+    ? 'Starting with this plan, generated results are delivered without the HAMDEVA watermark.'
+    : 'Generated results on this plan still include the HAMDEVA watermark.';
+};
 type SubjectType = typeof SUBJECT_TYPES[number];
 type CheckoutProductId = typeof CREDIT_PRODUCTS[number]['id'];
 type CreditKind = 'daily' | 'paid';
@@ -729,7 +765,7 @@ const translations = {
     popularProductName: 'popular',
     proProductName: 'pro',
     freeResultNoticeTitle: '이미지에 워터마크가 적용됩니다.',
-    freeResultNoticeBody: '모든 이미지 결과에는 HAMDEVA AI 워터마크가 포함됩니다.',
+    freeResultNoticeBody: 'FREE와 STARTER 결과에는 HAMDEVA AI 워터마크가 포함되며, POPULAR와 PRO는 워터마크 없이 제공됩니다.',
     watermarkEnabled: '워터마크 적용',
     watermarkRemoved: '워터마크 없음',
     adminNav: '관리',
@@ -1064,7 +1100,7 @@ const translations = {
     popularProductName: 'popular',
     proProductName: 'pro',
     freeResultNoticeTitle: 'Watermark applied to this image.',
-    freeResultNoticeBody: 'All generated image results include the HAMDEVA AI watermark.',
+    freeResultNoticeBody: 'FREE and STARTER results include the HAMDEVA AI watermark, while POPULAR and PRO are delivered without it.',
     watermarkEnabled: 'Watermark on',
     watermarkRemoved: 'Watermark off',
     adminNav: 'Admin',
@@ -3518,6 +3554,7 @@ const App: React.FC = () => {
   const [resultPreviewOffset, setResultPreviewOffset] = useState({ x: 0, y: 0 });
   const [isResultPreviewDragging, setIsResultPreviewDragging] = useState(false);
   const [isSocialInAppBrowser, setIsSocialInAppBrowser] = useState(false);
+  const [selectedSampleOutfitCategory, setSelectedSampleOutfitCategory] = useState<'all' | ClothSampleCategory>('all');
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -3555,6 +3592,16 @@ const App: React.FC = () => {
       description: getTraditionalSampleDescription(lang, countryLabel, categoryLabel),
     };
   });
+  const sampleOutfitFilterOptions: Array<{ id: 'all' | ClothSampleCategory; label: string }> = [
+    { id: 'all', label: getTraditionalSampleFilterAllLabel(lang) },
+    ...(['female', 'male', 'future', 'classic', 'special'] as ClothSampleCategory[]).map((category) => ({
+      id: category,
+      label: getTraditionalSampleCategoryLabel(category, lang),
+    })),
+  ];
+  const filteredSampleOutfitCards = selectedSampleOutfitCategory === 'all'
+    ? sampleOutfitCards
+    : sampleOutfitCards.filter(({ sample }) => sample.category === selectedSampleOutfitCategory);
   const t = uiTranslations[lang];
   const homeShowcaseCopy = getHomeShowcaseCopy(lang);
   const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGES.map((src, index) => ({
@@ -6103,33 +6150,6 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                    <button className="generate-btn landing-preview-spark-btn" onClick={handleHeroCta} type="button">
-                      <span aria-hidden="true">✦</span>
-                      <span>{landingContent.hero.compactPrimaryButton}</span>
-                    </button>
-                  </div>
-                  <div className="landing-result-preview-grid">
-                    {homePreviewStripItems.map((item, index) => (
-                      <article
-                        key={item.src}
-                        className={`landing-preview-card ${index === 2 || index === 7 ? 'is-featured' : ''}`}
-                      >
-                        <div className="landing-preview-card-media">
-                          <img
-                            src={item.src}
-                            alt={item.alt}
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="landing-preview-hover" aria-hidden="true">
-                          <img
-                            src={item.src}
-                            alt=""
-                            loading="lazy"
-                          />
-                        </div>
-                      </article>
-                    ))}
                   </div>
                 </div>
               </div>
@@ -6190,6 +6210,10 @@ const App: React.FC = () => {
               </div>
             </section>
           </main>
+          <button className="generate-btn landing-floating-spark-btn" onClick={handleHeroCta} type="button">
+            <span aria-hidden="true">✦</span>
+            <span>{landingContent.hero.compactPrimaryButton}</span>
+          </button>
         </>
       ) : (
         <main className="section page-shell">
@@ -6354,8 +6378,22 @@ const App: React.FC = () => {
                   <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
                   <p>{landingContent.sampleOutfits.catalogBody}</p>
                 </article>
+                <div className="sample-outfit-filter-bar" role="tablist" aria-label={landingContent.sampleOutfits.catalogTitle}>
+                  {sampleOutfitFilterOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      className={`sample-outfit-filter-tab ${selectedSampleOutfitCategory === option.id ? 'is-active' : ''}`}
+                      onClick={() => setSelectedSampleOutfitCategory(option.id)}
+                      role="tab"
+                      aria-selected={selectedSampleOutfitCategory === option.id}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="sample-outfit-card-grid">
-                  {sampleOutfitCards.map(({ sample, countryLabel, categoryLabel, displayLabel, description }) => (
+                  {filteredSampleOutfitCards.map(({ sample, countryLabel, categoryLabel, displayLabel, description }) => (
                     <article
                       key={sample.id}
                       className="sample-outfit-card"
@@ -6462,6 +6500,9 @@ const App: React.FC = () => {
                             <p className="credit-plan-sale-price">{formatCreditProductPrice(product)}</p>
                           </div>
                           <p>{pricingUiCopy.descriptionById[product.id]}</p>
+                          <p className={`pricing-inline-note pricing-watermark-note ${isWatermarkFreeSubscriptionPlan(product.id) ? 'is-watermark-free' : 'is-watermark-on'}`}>
+                            {getSubscriptionWatermarkNote(lang, product.id)}
+                          </p>
                         </div>
                         <button
                           className="generate-btn auth-inline-btn"
@@ -6806,6 +6847,9 @@ const App: React.FC = () => {
                         <p className="credit-plan-sale-price">{formatCreditProductPrice(product)}</p>
                       </div>
                       <p>{pricingUiCopy.descriptionById[product.id]}</p>
+                      <p className={`pricing-inline-note pricing-watermark-note ${isWatermarkFreeSubscriptionPlan(product.id) ? 'is-watermark-free' : 'is-watermark-on'}`}>
+                        {getSubscriptionWatermarkNote(lang, product.id)}
+                      </p>
                     </div>
                     <button
                       className="generate-btn auth-inline-btn"
