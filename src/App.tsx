@@ -3566,6 +3566,10 @@ const App: React.FC = () => {
     .map((index) => homeShowcaseItems[index])
     .filter((item): item is (typeof homeShowcaseItems)[number] => Boolean(item));
   const homePreviewStripItems = homeShowcaseItems.filter((item) => !homeHeroVisualItems.includes(item));
+  const homePreviewMarqueeRows = [
+    homePreviewStripItems.filter((_, index) => index % 2 === 0),
+    homePreviewStripItems.filter((_, index) => index % 2 === 1),
+  ].filter((row) => row.length > 0);
   const aboutVisualCopy = getAboutVisualCopy(lang);
   const styleGuideVisualCopy = getStyleGuideVisualCopy(lang);
   const sampleCategoryLabels = translate('sampleModal.categories', { returnObjects: true }) as Record<FaceCategory, string>;
@@ -6073,6 +6077,36 @@ const App: React.FC = () => {
                   <div className="landing-result-preview-copy">
                     <span className="section-label">{homeShowcaseCopy.title}</span>
                     <p>{homeShowcaseCopy.body}</p>
+                  </div>
+                  <div className="landing-result-preview-marquee" aria-label={homeShowcaseCopy.title}>
+                    {homePreviewMarqueeRows.map((row, rowIndex) => (
+                      <div
+                        key={`preview-marquee-row-${rowIndex}`}
+                        className={`landing-result-marquee-row ${rowIndex === 0 ? 'is-right' : 'is-left'}`}
+                      >
+                        <div className="landing-result-marquee-track">
+                          {[...row, ...row].map((item, itemIndex) => (
+                            <article
+                              key={`${item.src}-${rowIndex}-${itemIndex}`}
+                              className="landing-preview-card landing-preview-card-marquee"
+                              aria-hidden={itemIndex >= row.length}
+                            >
+                              <div className="landing-preview-card-media">
+                                <img
+                                  src={item.src}
+                                  alt={itemIndex < row.length ? item.alt : ''}
+                                  loading="lazy"
+                                />
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <button className="generate-btn landing-preview-spark-btn" onClick={handleHeroCta} type="button">
+                      <span aria-hidden="true">✦</span>
+                      <span>{landingContent.hero.compactPrimaryButton}</span>
+                    </button>
                   </div>
                   <div className="landing-result-preview-grid">
                     {homePreviewStripItems.map((item, index) => (
