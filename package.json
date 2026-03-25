@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/generateStaticSnapshots.mjs",
+    "build:app": "npm run build",
+    "cap:sync": "npm run build:app && npx cap sync android",
+    "cap:open:android": "npx cap open android",
     "preview": "vite preview",
     "check:i18n": "node scripts/checkLocaleCompleteness.mjs",
     "check:i18n:all": "node scripts/checkLocaleCompleteness.mjs --all",
@@ -16,6 +19,9 @@
     "seed:board": "node scripts/seedBoardPosts.js"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
     "i18next": "^25.8.18",

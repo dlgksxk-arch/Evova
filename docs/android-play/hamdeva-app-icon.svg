@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="56" y1="40" x2="456" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2CFFD8"/>
+      <stop offset="0.32" stop-color="#25A8FF"/>
+      <stop offset="0.7" stop-color="#FF52B6"/>
+      <stop offset="1" stop-color="#FFB800"/>
+    </linearGradient>
+    <linearGradient id="paw" x1="163" y1="111" x2="363" y2="383" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF6D8"/>
+      <stop offset="1" stop-color="#FFE15A"/>
+    </linearGradient>
+    <filter id="shadow" x="68" y="69" width="376" height="374" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="18"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.156863 0 0 0 0 0.0823529 0 0 0 0 0.270588 0 0 0 0.25 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="124" fill="url(#bg)"/>
+  <circle cx="84" cy="92" r="24" fill="#FFE15A" fill-opacity="0.95"/>
+  <circle cx="423" cy="108" r="18" fill="#FFE15A" fill-opacity="0.85"/>
+  <circle cx="401" cy="406" r="22" fill="#9BFF56" fill-opacity="0.88"/>
+  <path d="M382 86L390 104L410 106L395 119L399 138L382 128L365 138L369 119L354 106L374 104L382 86Z" fill="#FFF7DD"/>
+  <path d="M114 375L121 390L138 392L125 403L129 420L114 411L99 420L103 403L90 392L107 390L114 375Z" fill="#FFF7DD"/>
+  <g filter="url(#shadow)">
+    <path d="M257.499 381C318.07 381 355.5 348.11 355.5 291.5C355.5 242.995 326.7 207 287.5 191C280.792 188.262 276.5 181.83 276.5 174.585V157C276.5 133.252 257.248 114 233.5 114C209.752 114 190.5 133.252 190.5 157V175.904C190.5 182.589 186.947 188.858 180.932 191.77C142.523 210.362 118.5 245.735 118.5 291.5C118.5 348.11 196.928 381 257.499 381Z" fill="url(#paw)" stroke="#401A53" stroke-width="20" stroke-linejoin="round"/>
+    <ellipse cx="173.5" cy="145.5" rx="33.5" ry="43.5" transform="rotate(-23 173.5 145.5)" fill="url(#paw)" stroke="#401A53" stroke-width="20"/>
+    <ellipse cx="234.5" cy="114.5" rx="31.5" ry="39.5" fill="url(#paw)" stroke="#401A53" stroke-width="20"/>
+    <ellipse cx="307.5" cy="132.5" rx="32.5" ry="41.5" transform="rotate(20 307.5 132.5)" fill="url(#paw)" stroke="#401A53" stroke-width="20"/>
+    <ellipse cx="356.5" cy="186.5" rx="29.5" ry="38.5" transform="rotate(39 356.5 186.5)" fill="url(#paw)" stroke="#401A53" stroke-width="20"/>
+  </g>
+  <path d="M216 268C231.338 252.089 257.698 250.97 274.333 265.455L292 281" stroke="#401A53" stroke-width="18" stroke-linecap="round"/>
+  <path d="M221 320C246 339 273 339 297 320" stroke="#401A53" stroke-width="18" stroke-linecap="round"/>
+</svg>
+

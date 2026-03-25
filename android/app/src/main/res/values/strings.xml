@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">hamdeva</string>
+    <string name="title_activity_main">hamdeva</string>
+    <string name="package_name">com.hamdeva.app</string>
+    <string name="custom_url_scheme">com.hamdeva.app</string>
+</resources>
