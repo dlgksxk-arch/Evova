@@ -39,6 +39,7 @@ export const PAGE_PATHS: Record<SitePage, string> = {
   board: '/board',
   'site-management': '/site-management',
   mypage: '/mypage',
+  history: '/history',
   'payment-success': '/payment-success',
   'payment-failed': '/payment-failed',
 };
@@ -174,6 +175,10 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
   contact: {
     title: 'Contact HAMDEVA',
     description: 'Contact HAMDEVA for help with AI pet fitting, outfit preview issues, account questions, and service inquiries.',
+  },
+  history: {
+    title: 'History',
+    description: 'Review your saved HAMDEVA generation history, archived results, and previous outfit previews.',
   },
 };
 

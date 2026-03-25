@@ -45,6 +45,7 @@ export type SitePage =
   | 'board'
   | 'site-management'
   | 'mypage'
+  | 'history'
   | 'payment-success'
   | 'payment-failed';
 
@@ -79,6 +80,7 @@ export const SITE_PAGES: SitePage[] = [
   'board',
   'site-management',
   'mypage',
+  'history',
   'payment-success',
   'payment-failed',
 ];

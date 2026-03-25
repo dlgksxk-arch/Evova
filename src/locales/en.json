@@ -554,24 +554,7 @@
     "board": {
       "title": "Community Board",
       "description": "Leave a nickname and a message to share feedback, fitting notes, or requests with other visitors.",
-      "sections": [
-        {
-          "heading": "Why the board exists",
-          "paragraphs": [
-            "The board gives visitors a simple public place to leave fitting feedback, sample requests, and suggestions for future content or feature improvements.",
-            "Community pages can be valuable when they capture real user interest, repeated requests, and practical reactions to the site rather than acting as empty placeholder space.",
-            "HAMDEVA uses the board as a lightweight feedback layer connected to the broader content and try-on experience."
-          ]
-        },
-        {
-          "heading": "Useful board posts",
-          "paragraphs": [
-            "Helpful posts usually mention a garment category, a styling request, a missing sample, a page that needs correction, or a quality issue discovered during generation.",
-            "Specific messages are more useful than vague praise or complaints because they give the site a clearer signal about what content or functionality should improve next.",
-            "The board is therefore part of the publishing workflow, not just an isolated comment widget."
-          ]
-        }
-      ]
+      "sections": []
     },
     "site-management": {
       "title": "Site Management",
@@ -588,6 +571,11 @@
           ]
         }
       ]
+    },
+    "history": {
+      "title": "History",
+      "description": "Browse your saved generation results and open each item on a dedicated history screen.",
+      "sections": []
     }
   },
   "contact": {

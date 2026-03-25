@@ -58,7 +58,8 @@ import { getContentLocale, SITE_PAGES, type ModalTab, type SitePage } from './lo
 import { auth, db, firebaseConfigError, googleProvider, isFirebaseConfigured, missingFirebaseEnvKeys } from './firebase';
 import type { User } from 'firebase/auth';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
-import { Timestamp, addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, deleteDoc, doc, getDocsFromCache, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where } from 'firebase/firestore';
+import CreationHistoryPanel from './features/mypage/CreationHistoryPanel';
 declare const __APP_VERSION__: string;
 
 const AuthModal = lazy(() => import('./components/AuthModal'));
@@ -91,6 +92,7 @@ const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 125_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
 const HISTORY_RETENTION_MS = 15 * 24 * 60 * 60 * 1000;
+const HISTORY_CACHE_MAX_ITEMS = 12;
 const PRESERVED_HISTORY_LIMIT = 5;
 const SUBJECT_TYPES = ['dog', 'cat'] as const;
 type CreditProductKind = 'subscription' | 'extra_credit';
@@ -280,23 +282,31 @@ const getAboutVisualCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
       eyebrow: 'ABOUT HAMDEVA',
-      title: '반려동물 사진 한 장에서 시작되는 스타일 실험',
-      body: 'HAMDEVA는 펫 사진, 의상 이미지, 결과 미리보기를 한 흐름으로 연결해 반려동물 스타일 아이디어를 빠르게 비교하도록 만든 서비스입니다.',
-      petLabel: '반려동물 사진',
-      outfitLabel: '의상 이미지',
-      resultLabel: '펫 피팅 결과',
+      title: '반려동물 의상 결정을 더 가볍게 만드는 비교 도구',
+      body: 'HAMDEVA는 귀엽게 보이는지 한 번 보고 끝나는 사이트가 아니라, 구매 전과 촬영 전 사이에 들어가는 비교 단계를 정리해 주는 서비스입니다.',
+      spotlight: [
+        '구매 전에 먼저 분위기를 걸러내기',
+        '촬영 콘셉트 후보를 빠르게 압축하기',
+        '저장한 결과를 다시 열어 비교하기',
+      ],
       cards: [
         {
-          title: '왜 만들었나요?',
-          body: '막상 옷을 사거나 촬영을 준비하기 전에, 우리 아이에게 어떤 분위기가 어울릴지 먼저 보고 싶은 순간이 많기 때문입니다.',
+          title: '결과를 어떻게 받아들여야 하나요?',
+          body: '결과는 실제 사이즈 확정이 아니라 방향 비교용 시각 프리뷰입니다. 어떤 장식이 과한지, 얼굴 주변이 답답한지, 촬영용으로 충분히 읽히는지를 판단하는 데 더 강합니다.',
         },
         {
-          title: '어떻게 읽으면 좋을까요?',
-          body: 'HAMDEVA는 정답을 주는 도구보다 비교를 돕는 도구에 가깝습니다. 여러 의상 중 어떤 방향이 더 잘 맞는지 빠르게 좁혀볼 수 있습니다.',
+          title: '누가 가장 잘 쓰나요?',
+          body: '기념 촬영을 준비하는 보호자, SNS용 결과를 만들고 싶은 사용자, 행사 의상을 고르는 사람, 같은 사진으로 여러 의상을 비교해 보고 싶은 사용자에게 특히 잘 맞습니다.',
+        },
+      ],
+      sections: [
+        {
+          title: '왜 이런 서비스가 필요한가',
+          body: '반려동물 의상은 상품 사진만으로 판단하기 어렵습니다. 같은 옷도 털색, 얼굴 폭, 귀 모양, 몸통 길이에 따라 느낌이 크게 달라지기 때문입니다. HAMDEVA는 바로 이 차이를 구매 전 단계에서 미리 걸러내도록 돕습니다.',
         },
         {
-          title: '언제 유용할까요?',
-          body: '기념 촬영, SNS 공유, 시즌 코스튬, 선물용 의상 고민처럼 실제 구매와 촬영 전에 가볍게 미리 보는 용도로 잘 맞습니다.',
+          title: '무엇을 잘하고 무엇을 약속하지 않는가',
+          body: 'HAMDEVA는 시각적인 방향 비교에는 강하지만 실제 착용감, 원단 촉감, 활동성, 사이즈 적합성까지 확정해 주지는 않습니다. 대신 어떤 방향이 더 자연스럽고, 더 귀엽고, 더 촬영 친화적인지 판단하는 데 시간을 줄여 줍니다.',
         },
       ],
     };
@@ -304,44 +314,59 @@ const getAboutVisualCopy = (lang: LanguageCode) => {
   if (lang === 'ja') {
     return {
       eyebrow: 'ABOUT HAMDEVA',
-      title: 'ペット写真から始まるスタイルの比較体験',
-      body: 'HAMDEVA はペット写真、衣装画像、結果プレビューを一つの流れでつなぎ、ペットのスタイルアイデアをすばやく比べられるようにしたサービスです。',
-      petLabel: 'ペット写真',
-      outfitLabel: '衣装画像',
-      resultLabel: 'ペット試着結果',
+      title: 'ペット服の判断を軽くする比較ツール',
+      body: 'HAMDEVA は、買う前や撮影前に方向を絞りたい人のための比較サービスです。',
+      spotlight: [
+        '購入前に雰囲気を先に絞る',
+        '撮影コンセプト候補をすばやく整理する',
+        '保存した結果をあとで見比べる',
+      ],
       cards: [
-        { title: 'なぜ作られたのか', body: '衣装を買う前や撮影前に、まず似合う雰囲気を見たい場面が多いからです。' },
-        { title: 'どう見るべきか', body: 'HAMDEVA は最終回答よりも比較のためのプレビューです。どの方向が合うかを早く絞れます。' },
-        { title: 'どんな時に役立つか', body: '記念撮影、SNS 共有、季節コスチューム、イベント準備の前段階で特に便利です。' },
+        { title: '結果の見方', body: 'サイズ確定ではなく、方向比較のための視覚プレビューとして使うのが適切です。' },
+        { title: '向いている利用者', body: '記念撮影、SNS、イベント衣装、複数候補の比較をしたい人に向いています。' },
+      ],
+      sections: [
+        { title: 'なぜ必要か', body: '同じ服でも毛並み、顔幅、耳の形で印象が大きく変わるため、商品画像だけで判断するのは難しいからです。' },
+        { title: '何が強みか', body: '見た目の方向比較には強いですが、実際の着心地やサイズ適合を保証するものではありません。' },
       ],
     };
   }
   if (lang === 'zh') {
     return {
       eyebrow: 'ABOUT HAMDEVA',
-      title: '从一张宠物照片开始的穿搭比较体验',
-      body: 'HAMDEVA 把宠物照片、服装图片和结果预览连接成一个清晰流程，让你更快比较宠物穿搭灵感。',
-      petLabel: '宠物照片',
-      outfitLabel: '服装图片',
-      resultLabel: '宠物试穿结果',
+      title: '帮助你更轻松做宠物穿搭判断的比较工具',
+      body: 'HAMDEVA 更适合“买之前先比一比”的阶段，而不是直接替你做最终决定。',
+      spotlight: [
+        '先筛掉不合适的氛围',
+        '快速整理拍摄造型候选',
+        '把结果存下来再回头比较',
+      ],
       cards: [
-        { title: '为什么做这个服务', body: '很多时候在购买或拍摄前，用户更想先知道自己的宠物适合什么样的气质。' },
-        { title: '应该如何理解结果', body: 'HAMDEVA 更像比较工具，而不是最终答案。它适合先筛选方向，再做下一步决定。' },
-        { title: '适合哪些场景', body: '纪念拍摄、社交分享、节日服装和活动准备前，都很适合先用它看看预览。' },
+        { title: '应该如何看结果', body: '它更像视觉比较预览，而不是尺码或穿着感的最终保证。' },
+        { title: '哪些人最适合', body: '纪念拍摄、社交分享、节日造型、多个方案快速比较的人会最有感觉。' },
+      ],
+      sections: [
+        { title: '为什么需要它', body: '同一件衣服在不同毛色、脸型、耳朵形状的宠物身上会有很大差别，所以只看商品图往往不够。' },
+        { title: '它擅长什么', body: '它擅长视觉方向比较，但不替代真实尺码、材质手感和活动舒适度判断。' },
       ],
     };
   }
   return {
     eyebrow: 'ABOUT HAMDEVA',
-    title: 'A quick way to compare pet outfit ideas',
-    body: 'HAMDEVA connects a pet photo, an outfit image, and a result preview so you can compare cute style directions before you commit to one.',
-    petLabel: 'Pet photo',
-    outfitLabel: 'Outfit image',
-    resultLabel: 'Pet fitting result',
+    title: 'A comparison tool for pet outfit decisions',
+    body: 'HAMDEVA is strongest in the space between “that looks cute” and “I should actually buy or shoot this.”',
+    spotlight: [
+      'Filter moods before you buy',
+      'Narrow shoot concepts faster',
+      'Save and compare results later',
+    ],
     cards: [
-      { title: 'Why it exists', body: 'Many people want to check the mood of an outfit before they buy, plan, or share something for their dog or cat.' },
-      { title: 'How to use it', body: 'HAMDEVA works best as an early comparison tool. It helps you narrow ideas and spot what feels right first.' },
-      { title: 'Where it helps', body: 'It is useful for themed shoots, social posts, holiday looks, and playful outfit planning before the real step.' },
+      { title: 'How to read the result', body: 'Treat the output as a visual comparison layer, not as proof of final fit, comfort, or physical accuracy.' },
+      { title: 'Who it helps most', body: 'It works well for themed shoots, social sharing, event outfits, and quick comparison before the real next step.' },
+    ],
+    sections: [
+      { title: 'Why a service like this matters', body: 'The same outfit can read very differently depending on fur color, face width, ear shape, and body proportion. That makes pure imagination weak and product photos incomplete.' },
+      { title: 'What HAMDEVA is good at', body: 'It helps users reject weak directions early and keep only the ideas that still look readable, cute, or shoot-friendly after seeing them on a pet.' },
     ],
   };
 };
@@ -349,16 +374,25 @@ const getStyleGuideVisualCopy = (lang: LanguageCode) => {
   if (lang === 'ko') {
     return {
       eyebrow: 'PET STYLE GUIDE',
-      title: '반려동물 의상을 고를 때 먼저 보면 좋은 기준',
-      body: '',
-      petLabel: '펫 기준 사진',
-      outfitLabel: '의상 기준 이미지',
-      resultLabel: '비교용 결과',
+      title: '예쁜 것보다 먼저 걸러야 하는 스타일 기준',
+      body: '펫 스타일 가이드는 생성 방법이 아니라, 어떤 의상이 실제로 읽기 좋고 무리가 덜한지 판단하는 기준을 먼저 정리하는 페이지입니다.',
+      checklistTitle: '빠르게 거르는 기준',
+      checklist: [
+        '얼굴 주변이 과하게 복잡하지 않은가',
+        '목, 가슴, 다리 움직임이 답답해 보이지 않는가',
+        '털색과 의상 톤이 서로 묻히지 않는가',
+        '실내용인지 산책용인지 상황이 맞는가',
+      ],
       cards: [
         { title: '계절과 체온', body: '짧은 털, 작은 체구, 젖은 산책 환경에서는 보온 의상이 더 필요할 수 있고, 더운 날씨에는 장식보다 통기성과 과열 방지가 우선입니다.' },
         { title: '핏과 움직임', body: '움직임을 막거나 목, 가슴, 다리 주변을 과하게 조이는 옷은 사진상으로도 답답해 보이기 쉽습니다. 눈으로 보기만 예쁜지, 움직이기에도 편해 보이는지 함께 봐야 합니다.' },
         { title: '강아지와 고양이 차이', body: '강아지는 산책·야외 상황을 먼저 고려하는 경우가 많고, 고양이는 실내 적응과 거부감 여부를 더 먼저 보는 편이 좋습니다.' },
         { title: '사진에서 잘 보이는 룩', body: '얼굴 주변이 너무 복잡하지 않고, 몸통 실루엣과 장식 위치가 분명한 의상일수록 결과 비교가 쉽고 공유 이미지로도 보기 좋습니다.' },
+      ],
+      wrongReads: [
+        { title: '귀여운데 무거운 룩', body: '장식은 많지만 얼굴이 묻히고 체형이 흐려지면 사진상 만족도는 금방 떨어집니다.' },
+        { title: '실내와 실외를 섞은 룩', body: '얇고 장식적인 옷을 산책용처럼 고르면 결과는 예뻐도 실제 선택엔 도움이 덜 됩니다.' },
+        { title: '품종 특성을 무시한 룩', body: '목이 짧거나 털이 풍성한 아이는 같은 카라 장식도 훨씬 답답하게 보일 수 있습니다.' },
       ],
     };
   }
@@ -396,16 +430,25 @@ const getStyleGuideVisualCopy = (lang: LanguageCode) => {
   }
   return {
     eyebrow: 'PET STYLE GUIDE',
-    title: 'Practical filters for better pet outfit ideas',
-    body: 'This page helps you judge which outfits are easier to read in photos, when warmth matters, and which styling choices look cute without becoming too much.',
-    petLabel: 'Pet reference',
-    outfitLabel: 'Outfit reference',
-    resultLabel: 'Preview result',
+    title: 'The style filters to check before you fall for a cute look',
+    body: 'This page is about judging pet outfit ideas, not about explaining the generation workflow again.',
+    checklistTitle: 'Fast filter list',
+    checklist: [
+      'Is the face still easy to read?',
+      'Does the fit still look movable?',
+      'Do the fur color and outfit tone separate clearly?',
+      'Does the outfit match the actual use context?',
+    ],
     cards: [
       { title: 'Season and temperature', body: 'Short-haired or smaller pets may need more warmth in cold conditions, while hot weather makes breathability and overheating risk more important than decoration.' },
       { title: 'Fit and movement', body: 'Outfits that squeeze the neck, chest, or legs can look awkward in photos and feel restrictive in real use. Style works best when it still looks easy to move in.' },
       { title: 'Dog vs. cat context', body: 'Dogs are often evaluated around walks and weather, while cats usually need more emphasis on indoor comfort and tolerance.' },
       { title: 'What reads well on camera', body: 'Cleaner face framing, visible body shape, and readable trim placement usually create stronger previews and better shareable images.' },
+    ],
+    wrongReads: [
+      { title: 'Cute but visually heavy', body: 'If trim and decoration swallow the face, the result loses clarity even when the outfit is technically pretty.' },
+      { title: 'Wrong outfit for the context', body: 'A look can be photogenic and still be the wrong direction for outdoor use, warm weather, or an active pet.' },
+      { title: 'Ignoring breed traits', body: 'Neck length, fur volume, and head shape change how collars, ribbons, and hoods read on camera.' },
     ],
   };
 };
@@ -948,6 +991,7 @@ const translations = {
     historyUnarchiveConfirm: '그래도 보관 해제',
     historyDeleteConfirm: '이 결과물을 히스토리에서 삭제하시겠습니까?',
     historyDeleteFailed: '히스토리 삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+    historyBackToList: '목록으로',
     savePercent: (n: number) => `${n}% 할인`,
     saveAmountOff: (amount: string) => `${amount} 절약`,
     adminGenerationType: '유형',
@@ -1283,6 +1327,7 @@ const translations = {
     historyUnarchiveConfirm: 'Remove archive anyway',
     historyDeleteConfirm: 'Delete this result from your history?',
     historyDeleteFailed: 'Failed to delete the history item. Please try again later.',
+    historyBackToList: 'Back to list',
     savePercent: (n: number) => `Save ${n}%`,
     saveAmountOff: (amount: string) => `${amount} off`,
     adminGenerationType: 'Type',
@@ -1493,6 +1538,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyUnarchiveConfirm: '仍要取消保留',
     historyDeleteConfirm: '要从历史记录中删除这个结果吗？',
     historyDeleteFailed: '删除历史记录失败，请稍后再试。',
+    historyBackToList: '返回列表',
     savePercent: (n: number) => `立省 ${n}%`,
     saveAmountOff: (amount: string) => `优惠 ${amount}`,
     adminGenerationType: '类型',
@@ -1667,6 +1713,7 @@ const uiTranslations: Record<LanguageCode, typeof translations.en> = {
     historyUnarchiveConfirm: 'それでも保管解除',
     historyDeleteConfirm: 'この結果を履歴から削除しますか？',
     historyDeleteFailed: '履歴の削除に失敗しました。しばらくしてからもう一度お試しください。',
+    historyBackToList: '一覧へ戻る',
     savePercent: (n: number) => `${n}% オフ`,
     saveAmountOff: (amount: string) => `${amount} お得`,
     adminGenerationType: '種類',
@@ -2918,15 +2965,64 @@ const resizeImage = (dataUrl: string, maxPx = 1024): Promise<string> =>
 const createHistoryPreview = (dataUrl: string, maxPx = 480): Promise<string> =>
   resizeImage(dataUrl, maxPx);
 
-const getTimestampMillis = (value?: Timestamp | null): number | null => {
+const getTimestampMillis = (value?: Timestamp | number | { seconds?: number; nanoseconds?: number } | null): number | null => {
   if (!value) {
     return null;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'object' && 'seconds' in value && typeof value.seconds === 'number') {
+    const nanoseconds = 'nanoseconds' in value && typeof value.nanoseconds === 'number'
+      ? value.nanoseconds
+      : 0;
+    return (value.seconds * 1000) + Math.floor(nanoseconds / 1_000_000);
   }
 
   try {
     return value.toDate().getTime();
   } catch {
     return null;
+  }
+};
+
+const buildHistoryCacheKey = (uid: string): string => `HAMDEVA-history-cache:${uid}`;
+
+const serializeHistoryItemsForCache = (items: GenerationRecord[]): string => JSON.stringify(
+  items.slice(0, HISTORY_CACHE_MAX_ITEMS).map((item) => ({
+    id: item.id,
+    uid: item.uid,
+    imageUrl: item.imageUrl ?? null,
+    subjectType: item.subjectType ?? 'dog',
+    status: item.status ?? null,
+    createdAt: getTimestampMillis(item.createdAt),
+    expiresAt: getTimestampMillis(item.expiresAt),
+    preservedAt: getTimestampMillis(item.preservedAt),
+    preservedUntil: getTimestampMillis(item.preservedUntil),
+  })),
+);
+
+const readHistoryItemsFromCache = (uid: string): GenerationRecord[] => {
+  try {
+    const raw = window.localStorage.getItem(buildHistoryCacheKey(uid));
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as GenerationRecord[] : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeHistoryItemsToCache = (uid: string, items: GenerationRecord[]): void => {
+  try {
+    window.localStorage.setItem(buildHistoryCacheKey(uid), serializeHistoryItemsForCache(items));
+  } catch {
+    // Ignore local cache write failures.
   }
 };
 
@@ -3555,6 +3651,7 @@ const App: React.FC = () => {
   const [isResultPreviewDragging, setIsResultPreviewDragging] = useState(false);
   const [isSocialInAppBrowser, setIsSocialInAppBrowser] = useState(false);
   const [selectedSampleOutfitCategory, setSelectedSampleOutfitCategory] = useState<'all' | ClothSampleCategory>('all');
+  const [selectedSampleFriendCategory, setSelectedSampleFriendCategory] = useState<'all' | FaceCategory>('all');
   const mobileMenuCloseRef = useRef<HTMLButtonElement | null>(null);
   const headerLangMenuRef = useRef<HTMLDivElement | null>(null);
   const headerAccountMenuRef = useRef<HTMLDivElement | null>(null);
@@ -3625,6 +3722,15 @@ const App: React.FC = () => {
     label: sampleCategoryLabels[category],
     guides: petBreedGuides.filter((guide) => guide.category === category),
   }));
+  const sampleFriendFilterOptions = [
+    { id: 'all' as const, label: lang === 'ko' ? '전체' : lang === 'ja' ? 'すべて' : lang === 'zh' ? '全部' : 'All' },
+    ...petBreedGuideGroups.map((group) => ({ id: group.category, label: group.label })),
+  ];
+  const filteredPetBreedGuides = petBreedGuideGroups.flatMap((group) =>
+    (selectedSampleFriendCategory === 'all' || selectedSampleFriendCategory === group.category)
+      ? group.guides.map((guide) => ({ group, guide }))
+      : [],
+  );
   const countryShowcaseCards = getCountryShowcaseCards(contentLocale.modal.countries);
   const fontTheme = LANGUAGE_FONT_THEMES[lang];
   const emptyFaceTips = translate('uploadGuides.faceTips', { returnObjects: true }) as string[];
@@ -4202,6 +4308,35 @@ const App: React.FC = () => {
       return;
     }
 
+    const applyHistoryItems = (items: GenerationRecord[]) => {
+      const now = Date.now();
+      const filteredItems = items.filter((item) => {
+        const expiresAt = getHistoryExpiryMillis(item);
+        return !(typeof expiresAt === 'number' && expiresAt <= now);
+      });
+
+      setHistoryItems(filteredItems);
+      writeHistoryItemsToCache(currentUser.uid, filteredItems);
+
+      const expiredItems = items.filter((item) => {
+        const expiresAt = getHistoryExpiryMillis(item);
+        return typeof expiresAt === 'number' && expiresAt <= now;
+      });
+
+      if (expiredItems.length > 0) {
+        void Promise.all(expiredItems.map((item) =>
+          deleteDoc(doc(db, 'generations', item.id)).catch((error) => {
+            console.error('Failed to delete expired history item:', error);
+          }),
+        ));
+      }
+    };
+
+    const cachedHistoryItems = readHistoryItemsFromCache(currentUser.uid);
+    if (cachedHistoryItems.length > 0) {
+      setHistoryItems(cachedHistoryItems);
+    }
+
     const userRef = doc(db, 'users', currentUser.uid);
     const unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
       if (!snapshot.exists()) {
@@ -4218,29 +4353,29 @@ const App: React.FC = () => {
       where('uid', '==', currentUser.uid),
       orderBy('createdAt', 'desc'),
     );
+
+    void getDocsFromCache(historyQuery)
+      .then((snapshot) => {
+        if (snapshot.empty) {
+          return;
+        }
+
+        const cachedItems = snapshot.docs.map((historyDoc) => ({
+          id: historyDoc.id,
+          ...(historyDoc.data() as Omit<GenerationRecord, 'id'>),
+        }));
+        applyHistoryItems(cachedItems);
+      })
+      .catch(() => {
+        // Firestore cache may be empty on first load.
+      });
+
     const unsubscribeHistory = onSnapshot(historyQuery, (snapshot) => {
       const nextItems = snapshot.docs.map((historyDoc) => ({
         id: historyDoc.id,
         ...(historyDoc.data() as Omit<GenerationRecord, 'id'>),
       }));
-      const now = Date.now();
-      const expiredItems = nextItems.filter((item) => {
-        const expiresAt = getHistoryExpiryMillis(item);
-        return typeof expiresAt === 'number' && expiresAt <= now;
-      });
-
-      if (expiredItems.length > 0) {
-        void Promise.all(expiredItems.map((item) =>
-          deleteDoc(doc(db, 'generations', item.id)).catch((error) => {
-            console.error('Failed to delete expired history item:', error);
-          }),
-        ));
-      }
-
-      setHistoryItems(nextItems.filter((item) => {
-        const expiresAt = getHistoryExpiryMillis(item);
-        return !(typeof expiresAt === 'number' && expiresAt <= now);
-      }));
+      applyHistoryItems(nextItems);
     });
 
     return () => {
@@ -6249,51 +6384,30 @@ const App: React.FC = () => {
             )}
             {currentPage === 'about' && (
               <article className="page-article about-visual-article">
-                <div className="howto-visual-header">
+                <div className="howto-visual-header about-rich-header">
                   <span className="howto-visual-eyebrow">{aboutVisualCopy.eyebrow}</span>
                   <h2>{aboutVisualCopy.title}</h2>
                   <p>{aboutVisualCopy.body}</p>
                 </div>
-                <div className="about-visual-grid">
-                  <div className="howto-visual-flow about-visual-flow">
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">1</span>
-                        <strong>{aboutVisualCopy.petLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.petLabel}</span>
-                        <img src={guideFixedPet} alt={aboutVisualCopy.petLabel} loading="lazy" />
-                      </div>
-                    </article>
-                    <div className="howto-flow-arrow">→</div>
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">2</span>
-                        <strong>{aboutVisualCopy.outfitLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.outfitLabel}</span>
-                        <img src={guideFixedCloth} alt={aboutVisualCopy.outfitLabel} loading="lazy" />
-                      </div>
-                    </article>
-                    <div className="howto-flow-arrow">→</div>
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">3</span>
-                        <strong>{aboutVisualCopy.resultLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{aboutVisualCopy.resultLabel}</span>
-                        <img src={guideFixedResult} alt={aboutVisualCopy.resultLabel} loading="lazy" />
-                      </div>
-                    </article>
-                  </div>
+                <div className="about-spotlight-strip">
+                  {aboutVisualCopy.spotlight.map((item) => (
+                    <div key={item} className="about-spotlight-chip">{item}</div>
+                  ))}
+                </div>
+                <div className="about-rich-grid">
                   <div className="about-story-card-grid">
                     {aboutVisualCopy.cards.map((card) => (
                       <article key={card.title} className="compact-info-card about-story-card">
                         <h3>{card.title}</h3>
                         <p>{card.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                  <div className="about-depth-stack">
+                    {aboutVisualCopy.sections.map((section) => (
+                      <article key={section.title} className="about-depth-card">
+                        <h3>{section.title}</h3>
+                        <p>{section.body}</p>
                       </article>
                     ))}
                   </div>
@@ -6303,49 +6417,31 @@ const App: React.FC = () => {
 
             {currentPage === 'fashion-technology' && (
               <article className="page-article about-visual-article">
-                <div className="howto-visual-header">
+                <div className="howto-visual-header about-rich-header">
                   <span className="howto-visual-eyebrow">{styleGuideVisualCopy.eyebrow}</span>
                   <h2>{styleGuideVisualCopy.title}</h2>
                   <p>{styleGuideVisualCopy.body}</p>
                 </div>
-                <div className="about-visual-grid">
-                  <div className="howto-visual-flow about-visual-flow">
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">1</span>
-                        <strong>{styleGuideVisualCopy.petLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.petLabel}</span>
-                        <img src={guideFixedPet} alt={styleGuideVisualCopy.petLabel} loading="lazy" />
-                      </div>
-                    </article>
-                    <div className="howto-flow-arrow">→</div>
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">2</span>
-                        <strong>{styleGuideVisualCopy.outfitLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.outfitLabel}</span>
-                        <img src={guideFixedCloth} alt={styleGuideVisualCopy.outfitLabel} loading="lazy" />
-                      </div>
-                    </article>
-                    <div className="howto-flow-arrow">→</div>
-                    <article className="howto-visual-stage">
-                      <div className="howto-visual-stage-header">
-                        <span className="howto-stage-badge">3</span>
-                        <strong>{styleGuideVisualCopy.resultLabel}</strong>
-                      </div>
-                      <div className="howto-stage-image-card">
-                        <span className="howto-stage-chip howto-stage-chip-static">{styleGuideVisualCopy.resultLabel}</span>
-                        <img src={guideFixedResult} alt={styleGuideVisualCopy.resultLabel} loading="lazy" />
-                      </div>
-                    </article>
-                  </div>
-                  <div className="about-story-card-grid">
+                <div className="style-guide-layout">
+                  <article className="style-guide-checklist-card">
+                    <h3>{styleGuideVisualCopy.checklistTitle}</h3>
+                    <ul className="style-guide-checklist">
+                      {styleGuideVisualCopy.checklist.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </article>
+                  <div className="about-story-card-grid style-guide-card-grid">
                     {styleGuideVisualCopy.cards.map((card) => (
                       <article key={card.title} className="compact-info-card about-story-card">
+                        <h3>{card.title}</h3>
+                        <p>{card.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                  <div className="style-guide-warning-grid">
+                    {styleGuideVisualCopy.wrongReads.map((card) => (
+                      <article key={card.title} className="style-guide-warning-card">
                         <h3>{card.title}</h3>
                         <p>{card.body}</p>
                       </article>
@@ -6355,7 +6451,7 @@ const App: React.FC = () => {
               </article>
             )}
 
-            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPageCopy?.sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPage !== 'about' && currentPage !== 'fashion-technology' && currentPage !== 'sample-friends' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -6438,9 +6534,22 @@ const App: React.FC = () => {
                   <h2>{landingContent.sampleOutfits.breedTitle}</h2>
                   <p>{landingContent.sampleOutfits.breedBody}</p>
                 </article>
+                <div className="sample-outfit-filter-bar sample-friend-filter-bar" role="tablist" aria-label={landingContent.sampleOutfits.breedTitle}>
+                  {sampleFriendFilterOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      className={`sample-outfit-filter-tab ${selectedSampleFriendCategory === option.id ? 'is-active' : ''}`}
+                      onClick={() => setSelectedSampleFriendCategory(option.id)}
+                      role="tab"
+                      aria-selected={selectedSampleFriendCategory === option.id}
+                      type="button"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="sample-friend-thumbnail-grid">
-                  {petBreedGuideGroups.flatMap((group) =>
-                    group.guides.map((guide) => (
+                  {filteredPetBreedGuides.map(({ group, guide }) => (
                       <button
                         key={guide.id}
                         className="sample-breed-card sample-friend-card"
@@ -6455,8 +6564,7 @@ const App: React.FC = () => {
                           <strong>{guide.breedLabel}</strong>
                         </div>
                       </button>
-                    )),
-                  )}
+                    ))}
                 </div>
               </>
             )}
@@ -6724,26 +6832,43 @@ const App: React.FC = () => {
                   currentUser={currentUser}
                   userProfile={userProfile}
                   currentCredits={currentCredits}
-                  locale={lang}
-                  historyItems={historyItems}
-                  preservedHistoryCount={preservedHistoryCount}
-                  historyPreserveLimit={PRESERVED_HISTORY_LIMIT}
                   isFirebaseConfigured={isFirebaseConfigured}
                   firebaseDisabledMessage={firebaseDisabledMessage}
                   isStartingCheckout={isStartingCheckout}
                   products={CREDIT_PRODUCTS}
                   copy={{ ...t, loginComingSoon: loginComingSoonLabel, pricingUi: pricingUiCopy }}
                   onLogin={() => openAuthModal('login')}
+                  onNavigateHistory={() => navigateToPage('history')}
                   onNavigateSiteManagement={openAdminModal}
                   onNavigateTerms={() => navigateToPage('terms')}
                   onStartCheckout={(productId) => { void handleStartCheckout(productId); }}
                   formatTimestampLabel={formatTimestampLabel}
-                  onOpenHistoryItem={(item) => { void handleOpenHistoryItem(item); }}
-                  onToggleHistoryPreserve={(item) => { void handleToggleHistoryPreserve(item); }}
-                  onDownloadHistoryItem={(item) => { void handleDownloadHistoryItem(item); }}
-                  onDeleteHistoryItem={(item) => { void handleDeleteHistoryItem(item); }}
                 />
               </Suspense>
+            )}
+            {currentPage === 'history' && (
+              currentUser ? (
+                <CreationHistoryPanel
+                  inlineDetail
+                  items={historyItems}
+                  locale={lang}
+                  copy={t}
+                  preservedCount={preservedHistoryCount}
+                  maxPreserved={PRESERVED_HISTORY_LIMIT}
+                  onTogglePreserve={(item) => { void handleToggleHistoryPreserve(item); }}
+                  onDelete={(item) => { void handleDeleteHistoryItem(item); }}
+                />
+              ) : (
+                <article className="page-article">
+                  <h2>{t.historyTitle}</h2>
+                  <p>{firebaseDisabledMessage || t.authRequired}</p>
+                  {isFirebaseConfigured ? (
+                    <button className="generate-btn auth-inline-btn" onClick={() => openAuthModal('login')} type="button">
+                      {t.login}
+                    </button>
+                  ) : null}
+                </article>
+              )
             )}
             {currentPage === 'how-it-works' && (
               <Suspense fallback={lazyPageFallback}>

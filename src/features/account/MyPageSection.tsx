@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { callUserPaymentHistory } from '../../lib/api/hamdeva';
-import type { CheckoutProductId, GenerationRecord, PaymentLogRecord, UserProfile } from '../../types/hamdeva';
-import CreationHistoryPanel from '../mypage/CreationHistoryPanel';
+import type { CheckoutProductId, PaymentLogRecord, UserProfile } from '../../types/hamdeva';
 
 const ADMIN_EMAIL = 'dlgksxk@gmail.com';
 
@@ -42,9 +41,6 @@ interface MyPageSectionProps {
   userProfile: UserProfile | null;
   currentCredits: number;
   locale: string;
-  historyItems: GenerationRecord[];
-  preservedHistoryCount: number;
-  historyPreserveLimit: number;
   isFirebaseConfigured: boolean;
   firebaseDisabledMessage: string | null;
   isStartingCheckout: CheckoutProductId | null;
@@ -63,13 +59,10 @@ interface MyPageSectionProps {
   copy: Record<string, any>;
   onLogin: () => void;
   onNavigateSiteManagement: () => void;
+  onNavigateHistory: () => void;
   onNavigateTerms: () => void;
   onStartCheckout: (productId: CheckoutProductId) => void;
   formatTimestampLabel: (value?: any) => string;
-  onOpenHistoryItem: (item: GenerationRecord) => void;
-  onToggleHistoryPreserve: (item: GenerationRecord) => void;
-  onDownloadHistoryItem: (item: GenerationRecord) => void;
-  onDeleteHistoryItem: (item: GenerationRecord) => void;
 }
 
 const MyPageModalFrame: React.FC<{
@@ -111,7 +104,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
   userProfile,
   currentCredits,
-  locale,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -119,16 +111,10 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   copy,
   onLogin,
   onNavigateSiteManagement,
+  onNavigateHistory,
   onNavigateTerms: _onNavigateTerms,
   onStartCheckout,
   formatTimestampLabel,
-  historyItems,
-  preservedHistoryCount,
-  historyPreserveLimit,
-  onOpenHistoryItem: _onOpenHistoryItem,
-  onToggleHistoryPreserve,
-  onDownloadHistoryItem: _onDownloadHistoryItem,
-  onDeleteHistoryItem,
 }) => {
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<PaymentLogRecord[]>([]);
@@ -207,6 +193,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
               <p className="admin-section-helper">{copy.currentCredits(currentCredits)}</p>
             </div>
             <div className="credit-cta-actions">
+              <button className="outline-btn auth-inline-btn" onClick={onNavigateHistory} type="button">
+                {copy.historyTitle}
+              </button>
               <button className="outline-btn auth-inline-btn" onClick={openPaymentHistory} type="button">
                 {copy.paymentHistoryButton}
               </button>
@@ -274,17 +263,6 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
           </div>
         </MyPageModalFrame>
       ) : null}
-      {currentUser && (
-        <CreationHistoryPanel
-          items={historyItems}
-          locale={locale}
-          copy={copy}
-          preservedCount={preservedHistoryCount}
-          maxPreserved={historyPreserveLimit}
-          onTogglePreserve={onToggleHistoryPreserve}
-          onDelete={onDeleteHistoryItem}
-        />
-      )}
       {currentUser && (
         <article className="page-article">
           <h3>{copy.chargeCredits}</h3>

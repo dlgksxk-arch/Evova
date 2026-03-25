@@ -9,6 +9,7 @@ interface CreationHistoryPanelProps {
   copy: Record<string, any>;
   onTogglePreserve: (item: GenerationRecord) => Promise<void> | void;
   onDelete: (item: GenerationRecord) => Promise<void> | void;
+  inlineDetail?: boolean;
 }
 
 const IMAGE_LOAD_MIN_MS = 400;
@@ -46,8 +47,18 @@ const getHistoryPagerCopy = (locale: string) => {
 };
 
 const getTimestampMillis = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
   if (!value || typeof value !== 'object') {
     return null;
+  }
+  if ('seconds' in value && typeof (value as { seconds?: unknown }).seconds === 'number') {
+    const seconds = (value as { seconds: number }).seconds;
+    const nanoseconds = 'nanoseconds' in value && typeof (value as { nanoseconds?: unknown }).nanoseconds === 'number'
+      ? (value as { nanoseconds: number }).nanoseconds
+      : 0;
+    return (seconds * 1000) + Math.floor(nanoseconds / 1_000_000);
   }
   if ('toMillis' in value && typeof (value as { toMillis?: unknown }).toMillis === 'function') {
     return (value as { toMillis: () => number }).toMillis();
@@ -93,6 +104,22 @@ const downloadFile = (url: string, filename: string) => {
 const inferFileExtension = (item: GenerationRecord): string => {
   const match = item.imageUrl?.match(/\.([a-z0-9]+)(?:\?|$)/i);
   return match?.[1] || 'png';
+};
+
+const getTouchDistance = (touchA: Touch, touchB: Touch): number => {
+  const deltaX = touchA.clientX - touchB.clientX;
+  const deltaY = touchA.clientY - touchB.clientY;
+  return Math.hypot(deltaX, deltaY);
+};
+
+const preloadImage = (src?: string | null) => {
+  if (!src) {
+    return;
+  }
+
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = src;
 };
 
 const renderSocialIcon = (kind: 'link' | 'download') => {
@@ -206,6 +233,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   copy,
   onTogglePreserve,
   onDelete,
+  inlineDetail = false,
 }) => {
   const [submitting, setSubmitting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GenerationRecord | null>(null);
@@ -217,7 +245,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const [pendingArchiveSelectionId, setPendingArchiveSelectionId] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
   const [showUnarchiveWarning, setShowUnarchiveWarning] = useState(false);
+  const [swipeOffsetY, setSwipeOffsetY] = useState(0);
   const loadingStartedAtRef = useRef(0);
+  const pinchDistanceRef = useRef<number | null>(null);
+  const pinchZoomRef = useRef(1);
+  const swipeStartYRef = useRef<number | null>(null);
   const historyCopy = getHistoryCopy(locale);
   const pagerCopy = getHistoryPagerCopy(locale);
   const historyPageSize = isMobile ? MOBILE_HISTORY_PAGE_SIZE : DESKTOP_HISTORY_PAGE_SIZE;
@@ -225,18 +257,18 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const getGarmentLabel = (item: GenerationRecord) => getResolvedGarmentLabel(item, historyCopy);
   const previewCardStyle: React.CSSProperties = {
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: isMobile ? 14 : 16,
     background: 'color-mix(in srgb, var(--surface) 94%, transparent)',
-    padding: 8,
+    padding: isMobile ? 6 : 8,
     display: 'grid',
-    gap: 6,
+    gap: isMobile ? 4 : 6,
     boxShadow: 'var(--shadow-sm)',
   };
   const previewThumbStyle: React.CSSProperties = {
     width: '100%',
     aspectRatio: '1 / 1',
     objectFit: 'cover',
-    borderRadius: 12,
+    borderRadius: isMobile ? 10 : 12,
     border: '1px solid var(--border)',
     background: 'rgba(255,255,255,0.7)',
   };
@@ -295,11 +327,31 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setCurrentPage((prev) => Math.min(prev, Math.max(0, pageCount - 1)));
   }, [pageCount]);
 
+  useEffect(() => {
+    pagedItems.forEach((item) => {
+      preloadImage(item.personPreviewUrl);
+      preloadImage(item.garmentPreviewUrl);
+    });
+  }, [pagedItems]);
+
+  useEffect(() => {
+    if (!selectedItem) {
+      return;
+    }
+
+    preloadImage(selectedItem.personPreviewUrl);
+    preloadImage(selectedItem.garmentPreviewUrl);
+  }, [selectedItem]);
+
   const resetExpandedPanel = () => {
     setSelectedItem(null);
     setIsImageLoading(false);
     setIsImageReady(false);
     setZoom(1);
+    pinchDistanceRef.current = null;
+    pinchZoomRef.current = 1;
+    swipeStartYRef.current = null;
+    setSwipeOffsetY(0);
     setShareStatus(null);
     setShowUnarchiveWarning(false);
   };
@@ -392,6 +444,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
 
     setSelectedItem(item);
     setZoom(1);
+    setSwipeOffsetY(0);
     setShareStatus(null);
     startImageLoading();
   };
@@ -412,6 +465,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     setCurrentPage(Math.floor(nextIndex / historyPageSize));
     setSelectedItem(nextItem);
     setZoom(1);
+    setSwipeOffsetY(0);
     setShareStatus(null);
     startImageLoading();
   };
@@ -432,6 +486,63 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       console.error('Failed to copy history image link:', error);
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
+  };
+
+  const handleImageTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile) {
+      return;
+    }
+
+    if (event.touches.length === 1 && zoom <= 1.05) {
+      swipeStartYRef.current = event.touches[0].clientY;
+      return;
+    }
+
+    if (event.touches.length < 2) {
+      return;
+    }
+
+    pinchDistanceRef.current = getTouchDistance(event.touches[0], event.touches[1]);
+    pinchZoomRef.current = zoom;
+    swipeStartYRef.current = null;
+  };
+
+  const handleImageTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile) {
+      return;
+    }
+
+    if (event.touches.length === 1 && swipeStartYRef.current !== null && zoom <= 1.05) {
+      const deltaY = event.touches[0].clientY - swipeStartYRef.current;
+      if (deltaY > 0) {
+        setSwipeOffsetY(Math.min(160, deltaY));
+      }
+      return;
+    }
+
+    if (event.touches.length < 2 || !pinchDistanceRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextDistance = getTouchDistance(event.touches[0], event.touches[1]);
+    const scaleRatio = nextDistance / pinchDistanceRef.current;
+    const nextZoom = Math.min(2.1, Math.max(0.85, Number((pinchZoomRef.current * scaleRatio).toFixed(2))));
+    setZoom(nextZoom);
+  };
+
+  const handleImageTouchEnd = () => {
+    if (swipeStartYRef.current !== null) {
+      if (swipeOffsetY > 88) {
+        resetExpandedPanel();
+        return;
+      }
+      swipeStartYRef.current = null;
+      setSwipeOffsetY(0);
+    }
+
+    pinchDistanceRef.current = null;
+    pinchZoomRef.current = zoom;
   };
 
   useEffect(() => {
@@ -471,12 +582,314 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [historyPageSize, selectedItem, selectedVisibleIndex, visibleItems]);
 
+  const renderSelectedDetailShell = (buttonLabel: string, shellClassName: string, useModalMobileShell = false) => (
+    <div
+      className={shellClassName}
+      role="dialog"
+      aria-modal={!inlineDetail}
+      aria-label={copy.historyTitle}
+      style={!inlineDetail && useModalMobileShell ? {
+        transform: swipeOffsetY > 0 ? `translateY(${swipeOffsetY}px)` : undefined,
+        transition: swipeOffsetY > 0 ? 'none' : 'transform 180ms ease',
+      } : undefined}
+    >
+      <div className="history-modal-header">
+        <div className="history-modal-header-copy">
+          <strong>
+            [{formatDateTime(selectedItem?.createdAt, locale)}] IMAGE{selectedItem && isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
+          </strong>
+          <p>{copy.historyExpiresAt}: {selectedItem && isPreservedItem(selectedItem) ? copy.historyPreservedForever : formatDateTime(selectedItem?.expiresAt, locale)}</p>
+          {!isMobile && selectedItem ? <p>{historyCopy.personLabel}: {getPersonLabel(selectedItem)}</p> : null}
+          {!isMobile && selectedItem ? <p>{historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}</p> : null}
+        </div>
+        <button
+          className="outline-btn auth-inline-btn"
+          disabled={submitting}
+          onClick={resetExpandedPanel}
+          type="button"
+        >
+          {buttonLabel}
+        </button>
+      </div>
+
+      {!isMobile ? (
+        <div className="history-modal-toolbar">
+          <button
+            className="outline-btn auth-inline-btn"
+            disabled={zoom <= 0.75}
+            onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
+            type="button"
+          >
+            {copy.historyZoomOut}
+          </button>
+          <button
+            className="outline-btn auth-inline-btn"
+            disabled={zoom === 1}
+            onClick={() => setZoom(1)}
+            type="button"
+          >
+            {copy.historyZoomReset}
+          </button>
+          <button
+            className="outline-btn auth-inline-btn"
+            disabled={zoom >= 2}
+            onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
+            type="button"
+          >
+            {copy.historyZoomIn}
+          </button>
+        </div>
+      ) : null}
+
+      <div
+        className="history-modal-body"
+        onWheel={(event) => {
+          if (event.ctrlKey) {
+            event.preventDefault();
+          }
+        }}
+      >
+        <div className={`history-modal-grid ${isMobile ? 'is-mobile' : ''}`}>
+          <div className="history-modal-inputs">
+            <div className="history-input-card" style={previewCardStyle}>
+              <strong>{historyCopy.personLabel}</strong>
+              {selectedItem?.personPreviewUrl ? (
+                <img
+                  className="history-input-thumb"
+                  src={selectedItem.personPreviewUrl}
+                  alt={historyCopy.personLabel}
+                  decoding="async"
+                  loading="eager"
+                  style={{ ...previewThumbStyle }}
+                />
+              ) : (
+                <div className="history-input-thumb history-input-thumb-fallback" style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                  {selectedItem ? getPersonLabel(selectedItem) : ''}
+                </div>
+              )}
+              <span className="history-input-caption" style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                {selectedItem ? getPersonLabel(selectedItem) : ''}
+              </span>
+            </div>
+            <div className="history-input-card" style={previewCardStyle}>
+              <strong>{historyCopy.garmentLabel}</strong>
+              {selectedItem?.garmentPreviewUrl ? (
+                <img
+                  className="history-input-thumb"
+                  src={selectedItem.garmentPreviewUrl}
+                  alt={historyCopy.garmentLabel}
+                  decoding="async"
+                  loading="eager"
+                  style={{ ...previewThumbStyle }}
+                />
+              ) : (
+                <div className="history-input-thumb history-input-thumb-fallback" style={{ ...previewThumbStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
+                  {selectedItem ? getGarmentLabel(selectedItem) : ''}
+                </div>
+              )}
+              <span className="history-input-caption" style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                {selectedItem ? getGarmentLabel(selectedItem) : ''}
+              </span>
+            </div>
+            {isMobile ? (
+              <div className="history-input-action-stack">
+                <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
+                  {renderSocialIcon('link')}
+                  Link
+                </button>
+                <button
+                  className="download-btn auth-inline-btn history-action-btn"
+                  disabled={!selectedItem?.imageUrl}
+                  onClick={handleDownloadSelectedItem}
+                  type="button"
+                >
+                  {renderSocialIcon('download')}
+                  {copy.historyDownload}
+                </button>
+                <button
+                  className={isSelectedItemPreserved ? 'outline-btn auth-inline-btn history-action-btn active' : 'generate-btn auth-inline-btn history-action-btn'}
+                  disabled={submitting}
+                  onClick={() => {
+                    if (!isSelectedItemPreserved && !canArchiveSelectedItem) {
+                      alert(copy.historyArchiveLimit(maxPreserved));
+                      return;
+                    }
+                    if (isSelectedItemPreserved && selectedItem && isPastBaseRetention(selectedItem)) {
+                      setShowUnarchiveWarning(true);
+                      return;
+                    }
+                    void handleArchive();
+                  }}
+                  type="button"
+                >
+                  {isSelectedItemPreserved ? (copy.historyUnarchive ?? copy.historyArchive) : copy.historyArchive}
+                </button>
+                <button
+                  className="outline-btn auth-inline-btn history-action-btn danger"
+                  disabled={submitting}
+                  onClick={() => { void handleDelete(); }}
+                  type="button"
+                >
+                  {submitting ? copy.historyProcessing : copy.historyDelete}
+                </button>
+                {shareStatus ? (
+                  <div className="history-selected-share-status history-selected-share-status-mobile">
+                    {shareStatus}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div
+            className="history-selected-result-card"
+            style={{
+              ...previewCardStyle,
+              minHeight: isMobile ? undefined : '100%',
+              height: isMobile ? 'auto' : undefined,
+              alignContent: isMobile ? 'start' : undefined,
+            }}
+          >
+            {!isMobile ? <strong>{historyCopy.resultLabel}</strong> : null}
+            {!isMobile ? (
+              <span className="history-result-caption" style={{ color: 'var(--text-sub)', fontSize: 13 }}>
+                {historyCopy.resultPreview}
+              </span>
+            ) : null}
+            {isImageLoading || !isImageReady ? (
+              <div style={{ minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
+                {copy.historyLoading}
+              </div>
+            ) : null}
+            <div className={`history-selected-result-layout ${isMobile ? 'is-mobile' : ''}`}>
+              <div
+                className={`history-selected-image-shell ${isMobile ? 'is-mobile' : ''}`}
+                onTouchEnd={handleImageTouchEnd}
+                onTouchMove={handleImageTouchMove}
+                onTouchStart={handleImageTouchStart}
+                style={{
+                  width: '100%',
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  borderRadius: isMobile ? 14 : 16,
+                  padding: isMobile ? 4 : 10,
+                  background: isMobile ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.35)',
+                  height: isMobile ? 'auto' : 'min(54vh, 520px)',
+                  minHeight: isMobile ? 'auto' : 360,
+                  maxHeight: isMobile ? 'calc(100dvh - 240px)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  touchAction: isMobile ? 'none' : 'auto',
+                }}
+              >
+                <div className="history-selected-image-nav">
+                  <button
+                    className="outline-btn auth-inline-btn history-image-nav-btn"
+                    disabled={!hasPreviousSelectedItem}
+                    onClick={() => navigateSelectedItem('previous')}
+                    type="button"
+                  >
+                    ‹
+                  </button>
+                  <span className="history-image-nav-indicator">
+                    {selectedVisibleIndex + 1} / {visibleItems.length}
+                  </span>
+                  <button
+                    className="outline-btn auth-inline-btn history-image-nav-btn"
+                    disabled={!hasNextSelectedItem}
+                    onClick={() => navigateSelectedItem('next')}
+                    type="button"
+                  >
+                    ›
+                  </button>
+                </div>
+                <img
+                  alt={copy.resultPreviewAlt}
+                  onLoad={finishImageLoading}
+                  draggable={false}
+                  src={selectedItem?.imageUrl || ''}
+                  style={{
+                    display: 'block',
+                    margin: '0 auto',
+                    width: '100%',
+                    maxWidth: '100%',
+                    maxHeight: isMobile ? 'calc(100dvh - 248px)' : '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    userSelect: 'none',
+                    visibility: isImageLoading ? 'hidden' : 'visible',
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    transition: 'transform 180ms ease',
+                    touchAction: isMobile ? 'none' : 'auto',
+                  }}
+                />
+              </div>
+              {!isMobile ? (
+                <aside className="history-selected-sidebar">
+                  <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
+                    {renderSocialIcon('link')}
+                    Link
+                  </button>
+                  <button
+                    className="download-btn auth-inline-btn history-action-btn"
+                    disabled={!selectedItem?.imageUrl}
+                    onClick={handleDownloadSelectedItem}
+                    type="button"
+                  >
+                    {renderSocialIcon('download')}
+                    {copy.historyDownload}
+                  </button>
+                  {shareStatus ? (
+                    <div className="history-selected-share-status">
+                      {shareStatus}
+                    </div>
+                  ) : null}
+                </aside>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`history-modal-footer ${isMobile ? 'is-mobile-hidden' : ''}`}>
+        <button
+          className={isSelectedItemPreserved ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
+          disabled={submitting}
+          onClick={() => {
+            if (!isSelectedItemPreserved && !canArchiveSelectedItem) {
+              alert(copy.historyArchiveLimit(maxPreserved));
+              return;
+            }
+            if (isSelectedItemPreserved && selectedItem && isPastBaseRetention(selectedItem)) {
+              setShowUnarchiveWarning(true);
+              return;
+            }
+            void handleArchive();
+          }}
+          type="button"
+        >
+          {isSelectedItemPreserved ? (copy.historyUnarchive ?? copy.historyArchive) : copy.historyArchive}
+        </button>
+        <button
+          className="outline-btn auth-inline-btn history-modal-delete-btn"
+          disabled={submitting}
+          onClick={() => { void handleDelete(); }}
+          type="button"
+        >
+          {submitting ? copy.historyProcessing : copy.historyDelete}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <article className="page-article">
       <h3>{copy.historyTitle}</h3>
       <p className="history-guide-copy">{copy.historyGuide}</p>
       {!hasVisibleItems ? <p>{copy.historyEmpty}</p> : null}
-      {hasVisibleItems ? (
+      {hasVisibleItems && (!inlineDetail || !selectedItem) ? (
         <>
           <div className="creation-history-grid">
             {pagedItems.map((item) => {
@@ -533,261 +946,21 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
         </>
       ) : null}
 
-      {selectedItem ? (
-        <div className="modal-backdrop" onClick={resetExpandedPanel}>
-          <div
-            className="history-modal-shell"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label={copy.historyTitle}
-          >
-            <div className="history-modal-header">
-              <div className="history-modal-header-copy">
-                <strong>
-                  [{formatDateTime(selectedItem.createdAt, locale)}] IMAGE{isPreservedItem(selectedItem) ? ` (${copy.historyArchived})` : ''}
-                </strong>
-                <p>{copy.historyExpiresAt}: {isPreservedItem(selectedItem) ? copy.historyPreservedForever : formatDateTime(selectedItem.expiresAt, locale)}</p>
-                <p>{historyCopy.personLabel}: {getPersonLabel(selectedItem)}</p>
-                <p>{historyCopy.garmentLabel}: {getGarmentLabel(selectedItem)}</p>
-              </div>
-              <button
-                className="outline-btn auth-inline-btn"
-                disabled={submitting}
-                onClick={resetExpandedPanel}
-                type="button"
-              >
-                {copy.close}
-              </button>
-            </div>
+      {selectedItem && inlineDetail ? (
+        renderSelectedDetailShell(copy.historyBackToList ?? copy.close, 'history-modal-shell history-inline-shell')
+      ) : null}
 
-            <div className="history-modal-toolbar">
-              <button
-                className="outline-btn auth-inline-btn"
-                disabled={zoom <= 0.75}
-                onClick={() => setZoom((prev) => Math.max(0.75, Number((prev - 0.25).toFixed(2))))}
-                type="button"
-              >
-                {copy.historyZoomOut}
-              </button>
-              <button
-                className="outline-btn auth-inline-btn"
-                disabled={zoom === 1}
-                onClick={() => setZoom(1)}
-                type="button"
-              >
-                {copy.historyZoomReset}
-              </button>
-              <button
-                className="outline-btn auth-inline-btn"
-                disabled={zoom >= 2}
-                onClick={() => setZoom((prev) => Math.min(2, Number((prev + 0.25).toFixed(2))))}
-                type="button"
-              >
-                {copy.historyZoomIn}
-              </button>
-            </div>
-
-            <div
-              className="history-modal-body"
-              onWheel={(event) => {
-                if (event.ctrlKey) {
-                  event.preventDefault();
-                }
-              }}
-            >
-              <div className={`history-modal-grid ${isMobile ? 'is-mobile' : ''}`}>
-                <div className="history-modal-inputs">
-                  <div style={previewCardStyle}>
-                    <strong>{historyCopy.personLabel}</strong>
-                    {selectedItem.personPreviewUrl ? (
-                      <img
-                        src={selectedItem.personPreviewUrl}
-                        alt={historyCopy.personLabel}
-                        style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto' }}
-                      />
-                    ) : (
-                      <div style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                        {getPersonLabel(selectedItem)}
-                      </div>
-                    )}
-                    <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                      {getPersonLabel(selectedItem)}
-                    </span>
-                  </div>
-                  <div style={previewCardStyle}>
-                    <strong>{historyCopy.garmentLabel}</strong>
-                    {selectedItem.garmentPreviewUrl ? (
-                      <img
-                        src={selectedItem.garmentPreviewUrl}
-                        alt={historyCopy.garmentLabel}
-                        style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto' }}
-                      />
-                    ) : (
-                      <div style={{ ...previewThumbStyle, maxWidth: '52%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)', textAlign: 'center', padding: 12 }}>
-                        {getGarmentLabel(selectedItem)}
-                      </div>
-                    )}
-                    <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                      {getGarmentLabel(selectedItem)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="history-selected-result-card" style={{ ...previewCardStyle, minHeight: isMobile ? undefined : '100%' }}>
-                  <strong>{historyCopy.resultLabel}</strong>
-                  <span style={{ color: 'var(--text-sub)', fontSize: 13 }}>
-                    {historyCopy.resultPreview}
-                  </span>
-                  {isImageLoading || !isImageReady ? (
-                    <div style={{ minHeight: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-sub)' }}>
-                      {copy.historyLoading}
-                    </div>
-                  ) : null}
-                  <div className={`history-selected-result-layout ${isMobile ? 'is-mobile' : ''}`}>
-                    <div
-                      className="history-selected-image-shell"
-                      style={{
-                        width: '100%',
-                        overflow: 'hidden',
-                        border: '1px solid var(--border)',
-                        borderRadius: 16,
-                        padding: isMobile ? 8 : 10,
-                        background: 'rgba(255,255,255,0.35)',
-                        height: isMobile ? 'min(42vh, 340px)' : 'min(54vh, 520px)',
-                        minHeight: isMobile ? 180 : 360,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <div className="history-selected-image-nav">
-                        <button
-                          className="outline-btn auth-inline-btn history-image-nav-btn"
-                          disabled={!hasPreviousSelectedItem}
-                          onClick={() => navigateSelectedItem('previous')}
-                          type="button"
-                        >
-                          ‹
-                        </button>
-                        <span className="history-image-nav-indicator">
-                          {selectedVisibleIndex + 1} / {visibleItems.length}
-                        </span>
-                        <button
-                          className="outline-btn auth-inline-btn history-image-nav-btn"
-                          disabled={!hasNextSelectedItem}
-                          onClick={() => navigateSelectedItem('next')}
-                          type="button"
-                        >
-                          ›
-                        </button>
-                      </div>
-                      <img
-                        alt={copy.resultPreviewAlt}
-                        onLoad={finishImageLoading}
-                        draggable={false}
-                        src={selectedItem.imageUrl || ''}
-                        style={{
-                          display: 'block',
-                          margin: '0 auto',
-                          width: '100%',
-                          maxWidth: '100%',
-                          maxHeight: '100%',
-                          height: 'auto',
-                          objectFit: 'contain',
-                          userSelect: 'none',
-                          visibility: isImageLoading ? 'hidden' : 'visible',
-                          transform: `scale(${zoom})`,
-                          transformOrigin: 'center center',
-                          transition: 'transform 180ms ease',
-                        }}
-                      />
-                    </div>
-                    {!isMobile ? (
-                      <aside className="history-selected-sidebar">
-                        <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
-                          {renderSocialIcon('link')}
-                          Link
-                        </button>
-                        <button
-                          className="download-btn auth-inline-btn history-action-btn"
-                          disabled={!selectedItem.imageUrl}
-                          onClick={handleDownloadSelectedItem}
-                          type="button"
-                        >
-                          {renderSocialIcon('download')}
-                          {copy.historyDownload}
-                        </button>
-                        {shareStatus ? (
-                          <div className="history-selected-share-status">
-                            {shareStatus}
-                          </div>
-                        ) : null}
-                      </aside>
-                    ) : null}
-                  </div>
-                  {!isImageLoading ? (
-                    <div className="history-selected-zoom-hint" style={{ marginTop: 8, color: 'var(--text-sub)', fontSize: 13 }}>
-                      {copy.historyZoomHint}
-                    </div>
-                  ) : null}
-                </div>
-
-                {isMobile ? (
-                  <div className="history-modal-mobile-actions">
-                    <div className="history-actions" style={{ marginTop: 0 }}>
-                      <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
-                        {renderSocialIcon('link')}
-                        Link
-                      </button>
-                      <button
-                        className="download-btn auth-inline-btn history-action-btn"
-                        disabled={!selectedItem.imageUrl}
-                        onClick={handleDownloadSelectedItem}
-                        type="button"
-                      >
-                        {renderSocialIcon('download')}
-                        {copy.historyDownload}
-                      </button>
-                    </div>
-                    {shareStatus ? (
-                      <div className="history-selected-share-status history-selected-share-status-mobile">
-                        {shareStatus}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="history-modal-footer">
-              <button
-                className={isSelectedItemPreserved ? 'outline-btn auth-inline-btn' : 'generate-btn auth-inline-btn'}
-                disabled={submitting}
-                onClick={() => {
-                  if (!isSelectedItemPreserved && !canArchiveSelectedItem) {
-                    alert(copy.historyArchiveLimit(maxPreserved));
-                    return;
-                  }
-                  if (isSelectedItemPreserved && selectedItem && isPastBaseRetention(selectedItem)) {
-                    setShowUnarchiveWarning(true);
-                    return;
-                  }
-                  void handleArchive();
-                }}
-                type="button"
-              >
-                {isSelectedItemPreserved ? (copy.historyUnarchive ?? copy.historyArchive) : copy.historyArchive}
-              </button>
-              <button
-                className="outline-btn auth-inline-btn history-modal-delete-btn"
-                disabled={submitting}
-                onClick={() => { void handleDelete(); }}
-                type="button"
-              >
-                {submitting ? copy.historyProcessing : copy.historyDelete}
-              </button>
-            </div>
+      {selectedItem && !inlineDetail ? (
+        <div
+          className={`modal-backdrop ${isMobile ? 'history-modal-backdrop-mobile' : ''}`}
+          onClick={() => {
+            if (!isMobile) {
+              resetExpandedPanel();
+            }
+          }}
+        >
+          <div onClick={(event) => event.stopPropagation()}>
+            {renderSelectedDetailShell(copy.close, `history-modal-shell ${isMobile ? 'is-mobile' : ''}`, isMobile)}
           </div>
         </div>
       ) : null}
