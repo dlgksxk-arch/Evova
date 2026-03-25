@@ -1,9 +1,9 @@
 apply plugin: 'com.android.application'
 
-def releaseStoreFile = System.getenv("ANDROID_KEYSTORE_PATH")
-def releaseStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
-def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+def releaseStoreFile = System.getenv("ANDROID_KEYSTORE_PATH")?.trim()
+def releaseStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")?.trim()
+def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")?.trim()
+def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")?.trim()
 def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 def releaseVersionCode = (project.findProperty("versionCode") ?: "1").toString().toInteger()
 def releaseVersionName = (project.findProperty("versionName") ?: "0.1.0").toString()
