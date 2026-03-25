@@ -2,6 +2,14 @@
 
 Play Console 내부 테스트 업로드용 `AAB` 파일은 GitHub에서 만들 수 있습니다.
 
+## 0. 업로드 키가 없으면 먼저 만들기
+
+`Actions > Android Upload Keystore > Run workflow`
+
+완료되면 아티팩트 `hamdeva-upload-keystore` 를 내려받습니다.
+
+그 안에 있는 `github-actions-secrets.txt` 값을 아래 4개 GitHub Secrets로 옮기면 됩니다.
+
 ## 1. GitHub Secrets 4개 추가
 
 저장소 `Settings > Secrets and variables > Actions` 에 아래 값을 추가합니다.
