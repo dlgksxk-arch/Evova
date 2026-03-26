@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build && node scripts/generateStaticSnapshots.mjs",
     "build:preview": "VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev vite build && node scripts/generateStaticSnapshots.mjs",
-    "build:app": "npm run build",
+    "build:app": "npm run build && node scripts/pruneAppBundle.mjs",
     "cap:sync": "npm run build:app && npx cap sync android",
     "cap:open:android": "npx cap open android",
     "preview": "vite preview",

@@ -1,3 +1,5 @@
+import { resolveSampleAssetUrl } from '../lib/assets';
+
 export type ClothSampleCategory = 'female' | 'male' | 'future' | 'classic' | 'special';
 
 export interface ClothSampleOption {
@@ -57,7 +59,7 @@ const createSamples = (category: ClothSampleCategory, seeds: SampleSeed[]): Clot
   seeds.map((seed) => ({
     id: seed.id,
     label: seed.label,
-    image: `${SAMPLE_ASSET_BASE_PATH}/${category}/${seed.file}`,
+    image: resolveSampleAssetUrl(`${SAMPLE_ASSET_BASE_PATH}/${category}/${seed.file}`),
     category,
     country: seed.country,
     countryLabelKo: seed.countryLabelKo,

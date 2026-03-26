@@ -1,3 +1,5 @@
+import { resolveSampleAssetUrl } from '../lib/assets';
+
 export type FaceCategory = 'dog' | 'cat';
 
 export interface FaceSampleOption {
@@ -21,7 +23,7 @@ export interface PetBreedGuide {
 }
 
 const buildSampleUrl = (category: FaceCategory, filename: string) =>
-  `/sample/${category}/${encodeURIComponent(filename)}`;
+  resolveSampleAssetUrl(`/sample/${category}/${encodeURIComponent(filename)}`);
 
 const createFaceSamples = (category: FaceCategory, filenames: string[]): FaceSampleOption[] =>
   filenames.map((filename) => ({

@@ -1,4 +1,5 @@
 import type { LanguageCode } from '../constants/languages';
+import { resolveSampleAssetUrl } from '../lib/assets';
 
 type SupportedLandingLanguage = 'en' | 'ko' | 'ja' | 'zh';
 
@@ -122,11 +123,11 @@ export type LandingContent = {
 };
 
 const sharedSampleImages = {
-  hanbok: '/sample/cloth/female/2026-03-13-12-47-58-korea-trad-0.png',
-  qipao: '/sample/cloth/female/2026-03-13-12-55-32-china-trad-0.png',
-  kimono: '/sample/cloth/female/2026-03-13-12-51-42-japan-trad-0.png',
-  saree: '/sample/cloth/female/2026-03-13-13-14-07-india-trad-0.png',
-  dress: '/sample/cloth/female/2026-03-13-13-26-02-spain-trad-extra.png',
+  hanbok: resolveSampleAssetUrl('/sample/cloth/female/2026-03-13-12-47-58-korea-trad-0.png'),
+  qipao: resolveSampleAssetUrl('/sample/cloth/female/2026-03-13-12-55-32-china-trad-0.png'),
+  kimono: resolveSampleAssetUrl('/sample/cloth/female/2026-03-13-12-51-42-japan-trad-0.png'),
+  saree: resolveSampleAssetUrl('/sample/cloth/female/2026-03-13-13-14-07-india-trad-0.png'),
+  dress: resolveSampleAssetUrl('/sample/cloth/female/2026-03-13-13-26-02-spain-trad-extra.png'),
 };
 
 const landingContent: Record<SupportedLandingLanguage, LandingContent> = {

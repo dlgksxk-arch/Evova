@@ -46,6 +46,7 @@ import {
   callUploadShareImage,
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
+import { resolveSampleAssetUrl } from './lib/assets';
 import {
   acknowledgePlayBillingPurchase,
   consumePlayBillingPurchase,
@@ -160,6 +161,7 @@ const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_e128dc5e-1616-4bad-9fa1-59635f411959.png',
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
 ] as const;
+const HOME_SHOWCASE_RESULT_IMAGE_URLS = HOME_SHOWCASE_RESULT_IMAGES.map((imagePath) => resolveSampleAssetUrl(imagePath));
 const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
 const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
 const FOOTER_EDITORIAL_PAGES: SitePage[] = [
@@ -3715,7 +3717,7 @@ const App: React.FC = () => {
     : sampleOutfitCards.filter(({ sample }) => sample.category === selectedSampleOutfitCategory);
   const t = uiTranslations[lang];
   const homeShowcaseCopy = getHomeShowcaseCopy(lang);
-  const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGES.map((src, index) => ({
+  const homeShowcaseItems = HOME_SHOWCASE_RESULT_IMAGE_URLS.map((src, index) => ({
     src,
     alt: `${homeShowcaseCopy.imageAltPrefix} ${index + 1}`,
     variant: index % 6,
