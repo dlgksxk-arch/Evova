@@ -10,6 +10,7 @@ import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.QueryProductDetailsParams;
+import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.QueryPurchasesParams;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.JSArray;
@@ -228,20 +229,21 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             .setProductList(products)
             .build();
 
-        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
+        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsResult) -> {
             if (!isOk(billingResult)) {
                 call.reject(getBillingMessage(billingResult), String.valueOf(billingResult.getResponseCode()));
                 return;
             }
 
+            List<ProductDetails> productDetailsList = productDetailsResult == null
+                ? new ArrayList<>()
+                : productDetailsResult.getProductDetailsList();
             JSArray items = new JSArray();
             Map<String, ProductDetails> cache = getProductCache(productType);
             cache.clear();
-            if (productDetailsList != null) {
-                for (ProductDetails details : productDetailsList) {
-                    cache.put(details.getProductId(), details);
-                    items.put(toProductResult(details, productType));
-                }
+            for (ProductDetails details : productDetailsList) {
+                cache.put(details.getProductId(), details);
+                items.put(toProductResult(details, productType));
             }
 
             JSObject result = new JSObject();
@@ -277,20 +279,21 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             .setProductList(products)
             .build();
 
-        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
+        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsResult) -> {
             if (!isOk(billingResult)) {
                 call.reject(getBillingMessage(billingResult), String.valueOf(billingResult.getResponseCode()));
                 return;
             }
 
+            List<ProductDetails> productDetailsList = productDetailsResult == null
+                ? new ArrayList<>()
+                : productDetailsResult.getProductDetailsList();
             Map<String, ProductDetails> cache = getProductCache(productType);
             cache.clear();
-            if (productDetailsList != null) {
-                for (ProductDetails details : productDetailsList) {
-                    cache.put(details.getProductId(), details);
-                }
+            for (ProductDetails details : productDetailsList) {
+                cache.put(details.getProductId(), details);
             }
-            callback.onProducts(productDetailsList == null ? new ArrayList<>() : productDetailsList);
+            callback.onProducts(productDetailsList);
         });
     }
 
