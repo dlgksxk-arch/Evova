@@ -252,6 +252,20 @@ export interface CheckoutSessionStatusResponse {
   subscriptionPlan?: SubscriptionPlan;
 }
 
+export type NativePurchaseProductType = 'inapp' | 'subs';
+
+export interface NativePurchaseVerificationResponse {
+  success?: boolean;
+  paymentId?: string | null;
+  paidCredit?: number;
+  dailyCredit?: number | null;
+  paidCreditBalance?: number | null;
+  totalCreditBalance?: number | null;
+  isSubscribed?: boolean;
+  subscriptionPlan?: SubscriptionPlan;
+  alreadyProcessed?: boolean;
+ }
+
 export interface PublicResultRecord {
   id: string;
   uid?: string | null;

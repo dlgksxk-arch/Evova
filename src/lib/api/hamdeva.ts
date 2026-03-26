@@ -10,6 +10,8 @@ import type {
   CreditBootstrapResponse,
   CreditLogRecord,
   PaymentLogRecord,
+  NativePurchaseProductType,
+  NativePurchaseVerificationResponse,
   SubjectType,
   TryOnResponse,
   UserCreationRecord,
@@ -24,6 +26,7 @@ const BOOTSTRAP_ENDPOINT = apiUrl('/api/bootstrap');
 const CLASSIFY_SUBJECT_ENDPOINT = apiUrl('/api/classify-subject');
 const POLAR_CHECKOUT_ENDPOINT = apiUrl('/api/polar/checkout');
 const POLAR_SESSION_ENDPOINT = apiUrl('/api/polar/session');
+const PLAY_PURCHASE_VERIFY_ENDPOINT = apiUrl('/api/play/purchase/verify');
 const SHARE_IMAGE_ENDPOINT = apiUrl('/api/share-image');
 const CREATIONS_ENDPOINT = apiUrl('/api/creations');
 const USER_PAYMENT_HISTORY_ENDPOINT = apiUrl('/api/payments/me');
@@ -193,6 +196,34 @@ export const callCheckoutSessionStatus = async (payload: {
   }
 
   return await res.json() as CheckoutSessionStatusResponse;
+};
+
+export const callVerifyNativePurchase = async (payload: {
+  authToken: string;
+  productId: CheckoutProductId;
+  purchaseToken: string;
+  productType: NativePurchaseProductType;
+  orderId?: string | null;
+}): Promise<NativePurchaseVerificationResponse> => {
+  const res = await fetch(PLAY_PURCHASE_VERIFY_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${payload.authToken}`,
+    },
+    body: JSON.stringify({
+      productId: payload.productId,
+      purchaseToken: payload.purchaseToken,
+      productType: payload.productType,
+      orderId: payload.orderId ?? null,
+    }),
+  });
+
+  if (!res.ok) {
+    throw await parseApiError(res);
+  }
+
+  return await res.json() as NativePurchaseVerificationResponse;
 };
 
 export const callUploadShareImage = async (payload: {

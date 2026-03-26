@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanupExpiredCreations = exports.generateTryOn = exports.api = void 0;
 const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
+const google_auth_library_1 = require("google-auth-library");
 const sharp_1 = __importDefault(require("sharp"));
 const standardwebhooks_1 = require("standardwebhooks");
 const FIREBASE_STORAGE_BUCKET = process.env['APP_STORAGE_BUCKET']?.trim()
@@ -100,6 +101,10 @@ const GENERATED_RESPONSE_IMAGE_WIDTH = 1536;
 const HISTORY_RETENTION_DAYS = 15;
 const MAX_ARCHIVED_CREATIONS = 5;
 const POLAR_PROVIDER = 'polar';
+const GOOGLE_PLAY_PROVIDER = 'google_play';
+const GOOGLE_PLAY_PACKAGE_NAME = process.env['GOOGLE_PLAY_PACKAGE_NAME']?.trim() || 'com.hamdeva.app';
+const GOOGLE_PLAY_ANDROID_PUBLISHER_SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
+const GOOGLE_PLAY_API_BASE_URL = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications';
 const PAYMENT_CURRENCY = 'usd';
 const DEFAULT_ADMIN_GIFT_TITLE = '운영자의 선물이 도착했습니다';
 const DEFAULT_ADMIN_GIFT_MESSAGE = '운영팀이 회원님께 특별 크레딧을 지급했습니다.';
@@ -1818,6 +1823,46 @@ const getRequestStringHeaders = (req) => Object.entries(req.headers).reduce((acc
     }
     return acc;
 }, {});
+const isNativeBillingProductType = (value) => value === 'inapp' || value === 'subs';
+const isSubscriptionProductId = (productId) => productId === 'starter' || productId === 'popular' || productId === 'pro';
+const isGooglePlayProductActive = (purchase) => purchase.purchaseState === 0;
+const isGooglePlaySubscriptionActive = (purchase) => purchase.subscriptionState === 'SUBSCRIPTION_STATE_ACTIVE'
+    || purchase.subscriptionState === 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD'
+    || purchase.subscriptionState === 'SUBSCRIPTION_STATE_ON_HOLD';
+const getGooglePlayAccessToken = async () => {
+    const auth = new google_auth_library_1.GoogleAuth({
+        scopes: [GOOGLE_PLAY_ANDROID_PUBLISHER_SCOPE],
+    });
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
+    const token = typeof accessToken === 'string' ? accessToken : accessToken?.token;
+    if (!token) {
+        throw new Error(PAYMENT_CONFIG_ERROR);
+    }
+    return token;
+};
+const callGooglePlayApi = async (path) => {
+    const accessToken = await getGooglePlayAccessToken();
+    const response = await fetch(`${GOOGLE_PLAY_API_BASE_URL}/${encodeURIComponent(GOOGLE_PLAY_PACKAGE_NAME)}${path}`, {
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+        },
+    });
+    if (!response.ok) {
+        const errorBody = await response.text().catch(() => '');
+        functions.logger.error('Google Play API request failed', {
+            path,
+            status: response.status,
+            body: errorBody,
+        });
+        throw new Error(PAYMENT_CONFIG_ERROR);
+    }
+    return await response.json().catch(() => ({}));
+};
+const verifyGooglePlayProductPurchase = async (productId, purchaseToken) => await callGooglePlayApi(`/purchases/products/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`);
+const verifyGooglePlaySubscriptionPurchase = async (purchaseToken) => await callGooglePlayApi(`/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`);
 const upsertPendingPayment = async (params) => {
     const product = getPaymentProduct(params.productId);
     await db.collection('payments').doc(buildPaymentDocId(params.provider, params.providerPaymentId)).set({
@@ -2072,6 +2117,95 @@ const getCheckoutSessionStatus = async (user, sessionId) => {
         isSubscribed: account.isSubscribed,
         subscriptionPlan: account.subscriptionPlan,
     };
+};
+const handleVerifyNativePurchaseRequest = async (req, res) => {
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method Not Allowed' });
+        return;
+    }
+    const user = await requireAuthenticatedUser(req);
+    const { productId, purchaseToken, productType, orderId } = req.body;
+    if (!isPaymentProductId(productId) || !purchaseToken || !isNativeBillingProductType(productType)) {
+        res.status(400).json({ error: 'INVALID_PURCHASE' });
+        return;
+    }
+    if (productType === 'subs' && !isSubscriptionProductId(productId)) {
+        res.status(400).json({ error: 'INVALID_PRODUCT_TYPE' });
+        return;
+    }
+    if (productType === 'inapp' && isSubscriptionProductId(productId)) {
+        res.status(400).json({ error: 'INVALID_PRODUCT_TYPE' });
+        return;
+    }
+    let providerOrderId = typeof orderId === 'string' && orderId.trim() ? orderId.trim() : null;
+    let paidAt = null;
+    let rawPayload = null;
+    if (productType === 'inapp') {
+        const purchase = await verifyGooglePlayProductPurchase(productId, purchaseToken);
+        rawPayload = purchase;
+        if (!isGooglePlayProductActive(purchase)) {
+            res.status(409).json({ error: 'PURCHASE_NOT_COMPLETED' });
+            return;
+        }
+        providerOrderId = providerOrderId ?? purchase.orderId ?? null;
+        paidAt = typeof purchase.purchaseTimeMillis === 'string' ? Number(purchase.purchaseTimeMillis) : null;
+    }
+    else {
+        const purchase = await verifyGooglePlaySubscriptionPurchase(purchaseToken);
+        rawPayload = purchase;
+        const matchedLineItem = Array.isArray(purchase.lineItems)
+            ? purchase.lineItems.find((item) => item?.productId === productId)
+            : null;
+        if (!matchedLineItem || !isGooglePlaySubscriptionActive(purchase)) {
+            res.status(409).json({ error: 'PURCHASE_NOT_ACTIVE' });
+            return;
+        }
+        providerOrderId = providerOrderId ?? purchase.latestOrderId ?? null;
+        paidAt = purchase.startTime ?? null;
+    }
+    const paymentRef = db.collection('payments').doc(buildPaymentDocId(GOOGLE_PLAY_PROVIDER, purchaseToken));
+    const beforeSnapshot = await paymentRef.get();
+    const beforeData = beforeSnapshot.data() ?? {};
+    const alreadyProcessed = beforeData.status === 'paid';
+    await fulfillCreditPurchase({
+        provider: GOOGLE_PLAY_PROVIDER,
+        providerPaymentId: purchaseToken,
+        uid: user.uid,
+        productId,
+        providerOrderId,
+        checkoutSessionId: null,
+        currency: PAYMENT_CURRENCY,
+        amount: getPaymentProduct(productId).amountUsd,
+        paidAt,
+        rawPayload,
+    });
+    if (productType === 'subs') {
+        await db.collection('users').doc(user.uid).set({
+            googlePlaySubscription: {
+                productId,
+                purchaseToken,
+                providerOrderId: providerOrderId ?? null,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+        }, { merge: true });
+    }
+    const [paymentSnapshot, userSnapshot] = await Promise.all([
+        paymentRef.get(),
+        db.collection('users').doc(user.uid).get(),
+    ]);
+    const account = normalizeUserAccount(user.email, userSnapshot.data());
+    const paymentData = paymentSnapshot.data() ?? {};
+    res.json({
+        success: true,
+        paymentId: paymentSnapshot.id,
+        paidCredit: typeof paymentData.paidCredit === 'number' ? paymentData.paidCredit : getPaymentProduct(productId).paidCredit,
+        dailyCredit: account.dailyCredit,
+        paidCreditBalance: account.paidCredit,
+        totalCreditBalance: account.credits,
+        isSubscribed: account.isSubscribed,
+        subscriptionPlan: account.subscriptionPlan,
+        alreadyProcessed,
+    });
 };
 const handleCreateCheckoutSessionRequest = async (req, res) => {
     if (req.method !== 'POST') {
@@ -3799,6 +3933,15 @@ exports.api = functions
     if (normalizedPath === '/polar/session') {
         try {
             await handleCheckoutSessionStatusRequest(req, res);
+        }
+        catch (error) {
+            handleApiError(res, error, 500);
+        }
+        return;
+    }
+    if (normalizedPath === '/play/purchase/verify') {
+        try {
+            await handleVerifyNativePurchaseRequest(req, res);
         }
         catch (error) {
             handleApiError(res, error, 500);

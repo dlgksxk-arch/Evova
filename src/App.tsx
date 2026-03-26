@@ -40,11 +40,20 @@ import { getLandingContent } from './data/landingContent';
 import {
   callCreditBootstrap,
   callCreateCheckoutSession,
+  callVerifyNativePurchase,
   callSubjectClassifier,
   callTryOn,
   callUploadShareImage,
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
+import {
+  acknowledgePlayBillingPurchase,
+  consumePlayBillingPurchase,
+  getPlayBillingProducts,
+  isPlayBillingAvailable,
+  launchPlayBillingPurchase,
+  type PlayBillingProductType,
+} from './lib/native/playBilling';
 import { PUBLIC_LANGUAGE_OPTIONS, isAppSupportedLanguageCode, type LanguageCode } from './constants/languages';
 import {
   clothSampleOptions,
@@ -88,6 +97,7 @@ type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic
 const APP_VERSION = __APP_VERSION__;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
+const SUBSCRIPTION_PRODUCT_IDS = new Set<CheckoutProductId>(['starter', 'popular', 'pro']);
 const GENERATION_AUTH_TIMEOUT_MS = 15_000;
 const GENERATION_REQUEST_TIMEOUT_MS = 125_000;
 const GENERATION_IMAGE_READY_TIMEOUT_MS = 15_000;
@@ -3404,6 +3414,9 @@ const ShellModal: React.FC<{
 
 const ADSENSE_ELIGIBLE_PAGES = EDITORIAL_AD_PAGES;
 
+const getBillingProductType = (productId: CheckoutProductId): PlayBillingProductType =>
+  SUBSCRIPTION_PRODUCT_IDS.has(productId) ? 'subs' : 'inapp';
+
 const PATH_TO_PAGE = Object.entries(PAGE_PATHS).reduce<Record<string, SitePage>>((acc, [page, path]) => {
   acc[path] = page as SitePage;
   return acc;
@@ -5162,6 +5175,55 @@ const App: React.FC = () => {
     setIsStartingCheckout(productId);
     setPaymentStatusDetails(null);
     try {
+      const billingProductType = getBillingProductType(productId);
+      const usePlayBilling = await isPlayBillingAvailable();
+
+      if (usePlayBilling) {
+        const [productDetails, authToken] = await Promise.all([
+          getPlayBillingProducts([productId], billingProductType),
+          currentUser.getIdToken(),
+        ]);
+        const matchedProduct = productDetails.find((item) => item.productId === productId);
+        const purchase = await launchPlayBillingPurchase({
+          productId,
+          productType: billingProductType,
+          offerToken: matchedProduct?.offerToken ?? null,
+          obfuscatedAccountId: currentUser.uid,
+        });
+
+        const verification = await callVerifyNativePurchase({
+          authToken,
+          productId,
+          purchaseToken: purchase.purchaseToken,
+          productType: billingProductType,
+          orderId: purchase.orderId ?? null,
+        });
+
+        if (billingProductType === 'inapp') {
+          await consumePlayBillingPurchase(purchase.purchaseToken);
+        } else if (!purchase.acknowledged) {
+          await acknowledgePlayBillingPurchase(purchase.purchaseToken);
+        }
+
+        setUserProfile((prev) => normalizeUserProfile(currentUser.email || '', {
+          ...(prev ?? {}),
+          dailyCredit: typeof verification.dailyCredit === 'number' ? verification.dailyCredit : prev?.dailyCredit,
+          paidCredit: typeof verification.paidCreditBalance === 'number' ? verification.paidCreditBalance : prev?.paidCredit,
+          credits: typeof verification.totalCreditBalance === 'number' ? verification.totalCreditBalance : prev?.credits,
+          isSubscribed: typeof verification.isSubscribed === 'boolean' ? verification.isSubscribed : prev?.isSubscribed,
+          subscriptionPlan: verification.subscriptionPlan ?? prev?.subscriptionPlan,
+        }));
+        setPaymentStatusDetails({
+          addedPaidCredit: typeof verification.paidCredit === 'number' ? verification.paidCredit : null,
+          previousSubscriptionPlan: userProfile?.subscriptionPlan ?? 'free',
+          nextSubscriptionPlan: verification.subscriptionPlan ?? userProfile?.subscriptionPlan ?? null,
+        });
+        setShowCreditPlanModal(false);
+        setMobileMenuOpen(false);
+        alert(t.paymentSuccessReady);
+        return;
+      }
+
       const authToken = await currentUser.getIdToken();
       const session = await callCreateCheckoutSession({
         authToken,
@@ -5187,11 +5249,15 @@ const App: React.FC = () => {
       setMobileMenuOpen(false);
       window.location.href = session.checkoutUrl;
     } catch (error) {
-      console.error('Failed to start Polar checkout:', error);
-      const message = error instanceof Error && error.message === 'PAYMENT_NOT_CONFIGURED'
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage === 'USER_CANCELED') {
+        return;
+      }
+      console.error('Failed to start checkout:', error);
+      const alertMessage = error instanceof Error && error.message === 'PAYMENT_NOT_CONFIGURED'
         ? t.paymentConfigError
         : t.paymentConfigError;
-      alert(message);
+      alert(alertMessage);
     } finally {
       setIsStartingCheckout(null);
     }

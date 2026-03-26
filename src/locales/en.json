@@ -12,6 +12,7 @@
     "ai-fitting-faq": "AI Fitting FAQ",
     "about": "About",
     "privacy": "Privacy Policy",
+    "account-deletion": "Account Deletion",
     "refund-policy": "Refund Policy",
     "terms": "Terms of Service",
     "contact": "Contact",
@@ -453,6 +454,42 @@
             "Users are responsible for deciding whether an image is appropriate to upload. That includes considering personal privacy, third-party rights, minors, copyrighted materials, and any region-specific legal restrictions.",
             "If a user would not be comfortable with an image entering an AI-assisted processing flow, that image should not be uploaded to the service.",
             "A clear privacy policy helps set expectations before any data is submitted."
+          ]
+        }
+      ]
+    },
+    "account-deletion": {
+      "title": "Account Deletion",
+      "description": "Request deletion of your HAMDEVA account and review what data is deleted immediately and what may be retained temporarily.",
+      "sections": [
+        {
+          "heading": "How to request account deletion",
+          "paragraphs": [
+            "To request account deletion, email dlgksxk@gmail.com from the email address registered to your HAMDEVA account and use the subject line 'Account Deletion Request'.",
+            "If you cannot send from the registered email address, include your HAMDEVA account email address and enough information for us to verify account ownership before deletion is processed.",
+            "HAMDEVA may ask for limited confirmation details to prevent unauthorized deletion requests."
+          ]
+        },
+        {
+          "heading": "What data will be deleted",
+          "paragraphs": [
+            "After your request is verified, HAMDEVA will delete your account profile and authentication record, along with associated generation history and stored result records that are maintained for your account inside the service.",
+            "Uploaded reference images and generated result records stored for normal account use are deleted as part of the account deletion workflow unless retention is required for security, fraud prevention, payment reconciliation, or legal compliance."
+          ]
+        },
+        {
+          "heading": "What data may be retained for a limited time",
+          "paragraphs": [
+            "Certain limited records, such as payment, refund, tax, security, abuse-prevention, and legal compliance logs, may be retained after account deletion when required by law or for legitimate operational purposes.",
+            "Generation history is normally kept for 15 days during regular use, and up to 5 preserved items may remain until account deletion if the user chose to preserve them before deletion.",
+            "Any retained compliance or transaction records are kept only for the minimum period reasonably necessary for those purposes and are not used to restore a deleted HAMDEVA account."
+          ]
+        },
+        {
+          "heading": "Deleting only part of your data",
+          "paragraphs": [
+            "If you want to delete only certain data instead of the full account, contact dlgksxk@gmail.com and describe the specific data you want removed.",
+            "HAMDEVA will review whether the requested partial deletion can be completed without deleting the full account and will respond with the available options."
           ]
         }
       ]

@@ -33,6 +33,7 @@ export const PAGE_PATHS: Record<SitePage, string> = {
   'outfit-photo-tips': '/outfit-photo-tips',
   'ai-fitting-faq': '/ai-fitting-faq',
   privacy: '/privacy',
+  'account-deletion': '/account-deletion',
   'refund-policy': '/refund-policy',
   terms: '/terms',
   contact: '/contact',
@@ -67,6 +68,7 @@ export const INDEXABLE_PAGES = new Set<SitePage>([
   'outfit-photo-tips',
   'ai-fitting-faq',
   'privacy',
+  'account-deletion',
   'refund-policy',
   'terms',
   'contact',
@@ -163,6 +165,10 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
   privacy: {
     title: 'Privacy Policy',
     description: 'Read the HAMDEVA privacy policy for AI pet fitting, uploaded pet photos, personal data, and service usage information.',
+  },
+  'account-deletion': {
+    title: 'Account Deletion',
+    description: 'Learn how to request HAMDEVA account deletion, what data is deleted, and what limited records may be retained temporarily.',
   },
   'refund-policy': {
     title: 'Refund Policy',
