@@ -1,8 +1,6 @@
-import { Capacitor } from '@capacitor/core';
+import { isNativeApp } from './platform';
 
 const REMOTE_SAMPLE_ASSET_BASE_URL = 'https://hamdeva.com';
-
-export const isNativeApp = (): boolean => Capacitor.isNativePlatform();
 
 export const resolveSampleAssetUrl = (path: string): string => {
   if (!path.startsWith('/sample/')) {

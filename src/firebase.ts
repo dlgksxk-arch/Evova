@@ -36,6 +36,9 @@ let googleProvider: GoogleAuthProvider | null = null;
 if (!firebaseConfigError) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    // Android native builds currently rely on Firebase Web Auth for email/password only.
+    // Native Google sign-in needs a registered Android app in Firebase, SHA-1/SHA-256,
+    // google-services.json, and a redirect/deep-link or native plugin flow.
     auth = getAuth(app);
     db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();

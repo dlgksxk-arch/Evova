@@ -150,17 +150,42 @@ body {
   backdrop-filter: blur(20px);
 }
 
+.app-root.native-android-app .nav-content {
+  min-height: 58px;
+  padding: 0 14px;
+}
+
+.app-root.native-android-app .nav-brand {
+  gap: 0;
+}
+
 .app-root.native-android-app .app-version {
   display: none;
 }
 
-.app-root.native-android-app .nav-quick-scroll {
-  box-shadow: 0 4px 14px rgba(19, 32, 51, 0.05);
+.app-root.native-android-app .nav-logo {
+  font-size: 16px;
+}
+
+.app-root.native-android-app .nav-mobile-tools {
+  gap: 8px;
+  margin-left: auto;
+}
+
+.app-root.native-android-app .app-nav-payment-btn {
+  min-height: 32px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 
 .app-root.native-android-app .hero-section {
   min-height: 24vh;
   padding-top: calc(92px + env(safe-area-inset-top, 0px));
+}
+
+.app-root.native-android-app .hero-home-copy {
+  max-width: 560px;
 }
 
 .bg-video {

@@ -47,11 +47,11 @@ import {
 } from './lib/api/hamdeva';
 import { normalizeUserProfile } from './lib/profile';
 import { resolveSampleAssetUrl } from './lib/assets';
+import { isNativeAndroidApp } from './lib/platform';
 import {
   acknowledgePlayBillingPurchase,
   consumePlayBillingPurchase,
   getPlayBillingProducts,
-  isNativeAndroidApp,
   isPlayBillingAvailable,
   launchPlayBillingPurchase,
   type PlayBillingProductType,
@@ -5530,6 +5530,7 @@ const App: React.FC = () => {
       setAuthForm({ email: '', password: '' });
       void syncUserCreditsAfterAuth(signedInUser);
     } catch (error) {
+      console.error('[HAMDEVA] auth submit failed', error);
       setAuthError(buildAuthErrorMessage(error, t.authFailed, authErrorCopy));
     } finally {
       setAuthSubmitting(false);
@@ -5541,6 +5542,7 @@ const App: React.FC = () => {
       return;
     }
     if (isNativeAndroid) {
+      console.error('[HAMDEVA] google sign-in blocked on native android app');
       setAuthError(authErrorCopy.nativeAppGoogleUnsupported);
       return;
     }
@@ -5552,6 +5554,7 @@ const App: React.FC = () => {
       setAuthForm({ email: '', password: '' });
       void syncUserCreditsAfterAuth(credential.user);
     } catch (error) {
+      console.error('[HAMDEVA] google sign-in failed', error);
       setAuthError(buildAuthErrorMessage(error, t.authFailed, authErrorCopy));
     } finally {
       setAuthSubmitting(false);
@@ -5998,30 +6001,37 @@ const App: React.FC = () => {
             <button className="nav-logo nav-logo-button" onClick={() => navigateToPage('home')} type="button">HAM<span>DEVA</span></button>
             <span className="app-version">{appVersion}</span>
           </div>
-          <div className="nav-quick-scroll nav-inline-actions">
-            <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
-              {landingContent.hero.compactPrimaryButton}
-            </button>
-            <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
-              {contentLocale.nav['how-it-works']}
-            </button>
-            <button
-              className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
-              onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
-              type="button"
-            >
-              {currentUser ? headerCreditLabel : t.creditCheck}
-            </button>
-            {currentUser && (
-              <button className="nav-quick-btn nav-subscription-btn" onClick={openMyPageModal} type="button">
-                {headerSubscriptionLabel}
+          {!isNativeAndroid && (
+            <div className="nav-quick-scroll nav-inline-actions">
+              <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
+                {landingContent.hero.compactPrimaryButton}
+              </button>
+              <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
+                {contentLocale.nav['how-it-works']}
+              </button>
+              <button
+                className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
+                onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
+                type="button"
+              >
+                {currentUser ? headerCreditLabel : t.creditCheck}
+              </button>
+              {currentUser && (
+                <button className="nav-quick-btn nav-subscription-btn" onClick={openMyPageModal} type="button">
+                  {headerSubscriptionLabel}
+                </button>
+              )}
+              <button className="nav-payment-btn" onClick={openCreditPlanModal} type="button">
+                {t.chargeCredits}
+              </button>
+            </div>
+          )}
+          <div className="nav-mobile-tools">
+            {isNativeAndroid && (
+              <button className="nav-payment-btn app-nav-payment-btn" onClick={openCreditPlanModal} type="button">
+                {t.chargeCredits}
               </button>
             )}
-            <button className="nav-payment-btn" onClick={openCreditPlanModal} type="button">
-              {t.chargeCredits}
-            </button>
-          </div>
-          <div className="nav-mobile-tools">
             <div className="user-menu header-account-menu" ref={headerAccountMenuRef}>
               <button
                 className={`outline-btn auth-inline-btn header-account-trigger ${currentUser ? 'is-authenticated' : ''}`}
@@ -6059,63 +6069,67 @@ const App: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="header-icon-menu" ref={headerLangMenuRef}>
-              <button
-                className="icon-toggle-btn"
-                aria-expanded={headerLangMenuOpen}
-                aria-label={t.languageLabel}
-                onClick={() => setHeaderLangMenuOpen((prev) => !prev)}
-                title={t.languageLabel}
-                type="button"
-              >
-                <span aria-hidden="true">🌐</span>
-              </button>
-              {headerLangMenuOpen && (
-                <div className="header-icon-dropdown">
-                  {PUBLIC_LANGUAGE_OPTIONS.map((option) => (
-                    <button
-                      key={`header-lang-${option.value}`}
-                      className={`lang-option ${lang === option.value ? 'active' : ''}`}
-                      onClick={() => {
-                        handleLanguageChange(option.value as LanguageCode);
-                        setHeaderLangMenuOpen(false);
-                      }}
-                      type="button"
-                    >
-                      <span>{option.nativeLabel}</span>
-                      <span>{option.shortLabel}</span>
-                    </button>
-                  ))}
+            {!isNativeAndroid && (
+              <>
+                <div className="header-icon-menu" ref={headerLangMenuRef}>
+                  <button
+                    className="icon-toggle-btn"
+                    aria-expanded={headerLangMenuOpen}
+                    aria-label={t.languageLabel}
+                    onClick={() => setHeaderLangMenuOpen((prev) => !prev)}
+                    title={t.languageLabel}
+                    type="button"
+                  >
+                    <span aria-hidden="true">🌐</span>
+                  </button>
+                  {headerLangMenuOpen && (
+                    <div className="header-icon-dropdown">
+                      {PUBLIC_LANGUAGE_OPTIONS.map((option) => (
+                        <button
+                          key={`header-lang-${option.value}`}
+                          className={`lang-option ${lang === option.value ? 'active' : ''}`}
+                          onClick={() => {
+                            handleLanguageChange(option.value as LanguageCode);
+                            setHeaderLangMenuOpen(false);
+                          }}
+                          type="button"
+                        >
+                          <span>{option.nativeLabel}</span>
+                          <span>{option.shortLabel}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <button
-              className="dark-toggle icon-toggle-btn"
-              aria-label={darkMode ? t.lightMode : t.darkMode}
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? t.lightMode : t.darkMode}
-              type="button"
-            >
-              <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
-            </button>
-            <button
-              className="mobile-menu-toggle"
-              aria-expanded={mobileMenuOpen}
-              aria-controls="mobile-menu"
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              type="button"
-            >
-              <span className="hamburger-icon" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-            </button>
+                <button
+                  className="dark-toggle icon-toggle-btn"
+                  aria-label={darkMode ? t.lightMode : t.darkMode}
+                  onClick={() => setDarkMode(!darkMode)}
+                  title={darkMode ? t.lightMode : t.darkMode}
+                  type="button"
+                >
+                  <span aria-hidden="true">{darkMode ? '☀️' : '🌙'}</span>
+                </button>
+                <button
+                  className="mobile-menu-toggle"
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="mobile-menu"
+                  aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  type="button"
+                >
+                  <span className="hamburger-icon" aria-hidden="true">
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
-      {mobileMenuOpen && (
+      {!isNativeAndroid && mobileMenuOpen && (
         <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div
             id="mobile-menu"
@@ -6257,29 +6271,33 @@ const App: React.FC = () => {
                 <div className="hero-eyebrow">{landingContent.hero.eyebrow}</div>
                 <h1 className="hero-title page-title">{landingContent.hero.title}</h1>
                 <p className="hero-sub">{landingContent.hero.subtitle}</p>
-                <p className="hero-detail">{landingContent.hero.body}</p>
+                {!isNativeAndroid && <p className="hero-detail">{landingContent.hero.body}</p>}
                 <div className="hero-cta-group">
                   <button className="generate-btn hero-cta-btn" onClick={handleHeroCta} type="button">
                     {landingContent.hero.primaryButton}
                   </button>
-                  <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
-                    {landingContent.hero.secondaryButton}
-                  </button>
+                  {!isNativeAndroid && (
+                    <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                      {landingContent.hero.secondaryButton}
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="hero-home-visual" aria-hidden="true">
-                <div className="hero-home-glow hero-home-glow-primary" />
-                <div className="hero-home-glow hero-home-glow-secondary" />
-                {homeHeroVisualItems.map((item, index) => (
-                  <figure key={`hero-visual-${item.src}`} className={`hero-pet-card hero-pet-card-${index + 1}`}>
-                    <div className="hero-pet-card-media">
-                      <img src={item.src} alt="" loading="lazy" />
-                    </div>
-                  </figure>
-                ))}
-                <div className="hero-visual-orb hero-visual-orb-one" />
-                <div className="hero-visual-orb hero-visual-orb-two" />
-              </div>
+              {!isNativeAndroid && (
+                <div className="hero-home-visual" aria-hidden="true">
+                  <div className="hero-home-glow hero-home-glow-primary" />
+                  <div className="hero-home-glow hero-home-glow-secondary" />
+                  {homeHeroVisualItems.map((item, index) => (
+                    <figure key={`hero-visual-${item.src}`} className={`hero-pet-card hero-pet-card-${index + 1}`}>
+                      <div className="hero-pet-card-media">
+                        <img src={item.src} alt="" loading="lazy" />
+                      </div>
+                    </figure>
+                  ))}
+                  <div className="hero-visual-orb hero-visual-orb-one" />
+                  <div className="hero-visual-orb hero-visual-orb-two" />
+                </div>
+              )}
             </div>
           ) : currentPage === 'payment-success' ? (
             <>

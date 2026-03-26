@@ -9,6 +9,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth, firebaseConfigError, googleProvider } from '../firebase';
+import { isNativeAndroidApp } from '../lib/platform';
 
 type AuthMode = 'login' | 'signup';
 
@@ -20,6 +21,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
   const { t } = useTranslation();
   const loginComingSoonLabel = `${t('login.loginWithEmail')} (Coming Soon)`;
   const googleLoginComingSoonLabel = `${t('login.continueWithGoogle')} (Coming Soon)`;
+  const isNativeAndroid = isNativeAndroidApp();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -90,6 +92,7 @@ const Login: React.FC<LoginProps> = ({ className }) => {
       }
       setPassword('');
     } catch (nextError) {
+      console.error('[HAMDEVA] auth submit failed', nextError);
       setError(buildAuthErrorMessage(nextError));
     } finally {
       setIsSubmitting(false);
@@ -101,12 +104,19 @@ const Login: React.FC<LoginProps> = ({ className }) => {
       setError(firebaseConfigError || t('errors.auth.googleSignInNotConfigured'));
       return;
     }
+    if (isNativeAndroid) {
+      const message = t('errors.auth.nativeAppGoogleUnsupported');
+      console.error('[HAMDEVA] google sign-in blocked on native android app');
+      setError(message);
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (nextError) {
+      console.error('[HAMDEVA] google sign-in failed', nextError);
       setError(buildAuthErrorMessage(nextError));
     } finally {
       setIsSubmitting(false);
