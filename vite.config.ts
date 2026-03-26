@@ -202,6 +202,7 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
     build: {
+      outDir: 'dist',
       rollupOptions: {
         output: {
           manualChunks(id) {

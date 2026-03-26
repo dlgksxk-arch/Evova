@@ -698,6 +698,7 @@
       "unauthorizedDomainWithHost": "This domain ({{hostname}}) is not registered in Firebase Auth allowed domains. Ask the administrator to verify the domain settings.",
       "invalidApiKey": "Firebase configuration is not ready yet. Please contact the administrator.",
       "googlePolicyBlocked": "Google sign-in is currently blocked by OAuth policy settings. Please use email login for now.",
+      "nativeAppGoogleUnsupported": "The Android app currently supports email login only. Sign in or sign up with email inside the app.",
       "tooManyRequests": "Too many attempts. Please try again later.",
       "firebaseAuthNotConfigured": "Firebase Auth is not configured.",
       "googleSignInNotConfigured": "Google sign-in is not configured.",

@@ -19,6 +19,8 @@ interface AuthModalProps {
   email: string;
   password: string;
   error: string | null;
+  googleDisabled?: boolean;
+  googleDisabledReason?: string | null;
   isSubmitting: boolean;
   loginDisabled?: boolean;
   mode: AuthMode;
@@ -35,6 +37,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
   email,
   password,
   error,
+  googleDisabled = false,
+  googleDisabledReason = null,
   isSubmitting,
   loginDisabled = false,
   mode,
@@ -46,6 +50,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   onSwitchMode,
 }) => {
   const loginActionsDisabled = loginDisabled || isSubmitting;
+  const googleActionsDisabled = loginActionsDisabled || googleDisabled;
   const loginSwitchDisabled = loginDisabled && mode === 'signup';
 
   useEffect(() => {
@@ -111,12 +116,14 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
           <button
             className="outline-btn auth-google-btn"
-            disabled={loginActionsDisabled}
+            disabled={googleActionsDisabled}
             onClick={onGoogleLogin}
             type="button"
           >
             {copy.googleButton}
           </button>
+
+          {googleDisabledReason && <p className="auth-helper-text">{googleDisabledReason}</p>}
 
           <button
             className="text-link-btn auth-switch-btn"

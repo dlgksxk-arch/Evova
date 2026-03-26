@@ -1,4 +1,5 @@
 import type { User } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
 import type {
   ActivityLogRecord,
   AdminLogListResponse,
@@ -18,7 +19,8 @@ import type {
   GenerationRequestRecord,
 } from '../../types/hamdeva';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
+const EXPLICIT_API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '') || '';
+const API_BASE_URL = EXPLICIT_API_BASE_URL || (Capacitor.isNativePlatform() ? 'https://hamdeva.com' : '');
 const apiUrl = (path: string): string => `${API_BASE_URL}${path}`;
 
 const TRYON_ENDPOINT = apiUrl('/api/tryon');

@@ -50,6 +50,7 @@ import {
   acknowledgePlayBillingPurchase,
   consumePlayBillingPurchase,
   getPlayBillingProducts,
+  isNativeAndroidApp,
   isPlayBillingAvailable,
   launchPlayBillingPurchase,
   type PlayBillingProductType,
@@ -3783,8 +3784,10 @@ const App: React.FC = () => {
     unauthorizedDomainWithHost: string;
     invalidApiKey: string;
     googlePolicyBlocked: string;
+    nativeAppGoogleUnsupported: string;
     tooManyRequests: string;
   };
+  const isNativeAndroid = isNativeAndroidApp();
   const shareResultLink = latestSharedResultId ? buildSharedResultUrl(latestSharedResultId) : null;
   const sharedPageLink = sharedResultRouteId ? buildSharedResultUrl(sharedResultRouteId) : null;
   const firebaseDisabledMessage = firebaseConfigError
@@ -5535,6 +5538,10 @@ const App: React.FC = () => {
       setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
+    if (isNativeAndroid) {
+      setAuthError(authErrorCopy.nativeAppGoogleUnsupported);
+      return;
+    }
     setAuthSubmitting(true);
     setAuthError(null);
     try {
@@ -5981,7 +5988,7 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isSocialInAppBrowser ? 'has-social-browser-banner' : ''}`}>
+    <div className={`app-root ${darkMode ? 'dark' : ''} font-theme-${fontTheme} ${isSocialInAppBrowser ? 'has-social-browser-banner' : ''} ${isNativeAndroid ? 'native-android-app' : ''}`}>
       <StructuredData data={homeStructuredData.length > 0 ? homeStructuredData : pageStructuredData} />
       <nav className="landing-nav">
         <div className="nav-content">
@@ -7391,6 +7398,8 @@ const App: React.FC = () => {
             }}
             email={authForm.email}
             error={authError}
+            googleDisabled={isNativeAndroid}
+            googleDisabledReason={isNativeAndroid ? authErrorCopy.nativeAppGoogleUnsupported : null}
             isSubmitting={authSubmitting}
             mode={authMode}
             password={authForm.password}
