@@ -9,6 +9,7 @@ import com.android.billingclient.api.ConsumeParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.QueryProductDetailsParams;
 import com.android.billingclient.api.QueryProductDetailsResult;
 import com.android.billingclient.api.QueryPurchasesParams;
@@ -35,7 +36,11 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
     public void load() {
         billingClient = BillingClient.newBuilder(getContext())
             .setListener(this)
-            .enablePendingPurchases()
+            .enablePendingPurchases(
+                PendingPurchasesParams.newBuilder()
+                    .enableOneTimeProducts()
+                    .build()
+            )
             .build();
         startConnection(null);
     }
@@ -235,9 +240,7 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                 return;
             }
 
-            List<ProductDetails> productDetailsList = productDetailsResult == null
-                ? new ArrayList<>()
-                : productDetailsResult.getProductDetailsList();
+            List<ProductDetails> productDetailsList = getProductDetailsList(productDetailsResult);
             JSArray items = new JSArray();
             Map<String, ProductDetails> cache = getProductCache(productType);
             cache.clear();
@@ -285,9 +288,7 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
                 return;
             }
 
-            List<ProductDetails> productDetailsList = productDetailsResult == null
-                ? new ArrayList<>()
-                : productDetailsResult.getProductDetailsList();
+            List<ProductDetails> productDetailsList = getProductDetailsList(productDetailsResult);
             Map<String, ProductDetails> cache = getProductCache(productType);
             cache.clear();
             for (ProductDetails details : productDetailsList) {
@@ -418,6 +419,19 @@ public class PlayBillingPlugin extends Plugin implements PurchasesUpdatedListene
             }
         }
         return details.getSubscriptionOfferDetails().get(0).getOfferToken();
+    }
+
+    private List<ProductDetails> getProductDetailsList(QueryProductDetailsResult productDetailsResult) {
+        List<ProductDetails> productDetailsList = new ArrayList<>();
+        if (productDetailsResult == null) {
+            return productDetailsList;
+        }
+
+        List<ProductDetails> fetchedProducts = productDetailsResult.getProductDetailsList();
+        if (fetchedProducts != null) {
+            productDetailsList.addAll(fetchedProducts);
+        }
+        return productDetailsList;
     }
 
     private JSObject toProductResult(ProductDetails details, String productType) {
