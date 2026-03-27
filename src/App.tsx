@@ -27,6 +27,12 @@ import {
   syncDocumentHead,
 } from './lib/seo/pageMeta';
 import {
+  FOOTER_PRIMARY_ROUTE_KEYS,
+  FOOTER_UTILITY_ROUTE_KEYS,
+  HEADER_NAV_ROUTE_KEYS,
+  HUB_SPOTLIGHT_ROUTE_KEYS,
+} from './lib/routes/routeManifest';
+import {
   FEATURED_EDITORIAL_PAGES,
   getEditorialPage,
   getEditorialPageSummary,
@@ -165,23 +171,16 @@ const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
 ] as const;
 const HOME_SHOWCASE_RESULT_IMAGE_URLS = HOME_SHOWCASE_RESULT_IMAGES.map((imagePath) => resolveSampleAssetUrl(imagePath));
-const HEADER_NAV_PAGES: SitePage[] = ['home', 'tryon', 'traditional-clothing', 'how-it-works', 'pricing', 'contact'];
-const MOBILE_NAV_PAGES: SitePage[] = ['home', 'tryon', 'traditional-clothing', 'how-it-works', 'pricing', 'contact'];
-const TOPIC_LANDING_PAGES: SitePage[] = [
-  'dog-outfit-generator',
-  'cat-outfit-generator',
-  'pet-halloween-costume',
-  'pet-hanbok',
-  'dog-hoodie',
-  'cat-formal-outfit',
-];
-const FOOTER_EDITORIAL_PAGES: SitePage[] = ['tryon', 'traditional-clothing', ...TOPIC_LANDING_PAGES, 'about', 'pricing', 'contact'];
-const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'refund-policy', 'terms'];
+const HEADER_NAV_PAGES: SitePage[] = [...HEADER_NAV_ROUTE_KEYS];
+const MOBILE_NAV_PAGES: SitePage[] = [...HEADER_NAV_ROUTE_KEYS];
+const TOPIC_LANDING_PAGES: SitePage[] = [...HUB_SPOTLIGHT_ROUTE_KEYS];
+const FOOTER_EDITORIAL_PAGES: SitePage[] = [...FOOTER_PRIMARY_ROUTE_KEYS];
+const FOOTER_UTILITY_PAGES: SitePage[] = [...FOOTER_UTILITY_ROUTE_KEYS];
 const EDITORIAL_AD_PAGES = new Set<SitePage>([
   'tryon',
   'about',
   'how-it-works',
-  'traditional-clothing',
+  'sample-outfits',
   'dog-outfit-generator',
   'cat-outfit-generator',
   'pet-halloween-costume',
@@ -3314,7 +3313,7 @@ const getFaqItemsForPage = (page: SitePage, lang: LanguageCode, editorialFaq?: E
       if (page === 'how-it-works') {
         return howToUseFaqs;
       }
-      if (page === 'traditional-clothing') {
+      if (page === 'sample-outfits') {
         return sampleOutfitsFaqs;
       }
       return [];
@@ -3437,10 +3436,7 @@ const getPageFromHash = (hash: string): SitePage | null => {
 };
 const getPageFromPath = (pathname: string): SitePage | null => {
   const normalizedPath = normalizePathname(pathname);
-  if (normalizedPath === '/countries') {
-    return 'traditional-clothing';
-  }
-  return PATH_TO_PAGE[normalizedPath] ?? LEGACY_PAGE_PATHS[normalizedPath] ?? null;
+  return LEGACY_PAGE_PATHS[normalizedPath] ?? PATH_TO_PAGE[normalizedPath] ?? null;
 };
 const getPageFromLocation = (pathname: string, hash: string): SitePage => {
   const pageFromPath = getPageFromPath(pathname);
@@ -3583,7 +3579,7 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'ragdoll-kimono': `${SITE_KEYWORDS}, ragdoll kimono, ragdoll cat kimono, long hair cat kimono preview, cat japanese outfit`,
   about: `${SITE_KEYWORDS}, pet fitting service, ai pet fitting service, about hamdeva`,
   'how-it-works': `${SITE_KEYWORDS}, pet photo upload, outfit image upload, how pet fitting works, dog clothes try on steps`,
-  'traditional-clothing': `${SITE_KEYWORDS}, pet outfit ideas, pet costume ideas, dog outfit ideas, cat outfit ideas, pet hanbok, pet halloween costume, dog hoodie`,
+  'sample-outfits': `${SITE_KEYWORDS}, pet outfit ideas, pet costume ideas, dog outfit ideas, cat outfit ideas, pet hanbok, pet halloween costume, dog hoodie`,
   'sample-friends': `${SITE_KEYWORDS}, 샘플 강아지, 샘플 고양이, 강아지 품종, 고양이 품종, dog breeds, cat breeds, pet sample photo`,
   'fashion-technology': `${SITE_KEYWORDS}, pet style guide, dog outfit ideas, cat outfit ideas, ai pet fashion`,
   pricing: `${SITE_KEYWORDS}, pricing, credits, plans, pet fitting price, dog clothes try on price, pet outfit generator price`,
@@ -4095,7 +4091,7 @@ const App: React.FC = () => {
         };
       })
     : currentEditorialPage
-    ? Array.from(new Set(currentEditorialPage.relatedPages.map((page) => page === 'countries' ? 'traditional-clothing' : page)))
+    ? Array.from(new Set(currentEditorialPage.relatedPages.map((page) => page === 'countries' ? 'sample-outfits' : page)))
       .filter((page): page is typeof FEATURED_EDITORIAL_PAGES[number] => page !== currentPage)
       .map((page) => ({
         page,
@@ -4151,7 +4147,7 @@ const App: React.FC = () => {
     ? 'AboutPage'
     : currentPage === 'contact'
       ? 'ContactPage'
-      : currentPage === 'traditional-clothing' || currentPage === 'sample-friends'
+      : currentPage === 'sample-outfits' || currentPage === 'sample-friends'
         ? 'CollectionPage'
         : 'WebPage';
   const articleStructuredData = null;
@@ -5461,7 +5457,7 @@ const App: React.FC = () => {
     setShowLogoutConfirmModal(false);
   };
   const navigateToPage = (page: SitePage) => {
-    const resolvedPage = page === 'countries' ? 'traditional-clothing' : page;
+    const resolvedPage = page === 'countries' ? 'sample-outfits' : page;
     const nextUrl = PAGE_PATHS[resolvedPage];
     window.history.pushState(null, '', nextUrl);
     setCurrentPage(resolvedPage);
@@ -6298,7 +6294,7 @@ const App: React.FC = () => {
                     {landingContent.hero.primaryButton}
                   </button>
                   {!isNativeAndroid && (
-                    <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                    <button className="outline-btn hero-secondary-btn" onClick={() => navigateToPage('sample-outfits')} type="button">
                       {landingContent.hero.secondaryButton}
                     </button>
                   )}
@@ -6416,8 +6412,8 @@ const App: React.FC = () => {
                   <button className="generate-btn" onClick={handleHeroCta} type="button">
                     {contentLocale.nav.tryon}
                   </button>
-                  <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
-                    {contentLocale.nav['traditional-clothing']}
+                  <button className="outline-btn" onClick={() => navigateToPage('sample-outfits')} type="button">
+                    {contentLocale.nav['sample-outfits']}
                   </button>
                   <button className="outline-btn" onClick={() => navigateToPage('pricing')} type="button">
                     {contentLocale.nav.pricing}
@@ -6486,7 +6482,7 @@ const App: React.FC = () => {
                     <button className="generate-btn" onClick={handleHeroCta} type="button">
                       {contentLocale.nav.tryon}
                     </button>
-                    <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                    <button className="outline-btn" onClick={() => navigateToPage('sample-outfits')} type="button">
                       {landingContent.sampleInfo.button}
                     </button>
                   </div>
@@ -6557,8 +6553,8 @@ const App: React.FC = () => {
                   </div>
                   <div className="compact-card-grid">
                     {[...featuredSeoLandingCards.slice(0, 4), {
-                      page: 'traditional-clothing' as SitePage,
-                      title: contentLocale.nav['traditional-clothing'],
+                      page: 'sample-outfits' as SitePage,
+                      title: contentLocale.nav['sample-outfits'],
                       description: currentPage === 'tryon' ? landingContent.sampleInfo.body : '',
                     }].map((card) => (
                       <article key={`tryon-card-${card.page}`} className="compact-info-card">
@@ -6671,7 +6667,7 @@ const App: React.FC = () => {
               </article>
             )}
 
-            {currentPage !== 'admin' && currentPage !== 'tryon' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPage !== 'about' && currentPage !== 'fashion-technology' && currentPage !== 'sample-friends' && currentPageCopy?.sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'tryon' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'sample-outfits' && currentPage !== 'how-it-works' && currentPage !== 'about' && currentPage !== 'fashion-technology' && currentPage !== 'sample-friends' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -6680,7 +6676,7 @@ const App: React.FC = () => {
               </article>
             ))}
 
-            {currentPage === 'traditional-clothing' && (
+            {currentPage === 'sample-outfits' && (
               <>
                 {(landingContent.sampleOutfits.introTitle || landingContent.sampleOutfits.introParagraphs.length > 0) && (
                   <article className="page-article">
@@ -7101,7 +7097,7 @@ const App: React.FC = () => {
                 />
               </Suspense>
             )}
-            {relatedEditorialCards.length > 0 && currentPage !== 'traditional-clothing' && (
+            {relatedEditorialCards.length > 0 && currentPage !== 'sample-outfits' && (
               <section className="section editorial-section editorial-related-section">
                 <div className="section-copy">
                   <h2>{editorialUiCopy.relatedTitle}</h2>

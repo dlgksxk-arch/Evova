@@ -1,40 +1,43 @@
+import {
+  LEGACY_ROUTE_REDIRECTS,
+  SPA_FALLBACK_ROUTE_PATHS,
+  SNAPSHOT_ROUTE_PATHS,
+  X_ROBOTS_NOINDEX_ROUTE_PATHS,
+} from './src/lib/routes/routeManifest.ts';
+
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
-const LEGACY_REDIRECTS = new Map([
-  ['/how-it-works', '/how-to-use'],
-  ['/countries', '/sample-outfits'],
-  ['/dog-hanbok', '/pet-hanbok'],
-  ['/maltese-hanbok', '/pet-hanbok'],
-  ['/tuxedo-cat-hanbok', '/pet-hanbok'],
-  ['/cat-kimono', '/sample-outfits'],
-  ['/shiba-kimono', '/sample-outfits'],
-  ['/ragdoll-kimono', '/sample-outfits'],
-  ['/pet-qipao', '/sample-outfits'],
-  ['/corgi-qipao', '/sample-outfits'],
-  ['/pet-saree', '/sample-outfits'],
-  ['/persian-cat-saree', '/sample-outfits'],
-  ['/poodle-wedding-dress', '/sample-outfits'],
-]);
-const NON_INDEXABLE_PATHS = new Set([
-  '/board',
-  '/mypage',
-  '/admin',
-  '/site-management',
-  '/payment-success',
-  '/payment-failed',
-  '/virtual-try-on-guide',
-  '/fashion-technology',
-  '/sample-friends',
-  '/outfit-photo-tips',
-  '/ai-fitting-faq',
-  '/account-deletion',
-]);
 
 const normalizePathname = (pathname) => pathname.replace(/\/+$/, '') || '/';
 const isPreviewHost = (hostname) =>
   PREVIEW_HOST_MARKERS.some((marker) => hostname.includes(marker)) && hostname !== 'hamdeva.com' && hostname !== 'www.hamdeva.com';
 const isNonIndexableRoute = (pathname) => {
   const normalizedPath = normalizePathname(pathname);
-  return normalizedPath.startsWith('/result/') || NON_INDEXABLE_PATHS.has(normalizedPath);
+  return normalizedPath.startsWith('/result/') || X_ROBOTS_NOINDEX_ROUTE_PATHS.has(normalizedPath);
+};
+const cloneRequestWithPath = (request, pathname) => {
+  const url = new URL(request.url);
+  url.pathname = pathname;
+  url.search = '';
+  return new Request(url.toString(), request);
+};
+const createNotFoundResponse = (request) => {
+  const headers = new Headers({
+    'Content-Type': 'text/html; charset=UTF-8',
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet',
+  });
+
+  if (request.method === 'HEAD') {
+    return new Response(null, { status: 404, headers });
+  }
+
+  return new Response(
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>404 | HAMDEVA</title><meta name="robots" content="noindex, nofollow, noarchive, nosnippet"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main><h1>404</h1><p>The page you requested was not found.</p></main></body></html>',
+    {
+      status: 404,
+      headers,
+    },
+  );
 };
 const applyRobotsHeader = (request, response) => {
   const contentType = response.headers.get('content-type') || '';
@@ -74,9 +77,9 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (isNavigationRequest && LEGACY_REDIRECTS.has(normalizedPath)) {
+    if (isNavigationRequest && LEGACY_ROUTE_REDIRECTS.has(normalizedPath)) {
       const redirectUrl = new URL(request.url);
-      redirectUrl.pathname = LEGACY_REDIRECTS.get(normalizedPath);
+      redirectUrl.pathname = LEGACY_ROUTE_REDIRECTS.get(normalizedPath);
       redirectUrl.search = '';
       return Response.redirect(redirectUrl.toString(), 301);
     }
@@ -102,21 +105,32 @@ export default {
     } else if (isLegacyTryOnRequest) {
       targetUrl.hostname = 'asia-northeast3-hamdeva.cloudfunctions.net';
     } else if (env.ASSETS) {
-      const assetResponse = await env.ASSETS.fetch(request);
-      if (assetResponse.status !== 404 || isStaticAssetRequest || !isNavigationRequest) {
+      if (isStaticAssetRequest || !isNavigationRequest) {
+        const assetResponse = await env.ASSETS.fetch(request);
         return applyRobotsHeader(request, assetResponse);
       }
 
-      const fallbackUrl = new URL(request.url);
-      fallbackUrl.pathname = '/index.html';
-      fallbackUrl.search = '';
-      const fallbackResponse = await env.ASSETS.fetch(new Request(fallbackUrl.toString(), request));
-      return applyRobotsHeader(request, fallbackResponse);
+      if (SNAPSHOT_ROUTE_PATHS.has(normalizedPath)) {
+        const assetResponse = await env.ASSETS.fetch(request);
+        if (assetResponse.status !== 404) {
+          return applyRobotsHeader(request, assetResponse);
+        }
+        return createNotFoundResponse(request);
+      }
+
+      if (normalizedPath.startsWith('/result/') || SPA_FALLBACK_ROUTE_PATHS.has(normalizedPath)) {
+        const fallbackResponse = await env.ASSETS.fetch(cloneRequestWithPath(request, '/index.html'));
+        return applyRobotsHeader(request, fallbackResponse);
+      }
+
+      return createNotFoundResponse(request);
     } else {
       targetUrl.hostname = 'hamdeva.web.app';
-      if (!isStaticAssetRequest && isNavigationRequest) {
+      if (!isStaticAssetRequest && isNavigationRequest && (normalizedPath.startsWith('/result/') || SPA_FALLBACK_ROUTE_PATHS.has(normalizedPath))) {
         targetUrl.pathname = '/';
         targetUrl.search = '';
+      } else if (!isStaticAssetRequest && isNavigationRequest) {
+        return createNotFoundResponse(request);
       }
     }
 

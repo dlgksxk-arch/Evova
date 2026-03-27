@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "首页",
-    "traditional-clothing": "示例服装",
+    "sample-outfits": "示例服装",
     "sample-friends": "示例朋友",
     "countries": "国家服饰",
     "how-it-works": "使用方法",
@@ -169,7 +169,7 @@
     ]
   },
   "pages": {
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "示例服装",
       "description": "集中展示适合宠物试穿预览的示例服装，帮助你先确定方向再进入生成。",
       "sections": [

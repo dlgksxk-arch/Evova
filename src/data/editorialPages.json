@@ -2,7 +2,7 @@
   "featuredOrder": [
     "about",
     "how-it-works",
-    "traditional-clothing"
+    "sample-outfits"
   ],
   "pages": {
     "about": {
@@ -44,7 +44,7 @@
       ],
       "relatedPages": [
         "how-it-works",
-        "traditional-clothing"
+        "sample-outfits"
       ]
     },
     "how-it-works": {
@@ -85,12 +85,12 @@
         }
       ],
       "relatedPages": [
-        "traditional-clothing",
+        "sample-outfits",
         "outfit-photo-tips",
         "ai-fitting-faq"
       ]
     },
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "Pet Outfit Ideas",
       "description": "Browse pet outfit ideas and costume references for dogs and cats before you open the try-on tool.",
       "summary": "This page works as the main outfit ideas hub, with traditional looks treated as one category among broader pet outfit directions.",
@@ -148,7 +148,7 @@
       ],
       "faq": [],
       "relatedPages": [
-        "traditional-clothing",
+        "sample-outfits",
         "how-it-works"
       ]
     },
@@ -187,7 +187,7 @@
       "faq": [],
       "relatedPages": [
         "how-it-works",
-        "traditional-clothing"
+        "sample-outfits"
       ]
     },
     "outfit-photo-tips": {

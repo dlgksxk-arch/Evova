@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { getRouteDefinition, SNAPSHOT_ROUTE_KEYS } from '../src/lib/routes/routeManifest.ts';
 
 const projectRoot = process.cwd();
 const distDir = path.join(projectRoot, 'dist');
@@ -7,7 +8,6 @@ const indexHtmlPath = path.join(distDir, 'index.html');
 const editorialDataPath = path.join(projectRoot, 'src', 'data', 'editorialPages.json');
 const seoLandingPagesPath = path.join(projectRoot, 'src', 'data', 'seoLandingPages.json');
 const englishLocalePath = path.join(projectRoot, 'src', 'locales', 'en.json');
-const envFilePath = path.join(projectRoot, '.env');
 const supportEmail = 'support@hamdeva.com';
 const siteUrl = 'https://hamdeva.com';
 const defaultOgImage = `${siteUrl}/sample/og-image.png`;
@@ -15,35 +15,52 @@ const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]
 const INDEX_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 const NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
 
-const snapshotRoutes = [
-  { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'tryon', path: '/tryon', priority: '0.95', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'dog-outfit-generator', path: '/dog-outfit-generator', priority: '0.9', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'cat-outfit-generator', path: '/cat-outfit-generator', priority: '0.9', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'pet-halloween-costume', path: '/pet-halloween-costume', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'pet-hanbok', path: '/pet-hanbok', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'dog-hoodie', path: '/dog-hoodie', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'cat-formal-outfit', path: '/cat-formal-outfit', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'about', path: '/about', priority: '0.7', changefreq: 'monthly', indexable: true, sitemap: true },
-  { key: 'how-it-works', path: '/how-to-use', priority: '0.8', changefreq: 'monthly', indexable: true, sitemap: true },
-  { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.85', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'pricing', path: '/pricing', priority: '0.7', changefreq: 'weekly', indexable: true, sitemap: true },
-  { key: 'privacy', path: '/privacy', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
-  { key: 'refund-policy', path: '/refund-policy', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
-  { key: 'terms', path: '/terms', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
-  { key: 'contact', path: '/contact', priority: '0.6', changefreq: 'yearly', indexable: true, sitemap: true },
-  { key: 'virtual-try-on-guide', path: '/virtual-try-on-guide', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
-  { key: 'fashion-technology', path: '/fashion-technology', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
-  { key: 'sample-friends', path: '/sample-friends', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
-  { key: 'outfit-photo-tips', path: '/outfit-photo-tips', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
-  { key: 'ai-fitting-faq', path: '/ai-fitting-faq', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
-  { key: 'account-deletion', path: '/account-deletion', priority: '0.1', changefreq: 'yearly', indexable: false, sitemap: false },
-];
+const SNAPSHOT_ROUTE_SEO = {
+  home: { priority: '1.0', changefreq: 'weekly' },
+  tryon: { priority: '0.95', changefreq: 'weekly' },
+  'dog-outfit-generator': { priority: '0.9', changefreq: 'weekly' },
+  'cat-outfit-generator': { priority: '0.9', changefreq: 'weekly' },
+  'pet-halloween-costume': { priority: '0.8', changefreq: 'weekly' },
+  'pet-hanbok': { priority: '0.8', changefreq: 'weekly' },
+  'dog-hoodie': { priority: '0.8', changefreq: 'weekly' },
+  'cat-formal-outfit': { priority: '0.8', changefreq: 'weekly' },
+  about: { priority: '0.7', changefreq: 'monthly' },
+  'how-it-works': { priority: '0.8', changefreq: 'monthly' },
+  'sample-outfits': { priority: '0.85', changefreq: 'weekly' },
+  pricing: { priority: '0.7', changefreq: 'weekly' },
+  privacy: { priority: '0.4', changefreq: 'yearly' },
+  'refund-policy': { priority: '0.4', changefreq: 'yearly' },
+  terms: { priority: '0.4', changefreq: 'yearly' },
+  contact: { priority: '0.6', changefreq: 'yearly' },
+  'virtual-try-on-guide': { priority: '0.1', changefreq: 'monthly' },
+  'fashion-technology': { priority: '0.1', changefreq: 'monthly' },
+  'sample-friends': { priority: '0.1', changefreq: 'monthly' },
+  'outfit-photo-tips': { priority: '0.1', changefreq: 'monthly' },
+  'ai-fitting-faq': { priority: '0.1', changefreq: 'monthly' },
+  'account-deletion': { priority: '0.1', changefreq: 'yearly' },
+};
+
+const snapshotRoutes = SNAPSHOT_ROUTE_KEYS.map((key) => {
+  const route = getRouteDefinition(key);
+  const seo = SNAPSHOT_ROUTE_SEO[key];
+  if (!seo) {
+    throw new Error(`Missing snapshot SEO metadata for route "${key}"`);
+  }
+
+  return {
+    key,
+    path: route.path,
+    priority: seo.priority,
+    changefreq: seo.changefreq,
+    indexable: route.indexable,
+    sitemap: route.sitemap,
+  };
+});
 
 const pageTypeByKey = {
   about: 'AboutPage',
   contact: 'ContactPage',
-  'traditional-clothing': 'CollectionPage',
+  'sample-outfits': 'CollectionPage',
 };
 
 const escapeHtml = (value) =>
@@ -145,17 +162,7 @@ const renderHowToSchema = (page, pageUrl) => ({
 
 const resolveGaMeasurementId = async () => {
   const envValue = process.env.VITE_GA_MEASUREMENT_ID?.trim();
-  if (envValue) {
-    return envValue;
-  }
-
-  try {
-    const envFile = await readFile(envFilePath, 'utf8');
-    const matchedLine = envFile.match(/^VITE_GA_MEASUREMENT_ID=(.*)$/m);
-    return matchedLine?.[1]?.trim() || '';
-  } catch {
-    return '';
-  }
+  return envValue || '';
 };
 
 const renderGaBootstrap = (measurementId) => {
@@ -208,7 +215,7 @@ const buildHomeSnapshot = (locale) => ({
     },
   ],
   faq: [],
-  relatedPages: ['tryon', 'traditional-clothing', 'dog-outfit-generator', 'cat-outfit-generator', 'pricing'],
+  relatedPages: ['tryon', 'sample-outfits', 'dog-outfit-generator', 'cat-outfit-generator', 'pricing'],
 });
 
 const buildContactSnapshot = (locale) => ({
@@ -235,6 +242,52 @@ const buildContactSnapshot = (locale) => ({
   relatedPages: ['tryon', 'pricing', 'privacy', 'terms'],
 });
 
+const buildTryOnSnapshot = (locale, landingContent) => ({
+  title: locale.pages.tryon.title,
+  description: locale.pages.tryon.description,
+  summary: locale.pages.tryon.description,
+  sections: [
+    ...locale.pages.tryon.sections,
+    ...landingContent.steps.items.map((item) => ({
+      heading: `${item.step} ${item.title}`,
+      paragraphs: [item.description],
+    })),
+  ],
+  faq: [],
+  relatedPages: ['sample-outfits', 'dog-outfit-generator', 'cat-outfit-generator', 'pricing'],
+});
+
+const buildSampleOutfitsSnapshot = () => ({
+  title: 'Outfit Ideas',
+  description: 'Browse pet outfit ideas and costume references before you open the try-on tool.',
+  summary: 'Use this page to compare broader directions such as everyday outfits, hoodies, formal looks, holiday costumes, hanbok, and funny themed looks before generation.',
+  sections: [
+    {
+      heading: 'Start with the outfit category, not the final image',
+      paragraphs: [
+        'Use this hub when you know the mood you want, but do not have the final outfit image yet.',
+        'The fastest route is to choose a category first, then move into the try-on tool or a focused landing page.',
+      ],
+    },
+    {
+      heading: 'Categories to compare first',
+      paragraphs: [
+        'Start with everyday, hoodie, formal, holiday, hanbok or traditional, and funny or theme directions.',
+        'Traditional looks still matter here, but only as one subcategory inside a broader outfit ideas hub.',
+      ],
+    },
+    {
+      heading: 'Use it as a bridge into the tool',
+      paragraphs: [
+        'Once you find a direction that feels right, move to the try-on page with a stronger outfit image.',
+        'That is the practical role of this page: narrowing the idea quickly before generation.',
+      ],
+    },
+  ],
+  faq: [],
+  relatedPages: ['tryon', 'dog-outfit-generator', 'cat-outfit-generator', 'pet-halloween-costume', 'pet-hanbok'],
+});
+
 const buildSnapshotPage = (key, locale, editorialData, seoLandingPages) => {
   if (key === 'home') {
     return buildHomeSnapshot(locale);
@@ -242,6 +295,22 @@ const buildSnapshotPage = (key, locale, editorialData, seoLandingPages) => {
 
   if (key === 'contact') {
     return buildContactSnapshot(locale);
+  }
+
+  if (key === 'tryon') {
+    return buildTryOnSnapshot(locale, {
+      steps: {
+        items: [
+          { step: '01', title: 'Upload your pet photo', description: 'Choose a clear dog or cat photo with a visible face.' },
+          { step: '02', title: 'Add an outfit image', description: 'Use a sample outfit or your own clothing image.' },
+          { step: '03', title: 'Generate and compare', description: 'Create the preview, then decide which look is worth keeping.' },
+        ],
+      },
+    });
+  }
+
+  if (key === 'sample-outfits') {
+    return buildSampleOutfitsSnapshot();
   }
 
   if (seoLandingPages[key]) {

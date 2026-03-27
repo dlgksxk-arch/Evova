@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/generateStaticSnapshots.mjs",
-    "build:preview": "VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev vite build && node scripts/generateStaticSnapshots.mjs",
+    "build": "vite build && node --experimental-strip-types --experimental-specifier-resolution=node scripts/generateStaticSnapshots.mjs",
+    "build:preview": "VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev vite build && node --experimental-strip-types --experimental-specifier-resolution=node scripts/generateStaticSnapshots.mjs",
     "build:worker": "npm run build",
     "build:app": "npm run build && node scripts/pruneAppBundle.mjs",
     "check:android-release": "node scripts/checkAndroidReleaseReadiness.mjs",

@@ -1,5 +1,11 @@
 import type { LanguageCode } from '../../constants/languages';
 import type { ContentLocale, SitePage } from '../../locales';
+import {
+  CANONICAL_PATHS,
+  INDEXABLE_ROUTE_KEYS,
+  LEGACY_ROUTE_REDIRECTS,
+  PAGE_PATHS as ROUTE_PAGE_PATHS,
+} from '../routes/routeManifest';
 
 export const SEO_BASE_URL = 'https://hamdeva.com';
 export const SEO_SITE_NAME = 'HAMDEVA';
@@ -8,74 +14,14 @@ export const SEO_DEFAULT_OG_IMAGE_ALT = 'HAMDEVA pet fitting preview';
 export const SEO_INDEX_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 export const SEO_NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
 
-export const PAGE_PATHS: Record<SitePage, string> = {
-  home: '/',
-  tryon: '/tryon',
-  admin: '/admin',
-  'dog-outfit-generator': '/dog-outfit-generator',
-  'cat-outfit-generator': '/cat-outfit-generator',
-  'pet-halloween-costume': '/pet-halloween-costume',
-  'pet-hanbok': '/pet-hanbok',
-  'dog-hoodie': '/dog-hoodie',
-  'cat-formal-outfit': '/cat-formal-outfit',
-  'dog-hanbok': '/dog-hanbok',
-  'cat-kimono': '/cat-kimono',
-  'pet-qipao': '/pet-qipao',
-  'pet-saree': '/pet-saree',
-  'maltese-hanbok': '/maltese-hanbok',
-  'shiba-kimono': '/shiba-kimono',
-  'corgi-qipao': '/corgi-qipao',
-  'persian-cat-saree': '/persian-cat-saree',
-  'tuxedo-cat-hanbok': '/tuxedo-cat-hanbok',
-  'poodle-wedding-dress': '/poodle-wedding-dress',
-  'ragdoll-kimono': '/ragdoll-kimono',
-  about: '/about',
-  'how-it-works': '/how-to-use',
-  'traditional-clothing': '/sample-outfits',
-  'sample-friends': '/sample-friends',
-  countries: '/countries',
-  'fashion-technology': '/fashion-technology',
-  pricing: '/pricing',
-  'virtual-try-on-guide': '/virtual-try-on-guide',
-  'outfit-photo-tips': '/outfit-photo-tips',
-  'ai-fitting-faq': '/ai-fitting-faq',
-  privacy: '/privacy',
-  'account-deletion': '/account-deletion',
-  'refund-policy': '/refund-policy',
-  terms: '/terms',
-  contact: '/contact',
-  board: '/board',
-  'site-management': '/site-management',
-  mypage: '/mypage',
-  history: '/history',
-  'payment-success': '/payment-success',
-  'payment-failed': '/payment-failed',
-};
-
-export const INDEXABLE_PAGES = new Set<SitePage>([
-  'home',
-  'tryon',
-  'dog-outfit-generator',
-  'cat-outfit-generator',
-  'pet-halloween-costume',
-  'pet-hanbok',
-  'dog-hoodie',
-  'cat-formal-outfit',
-  'about',
-  'how-it-works',
-  'traditional-clothing',
-  'pricing',
-  'privacy',
-  'refund-policy',
-  'terms',
-  'contact',
-]);
-
-export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = {
-  '/how-it-works': 'how-it-works',
-  '/traditional-clothing': 'traditional-clothing',
-  '/countries': 'traditional-clothing',
-};
+export const PAGE_PATHS: Record<SitePage, string> = ROUTE_PAGE_PATHS as Record<SitePage, string>;
+export const INDEXABLE_PAGES = new Set<SitePage>(INDEXABLE_ROUTE_KEYS);
+export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = Object.fromEntries(
+  Array.from(LEGACY_ROUTE_REDIRECTS.entries()).map(([legacyPath, targetPath]) => {
+    const targetPage = (Object.entries(PAGE_PATHS).find(([, path]) => path === targetPath)?.[0] ?? null) as SitePage | null;
+    return targetPage ? [legacyPath, targetPage] : null;
+  }).filter((entry): entry is [string, SitePage] => entry !== null),
+);
 
 const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description: string }>> = {
   tryon: {
@@ -158,7 +104,7 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
     title: 'How to Use HAMDEVA',
     description: 'See how to upload pet photos, choose outfit images, and get better AI pet fitting, dog clothes try on, and pet outfit preview results with HAMDEVA.',
   },
-  'traditional-clothing': {
+  'sample-outfits': {
     title: 'Pet Outfit Ideas',
     description: 'Browse pet outfit ideas, costume references, and stronger starting points before you open the HAMDEVA try-on tool.',
   },
@@ -261,7 +207,7 @@ const OG_LOCALE_BY_LANG: Partial<Record<LanguageCode, string>> = {
 const withBrand = (title: string): string =>
   title.includes(SEO_SITE_NAME) ? title : `${title} | ${SEO_SITE_NAME}`;
 
-export const getCanonicalPageUrl = (page: SitePage): string => `${SEO_BASE_URL}${PAGE_PATHS[page]}`;
+export const getCanonicalPageUrl = (page: SitePage): string => `${SEO_BASE_URL}${CANONICAL_PATHS[page]}`;
 
 export const buildSeoMeta = ({
   contentLocale,

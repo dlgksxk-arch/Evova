@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "होम",
-    "traditional-clothing": "सैंपल आउटफिट जानकारी",
+    "sample-outfits": "सैंपल आउटफिट जानकारी",
     "countries": "सैंपल आउटफिट जानकारी",
     "how-it-works": "कैसे काम करता है",
     "fashion-technology": "सैंपल आउटफिट जानकारी",
@@ -118,7 +118,7 @@
     ]
   },
   "pages": {
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "सैंपल आउटफिट जानकारी",
       "description": "यह HAMDEVA AI फिटिंग को ट्राय करने के लिए सैंपल आउटफिट कलेक्शन है।\n\nचेहरे की फोटो और कपड़ों की इमेज चुनें, फिर AI बहु-एंगल रिज़ल्ट बनाएगा।",
       "sections": [

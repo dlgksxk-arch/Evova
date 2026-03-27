@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "tryon": "Try On",
-    "traditional-clothing": "Outfit Ideas",
+    "sample-outfits": "Outfit Ideas",
     "dog-outfit-generator": "Dog Outfit Generator",
     "cat-outfit-generator": "Cat Outfit Generator",
     "pet-halloween-costume": "Pet Halloween Costume",
@@ -137,7 +137,7 @@
     ]
   },
   "pages": {
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "Outfit Ideas",
       "description": "Browse pet outfit ideas, costume references, and sample directions for dogs and cats before creating your own preview.",
       "sections": [

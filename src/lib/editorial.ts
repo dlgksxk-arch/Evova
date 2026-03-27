@@ -4,7 +4,7 @@ import type { LanguageCode } from '../constants/languages';
 export const EDITORIAL_PAGE_KEYS = [
   'about',
   'how-it-works',
-  'traditional-clothing',
+  'sample-outfits',
   'countries',
   'fashion-technology',
   'virtual-try-on-guide',

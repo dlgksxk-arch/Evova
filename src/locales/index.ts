@@ -1,4 +1,5 @@
 import type { LanguageCode } from '../constants/languages';
+import { HEADER_NAV_ROUTE_KEYS, SITE_ROUTE_KEYS, type RouteKey } from '../lib/routes/routeManifest';
 import en from './en.json';
 import hi from './hi.json';
 import ja from './ja.json';
@@ -14,101 +15,11 @@ type DeepPartial<T> = {
       ? DeepPartial<T[K]>
       : T[K];
 };
-export type SitePage =
-  | 'home'
-  | 'tryon'
-  | 'admin'
-  | 'dog-outfit-generator'
-  | 'cat-outfit-generator'
-  | 'pet-halloween-costume'
-  | 'pet-hanbok'
-  | 'dog-hoodie'
-  | 'cat-formal-outfit'
-  | 'dog-hanbok'
-  | 'cat-kimono'
-  | 'pet-qipao'
-  | 'pet-saree'
-  | 'maltese-hanbok'
-  | 'shiba-kimono'
-  | 'corgi-qipao'
-  | 'persian-cat-saree'
-  | 'tuxedo-cat-hanbok'
-  | 'poodle-wedding-dress'
-  | 'ragdoll-kimono'
-  | 'traditional-clothing'
-  | 'sample-friends'
-  | 'countries'
-  | 'how-it-works'
-  | 'fashion-technology'
-  | 'pricing'
-  | 'virtual-try-on-guide'
-  | 'outfit-photo-tips'
-  | 'ai-fitting-faq'
-  | 'about'
-  | 'privacy'
-  | 'account-deletion'
-  | 'refund-policy'
-  | 'terms'
-  | 'contact'
-  | 'board'
-  | 'site-management'
-  | 'mypage'
-  | 'history'
-  | 'payment-success'
-  | 'payment-failed';
+export type SitePage = RouteKey;
 
-export const SITE_PAGES: SitePage[] = [
-  'home',
-  'tryon',
-  'admin',
-  'dog-outfit-generator',
-  'cat-outfit-generator',
-  'pet-halloween-costume',
-  'pet-hanbok',
-  'dog-hoodie',
-  'cat-formal-outfit',
-  'dog-hanbok',
-  'cat-kimono',
-  'pet-qipao',
-  'pet-saree',
-  'maltese-hanbok',
-  'shiba-kimono',
-  'corgi-qipao',
-  'persian-cat-saree',
-  'tuxedo-cat-hanbok',
-  'poodle-wedding-dress',
-  'ragdoll-kimono',
-  'traditional-clothing',
-  'sample-friends',
-  'countries',
-  'how-it-works',
-  'fashion-technology',
-  'pricing',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
-  'about',
-  'privacy',
-  'account-deletion',
-  'refund-policy',
-  'terms',
-  'contact',
-  'board',
-  'site-management',
-  'mypage',
-  'history',
-  'payment-success',
-  'payment-failed',
-];
+export const SITE_PAGES: SitePage[] = [...SITE_ROUTE_KEYS];
 
-export const NAV_PAGES: SitePage[] = [
-  'home',
-  'tryon',
-  'traditional-clothing',
-  'how-it-works',
-  'pricing',
-  'contact',
-];
+export const NAV_PAGES: SitePage[] = [...HEADER_NAV_ROUTE_KEYS];
 
 const locales: Partial<Record<LanguageCode, DeepPartial<ContentLocale>>> = {
   en,

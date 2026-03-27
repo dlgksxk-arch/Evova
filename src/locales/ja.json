@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "ホーム",
-    "traditional-clothing": "サンプル衣装",
+    "sample-outfits": "サンプル衣装",
     "sample-friends": "サンプルフレンズ",
     "countries": "国別衣装",
     "how-it-works": "使い方",
@@ -169,7 +169,7 @@
     ]
   },
   "pages": {
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "サンプル衣装",
       "description": "犬や猫の試着プレビューに使いやすいサンプル衣装を見比べ、方向を決めるためのページです。",
       "sections": [

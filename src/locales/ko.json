@@ -2,7 +2,7 @@
   "nav": {
     "home": "홈",
     "tryon": "Try On",
-    "traditional-clothing": "Outfit Ideas",
+    "sample-outfits": "Outfit Ideas",
     "dog-outfit-generator": "강아지 의상 생성기",
     "cat-outfit-generator": "고양이 의상 생성기",
     "pet-halloween-costume": "반려동물 할로윈 코스튬",
@@ -137,7 +137,7 @@
     ]
   },
   "pages": {
-    "traditional-clothing": {
+    "sample-outfits": {
       "title": "Outfit Ideas",
       "description": "강아지와 고양이를 위한 outfit ideas, costume ideas, 샘플 레퍼런스를 먼저 둘러보는 페이지입니다.",
       "sections": [
