@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import type { LanguageCode } from '../../constants/languages';
-import { clothSampleOptions } from '../../data/clothSamples';
-import { FACE_SAMPLE_OPTIONS, type FaceCategory } from '../../data/faceSamples';
 import type { ImageLoadState, SubjectType } from '../../types/hamdeva';
 import ResultActionsPanel from './ResultActionsPanel';
 
@@ -285,67 +283,6 @@ const getResultLoopCopy = (lang: LanguageCode) => {
   };
 };
 
-const getSegmentedCopy = (lang: LanguageCode) => {
-  if (lang === 'ko') {
-    return {
-      samplePet: '샘플에서 고르기',
-      uploadPet: '내 사진 업로드',
-      sampleOutfit: '샘플 의상 고르기',
-      uploadOutfit: '의상 이미지 업로드',
-      morePetSamples: '샘플 더보기',
-      moreOutfitSamples: '의상 더보기',
-      dropPetTitle: '펫 사진을 올려주세요',
-      dropOutfitTitle: '의상 이미지를 올려주세요',
-      dropGuideTop: '드래그 앤 드롭 또는 파일 선택',
-      dropGuideBottom: '얼굴과 상체가 잘 보이는 사진이 좋아요.',
-      outfitGuideBottom: '정면 의상 이미지일수록 결과가 안정적이에요.',
-      quickPetSamples: '빠른 펫 샘플',
-      quickOutfitSamples: '빠른 의상 샘플',
-      resultCanvas: 'Preview Canvas',
-      resultIcon: '✨',
-    };
-  }
-
-  return {
-    samplePet: 'Choose Sample',
-    uploadPet: 'Upload My Photo',
-    sampleOutfit: 'Choose Sample Outfit',
-    uploadOutfit: 'Upload Outfit Image',
-    morePetSamples: 'More samples',
-    moreOutfitSamples: 'More outfits',
-    dropPetTitle: 'Drop a pet photo here',
-    dropOutfitTitle: 'Drop an outfit image here',
-    dropGuideTop: 'Drag and drop or choose a file.',
-    dropGuideBottom: 'Clear face and upper body photos work best.',
-    outfitGuideBottom: 'Front-facing outfit images usually fit better.',
-    quickPetSamples: 'Quick pet samples',
-    quickOutfitSamples: 'Quick outfit samples',
-    resultCanvas: 'Preview Canvas',
-    resultIcon: '✨',
-  };
-};
-
-type InputMode = 'sample' | 'upload';
-type OutfitQuickFilter = 'hanbok' | 'formal' | 'holiday' | 'theme';
-
-const getOutfitQuickFilterCopy = (lang: LanguageCode): Array<{ id: OutfitQuickFilter; label: string }> => {
-  if (lang === 'ko') {
-    return [
-      { id: 'hanbok', label: '한복' },
-      { id: 'formal', label: '정장' },
-      { id: 'holiday', label: '홀리데이' },
-      { id: 'theme', label: '테마' },
-    ];
-  }
-
-  return [
-    { id: 'hanbok', label: 'Hanbok' },
-    { id: 'formal', label: 'Formal' },
-    { id: 'holiday', label: 'Holiday' },
-    { id: 'theme', label: 'Theme' },
-  ];
-};
-
 interface TryOnStudioProps {
   layout?: 'page' | 'modal';
   currentUser: unknown;
@@ -393,8 +330,6 @@ interface TryOnStudioProps {
   clothInputRef: React.RefObject<HTMLInputElement | null>;
   onOpenPersonSampleModal: () => void;
   onOpenClothSampleModal: () => void;
-  onQuickSelectPersonSample?: (url: string, category: FaceCategory) => void;
-  onQuickSelectClothSample?: (url: string) => void;
   onPersonFileChange: (file: File) => void;
   onClothFileChange: (file: File) => void;
   onPersonExternalDrop: (source: File | string) => Promise<void> | void;
@@ -456,8 +391,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   clothInputRef,
   onOpenPersonSampleModal,
   onOpenClothSampleModal,
-  onQuickSelectPersonSample,
-  onQuickSelectClothSample,
   onPersonFileChange,
   onClothFileChange,
   onPersonExternalDrop,
@@ -498,55 +431,12 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
     dog: createRunnerObstacleProfile(),
     cat: createRunnerObstacleProfile(),
   }));
-  const [personInputMode, setPersonInputMode] = useState<InputMode>('sample');
-  const [clothInputMode, setClothInputMode] = useState<InputMode>('sample');
-  const [outfitQuickFilter, setOutfitQuickFilter] = useState<OutfitQuickFilter>('hanbok');
   const isModalLayout = layout === 'modal';
   const isReadyToGenerate = Boolean(activePersonImage && activeClothImage && canAffordGeneration);
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
   const modalClothGuide = getModalPreviewGuide(lang, 'cloth');
   const generationPanelCopy = getGenerationPanelCopy(lang);
   const resultLoopCopy = getResultLoopCopy(lang);
-  const segmentedCopy = getSegmentedCopy(lang);
-  const outfitQuickFilters = getOutfitQuickFilterCopy(lang);
-  const quickPetCategory: FaceCategory = selectedSampleUrl && FACE_SAMPLE_OPTIONS.cat.some((sample) => sample.url === selectedSampleUrl)
-    ? 'cat'
-    : subjectType === 'cat'
-      ? 'cat'
-      : 'dog';
-  const quickPetSamples = FACE_SAMPLE_OPTIONS[quickPetCategory].slice(0, 4);
-  const quickOutfitSamples = clothSampleOptions.filter((sample) => {
-    if (outfitQuickFilter === 'hanbok') {
-      return sample.country === 'korea';
-    }
-    if (outfitQuickFilter === 'formal') {
-      return sample.category === 'classic';
-    }
-    if (outfitQuickFilter === 'holiday') {
-      return sample.category === 'special';
-    }
-    return sample.category === 'future' || sample.category === 'male';
-  }).slice(0, 6);
-
-  useEffect(() => {
-    if (selectedSampleUrl) {
-      setPersonInputMode('sample');
-      return;
-    }
-    if (personFile || personImage) {
-      setPersonInputMode('upload');
-    }
-  }, [personFile, personImage, selectedSampleUrl]);
-
-  useEffect(() => {
-    if (selectedClothSampleUrl) {
-      setClothInputMode('sample');
-      return;
-    }
-    if (clothFile || clothImage) {
-      setClothInputMode('upload');
-    }
-  }, [clothFile, clothImage, selectedClothSampleUrl]);
 
   useEffect(() => {
     if (isGenerating) {
@@ -940,7 +830,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
         </div>
       ) : (
         <div className="result-preview-placeholder">
-          <div className="result-preview-placeholder-icon" aria-hidden="true">{segmentedCopy.resultIcon}</div>
           <div className="result-preview-placeholder-badge">{modalCopy?.resultTitle ?? copy.resultTitle}</div>
           <strong>{generationPanelCopy.idleTitle}</strong>
           <p>{generationPanelCopy.idleBody}</p>
@@ -1010,301 +899,228 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
 
   const inputColumnsNode = (
     <div className={`try-layout ${isModalLayout ? 'try-layout-modal' : ''}`}>
-      <div className="try-column try-step-card">
-        <div className="card-header">
-          <span className="section-label">{copy.step1Label}</span>
-          <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
-          <p className="try-step-description">{personInputMode === 'sample' ? modalFaceGuide.tips[0] : segmentedCopy.dropGuideTop}</p>
-        </div>
-        <div className="segmented-control" role="tablist" aria-label={copy.step1Title}>
-          <button className={`segmented-btn ${personInputMode === 'sample' ? 'is-active' : ''}`} disabled={isGenerating} onClick={() => setPersonInputMode('sample')} type="button">{segmentedCopy.samplePet}</button>
-          <button className={`segmented-btn ${personInputMode === 'upload' ? 'is-active' : ''}`} disabled={isGenerating} onClick={() => setPersonInputMode('upload')} type="button">{segmentedCopy.uploadPet}</button>
-        </div>
-        {personInputMode === 'sample' ? (
-          <div className="quick-picker-shell">
-            <div className="quick-picker-head">
-              <strong>{segmentedCopy.quickPetSamples}</strong>
-              <button className="text-link-btn" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">{segmentedCopy.morePetSamples}</button>
-            </div>
-            <div className="quick-sample-grid">
-              {quickPetSamples.map((sample) => (
-                <button
-                  key={sample.url}
-                  className={`quick-sample-card ${selectedSampleUrl === sample.url ? 'is-active' : ''}`}
-                  disabled={isGenerating}
-                  onClick={() => {
-                    setPersonInputMode('sample');
-                    onQuickSelectPersonSample?.(sample.url, sample.category);
+        <div className="try-column">
+          <div className={isModalLayout ? 'modal-input-card-layout' : undefined}>
+            <div className={isModalLayout ? 'modal-input-card-main' : undefined}>
+              <div className="card-header">
+                <span className="section-label">{copy.step1Label}</span>
+                <h3 className="card-title">{isModalLayout ? modalCopy?.personCardTitle ?? copy.step1Title : copy.step1Title}</h3>
+              </div>
+              <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
+                <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
+                  {copy.chooseSample}
+                </button>
+                <button className={`outline-btn ${isModalLayout ? 'primary' : ''}`} disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
+                  {copy.uploadMyPhoto}
+                </button>
+                <input
+                  id="p-up"
+                  ref={personInputRef}
+                  type="file"
+                  hidden
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onClick={(event) => { event.currentTarget.value = ''; }}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onPersonFileChange(file);
+                    }
                   }}
-                  type="button"
-                >
-                  <img src={sample.url} alt={sample.breedLabel} loading="lazy" />
-                  <span>{sample.breedLabel}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        <input
-          id="p-up"
-          ref={personInputRef}
-          type="file"
-          hidden
-          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-          onClick={(event) => { event.currentTarget.value = ''; }}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              setPersonInputMode('upload');
-              onPersonFileChange(file);
-            }
-          }}
-        />
-        <div
-          className={`preview-box try-step-preview ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''} ${personInputMode === 'upload' ? 'is-upload-mode' : 'is-sample-mode'}`}
-          onClick={() => {
-            if (!isGenerating && !activePersonImage) {
-              if (personInputMode === 'sample') {
-                onOpenPersonSampleModal();
-                return;
-              }
-              personInputRef.current?.click();
-            }
-          }}
-          onKeyDown={(event) => {
-            if (!isGenerating && !activePersonImage && (event.key === 'Enter' || event.key === ' ')) {
-              event.preventDefault();
-              if (personInputMode === 'sample') {
-                onOpenPersonSampleModal();
-                return;
-              }
-              personInputRef.current?.click();
-            }
-          }}
-          onDragEnter={(event) => {
-            handleDragOver(event);
-            setPersonDragActive(true);
-            setPersonInputMode('upload');
-          }}
-          onDragLeave={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-              setPersonDragActive(false);
-            }
-          }}
-          onDragOver={handleDragOver}
-          onDrop={(event) => {
-            setPersonInputMode('upload');
-            void handleDrop(event, 'person');
-          }}
-          role={!activePersonImage ? 'button' : undefined}
-          tabIndex={!activePersonImage ? 0 : -1}
-        >
-          {activePersonImage ? (
-            <>
-              {personPreviewState === 'loading' && (
-                <div className="preview-overlay">
-                  <span className="spinner"></span>
-                  <span>{personUploadMessage || copy.loadingImage}</span>
-                </div>
-              )}
-              {personPreviewState === 'error' && <div className="img-error-msg">{copy.imageLoadError}</div>}
-              <img
-                src={activePersonImage}
-                alt="Face"
-                onLoad={() => copy.setPersonPreviewReady()}
-                onError={() => copy.setPersonPreviewError()}
-                className={`${selectedSampleUrl ? 'sample-img' : personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
-              />
-            </>
-          ) : (
-            <EmptyPreviewState
-              title={personInputMode === 'sample' ? (isModalLayout ? modalFaceGuide.title : copy.facePlaceholderTitle) : segmentedCopy.dropPetTitle}
-              tips={personInputMode === 'sample' ? (isModalLayout ? modalFaceGuide.tips : emptyFaceTips.slice(0, 2)) : [segmentedCopy.dropGuideTop, segmentedCopy.dropGuideBottom]}
-              type="face"
-              badgeLabel={emptyPreviewCopy.faceBadge}
-            />
-          )}
-          {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
-          {(personImage || selectedSampleUrl) && (
-            <button className="clear-img-btn" disabled={isGenerating} onClick={onClearPerson} type="button">&times;</button>
-          )}
-        </div>
-        <div className="try-actions try-actions-row">
-          {personInputMode === 'sample' ? (
-            <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenPersonSampleModal} type="button">
-              {segmentedCopy.morePetSamples}
-            </button>
-          ) : (
-            <button className="outline-btn primary" disabled={isGenerating} onClick={() => personInputRef.current?.click()} type="button">
-              {copy.uploadMyPhoto}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="try-column try-step-card">
-        <div className="card-header">
-          <span className="section-label">{copy.step2Label}</span>
-          <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
-          <p className="try-step-description">{clothInputMode === 'sample' ? modalClothGuide.tips[0] : segmentedCopy.dropGuideTop}</p>
-        </div>
-        <div className="segmented-control" role="tablist" aria-label={copy.step2Title}>
-          <button className={`segmented-btn ${clothInputMode === 'sample' ? 'is-active' : ''}`} disabled={isGenerating} onClick={() => setClothInputMode('sample')} type="button">{segmentedCopy.sampleOutfit}</button>
-          <button className={`segmented-btn ${clothInputMode === 'upload' ? 'is-active' : ''}`} disabled={isGenerating} onClick={() => setClothInputMode('upload')} type="button">{segmentedCopy.uploadOutfit}</button>
-        </div>
-        {clothInputMode === 'sample' ? (
-          <div className="quick-picker-shell">
-            <div className="quick-picker-head">
-              <strong>{segmentedCopy.quickOutfitSamples}</strong>
-              <button className="text-link-btn" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">{segmentedCopy.moreOutfitSamples}</button>
-            </div>
-            <div className="quick-filter-row">
-              {outfitQuickFilters.map((filter) => (
-                <button
-                  key={filter.id}
-                  className={`quick-filter-chip ${outfitQuickFilter === filter.id ? 'is-active' : ''}`}
-                  disabled={isGenerating}
-                  onClick={() => setOutfitQuickFilter(filter.id)}
-                  type="button"
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-            <div className="quick-sample-grid quick-outfit-grid">
-              {quickOutfitSamples.map((sample) => (
-                <button
-                  key={sample.id}
-                  className={`quick-sample-card quick-outfit-card ${selectedClothSampleUrl === sample.image ? 'is-active' : ''}`}
-                  disabled={isGenerating}
-                  onClick={() => {
-                    setClothInputMode('sample');
-                    onQuickSelectClothSample?.(sample.image);
-                  }}
-                  type="button"
-                >
-                  <img src={sample.image} alt={sample.label} loading="lazy" />
-                  <span>{sample.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        <input
-          id="c-up"
-          ref={clothInputRef}
-          type="file"
-          hidden
-          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-          onClick={(event) => { event.currentTarget.value = ''; }}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              setClothInputMode('upload');
-              onClothFileChange(file);
-            }
-          }}
-        />
-        <div
-          className={`preview-box try-step-preview ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''} ${clothInputMode === 'upload' ? 'is-upload-mode' : 'is-sample-mode'}`}
-          onClick={() => {
-            if (!isGenerating && !activeClothImage) {
-              if (clothInputMode === 'sample') {
-                onOpenClothSampleModal();
-                return;
-              }
-              clothInputRef.current?.click();
-            }
-          }}
-          onKeyDown={(event) => {
-            if (!isGenerating && !activeClothImage && (event.key === 'Enter' || event.key === ' ')) {
-              event.preventDefault();
-              if (clothInputMode === 'sample') {
-                onOpenClothSampleModal();
-                return;
-              }
-              clothInputRef.current?.click();
-            }
-          }}
-          onDragEnter={(event) => {
-            handleDragOver(event);
-            setClothDragActive(true);
-            setClothInputMode('upload');
-          }}
-          onDragLeave={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-              setClothDragActive(false);
-            }
-          }}
-          onDragOver={handleDragOver}
-          onDrop={(event) => {
-            setClothInputMode('upload');
-            void handleDrop(event, 'cloth');
-          }}
-          role={!activeClothImage ? 'button' : undefined}
-          tabIndex={!activeClothImage ? 0 : -1}
-        >
-          {activeClothImage ? (
-            <>
-              {clothPreviewState === 'loading' && (
-                <div className="preview-overlay">
-                  <span className="spinner"></span>
-                  <span>{clothUploadMessage || copy.loadingImage}</span>
-                </div>
-              )}
-              {clothPreviewState === 'error' ? (
-                <div className="img-error-msg">{copy.imageLoadError}</div>
-              ) : (
-                <img
-                  src={activeClothImage}
-                  alt="Cloth"
-                  className={clothPreviewState === 'ready' ? 'is-visible' : ''}
-                  onLoad={() => copy.setClothPreviewReady()}
-                  onError={() => copy.setClothPreviewError()}
                 />
-              )}
-              {selectedClothSampleUrl && activeClothImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
-              {(clothImage || selectedClothSampleUrl) && (
-                <button className="clear-img-btn" disabled={isGenerating} onClick={onClearCloth} type="button">&times;</button>
-              )}
-            </>
-          ) : (
-            <EmptyPreviewState
-              title={clothInputMode === 'sample' ? (isModalLayout ? modalClothGuide.title : copy.clothingPlaceholderTitle) : segmentedCopy.dropOutfitTitle}
-              tips={clothInputMode === 'sample' ? (isModalLayout ? modalClothGuide.tips : emptyClothTips.slice(0, 2)) : [segmentedCopy.dropGuideTop, segmentedCopy.outfitGuideBottom]}
-              type="cloth"
-              badgeLabel={emptyPreviewCopy.styleBadge}
-            />
-          )}
+              </div>
+            </div>
+            <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
+              <div
+                className={`preview-box ${activePersonImage ? 'has-image' : 'is-clickable'} ${personDragActive ? 'drag-active' : ''}`}
+                onClick={() => {
+                  if (!isGenerating && !activePersonImage) {
+                    personInputRef.current?.click();
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!isGenerating && !activePersonImage && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    personInputRef.current?.click();
+                  }
+                }}
+                onDragEnter={(event) => {
+                  handleDragOver(event);
+                  setPersonDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setPersonDragActive(false);
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDrop={(event) => { void handleDrop(event, 'person'); }}
+                role={!activePersonImage ? 'button' : undefined}
+                tabIndex={!activePersonImage ? 0 : -1}
+              >
+                {activePersonImage ? (
+                  <>
+                    {personPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{personUploadMessage || copy.loadingImage}</span>
+                      </div>
+                    )}
+                    {personPreviewState === 'error' && <div className="img-error-msg">{copy.imageLoadError}</div>}
+                    <img
+                      src={activePersonImage}
+                      alt="Face"
+                      onLoad={() => copy.setPersonPreviewReady()}
+                      onError={() => copy.setPersonPreviewError()}
+                      className={`${selectedSampleUrl ? 'sample-img' : personImage ? 'user-uploaded' : 'sample-img'} ${personPreviewState === 'ready' ? 'is-visible' : ''}`}
+                    />
+                  </>
+                ) : (
+                  <EmptyPreviewState
+                    title={isModalLayout ? modalFaceGuide.title : copy.facePlaceholderTitle}
+                    tips={isModalLayout ? modalFaceGuide.tips : emptyFaceTips.slice(0, 2)}
+                    type="face"
+                    badgeLabel={emptyPreviewCopy.faceBadge}
+                    hint={
+                      isModalLayout
+                        ? [modalCopy?.personCardBody, copy.faceCopyrightNotice].filter(Boolean).join(' ')
+                        : undefined
+                    }
+                  />
+                )}
+                {selectedSampleUrl && activePersonImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
+                {(personImage || selectedSampleUrl) && (
+                  <button className="clear-img-btn" disabled={isGenerating} onClick={onClearPerson} type="button">&times;</button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="try-actions try-actions-row">
-          {clothInputMode === 'sample' ? (
-            <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
-              {segmentedCopy.moreOutfitSamples}
-            </button>
-          ) : (
-            <button className="outline-btn primary" disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
-              {copy.uploadClothing}
-            </button>
-          )}
+
+        <div className="try-column">
+          <div className={isModalLayout ? 'modal-input-card-layout' : undefined}>
+            <div className={isModalLayout ? 'modal-input-card-main' : undefined}>
+              <div className="card-header">
+                <span className="section-label">{copy.step2Label}</span>
+                <h3 className="card-title">{isModalLayout ? modalCopy?.garmentCardTitle ?? copy.step2Title : copy.step2Title}</h3>
+              </div>
+              <div className={`try-actions ${isModalLayout ? 'try-actions-compact' : ''}`}>
+                <button className="outline-btn primary" disabled={isGenerating} onClick={onOpenClothSampleModal} type="button">
+                  {copy.chooseClothingSample}
+                </button>
+                <button className={`outline-btn ${isModalLayout ? 'primary' : ''}`} disabled={isGenerating} onClick={() => clothInputRef.current?.click()} type="button">
+                  {copy.uploadClothing}
+                </button>
+                <input
+                  id="c-up"
+                  ref={clothInputRef}
+                  type="file"
+                  hidden
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onClick={(event) => { event.currentTarget.value = ''; }}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) {
+                      onClothFileChange(file);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <div className={isModalLayout ? 'modal-input-card-preview' : undefined}>
+              <div
+                className={`preview-box ${activeClothImage ? 'has-image' : 'is-clickable'} ${clothDragActive ? 'drag-active' : ''}`}
+                onClick={() => {
+                  if (!isGenerating && !activeClothImage) {
+                    clothInputRef.current?.click();
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!isGenerating && !activeClothImage && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    clothInputRef.current?.click();
+                  }
+                }}
+                onDragEnter={(event) => {
+                  handleDragOver(event);
+                  setClothDragActive(true);
+                }}
+                onDragLeave={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setClothDragActive(false);
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDrop={(event) => { void handleDrop(event, 'cloth'); }}
+                role={!activeClothImage ? 'button' : undefined}
+                tabIndex={!activeClothImage ? 0 : -1}
+              >
+                {activeClothImage ? (
+                  <>
+                    {clothPreviewState === 'loading' && (
+                      <div className="preview-overlay">
+                        <span className="spinner"></span>
+                        <span>{clothUploadMessage || copy.loadingImage}</span>
+                      </div>
+                    )}
+                    {clothPreviewState === 'error' ? (
+                      <div className="img-error-msg">{copy.imageLoadError}</div>
+                    ) : (
+                      <img
+                        src={activeClothImage}
+                        alt="Cloth"
+                        className={clothPreviewState === 'ready' ? 'is-visible' : ''}
+                        onLoad={() => copy.setClothPreviewReady()}
+                        onError={() => copy.setClothPreviewError()}
+                      />
+                    )}
+                    {selectedClothSampleUrl && activeClothImage && <div className="sample-badge">{sampleBadgeLabel}</div>}
+                    {(clothImage || selectedClothSampleUrl) && (
+                      <button className="clear-img-btn" disabled={isGenerating} onClick={onClearCloth} type="button">&times;</button>
+                    )}
+                  </>
+                ) : (
+                  <EmptyPreviewState
+                    title={isModalLayout ? modalClothGuide.title : copy.clothingPlaceholderTitle}
+                    tips={isModalLayout ? modalClothGuide.tips : emptyClothTips.slice(0, 2)}
+                    type="cloth"
+                    badgeLabel={emptyPreviewCopy.styleBadge}
+                    hint={
+                      isModalLayout
+                        ? [modalCopy?.garmentCardBody, copy.clothingSafetyNotice].filter(Boolean).join(' ')
+                        : undefined
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 
   const actionSectionContentNode = (
     <>
-        <div className="card-header modal-action-header">
-          <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
-          <h3 className="card-title">{isModalLayout ? modalCopy?.actionCardTitle : (lang === 'ko' ? 'Start Pet Fitting' : 'Start Pet Fitting')}</h3>
-        </div>
-        <div className="try-generate-bar-layout">
-          <div className="credit-summary-row try-generate-bar-meta" aria-label={copy.currentCredits(currentCredits)}>
+        {isModalLayout ? (
+          <div className="card-header modal-action-header">
+            <span className="section-label">{copy.step3Label ?? 'Step 3'}</span>
+            <h3 className="card-title">{modalCopy?.actionCardTitle}</h3>
+            {modalCopy?.actionCardBody ? <p className="modal-card-description">{modalCopy.actionCardBody}</p> : null}
+          </div>
+        ) : null}
+        {copy.realGenerationCta ? <p className="real-generation-label">{copy.realGenerationCta}</p> : null}
+        {isModalLayout ? (
+          <div className="credit-summary-row" aria-label={copy.currentCredits(currentCredits)}>
             <span className="credit-summary-pill credit-summary-pill-cost">{copy.generationCostDetailed(generationCost)}</span>
             <span className="credit-summary-pill credit-summary-pill-balance">{copy.currentCredits(currentCredits)}</span>
           </div>
+        ) : (
+          <div className="credit-summary-row" aria-label={copy.currentCredits(currentCredits)}>
+            <span className="credit-summary-pill credit-summary-pill-cost">{copy.generationCostDetailed(generationCost)}</span>
+            <span className="credit-summary-pill credit-summary-pill-balance">{copy.currentCredits(currentCredits)}</span>
+          </div>
+        )}
         <button
-          className={`generate-btn try-generate-main-btn ${isGenerating ? 'is-generating' : ''}`}
+          className={`generate-btn ${isGenerating ? 'is-generating' : ''}`}
           onClick={onGenerate}
           disabled={isGenerating || !currentUser || !activePersonImage || !activeClothImage || !canAffordGeneration}
           type="button"
@@ -1320,7 +1136,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </span>
           ) : copy.generate}
         </button>
-        </div>
         {currentUser && !canAffordGeneration && (
           <>
             <p className="loading-subtext">{copy.notEnoughCredits}</p>
@@ -1357,21 +1172,17 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
           </div>
         </div>
       ) : (
-        <div className="try-tool-shell">
-          <div className="try-tool-controls">
-            {inputColumnsNode}
-            <div className="action-section action-section-card try-generate-bar-card">{actionSectionContentNode}</div>
-          </div>
-          <div className="try-tool-results">
-            {previewPanelNode}
-            {shareSidebarNode || resultFollowupNode ? (
-              <div className="results-section">
-                {shareSidebarNode}
-                {resultFollowupNode}
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <>
+          {inputColumnsNode}
+          <div className="action-section">{actionSectionContentNode}</div>
+          {previewPanelNode}
+          {shareSidebarNode || resultFollowupNode ? (
+            <div className="results-section">
+              {shareSidebarNode}
+              {resultFollowupNode}
+            </div>
+          ) : null}
+        </>
       )}
     </>
   );

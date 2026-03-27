@@ -6078,8 +6078,6 @@ const App: React.FC = () => {
     clothInputRef,
     onOpenPersonSampleModal: handleOpenPersonSampleModal,
     onOpenClothSampleModal: handleOpenClothSampleModal,
-    onQuickSelectPersonSample: (url: string, category: FaceCategory) => { void loadPersonSample(url, category); },
-    onQuickSelectClothSample: (url: string) => { void loadClothSample(url); },
     onPersonFileChange: (file: File) => { void loadPersonUpload(file); },
     onClothFileChange: (file: File) => { void loadClothUpload(file); },
     onPersonExternalDrop: (source: File | string) => { void handlePersonExternalDrop(source); },
@@ -6147,24 +6145,26 @@ const App: React.FC = () => {
           </div>
           {!isNativeAndroid && (
             <div className="nav-quick-scroll nav-inline-actions">
-              <button className="nav-quick-btn nav-link-pill" onClick={() => navigateToPage('tryon')} type="button">
-                {contentLocale.nav.tryon}
+              <button className="generate-btn nav-quick-primary" onClick={handleHeroCta} type="button">
+                {landingContent.hero.compactPrimaryButton}
               </button>
               <button className="nav-quick-btn" onClick={() => navigateToPage('how-it-works')} type="button">
                 {contentLocale.nav['how-it-works']}
               </button>
-              <button className="nav-quick-btn nav-link-pill" onClick={() => navigateToPage('sample-outfits')} type="button">
-                {contentLocale.nav['sample-outfits']}
-              </button>
               <button
-                className={`nav-quick-btn nav-credit-chip ${currentUser ? 'has-balance' : ''}`}
+                className={`nav-quick-btn nav-credit-btn ${currentUser ? 'has-balance' : ''}`}
                 onClick={currentUser ? openMyPageModal : () => openAuthModal('login')}
                 type="button"
               >
                 {currentUser ? headerCreditLabel : t.creditCheck}
               </button>
+              {currentUser && (
+                <button className="nav-quick-btn nav-subscription-btn" onClick={openMyPageModal} type="button">
+                  {headerSubscriptionLabel}
+                </button>
+              )}
               <button className="nav-payment-btn" onClick={openCreditPlanModal} type="button">
-                Pay
+                {t.chargeCredits}
               </button>
             </div>
           )}
