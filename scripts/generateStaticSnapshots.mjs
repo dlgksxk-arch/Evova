@@ -7,28 +7,37 @@ const indexHtmlPath = path.join(distDir, 'index.html');
 const editorialDataPath = path.join(projectRoot, 'src', 'data', 'editorialPages.json');
 const seoLandingPagesPath = path.join(projectRoot, 'src', 'data', 'seoLandingPages.json');
 const englishLocalePath = path.join(projectRoot, 'src', 'locales', 'en.json');
+const envFilePath = path.join(projectRoot, '.env');
 const supportEmail = 'support@hamdeva.com';
 const siteUrl = 'https://hamdeva.com';
 const defaultOgImage = `${siteUrl}/sample/og-image.png`;
 const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]*?<!-- HAMDEVA_STRUCTURED_DATA_END -->/;
+const INDEX_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+const NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
 
 const snapshotRoutes = [
-  { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
-  { key: 'tryon', path: '/tryon', priority: '0.95', changefreq: 'weekly' },
-  { key: 'dog-outfit-generator', path: '/dog-outfit-generator', priority: '0.9', changefreq: 'weekly' },
-  { key: 'cat-outfit-generator', path: '/cat-outfit-generator', priority: '0.9', changefreq: 'weekly' },
-  { key: 'pet-halloween-costume', path: '/pet-halloween-costume', priority: '0.8', changefreq: 'weekly' },
-  { key: 'pet-hanbok', path: '/pet-hanbok', priority: '0.8', changefreq: 'weekly' },
-  { key: 'dog-hoodie', path: '/dog-hoodie', priority: '0.8', changefreq: 'weekly' },
-  { key: 'cat-formal-outfit', path: '/cat-formal-outfit', priority: '0.8', changefreq: 'weekly' },
-  { key: 'about', path: '/about', priority: '0.7', changefreq: 'monthly' },
-  { key: 'how-it-works', path: '/how-to-use', priority: '0.8', changefreq: 'monthly' },
-  { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.85', changefreq: 'weekly' },
-  { key: 'pricing', path: '/pricing', priority: '0.7', changefreq: 'weekly' },
-  { key: 'privacy', path: '/privacy', priority: '0.4', changefreq: 'yearly' },
-  { key: 'refund-policy', path: '/refund-policy', priority: '0.4', changefreq: 'yearly' },
-  { key: 'terms', path: '/terms', priority: '0.4', changefreq: 'yearly' },
-  { key: 'contact', path: '/contact', priority: '0.6', changefreq: 'yearly' },
+  { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'tryon', path: '/tryon', priority: '0.95', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'dog-outfit-generator', path: '/dog-outfit-generator', priority: '0.9', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'cat-outfit-generator', path: '/cat-outfit-generator', priority: '0.9', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'pet-halloween-costume', path: '/pet-halloween-costume', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'pet-hanbok', path: '/pet-hanbok', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'dog-hoodie', path: '/dog-hoodie', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'cat-formal-outfit', path: '/cat-formal-outfit', priority: '0.8', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'about', path: '/about', priority: '0.7', changefreq: 'monthly', indexable: true, sitemap: true },
+  { key: 'how-it-works', path: '/how-to-use', priority: '0.8', changefreq: 'monthly', indexable: true, sitemap: true },
+  { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.85', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'pricing', path: '/pricing', priority: '0.7', changefreq: 'weekly', indexable: true, sitemap: true },
+  { key: 'privacy', path: '/privacy', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
+  { key: 'refund-policy', path: '/refund-policy', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
+  { key: 'terms', path: '/terms', priority: '0.4', changefreq: 'yearly', indexable: true, sitemap: true },
+  { key: 'contact', path: '/contact', priority: '0.6', changefreq: 'yearly', indexable: true, sitemap: true },
+  { key: 'virtual-try-on-guide', path: '/virtual-try-on-guide', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
+  { key: 'fashion-technology', path: '/fashion-technology', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
+  { key: 'sample-friends', path: '/sample-friends', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
+  { key: 'outfit-photo-tips', path: '/outfit-photo-tips', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
+  { key: 'ai-fitting-faq', path: '/ai-fitting-faq', priority: '0.1', changefreq: 'monthly', indexable: false, sitemap: false },
+  { key: 'account-deletion', path: '/account-deletion', priority: '0.1', changefreq: 'yearly', indexable: false, sitemap: false },
 ];
 
 const pageTypeByKey = {
@@ -133,6 +142,47 @@ const renderHowToSchema = (page, pageUrl) => ({
     text: section.paragraphs.join(' '),
   })),
 });
+
+const resolveGaMeasurementId = async () => {
+  const envValue = process.env.VITE_GA_MEASUREMENT_ID?.trim();
+  if (envValue) {
+    return envValue;
+  }
+
+  try {
+    const envFile = await readFile(envFilePath, 'utf8');
+    const matchedLine = envFile.match(/^VITE_GA_MEASUREMENT_ID=(.*)$/m);
+    return matchedLine?.[1]?.trim() || '';
+  } catch {
+    return '';
+  }
+};
+
+const renderGaBootstrap = (measurementId) => {
+  const safeMeasurementId = /^[A-Z0-9-]+$/i.test(measurementId) ? measurementId : '';
+
+  return `    <script>
+      window.__HAMDEVA_GA_MEASUREMENT_ID__ = ${JSON.stringify(safeMeasurementId)};
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function gtag() {
+        window.dataLayer.push(arguments);
+      };
+      (function initializeHamdevaGa() {
+        var measurementId = window.__HAMDEVA_GA_MEASUREMENT_ID__;
+        if (!measurementId) {
+          return;
+        }
+
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+        document.head.appendChild(script);
+
+        window.gtag('js', new Date());
+        window.gtag('config', measurementId, { send_page_view: false });
+      })();
+    </script>`;
+};
 
 const replaceTag = (html, pattern, replacement) => (
   pattern.test(html) ? html.replace(pattern, replacement) : html
@@ -339,7 +389,7 @@ const renderStructuredData = (routeKey, page, pageUrl) => {
 
 const renderSitemapXml = (routes, lastModified) => `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.map((route) => `  <url>
+${routes.filter((route) => route.sitemap !== false).map((route) => `  <url>
     <loc>${siteUrl}${route.path === '/' ? '/' : route.path}</loc>
     <lastmod>${lastModified}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
@@ -359,6 +409,8 @@ const main = async () => {
   const editorialData = JSON.parse(editorialDataRaw);
   const seoLandingPages = JSON.parse(seoLandingPagesRaw);
   const locale = JSON.parse(englishLocaleRaw);
+  const gaMeasurementId = await resolveGaMeasurementId();
+  const gaBootstrap = renderGaBootstrap(gaMeasurementId);
   const routeLookup = new Map(snapshotRoutes.map((route) => [route.key, route]));
   const pages = new Map(snapshotRoutes.map((route) => [route.key, buildSnapshotPage(route.key, locale, editorialData, seoLandingPages)]));
   const lastModified = new Date().toISOString().slice(0, 10);
@@ -373,11 +425,12 @@ const main = async () => {
     const documentTitle = page.title.includes('HAMDEVA') ? page.title : `${page.title} | HAMDEVA`;
     const structuredData = renderStructuredData(route.key, page, pageUrl);
     const pageBody = renderPageBody(page, pages, routeLookup);
+    const robotsContent = route.indexable === false ? NOINDEX_ROBOTS : INDEX_ROBOTS;
 
     let html = baseHtml;
     html = replaceTag(html, /<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(documentTitle)}</title>`);
     html = replaceTag(html, /<meta\s+name="description"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="description" content="${escapeHtml(page.description)}" />`);
-    html = replaceTag(html, /<meta\s+name="robots"\s+content="[\s\S]*?"\s*\/?>/, '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />');
+    html = replaceTag(html, /<meta\s+name="robots"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="robots" content="${robotsContent}" />`);
     html = replaceTag(html, /<meta\s+property="og:title"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:title" content="${escapeHtml(documentTitle)}" />`);
     html = replaceTag(html, /<meta\s+property="og:description"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:description" content="${escapeHtml(page.description)}" />`);
     html = replaceTag(html, /<meta\s+property="og:url"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:url" content="${pageUrl}" />`);
@@ -388,6 +441,7 @@ const main = async () => {
     html = replaceTag(html, /<meta\s+name="twitter:image"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="twitter:image" content="${defaultOgImage}" />`);
     html = replaceTag(html, /<meta\s+name="twitter:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta name="twitter:image:alt" content="HAMDEVA pet outfit preview" />');
     html = replaceTag(html, /<link\s+rel="canonical"\s+href="[\s\S]*?"\s*\/?>/, `<link rel="canonical" href="${pageUrl}" />`);
+    html = html.replace('<!-- HAMDEVA_GA_BOOTSTRAP -->', gaBootstrap);
     html = html.replace(structuredDataBlockPattern, structuredData);
     html = html.replace('<div id="root"></div>', pageBody);
 

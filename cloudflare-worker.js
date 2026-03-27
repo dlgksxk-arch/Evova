@@ -21,6 +21,12 @@ const NON_INDEXABLE_PATHS = new Set([
   '/site-management',
   '/payment-success',
   '/payment-failed',
+  '/virtual-try-on-guide',
+  '/fashion-technology',
+  '/sample-friends',
+  '/outfit-photo-tips',
+  '/ai-fitting-faq',
+  '/account-deletion',
 ]);
 
 const normalizePathname = (pathname) => pathname.replace(/\/+$/, '') || '/';

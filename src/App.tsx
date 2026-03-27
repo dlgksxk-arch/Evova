@@ -88,9 +88,12 @@ const TryOnStudio = lazy(() => import('./features/tryon/TryOnStudio'));
 
 declare global {
   interface Window {
+    __HAMDEVA_GA_MEASUREMENT_ID__?: string;
     adsbygoogle?: Array<Record<string, unknown>> & {
       pauseAdRequests?: number;
     };
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -3593,6 +3596,24 @@ const normalizeLanguageCode = (value: string | null | undefined): LanguageCode =
   return isAppSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
 };
 
+const trackGaPageView = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return;
+  }
+
+  const measurementId = window.__HAMDEVA_GA_MEASUREMENT_ID__?.trim();
+  if (!measurementId || typeof window.gtag !== 'function') {
+    return;
+  }
+
+  window.gtag('config', measurementId, {
+    page_title: document.title,
+    page_path: `${window.location.pathname}${window.location.search}`,
+    page_location: window.location.href,
+    send_page_view: true,
+  });
+};
+
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const { i18n: i18next, t: translate } = useTranslation();
@@ -4650,6 +4671,9 @@ const App: React.FC = () => {
       removeAdSenseScript();
     }
   }, [contentLocale, currentPage, currentPageCopy, lang, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
+  useEffect(() => {
+    trackGaPageView();
+  }, [currentPage, routeSearch, sharedResultRouteId, paymentStatusMessage, currentPageCopy?.title, currentPageCopy?.description, lang]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {
     setSubjectDetectionStatus('detecting');
