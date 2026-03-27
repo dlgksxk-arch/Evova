@@ -3752,6 +3752,14 @@ const App: React.FC = () => {
       title: entry.title,
       description: entry.summary,
     }));
+  const featuredIdeaCards = featuredSeoLandingCards.filter((card) => (
+    card.page === 'dog-outfit-generator'
+    || card.page === 'cat-outfit-generator'
+    || card.page === 'pet-halloween-costume'
+    || card.page === 'pet-hanbok'
+    || card.page === 'dog-hoodie'
+    || card.page === 'cat-formal-outfit'
+  ));
   const traditionalOutfitGuideByCountry = new Map(
     traditionalOutfitGuides.map((guide) => [guide.country, guide] as const),
   );
@@ -3767,7 +3775,7 @@ const App: React.FC = () => {
       countryLabel,
       categoryLabel,
       displayLabel: getTraditionalSampleDisplayLabel(sample, lang, baseLabel),
-      description: getTraditionalSampleDescription(lang, countryLabel, categoryLabel),
+      description: `${countryLabel} · ${categoryLabel}`,
     };
   });
   const sampleOutfitFilterOptions: Array<{ id: 'all' | ClothSampleCategory; label: string }> = [
@@ -3879,6 +3887,11 @@ const App: React.FC = () => {
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
   };
   const preservedHistoryCount = historyItems.filter((item) => isHistoryPreserved(item)).length;
+  const latestHistoryItem = historyItems[0] ?? null;
+  const myPageRecentGenerationLabel = latestHistoryItem?.createdAt
+    ? formatTimestampLabel(latestHistoryItem.createdAt)
+    : (lang === 'ko' ? '아직 없음' : 'No result yet');
+  const myPageSubscriptionStatusLabel = t.subscriptionPlanValue(userProfile?.subscriptionPlan ?? 'free');
   const loginComingSoonLabel = t.login;
   const googleLoginComingSoonLabel = t.googleLogin;
   const headerAccountLabel = currentUser ? t.myPage : t.login;
@@ -6515,10 +6528,17 @@ const App: React.FC = () => {
 
             <section className="section landing-feature-section">
               <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.intro.title}</h2>
-                  {landingContent.intro.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
+                <div className="section-copy landing-quickstart-copy">
+                  <h2>{landingContent.steps.title}</h2>
+                  <p>{landingContent.intro.paragraphs[0]}</p>
+                </div>
+                <div className="landing-card-grid">
+                  {landingContent.steps.items.map((item) => (
+                    <article key={item.title} className="compact-info-card landing-feature-card">
+                      <strong>{item.step}</strong>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
                   ))}
                 </div>
                 <div className="landing-inline-actions">
@@ -6528,58 +6548,6 @@ const App: React.FC = () => {
                   <button className="outline-btn" onClick={() => navigateToPage('sample-outfits')} type="button">
                     {contentLocale.nav['sample-outfits']}
                   </button>
-                  <button className="outline-btn" onClick={() => navigateToPage('pricing')} type="button">
-                    {contentLocale.nav.pricing}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section className="section landing-feature-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.features.title}</h2>
-                </div>
-                <div className="landing-card-grid">
-                  {landingContent.features.items.map((item) => (
-                    <article key={item.title} className="compact-info-card landing-feature-card">
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="section landing-feature-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.steps.title}</h2>
-                </div>
-                <div className="landing-card-grid">
-                  {landingContent.steps.items.map((item) => (
-                    <article key={item.step} className="compact-info-card landing-feature-card">
-                      <strong>{item.step}</strong>
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="section landing-feature-section">
-              <div className="section-inner">
-                <div className="section-copy">
-                  <h2>{landingContent.examples.title}</h2>
-                </div>
-                <div className="landing-card-grid">
-                  {landingContent.examples.items.map((item) => (
-                    <article key={item.title} className="compact-info-card landing-feature-card">
-                      <h3>{item.title}</h3>
-                      <p>{item.description}</p>
-                    </article>
-                  ))}
                 </div>
               </div>
             </section>
@@ -6610,8 +6578,8 @@ const App: React.FC = () => {
                   <p>{seoLandingUiCopy.featuredDescription}</p>
                 </div>
                 <div className="compact-card-grid">
-                  {featuredSeoLandingCards.map((card) => (
-                    <article key={card.page} className="compact-info-card">
+                  {featuredIdeaCards.map((card, index) => (
+                    <article key={card.page} className={`compact-info-card ${index === 0 ? 'landing-featured-card' : ''}`}>
                       <h2>{card.title}</h2>
                       <p>{card.description}</p>
                       <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
@@ -6639,10 +6607,13 @@ const App: React.FC = () => {
                     layout="page"
                   />
                 </Suspense>
-                <article className="page-article">
-                  <h2>{landingContent.steps.title}</h2>
+                <article className="page-article tryon-quick-guide-card">
+                  <div className="section-copy">
+                    <h2>{landingContent.steps.title}</h2>
+                    <p>{landingContent.intro.paragraphs[0]}</p>
+                  </div>
                   <div className="landing-card-grid">
-                    {landingContent.steps.items.map((item) => (
+                    {landingContent.steps.items.slice(0, 3).map((item) => (
                       <article key={`tryon-step-${item.step}`} className="compact-info-card landing-feature-card">
                         <strong>{item.step}</strong>
                         <h3>{item.title}</h3>
@@ -6651,21 +6622,13 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 </article>
-                {currentPageCopy?.sections?.map((section) => (
-                  <article key={`tryon-${section.heading}`} className="page-article">
-                    <h2>{section.heading}</h2>
-                    {section.paragraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
-                  </article>
-                ))}
                 <section className="section editorial-section editorial-related-section">
                   <div className="section-copy">
                     <h2>{seoLandingUiCopy.featuredTitle}</h2>
-                    <p>{seoLandingUiCopy.featuredDescription}</p>
+                    <p>{landingContent.sampleInfo.body}</p>
                   </div>
                   <div className="compact-card-grid">
-                    {[...featuredSeoLandingCards.slice(0, 4), {
+                    {[...featuredIdeaCards.slice(0, 4), {
                       page: 'sample-outfits' as SitePage,
                       title: contentLocale.nav['sample-outfits'],
                       description: currentPage === 'tryon' ? landingContent.sampleInfo.body : '',
@@ -6791,26 +6754,20 @@ const App: React.FC = () => {
 
             {currentPage === 'sample-outfits' && (
               <>
-                {(landingContent.sampleOutfits.introTitle || landingContent.sampleOutfits.introParagraphs.length > 0) && (
-                  <article className="page-article">
-                    {landingContent.sampleOutfits.introTitle ? <h2>{landingContent.sampleOutfits.introTitle}</h2> : null}
-                    {landingContent.sampleOutfits.introParagraphs.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
-                  </article>
-                )}
-                <article className="page-article">
-                  <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
-                  <p>{landingContent.sampleOutfits.catalogBody}</p>
+                <article className="page-article sample-outfit-hub-card">
+                  {landingContent.sampleOutfits.introTitle ? <h2>{landingContent.sampleOutfits.introTitle}</h2> : null}
+                  {landingContent.sampleOutfits.introParagraphs.slice(0, 1).map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
                 </article>
-                <section className="section editorial-section editorial-related-section">
+                <section className="section editorial-section editorial-related-section sample-featured-section">
                   <div className="section-copy">
                     <h2>{seoLandingUiCopy.sampleTitle}</h2>
                     <p>{seoLandingUiCopy.sampleDescription}</p>
                   </div>
-                  <div className="compact-card-grid">
-                    {featuredSeoLandingCards.map((card) => (
-                      <article key={`sample-jump-${card.page}`} className="compact-info-card">
+                  <div className="compact-card-grid sample-featured-grid">
+                    {featuredIdeaCards.map((card, index) => (
+                      <article key={`sample-jump-${card.page}`} className={`compact-info-card sample-featured-card ${index === 0 ? 'is-primary' : ''}`}>
                         <h2>{card.title}</h2>
                         <p>{card.description}</p>
                         <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
@@ -6820,6 +6777,10 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 </section>
+                <article className="page-article sample-outfit-catalog-card">
+                  <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
+                  <p>{landingContent.sampleOutfits.catalogBody}</p>
+                </article>
                 <div className="sample-outfit-filter-bar" role="tablist" aria-label={landingContent.sampleOutfits.catalogTitle}>
                   {sampleOutfitFilterOptions.map((option) => (
                     <button
@@ -6835,10 +6796,10 @@ const App: React.FC = () => {
                   ))}
                 </div>
                 <div className="sample-outfit-card-grid">
-                  {filteredSampleOutfitCards.map(({ sample, countryLabel, categoryLabel, displayLabel, description }) => (
+                  {filteredSampleOutfitCards.map(({ sample, countryLabel, categoryLabel, displayLabel, description }, index) => (
                     <article
                       key={sample.id}
-                      className="sample-outfit-card"
+                      className={`sample-outfit-card ${index < 2 ? 'is-featured' : ''}`}
                     >
                       <div className="sample-outfit-card-image">
                         <img src={sample.image} alt={displayLabel} loading="lazy" />
@@ -6900,7 +6861,7 @@ const App: React.FC = () => {
 
             {currentPage === 'pricing' && (
               <>
-                <article className="page-article">
+                <article className="page-article pricing-intro-card">
                   <h2>{pricingUiCopy.subscriptionTitle}</h2>
                   <p>{pricingUiCopy.subscriptionSubtitle}</p>
                   <p className="pricing-bonus-note">{pricingUiCopy.firstPurchaseBonus}</p>
@@ -6954,10 +6915,9 @@ const App: React.FC = () => {
                     );
                   })}
                 </div>
-                <article className="page-article">
+                <article className="page-article pricing-intro-card pricing-intro-card-secondary">
                   <h2>{pricingUiCopy.extraCreditsTitle}</h2>
                   <p>{pricingUiCopy.extraCreditsSubtitle}</p>
-                  <p className="pricing-inline-note">{pricingUiCopy.extraCreditsIntro}</p>
                 </article>
                 <div className="credit-plan-grid">
                   {extraCreditProducts.map((product) => (
@@ -7161,6 +7121,10 @@ const App: React.FC = () => {
                   currentUser={currentUser}
                   userProfile={userProfile}
                   currentCredits={currentCredits}
+                  historyCount={historyItems.length}
+                  recentGenerationLabel={myPageRecentGenerationLabel}
+                  subscriptionStatusLabel={myPageSubscriptionStatusLabel}
+                  locale={lang}
                   isFirebaseConfigured={isFirebaseConfigured}
                   firebaseDisabledMessage={firebaseDisabledMessage}
                   isStartingCheckout={isStartingCheckout}
@@ -7208,6 +7172,10 @@ const App: React.FC = () => {
                   sampleCatSrc={guideSampleCat}
                   sampleClothSrc={guideSampleCloth}
                   resultImageSrc={guideFixedResult}
+                  primaryCtaLabel={contentLocale.nav.tryon}
+                  secondaryCtaLabel={contentLocale.nav['sample-outfits']}
+                  onPrimaryCta={() => navigateToPage('tryon')}
+                  onSecondaryCta={() => navigateToPage('sample-outfits')}
                 />
               </Suspense>
             )}

@@ -583,8 +583,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
       {!currentUser && (
         <div className="credit-cta-panel">
           <p>{copy.authSignupCreditsHint}</p>
-          <p>{copy.dailyLoginCredits}</p>
-          <p>{copy.subscriptionCreditBonus}</p>
           <div className="credit-cta-actions">
             <button className="generate-btn auth-inline-btn" onClick={() => copy.openAuthModal('signup')} type="button">
               {copy.signUpGetCredits}
@@ -871,9 +869,9 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const resultFollowupNode = isPreviewReady && finalImageSrc ? (
     <>
       <div className={isModalLayout ? 'result-followup-shell' : 'page-article'}>
-        <div className="share-section-copy">
+        <div className="share-section-copy result-followup-copy">
           <h3>{resultLoopCopy.nextStep}</h3>
-          <p>{resultLoopCopy.nextStepBody}</p>
+          {!isModalLayout ? <p>{resultLoopCopy.nextStepBody}</p> : null}
         </div>
         <div className="result-action-grid single-row result-followup-actions">
           <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
@@ -1116,10 +1114,10 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <span className="credit-summary-pill credit-summary-pill-balance">{copy.currentCredits(currentCredits)}</span>
           </div>
         ) : (
-          <>
-            <p className="credit-cost-text">{copy.generationCostDetailed(generationCost)}</p>
-            <p className="credit-balance-text">{copy.currentCredits(currentCredits)}</p>
-          </>
+          <div className="credit-summary-row" aria-label={copy.currentCredits(currentCredits)}>
+            <span className="credit-summary-pill credit-summary-pill-cost">{copy.generationCostDetailed(generationCost)}</span>
+            <span className="credit-summary-pill credit-summary-pill-balance">{copy.currentCredits(currentCredits)}</span>
+          </div>
         )}
         <button
           className={`generate-btn ${isGenerating ? 'is-generating' : ''}`}
@@ -1138,7 +1136,6 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </span>
           ) : copy.generate}
         </button>
-        {!isModalLayout && currentUser ? <p className="credit-balance-text credit-balance-text-bottom">{copy.currentCredits(currentCredits)}</p> : null}
         {currentUser && !canAffordGeneration && (
           <>
             <p className="loading-subtext">{copy.notEnoughCredits}</p>
@@ -1147,12 +1144,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             </button>
           </>
         )}
-        {isGenerating && !isModalLayout && (
-          <>
-            <p className="loading-subtext">{copy.loadingDetail}</p>
-          </>
-        )}
-        <p className="generation-estimate-notice">{isModalLayout ? modalCopy?.actionFootnote ?? copy.generationEstimateNotice : copy.generationEstimateNotice}</p>
+        {isGenerating && !isModalLayout ? <p className="loading-subtext">{copy.loadingDetail}</p> : null}
+        {isModalLayout ? <p className="generation-estimate-notice">{modalCopy?.actionFootnote ?? copy.generationEstimateNotice}</p> : null}
     </>
   );
 

@@ -40,6 +40,10 @@ interface HowItWorksVisualGuideProps {
   sampleCatSrc: string;
   sampleClothSrc: string;
   resultImageSrc: string | null;
+  primaryCtaLabel: string;
+  secondaryCtaLabel: string;
+  onPrimaryCta: () => void;
+  onSecondaryCta: () => void;
 }
 
 const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
@@ -48,6 +52,10 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
   sampleCatSrc,
   sampleClothSrc,
   resultImageSrc,
+  primaryCtaLabel,
+  secondaryCtaLabel,
+  onPrimaryCta,
+  onSecondaryCta,
 }) => (
   <section className="howto-visual-section">
     <article className="page-article howto-visual-card">
@@ -58,7 +66,7 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
       </div>
 
       <div className="howto-summary-grid">
-        {copy.summaryCards.map((card) => (
+        {copy.summaryCards.slice(0, 3).map((card) => (
           <article key={card.title} className="howto-summary-card">
             <strong>{card.title}</strong>
             <p>{card.body}</p>
@@ -142,38 +150,13 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
         </div>
       </div>
 
-      <div className="howto-guide-grid">
-        <article className="howto-guide-card">
-          <div className="howto-section-copy">
-            <h3>{copy.dragGuideTitle}</h3>
-            <p>{copy.dragGuideDescription}</p>
-          </div>
-          <div className="howto-drag-demo">
-            <div className="howto-browser-mock">
-              <span className="howto-browser-chip">{copy.dragBrowserLabel}</span>
-              <div className="howto-browser-image">
-                <img src={sampleClothSrc} alt={copy.outfitSampleLabel} loading="lazy" />
-              </div>
-            </div>
-            <div className="howto-drag-arrow" aria-hidden="true">→</div>
-            <div className="howto-dropzone-mock">
-              <span className="howto-stage-chip howto-stage-chip-static">{copy.dragDropzoneLabel}</span>
-              <strong>{copy.dragDropzoneHint}</strong>
-            </div>
-          </div>
-          <ol className="howto-guide-list">
-            {copy.dragGuideSteps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-        </article>
-
+      <div className="howto-guide-grid howto-guide-grid-compact">
         <article className="howto-guide-card">
           <div className="howto-section-copy">
             <h3>{copy.checklistTitle}</h3>
           </div>
           <ul className="howto-bullet-list">
-            {copy.checklistItems.map((item) => (
+            {copy.checklistItems.slice(0, 3).map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
@@ -184,11 +167,16 @@ const HowItWorksVisualGuide: React.FC<HowItWorksVisualGuideProps> = ({
             <h3>{copy.resultTipsTitle}</h3>
           </div>
           <ul className="howto-bullet-list">
-            {copy.resultTips.map((item) => (
+            {copy.resultTips.slice(0, 3).map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
         </article>
+      </div>
+
+      <div className="howto-cta-row">
+        <button className="generate-btn" onClick={onPrimaryCta} type="button">{primaryCtaLabel}</button>
+        <button className="outline-btn" onClick={onSecondaryCta} type="button">{secondaryCtaLabel}</button>
       </div>
     </article>
   </section>

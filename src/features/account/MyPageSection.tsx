@@ -40,6 +40,9 @@ interface MyPageSectionProps {
   currentUser: User | null;
   userProfile: UserProfile | null;
   currentCredits: number;
+  historyCount: number;
+  recentGenerationLabel: string;
+  subscriptionStatusLabel: string;
   locale: string;
   isFirebaseConfigured: boolean;
   firebaseDisabledMessage: string | null;
@@ -104,6 +107,9 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   currentUser,
   userProfile,
   currentCredits,
+  historyCount,
+  recentGenerationLabel,
+  subscriptionStatusLabel,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
@@ -123,6 +129,29 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   const [paymentHistoryLoaded, setPaymentHistoryLoaded] = useState(false);
   const isAdminUser = (currentUser?.email || userProfile?.email || '').trim().toLowerCase() === ADMIN_EMAIL;
   const currentSubscriptionRank = getCurrentSubscriptionRank(userProfile?.subscriptionPlan);
+  const summaryCopy = locale === 'ko'
+    ? {
+        subtitle: '생성 결과와 결제 상태를 한눈에 정리했어요.',
+        currentCredits: '현재 크레딧',
+        savedResults: '저장 결과 수',
+        recentGeneration: '최근 생성',
+        subscription: '구독 상태',
+        historyTitle: '생성 히스토리',
+        historyBody: '저장된 결과를 다시 보고, 공유하고, 다른 의상으로 이어서 비교할 수 있어요.',
+        planTitle: '크레딧과 구독',
+        planBody: '플랜 비교와 추가 크레딧 구매는 아래에서 바로 진행할 수 있어요.',
+      }
+    : {
+        subtitle: 'See your credits, saved results, and subscription at a glance.',
+        currentCredits: 'Current credits',
+        savedResults: 'Saved results',
+        recentGeneration: 'Recent generation',
+        subscription: 'Subscription',
+        historyTitle: 'Generation history',
+        historyBody: 'Open saved results again, share them, and compare new outfits from the same place.',
+        planTitle: 'Credits and plans',
+        planBody: 'Compare plans and buy extra credits from the same dashboard.',
+      };
   const productLabelMap = useMemo(() => new Map(products.map((product) => [product.id, product.label])), [products]);
   const formatProductPrice = (product: { salePriceUsd: number; kind: 'subscription' | 'extra_credit' }) =>
     `$${product.salePriceUsd.toFixed(2)}${product.kind === 'subscription' ? '/month' : ''}`;
@@ -186,33 +215,57 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         </article>
       )}
       {currentUser && (
-        <article className="page-article">
-          <div className="admin-section-header">
-            <div>
-              <h2>{copy.myPage}</h2>
-              <p className="admin-section-helper">{copy.currentCredits(currentCredits)}</p>
-            </div>
-            <div className="credit-cta-actions">
-              <button className="outline-btn auth-inline-btn" onClick={onNavigateHistory} type="button">
-                {copy.historyTitle}
-              </button>
-              <button className="outline-btn auth-inline-btn" onClick={openPaymentHistory} type="button">
-                {copy.paymentHistoryButton}
-              </button>
-              {isAdminUser ? (
-                <button className="outline-btn auth-inline-btn" onClick={onNavigateSiteManagement} type="button">
-                  {copy.adminTitle ?? copy.siteManagementTitle ?? '관리자 페이지'}
+        <>
+          <article className="page-article mypage-overview-card">
+            <div className="admin-section-header mypage-overview-header">
+              <div>
+                <h2>{copy.myPage}</h2>
+                <p className="admin-section-helper">{summaryCopy.subtitle}</p>
+              </div>
+              <div className="credit-cta-actions mypage-top-actions">
+                <button className="outline-btn auth-inline-btn" onClick={openPaymentHistory} type="button">
+                  {copy.paymentHistoryButton}
                 </button>
-              ) : null}
+                {isAdminUser ? (
+                  <button className="outline-btn auth-inline-btn mypage-admin-btn" onClick={onNavigateSiteManagement} type="button">
+                    {copy.adminTitle ?? copy.siteManagementTitle ?? '관리자 페이지'}
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
-          <div className="credit-balance-grid">
-            <div className="credit-balance-card">
-              <span>{copy.totalCreditLabel}</span>
-              <strong>{currentCredits}</strong>
+            <div className="credit-balance-grid mypage-summary-grid">
+              <div className="credit-balance-card mypage-summary-card mypage-summary-card-primary">
+                <span>{summaryCopy.currentCredits}</span>
+                <strong>{currentCredits.toLocaleString()}</strong>
+              </div>
+              <div className="credit-balance-card mypage-summary-card">
+                <span>{summaryCopy.savedResults}</span>
+                <strong>{historyCount.toLocaleString()}</strong>
+              </div>
+              <div className="credit-balance-card mypage-summary-card">
+                <span>{summaryCopy.recentGeneration}</span>
+                <strong>{recentGenerationLabel}</strong>
+              </div>
+              <div className="credit-balance-card mypage-summary-card">
+                <span>{summaryCopy.subscription}</span>
+                <strong>{subscriptionStatusLabel}</strong>
+              </div>
             </div>
-          </div>
-        </article>
+          </article>
+          <article className="page-article mypage-history-card">
+            <div className="admin-section-header mypage-history-header">
+              <div>
+                <h3>{summaryCopy.historyTitle}</h3>
+                <p className="admin-section-helper">{summaryCopy.historyBody}</p>
+              </div>
+              <div className="credit-cta-actions mypage-history-actions">
+                <button className="generate-btn auth-inline-btn" onClick={onNavigateHistory} type="button">
+                  {copy.historyTitle}
+                </button>
+              </div>
+            </div>
+          </article>
+        </>
       )}
       {currentUser && isPaymentHistoryOpen ? (
         <MyPageModalFrame
@@ -264,9 +317,18 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
         </MyPageModalFrame>
       ) : null}
       {currentUser && (
-        <article className="page-article">
-          <h3>{copy.chargeCredits}</h3>
-          <p>{copy.chargeDescription}</p>
+        <article className="page-article mypage-plan-card">
+          <div className="pricing-section-header mypage-plan-header">
+            <div>
+              <h3>{summaryCopy.planTitle}</h3>
+              <p>{summaryCopy.planBody}</p>
+            </div>
+            <div className="credit-cta-actions mypage-plan-actions">
+              <button className="outline-btn auth-inline-btn" onClick={onNavigateHistory} type="button">
+                {copy.historyTitle}
+              </button>
+            </div>
+          </div>
           <div className="pricing-section-stack">
             <section className="pricing-section-shell">
               <div className="pricing-section-header">

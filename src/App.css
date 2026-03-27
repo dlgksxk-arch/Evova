@@ -11364,3 +11364,492 @@ body {
     transform: none;
   }
 }
+
+/* 2026 Spring UI refresh overrides */
+:root,
+[data-theme='light'] {
+  --primary: #8B5CF6;
+  --primary-hover: #7c48f3;
+  --accent-blue: #7DD3FC;
+  --accent-gold: #EC5BCB;
+  --accent-green: #8B5CF6;
+  --bg: #F7F4FF;
+  --bg-alt: #FFF8FD;
+  --surface: #FFFFFF;
+  --surface-alt: #F1ECFF;
+  --nav-bg: rgba(247, 244, 255, 0.88);
+  --nav-border: rgba(139, 92, 246, 0.12);
+  --hero-bg: #F7F4FF;
+  --hero-overlay: radial-gradient(circle at top left, rgba(236, 91, 203, 0.16), transparent 38%), linear-gradient(180deg, rgba(255,248,253,0.94), rgba(241,236,255,0.9));
+  --text: #1F2340;
+  --text-sub: #5B6285;
+  --text-muted: #8B91B3;
+  --text-on-dark: #F7F4FF;
+  --border: rgba(139, 92, 246, 0.12);
+  --upload-bg: #FFFFFF;
+  --upload-hover-bg: #F7EEFF;
+  --shadow-sm: 0 10px 24px rgba(95, 79, 164, 0.08);
+  --shadow-md: 0 20px 44px rgba(95, 79, 164, 0.12);
+  --shadow-lg: 0 26px 60px rgba(95, 79, 164, 0.14);
+  --r-md: 18px;
+  --r-lg: 24px;
+  --r-xl: 30px;
+  --button-radius: 999px;
+}
+
+[data-theme='dark'],
+.app-root.dark {
+  --primary: #b99eff;
+  --primary-hover: #c9b6ff;
+  --accent-blue: #7DD3FC;
+  --accent-gold: #EC5BCB;
+  --bg: #232347;
+  --bg-alt: #2b2b56;
+  --surface: #2f2f63;
+  --surface-alt: #3a3a76;
+  --nav-bg: rgba(35, 35, 71, 0.88);
+  --nav-border: rgba(196, 181, 253, 0.18);
+  --hero-bg: #232347;
+  --hero-overlay: linear-gradient(180deg, rgba(35,35,71,0.94), rgba(47,47,99,0.9));
+  --text: #f6f3ff;
+  --text-sub: rgba(246,243,255,0.78);
+  --text-muted: rgba(246,243,255,0.58);
+  --border: rgba(196, 181, 253, 0.16);
+  --upload-bg: #2f2f63;
+  --upload-hover-bg: #3a3a76;
+}
+
+html,
+body,
+.app-root {
+  background:
+    radial-gradient(circle at top left, rgba(236, 91, 203, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(125, 211, 252, 0.12), transparent 22%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+}
+
+.landing-nav {
+  background: rgba(247, 244, 255, 0.78);
+  border-bottom: 1px solid var(--nav-border);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 10px 34px rgba(95, 79, 164, 0.06);
+}
+
+.nav-logo,
+.hero-title,
+.page-title,
+.page-article h2,
+.page-article h3,
+.compact-info-card h2,
+.compact-info-card h3 {
+  letter-spacing: -0.03em;
+}
+
+.generate-btn,
+.outline-btn,
+.nav-payment-btn,
+.nav-quick-btn,
+.text-link-btn,
+.sample-outfit-filter-tab,
+.header-account-trigger,
+.mobile-menu-link {
+  border-radius: 999px;
+}
+
+.generate-btn,
+.nav-payment-btn,
+.hero-home .hero-cta-btn {
+  background: linear-gradient(135deg, #8B5CF6, #EC5BCB);
+  border: 0;
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(139, 92, 246, 0.24);
+}
+
+.outline-btn,
+.nav-quick-btn,
+.hero-home .hero-secondary-btn,
+.sample-outfit-filter-tab,
+.header-account-trigger {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(139, 92, 246, 0.16);
+  color: var(--text);
+  box-shadow: 0 10px 24px rgba(95, 79, 164, 0.08);
+}
+
+.hero-section {
+  background: var(--hero-overlay);
+}
+
+.hero-home {
+  min-height: 72vh;
+}
+
+.hero-home .bg-video {
+  opacity: 0.08;
+  filter: saturate(0.85) blur(1px);
+}
+
+.hero-home::before,
+.hero-home::after,
+.hero-home-glow,
+.hero-visual-orb {
+  opacity: 0.5;
+  filter: blur(34px);
+}
+
+.hero-home .hero-content {
+  padding-top: 112px;
+  padding-bottom: 56px;
+}
+
+.hero-home-copy {
+  max-width: 560px;
+  gap: 18px;
+}
+
+.hero-home-copy .hero-title {
+  color: var(--text);
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+}
+
+.hero-home-copy .hero-sub {
+  color: var(--text-sub);
+  max-width: 44rem;
+}
+
+.hero-home-copy .hero-detail {
+  color: var(--text-muted);
+  max-width: 38rem;
+}
+
+.hero-pet-card,
+.landing-preview-card,
+.page-article,
+.compact-info-card,
+.sample-outfit-card,
+.credit-plan-card,
+.credit-product-card,
+.credit-balance-card,
+.howto-summary-card,
+.howto-guide-card,
+.result-share-sidebar,
+.result-followup-shell,
+.shared-result-shell,
+.action-section,
+.preview-box,
+.result-preview-panel,
+.pricing-section-shell {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  box-shadow: var(--shadow-md);
+  border-radius: 28px;
+}
+
+.page-article,
+.compact-info-card {
+  padding: 28px;
+}
+
+.compact-info-card:nth-child(3n + 1),
+.landing-preview-card:nth-child(4n + 1) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,238,255,0.96));
+}
+
+.compact-info-card:nth-child(3n + 2),
+.landing-preview-card:nth-child(4n + 2) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,236,255,0.98));
+}
+
+.compact-info-card:nth-child(3n),
+.landing-preview-card:nth-child(4n + 3) {
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,248,253,0.98));
+}
+
+.landing-featured-card,
+.sample-featured-card.is-primary,
+.sample-outfit-card.is-featured,
+.credit-plan-card.is-featured,
+.pricing-tier-card.is-featured,
+.mypage-summary-card-primary {
+  background: linear-gradient(180deg, rgba(247,238,255,1), rgba(255,255,255,0.98));
+  border-color: rgba(236, 91, 203, 0.18);
+  box-shadow: 0 24px 50px rgba(164, 92, 185, 0.18);
+}
+
+.landing-home-shell .section {
+  padding-block: 24px;
+}
+
+.landing-result-preview-shell,
+.landing-inline-actions,
+.howto-cta-row,
+.mypage-top-actions,
+.mypage-history-actions,
+.mypage-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.landing-quickstart-copy p,
+.section-copy p,
+.page-article p,
+.compact-info-card p {
+  color: var(--text-sub);
+}
+
+.result-preview-panel {
+  padding: 20px;
+}
+
+.result-action-grid {
+  gap: 12px;
+}
+
+.result-action-grid .result-action-btn {
+  min-height: 48px;
+  border-radius: 999px;
+}
+
+.result-share-sidebar,
+.result-followup-shell,
+.shared-result-shell {
+  padding: 24px;
+}
+
+.result-followup-copy p {
+  max-width: 42rem;
+}
+
+.results-section {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.credit-cta-panel,
+.usage-bar,
+.credit-notice-banner,
+.pricing-intro-card,
+.sample-outfit-hub-card,
+.sample-outfit-catalog-card,
+.tryon-quick-guide-card,
+.mypage-overview-card,
+.mypage-history-card,
+.mypage-plan-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  border-radius: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.usage-bar,
+.credit-notice-banner {
+  border-radius: 999px;
+}
+
+.action-section {
+  margin-top: 22px;
+  padding: 24px;
+}
+
+.credit-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.credit-summary-pill {
+  background: rgba(241, 236, 255, 0.9);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+  color: var(--text);
+}
+
+.generation-estimate-notice,
+.loading-subtext {
+  color: var(--text-muted);
+}
+
+.sample-featured-grid,
+.credit-plan-grid,
+.credit-product-grid,
+.landing-card-grid,
+.compact-card-grid,
+.mypage-summary-grid {
+  gap: 18px;
+}
+
+.sample-outfit-filter-bar {
+  margin: 8px 0 20px;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.sample-outfit-filter-tab.is-active {
+  background: linear-gradient(135deg, #8B5CF6, #EC5BCB);
+  color: #fff;
+  border-color: transparent;
+}
+
+.sample-outfit-card {
+  overflow: hidden;
+}
+
+.sample-outfit-card-image {
+  background: linear-gradient(180deg, rgba(247,238,255,0.8), rgba(241,236,255,0.5));
+}
+
+.sample-outfit-card-copy {
+  gap: 10px;
+}
+
+.sample-outfit-country-pill {
+  background: rgba(139, 92, 246, 0.1);
+  color: #6f42df;
+}
+
+.sample-outfit-card-category {
+  color: var(--text-muted);
+}
+
+.sample-outfit-card-copy p {
+  font-size: 0.95rem;
+}
+
+.howto-visual-card {
+  padding: 28px;
+}
+
+.howto-guide-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.howto-cta-row {
+  margin-top: 24px;
+}
+
+.pricing-intro-card {
+  margin-bottom: 18px;
+}
+
+.credit-plan-card,
+.credit-product-card {
+  padding: 24px;
+}
+
+.pricing-hook-panel {
+  background: rgba(247, 238, 255, 0.9);
+  border-radius: 20px;
+  border: 1px solid rgba(236, 91, 203, 0.16);
+}
+
+.mypage-layout {
+  gap: 18px;
+}
+
+.mypage-overview-header,
+.mypage-history-header,
+.mypage-plan-header {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.mypage-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 20px;
+}
+
+.mypage-summary-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  justify-content: space-between;
+}
+
+.mypage-summary-card span {
+  color: var(--text-muted);
+}
+
+.mypage-summary-card strong {
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.mypage-history-card,
+.mypage-plan-card {
+  padding: 24px 28px;
+}
+
+.mypage-admin-btn {
+  opacity: 0.76;
+}
+
+.page-shell .page-article + .page-article {
+  margin-top: 18px;
+}
+
+@media (max-width: 1024px) {
+  .hero-home {
+    min-height: auto;
+  }
+
+  .mypage-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .howto-guide-grid-compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-article,
+  .compact-info-card,
+  .sample-outfit-card,
+  .credit-plan-card,
+  .credit-product-card,
+  .action-section,
+  .result-share-sidebar,
+  .result-followup-shell,
+  .shared-result-shell,
+  .howto-visual-card,
+  .mypage-history-card,
+  .mypage-plan-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .hero-home .hero-content {
+    padding-top: 96px;
+  }
+
+  .hero-home-copy .hero-detail {
+    display: none;
+  }
+
+  .landing-home-shell .section {
+    padding-block: 16px;
+  }
+
+  .landing-inline-actions,
+  .howto-cta-row,
+  .result-action-grid,
+  .mypage-top-actions,
+  .mypage-history-actions,
+  .mypage-plan-actions {
+    flex-direction: column;
+  }
+
+  .mypage-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sample-outfit-filter-bar {
+    border-radius: 24px;
+  }
+}
