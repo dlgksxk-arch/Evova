@@ -19,6 +19,7 @@ interface SharedResultSectionProps {
   onInstagramSave: (src: string | null) => void;
   onShareOnTikTok: (src: string | null) => void;
   onRandomOutfit: () => void;
+  onViewOutfitIdeas: () => void;
 }
 
 const SharedResultSection: React.FC<SharedResultSectionProps> = ({
@@ -39,6 +40,7 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
   onInstagramSave,
   onShareOnTikTok,
   onRandomOutfit,
+  onViewOutfitIdeas,
 }) => (
   <main className="section page-shell">
     <div className="section-inner page-layout">
@@ -69,8 +71,20 @@ const SharedResultSection: React.FC<SharedResultSectionProps> = ({
               <button className="download-btn result-action-btn" onClick={() => onDownloadResult(record.resultImageUrl)} type="button">
                 {copy.downloadImage}
               </button>
+              <button className="outline-btn result-action-btn" onClick={() => onShareLink(link)} type="button">
+                {copy.share}
+              </button>
+              <button className="outline-btn result-action-btn" onClick={() => onCopyLink(link)} type="button">
+                {copy.copyLink}
+              </button>
+              <button className="outline-btn result-action-btn" onClick={() => onShareOnKakao(link)} type="button">
+                Kakao
+              </button>
               <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
                 {copy.tryAnotherOutfit}
+              </button>
+              <button className="outline-btn result-action-btn" onClick={onViewOutfitIdeas} type="button">
+                {copy.viewOutfitIdeas ?? 'View Outfit Ideas'}
               </button>
               <button className="outline-btn result-action-btn" onClick={onRandomOutfit} type="button">
                 {copy.randomOutfit}

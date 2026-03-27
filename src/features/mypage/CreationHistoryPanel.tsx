@@ -9,6 +9,7 @@ interface CreationHistoryPanelProps {
   copy: Record<string, any>;
   onTogglePreserve: (item: GenerationRecord) => Promise<void> | void;
   onDelete: (item: GenerationRecord) => Promise<void> | void;
+  onTrackShareClick?: (channel: string) => void;
   inlineDetail?: boolean;
 }
 
@@ -205,6 +206,19 @@ const getHistoryCopy = (locale: string) => {
   };
 };
 
+const getHistoryActionLabels = (locale: string) => {
+  if (locale.startsWith('ko')) {
+    return {
+      share: 'Share',
+      link: 'Link',
+    };
+  }
+  return {
+    share: 'Share',
+    link: 'Link',
+  };
+};
+
 const getSubjectFallbackLabel = (item: GenerationRecord, historyCopy: ReturnType<typeof getHistoryCopy>) => {
   if (item.subjectType === 'dog') {
     return historyCopy.subjectDog;
@@ -233,6 +247,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   copy,
   onTogglePreserve,
   onDelete,
+  onTrackShareClick,
   inlineDetail = false,
 }) => {
   const [submitting, setSubmitting] = useState(false);
@@ -251,6 +266,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const pinchZoomRef = useRef(1);
   const swipeStartYRef = useRef<number | null>(null);
   const historyCopy = getHistoryCopy(locale);
+  const historyActionLabels = getHistoryActionLabels(locale);
   const pagerCopy = getHistoryPagerCopy(locale);
   const historyPageSize = isMobile ? MOBILE_HISTORY_PAGE_SIZE : DESKTOP_HISTORY_PAGE_SIZE;
   const getPersonLabel = (item: GenerationRecord) => getResolvedPersonLabel(item, historyCopy);
@@ -473,6 +489,7 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
   const getSelectedShareUrl = (): string | null => selectedItem?.imageUrl || null;
 
   const handleCopySelectedLink = async () => {
+    onTrackShareClick?.('history_copy_link');
     const shareUrl = getSelectedShareUrl();
     if (!shareUrl) {
       setShareStatus(copy.imageNotReady);
@@ -484,6 +501,33 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
       setShareStatus(copy.linkCopied);
     } catch (error) {
       console.error('Failed to copy history image link:', error);
+      setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
+    }
+  };
+  const handleShareSelectedItem = async () => {
+    onTrackShareClick?.('history_share');
+    const shareUrl = getSelectedShareUrl();
+    if (!shareUrl) {
+      setShareStatus(copy.imageNotReady);
+      return;
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: shareUrl });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus(copy.linkCopied);
+    } catch (error) {
+      console.error('Failed to share history image link:', error);
       setShareStatus(copy.linkCopyFailed || copy.imageNotReady);
     }
   };
@@ -695,7 +739,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
               <div className="history-input-action-stack">
                 <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
                   {renderSocialIcon('link')}
-                  Link
+                  {historyActionLabels.link}
+                </button>
+                <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareSelectedItem(); }} type="button">
+                  {renderSocialIcon('link')}
+                  {historyActionLabels.share}
                 </button>
                 <button
                   className="download-btn auth-inline-btn history-action-btn"
@@ -830,7 +878,11 @@ const CreationHistoryPanel: React.FC<CreationHistoryPanelProps> = ({
                 <aside className="history-selected-sidebar">
                   <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleCopySelectedLink(); }} type="button">
                     {renderSocialIcon('link')}
-                    Link
+                    {historyActionLabels.link}
+                  </button>
+                  <button className="outline-btn auth-inline-btn history-action-btn" onClick={() => { void handleShareSelectedItem(); }} type="button">
+                    {renderSocialIcon('link')}
+                    {historyActionLabels.share}
                   </button>
                   <button
                     className="download-btn auth-inline-btn history-action-btn"

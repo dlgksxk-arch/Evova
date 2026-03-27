@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import './App.css';
@@ -29,6 +29,7 @@ import {
 import {
   FOOTER_PRIMARY_ROUTE_KEYS,
   FOOTER_UTILITY_ROUTE_KEYS,
+  getRouteDefinition,
   HEADER_NAV_ROUTE_KEYS,
   HUB_SPOTLIGHT_ROUTE_KEYS,
 } from './lib/routes/routeManifest';
@@ -105,6 +106,8 @@ declare global {
 
 type ImageLoadState = 'idle' | 'loading' | 'ready' | 'error';
 type FontTheme = 'latin' | 'korean' | 'japanese' | 'chinese' | 'arabic' | 'indic';
+type AnalyticsEventParams = Record<string, string | number | boolean | undefined>;
+type AnalyticsPageType = 'hub' | 'tool' | 'ideas' | 'landing' | 'support' | 'legal' | 'helper' | 'admin' | 'account' | 'pricing' | 'community' | 'shared';
 const APP_VERSION = __APP_VERSION__;
 const GENERATION_DURATION_CACHE_KEY = 'HAMDEVA-generation-durations';
 const GENERATION_PREP_TIMEOUT_MS = 60_000;
@@ -3592,7 +3595,7 @@ const normalizeLanguageCode = (value: string | null | undefined): LanguageCode =
   return isAppSupportedLanguageCode(normalized) ? normalized : DEFAULT_LANGUAGE;
 };
 
-const trackGaPageView = () => {
+const sendGaEvent = (name: string, params: AnalyticsEventParams) => {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return;
   }
@@ -3602,12 +3605,48 @@ const trackGaPageView = () => {
     return;
   }
 
-  window.gtag('config', measurementId, {
-    page_title: document.title,
-    page_path: `${window.location.pathname}${window.location.search}`,
-    page_location: window.location.href,
-    send_page_view: true,
-  });
+  window.gtag('event', name, params);
+};
+
+const getAnalyticsPageType = (page: SitePage, hasSharedResultRoute: boolean): AnalyticsPageType => {
+  if (hasSharedResultRoute) {
+    return 'shared';
+  }
+
+  if (page === 'sample-outfits') {
+    return 'ideas';
+  }
+  if (page === 'pricing') {
+    return 'pricing';
+  }
+  if (page === 'admin' || page === 'site-management') {
+    return 'admin';
+  }
+  if (page === 'mypage' || page === 'history' || page === 'payment-success' || page === 'payment-failed') {
+    return 'account';
+  }
+  if (page === 'board') {
+    return 'community';
+  }
+
+  const routeType = getRouteDefinition(page).routeType;
+  if (routeType === 'hub') {
+    return 'hub';
+  }
+  if (routeType === 'tool') {
+    return 'tool';
+  }
+  if (routeType === 'landing') {
+    return 'landing';
+  }
+  if (routeType === 'support') {
+    return 'support';
+  }
+  if (routeType === 'legal') {
+    return 'legal';
+  }
+
+  return 'helper';
 };
 
 // ─── App ──────────────────────────────────────────────────────
@@ -3818,6 +3857,8 @@ const App: React.FC = () => {
   const isNativeAndroid = isNativeAndroidApp();
   const shareResultLink = latestSharedResultId ? buildSharedResultUrl(latestSharedResultId) : null;
   const sharedPageLink = sharedResultRouteId ? buildSharedResultUrl(sharedResultRouteId) : null;
+  const trackedPageViewKeyRef = useRef<string | null>(null);
+  const trackedGenerationSuccessRequestIdRef = useRef<string | null>(null);
   const firebaseDisabledMessage = firebaseConfigError
     ? `${getFirebaseDisabledMessage(firebaseDisabledBaseMessage)}${missingFirebaseEnvKeys.length > 0 ? ` (${missingFirebaseEnvKeys.join(', ')})` : ''}`
     : null;
@@ -4194,6 +4235,26 @@ const App: React.FC = () => {
     notFoundMessage: t.resultNotFound,
   });
   const currentShareImageUrl = resolveRemoteShareImageUrl(finalShareImageUrl, sharedResultRecord?.resultImageUrl);
+  const analyticsPageType = getAnalyticsPageType(currentPage, Boolean(sharedResultRouteId));
+  const getAnalyticsContext = (overrides: AnalyticsEventParams = {}): AnalyticsEventParams => ({
+    page_type: analyticsPageType,
+    route: sharedResultRouteId ? window.location.pathname : PAGE_PATHS[currentPage],
+    locale: lang,
+    admin_flag: analyticsPageType === 'admin',
+    source_page: sharedResultRouteId ? 'shared-result' : currentPage,
+    ...overrides,
+  });
+  const trackAnalyticsEvent = useEffectEvent((name: string, params: AnalyticsEventParams = {}) => {
+    sendGaEvent(name, getAnalyticsContext(params));
+  });
+  const trackShareClick = (channel: string, source: 'result' | 'shared-result' | 'history') => {
+    trackAnalyticsEvent('share_click', {
+      share_channel: channel,
+      share_source: source,
+      has_result_image: Boolean(finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl),
+      result_count: 1,
+    });
+  };
   useCreditBootstrap({
     currentUser,
     rewardMessage: t.todayDailyRewardGranted,
@@ -4668,8 +4729,36 @@ const App: React.FC = () => {
     }
   }, [contentLocale, currentPage, currentPageCopy, lang, paymentStatusMessage, sharedResultRecord, sharedResultRouteId, t.adminSubtitle, t.adminTitle, t.paymentFailedDescription, t.paymentFailedTitle, t.paymentSuccessTitle, t.paymentVerifying, t.sharedResultDescription, t.sharedResultTitle]);
   useEffect(() => {
-    trackGaPageView();
+    const pageViewKey = `${window.location.pathname}${window.location.search}|${document.title}`;
+    if (trackedPageViewKeyRef.current === pageViewKey) {
+      return;
+    }
+
+    trackedPageViewKeyRef.current = pageViewKey;
+    trackAnalyticsEvent('page_view', {
+      page_title: document.title,
+      page_path: `${window.location.pathname}${window.location.search}`,
+      page_location: window.location.href,
+    });
   }, [currentPage, routeSearch, sharedResultRouteId, paymentStatusMessage, currentPageCopy?.title, currentPageCopy?.description, lang]);
+  useEffect(() => {
+    if (!latestGenerationRequestId || !finalImageSrc || resultPreviewState !== 'ready') {
+      return;
+    }
+    if (trackedGenerationSuccessRequestIdRef.current === latestGenerationRequestId) {
+      return;
+    }
+
+    trackedGenerationSuccessRequestIdRef.current = latestGenerationRequestId;
+    trackAnalyticsEvent('generate_success', {
+      request_id: latestGenerationRequestId,
+      result_count: 1,
+      has_pet_image: Boolean(activePersonImage),
+      has_outfit_image: Boolean(activeClothImage),
+      used_credit_type: resultUsedCreditType ?? undefined,
+      subject_type: subjectType,
+    });
+  }, [activeClothImage, activePersonImage, finalImageSrc, latestGenerationRequestId, resultPreviewState, resultUsedCreditType, subjectType]);
 
   const detectSubjectTypeFromImage = async (source: File | string) => {
     setSubjectDetectionStatus('detecting');
@@ -4966,6 +5055,7 @@ const App: React.FC = () => {
     return ensureSharedResultLink(link);
   };
   const handleCopyLink = async (link: string | null) => {
+    trackShareClick('copy_link', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     const resolvedTargetUrl = shareImageSrc ?? await resolveShareTargetUrl(link);
     if (!resolvedTargetUrl) {
@@ -4981,6 +5071,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareLink = async (link: string | null) => {
+    trackShareClick('native_share', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     if (!shareImageSrc) {
       setShareStatus(t.imageNotReady);
@@ -5025,6 +5116,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnKakao = async (_link: string | null) => {
+    trackShareClick('kakao', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     if (!shareImageSrc) {
       setShareStatus(t.imageNotReady);
@@ -5057,6 +5149,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnLine = async (_link: string | null) => {
+    trackShareClick('line', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     if (!shareImageSrc) {
       setShareStatus(t.imageNotReady);
@@ -5089,6 +5182,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnX = async (_link: string | null) => {
+    trackShareClick('x', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     if (!shareImageSrc) {
       setShareStatus(t.imageNotReady);
@@ -5122,6 +5216,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnFacebook = async (_link: string | null) => {
+    trackShareClick('facebook', sharedResultRouteId ? 'shared-result' : 'result');
     const shareImageSrc = finalImageSrc || currentShareImageUrl || sharedResultRecord?.resultImageUrl || null;
     if (!shareImageSrc) {
       setShareStatus(t.imageNotReady);
@@ -5155,6 +5250,7 @@ const App: React.FC = () => {
     }
   };
   const handleInstagramSave = async (src: string | null) => {
+    trackShareClick('instagram', sharedResultRouteId ? 'shared-result' : 'result');
     if (!src) {
       setShareStatus(t.imageNotReady);
       return;
@@ -5171,6 +5267,7 @@ const App: React.FC = () => {
     }
   };
   const handleShareOnTikTok = async (src: string | null) => {
+    trackShareClick('tiktok', sharedResultRouteId ? 'shared-result' : 'result');
     if (!src) {
       setShareStatus(t.imageNotReady);
       return;
@@ -5198,6 +5295,11 @@ const App: React.FC = () => {
     }
 
     setIsStartingCheckout(productId);
+    trackAnalyticsEvent('checkout_start', {
+      product_id: productId,
+      has_pet_image: Boolean(activePersonImage),
+      has_outfit_image: Boolean(activeClothImage),
+    });
     setPaymentStatusDetails(null);
     try {
       const billingProductType = getBillingProductType(productId);
@@ -5545,6 +5647,9 @@ const App: React.FC = () => {
       } else {
         const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, authForm.password);
         signedInUser = credential.user;
+        trackAnalyticsEvent('signup_complete', {
+          auth_method: 'email',
+        });
       }
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
@@ -5786,6 +5891,11 @@ const App: React.FC = () => {
 
     generationLockRef.current = true;
     setIsGenerating(true);
+    trackAnalyticsEvent('generate_click', {
+      has_pet_image: Boolean(activePersonImage),
+      has_outfit_image: Boolean(activeClothImage),
+      subject_type: subjectType,
+    });
     const startedAt = Date.now();
     clearGeneratedResult();
     setShareStatus(null);
@@ -5989,6 +6099,8 @@ const App: React.FC = () => {
     onSubjectTypeChange: (value: SubjectType) => handleSubjectTypeChange(normalizeSubjectType(value)),
     onGenerate: () => { void handleGenerate(); },
     onNavigateToMyPage: () => navigateToPage('mypage'),
+    onNavigateToHistory: () => navigateToPage('history'),
+    onNavigateToOutfitIdeas: () => navigateToPage('sample-outfits'),
     onDownloadResult: (src: string) => { void handleDownloadResult(src); },
     onShareLink: (link: string | null) => { void handleShareLink(link); },
     onCopyLink: (link: string | null) => { void handleCopyLink(link); },
@@ -6358,6 +6470,7 @@ const App: React.FC = () => {
             onInstagramSave={(src) => { void handleInstagramSave(src); }}
             onShareOnTikTok={(src) => { void handleShareOnTikTok(src); }}
             onRandomOutfit={handleRandomOutfit}
+            onViewOutfitIdeas={() => navigateToPage('sample-outfits')}
           />
         </Suspense>
       ) : currentPage === 'home' ? (
@@ -7073,6 +7186,7 @@ const App: React.FC = () => {
                   maxPreserved={PRESERVED_HISTORY_LIMIT}
                   onTogglePreserve={(item) => { void handleToggleHistoryPreserve(item); }}
                   onDelete={(item) => { void handleDeleteHistoryItem(item); }}
+                  onTrackShareClick={(channel) => trackShareClick(channel, 'history')}
                 />
               ) : (
                 <article className="page-article">

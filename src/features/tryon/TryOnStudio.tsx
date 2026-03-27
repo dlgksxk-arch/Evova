@@ -263,6 +263,26 @@ const getGenerationPanelCopy = (lang: LanguageCode) => {
   };
 };
 
+const getResultLoopCopy = (lang: LanguageCode) => {
+  if (lang === 'ko') {
+    return {
+      saveResult: 'Save Result',
+      viewIdeas: 'View Outfit Ideas',
+      samePet: '같은 반려동물로 다시 만들기',
+      nextStep: '생성 후 다음 행동',
+      nextStepBody: '결과를 저장해 두고, 다른 의상으로 다시 시도하거나 Outfit Ideas에서 다음 스타일을 고르세요.',
+    };
+  }
+
+  return {
+    saveResult: 'Save Result',
+    viewIdeas: 'View Outfit Ideas',
+    samePet: 'Try Another Outfit',
+    nextStep: 'What to do next',
+    nextStepBody: 'Save this result for later, try another outfit with the same pet, or open Outfit Ideas for the next style direction.',
+  };
+};
+
 interface TryOnStudioProps {
   layout?: 'page' | 'modal';
   currentUser: unknown;
@@ -320,6 +340,8 @@ interface TryOnStudioProps {
   onSubjectTypeChange: (value: SubjectType) => void;
   onGenerate: () => void;
   onNavigateToMyPage: () => void;
+  onNavigateToHistory: () => void;
+  onNavigateToOutfitIdeas: () => void;
   onDownloadResult: (src: string) => void;
   onShareLink: (link: string | null) => void;
   onCopyLink: (link: string | null) => void;
@@ -377,6 +399,8 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   onClearCloth,
   onGenerate,
   onNavigateToMyPage,
+  onNavigateToHistory,
+  onNavigateToOutfitIdeas,
   onDownloadResult,
   onShareLink,
   onCopyLink,
@@ -412,6 +436,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const modalFaceGuide = getModalPreviewGuide(lang, 'face');
   const modalClothGuide = getModalPreviewGuide(lang, 'cloth');
   const generationPanelCopy = getGenerationPanelCopy(lang);
+  const resultLoopCopy = getResultLoopCopy(lang);
 
   useEffect(() => {
     if (isGenerating) {
@@ -564,7 +589,7 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
             <button className="generate-btn auth-inline-btn" onClick={() => copy.openAuthModal('signup')} type="button">
               {copy.signUpGetCredits}
             </button>
-            <button className="outline-btn auth-inline-btn auth-disabled-btn" disabled onClick={() => copy.openAuthModal('login')} type="button">
+            <button className="outline-btn auth-inline-btn" onClick={() => copy.openAuthModal('login')} type="button">
               {copy.loginComingSoon ?? `${copy.login} (${copy.comingSoon})`}
             </button>
           </div>
@@ -846,12 +871,22 @@ const TryOnStudio: React.FC<TryOnStudioProps> = ({
   const resultFollowupNode = isPreviewReady && finalImageSrc ? (
     <>
       <div className={isModalLayout ? 'result-followup-shell' : 'page-article'}>
+        <div className="share-section-copy">
+          <h3>{resultLoopCopy.nextStep}</h3>
+          <p>{resultLoopCopy.nextStepBody}</p>
+        </div>
         <div className="result-action-grid single-row result-followup-actions">
           <button className="outline-btn result-action-btn" onClick={onTryAnotherOutfit} type="button">
-            {copy.tryAnotherOutfit}
+            {resultLoopCopy.samePet}
           </button>
           <button className="outline-btn result-action-btn" onClick={onRandomOutfit} type="button">
             {copy.randomOutfit}
+          </button>
+          <button className="outline-btn result-action-btn" onClick={onNavigateToOutfitIdeas} type="button">
+            {resultLoopCopy.viewIdeas}
+          </button>
+          <button className="generate-btn result-action-btn" onClick={onNavigateToHistory} type="button">
+            {resultLoopCopy.saveResult}
           </button>
         </div>
       </div>
