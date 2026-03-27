@@ -10,10 +10,15 @@
     "dev": "vite",
     "build": "vite build && node scripts/generateStaticSnapshots.mjs",
     "build:preview": "VITE_API_BASE_URL=https://hamdeva.dlgksxk.workers.dev vite build && node scripts/generateStaticSnapshots.mjs",
+    "build:worker": "npm run build",
     "build:app": "npm run build && node scripts/pruneAppBundle.mjs",
+    "check:android-release": "node scripts/checkAndroidReleaseReadiness.mjs",
+    "build:aab": "npm run check:android-release && npm run build:app && cd android && ./gradlew bundleRelease",
     "cap:sync": "npm run build:app && npx cap sync android",
     "cap:open:android": "npx cap open android",
     "preview": "vite preview",
+    "deploy:worker": "wrangler deploy",
+    "deploy:worker:preview": "wrangler versions upload",
     "deploy:preview": "npm run build:preview && npx wrangler deploy",
     "check:i18n": "node scripts/checkLocaleCompleteness.mjs",
     "check:i18n:all": "node scripts/checkLocaleCompleteness.mjs --all",
@@ -21,6 +26,7 @@
     "seed:board": "node scripts/seedBoardPosts.js"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.1.0",
     "@capacitor/android": "^8.2.0",
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
@@ -43,6 +49,7 @@
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "wrangler": "4.77.0"
   }
 }
