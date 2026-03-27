@@ -66,10 +66,10 @@ export const getEditorialUiCopy = (lang: LanguageCode) => {
   switch (resolveEditorialLanguage(lang)) {
     case 'ko':
       return {
-        homeTitle: '읽을거리와 가이드를 먼저 보고, 필요한 순간에만 피팅을 시작하세요.',
-        homeDescription: '가상 피팅 사용법, 전통 의상 비교, 입력 사진 팁, AI 피팅 FAQ를 한곳에서 읽을 수 있습니다.',
-        relatedTitle: '관련 읽을거리',
-        relatedDescription: '현재 페이지와 함께 보면 도움이 되는 편집형 페이지입니다.',
+        homeTitle: '필요한 정보만 빠르게 보고 바로 생성으로 이동하세요.',
+        homeDescription: '사용 방법, 의상 아이디어, 입력 팁처럼 실제로 도움이 되는 보조 페이지를 정리했습니다.',
+        relatedTitle: '함께 보면 좋은 페이지',
+        relatedDescription: '현재 페이지와 연결되는 다음 단계 페이지입니다.',
         readMore: '페이지 보기',
       };
     case 'ja':
@@ -90,10 +90,10 @@ export const getEditorialUiCopy = (lang: LanguageCode) => {
       };
     default:
       return {
-        homeTitle: 'Read the guides first, then use the fitting tool when you actually have a stronger reference.',
-        homeDescription: 'Explore how-to guides, traditional outfit comparisons, input-photo tips, and AI fitting FAQs in one editorial hub.',
-        relatedTitle: 'Related Reading',
-        relatedDescription: 'These editorial pages strengthen the topic you are already viewing.',
+        homeTitle: 'Use the supporting pages only when they help you get to a better preview faster.',
+        homeDescription: 'Browse practical pages for workflow, outfit ideas, and cleaner inputs.',
+        relatedTitle: 'Related Pages',
+        relatedDescription: 'Use these pages for the next step in the workflow.',
         readMore: 'Open page',
       };
   }

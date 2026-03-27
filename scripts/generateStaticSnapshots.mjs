@@ -7,37 +7,27 @@ const indexHtmlPath = path.join(distDir, 'index.html');
 const editorialDataPath = path.join(projectRoot, 'src', 'data', 'editorialPages.json');
 const seoLandingPagesPath = path.join(projectRoot, 'src', 'data', 'seoLandingPages.json');
 const englishLocalePath = path.join(projectRoot, 'src', 'locales', 'en.json');
-const supportEmail = 'dlgksxk@gmail.com';
+const supportEmail = 'support@hamdeva.com';
 const siteUrl = 'https://hamdeva.com';
-const defaultOgImage = `${siteUrl}/sample/og/og-image.png`;
-const withBrand = (title) => (title.includes('HAMDEVA') ? title : `${title} | HAMDEVA`);
+const defaultOgImage = `${siteUrl}/sample/og-image.png`;
 const structuredDataBlockPattern = /<!-- HAMDEVA_STRUCTURED_DATA_START -->[\s\S]*?<!-- HAMDEVA_STRUCTURED_DATA_END -->/;
 
 const snapshotRoutes = [
   { key: 'home', path: '/', priority: '1.0', changefreq: 'weekly' },
-  { key: 'dog-hanbok', path: '/dog-hanbok', priority: '0.8', changefreq: 'weekly' },
-  { key: 'cat-kimono', path: '/cat-kimono', priority: '0.8', changefreq: 'weekly' },
-  { key: 'pet-qipao', path: '/pet-qipao', priority: '0.8', changefreq: 'weekly' },
-  { key: 'pet-saree', path: '/pet-saree', priority: '0.8', changefreq: 'weekly' },
-  { key: 'maltese-hanbok', path: '/maltese-hanbok', priority: '0.8', changefreq: 'weekly' },
-  { key: 'shiba-kimono', path: '/shiba-kimono', priority: '0.8', changefreq: 'weekly' },
-  { key: 'corgi-qipao', path: '/corgi-qipao', priority: '0.8', changefreq: 'weekly' },
-  { key: 'persian-cat-saree', path: '/persian-cat-saree', priority: '0.8', changefreq: 'weekly' },
-  { key: 'tuxedo-cat-hanbok', path: '/tuxedo-cat-hanbok', priority: '0.8', changefreq: 'weekly' },
-  { key: 'poodle-wedding-dress', path: '/poodle-wedding-dress', priority: '0.8', changefreq: 'weekly' },
-  { key: 'ragdoll-kimono', path: '/ragdoll-kimono', priority: '0.8', changefreq: 'weekly' },
-  { key: 'about', path: '/about', priority: '0.8', changefreq: 'monthly' },
-  { key: 'how-it-works', path: '/how-to-use', priority: '0.9', changefreq: 'monthly' },
-  { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.9', changefreq: 'weekly' },
-  { key: 'sample-friends', path: '/sample-friends', priority: '0.8', changefreq: 'weekly' },
-  { key: 'fashion-technology', path: '/fashion-technology', priority: '0.8', changefreq: 'monthly' },
-  { key: 'pricing', path: '/pricing', priority: '0.8', changefreq: 'weekly' },
-  { key: 'virtual-try-on-guide', path: '/virtual-try-on-guide', priority: '0.7', changefreq: 'monthly' },
-  { key: 'outfit-photo-tips', path: '/outfit-photo-tips', priority: '0.7', changefreq: 'monthly' },
-  { key: 'ai-fitting-faq', path: '/ai-fitting-faq', priority: '0.7', changefreq: 'monthly' },
-  { key: 'privacy', path: '/privacy', priority: '0.5', changefreq: 'yearly' },
-  { key: 'refund-policy', path: '/refund-policy', priority: '0.5', changefreq: 'yearly' },
-  { key: 'terms', path: '/terms', priority: '0.5', changefreq: 'yearly' },
+  { key: 'tryon', path: '/tryon', priority: '0.95', changefreq: 'weekly' },
+  { key: 'dog-outfit-generator', path: '/dog-outfit-generator', priority: '0.9', changefreq: 'weekly' },
+  { key: 'cat-outfit-generator', path: '/cat-outfit-generator', priority: '0.9', changefreq: 'weekly' },
+  { key: 'pet-halloween-costume', path: '/pet-halloween-costume', priority: '0.8', changefreq: 'weekly' },
+  { key: 'pet-hanbok', path: '/pet-hanbok', priority: '0.8', changefreq: 'weekly' },
+  { key: 'dog-hoodie', path: '/dog-hoodie', priority: '0.8', changefreq: 'weekly' },
+  { key: 'cat-formal-outfit', path: '/cat-formal-outfit', priority: '0.8', changefreq: 'weekly' },
+  { key: 'about', path: '/about', priority: '0.7', changefreq: 'monthly' },
+  { key: 'how-it-works', path: '/how-to-use', priority: '0.8', changefreq: 'monthly' },
+  { key: 'traditional-clothing', path: '/sample-outfits', priority: '0.85', changefreq: 'weekly' },
+  { key: 'pricing', path: '/pricing', priority: '0.7', changefreq: 'weekly' },
+  { key: 'privacy', path: '/privacy', priority: '0.4', changefreq: 'yearly' },
+  { key: 'refund-policy', path: '/refund-policy', priority: '0.4', changefreq: 'yearly' },
+  { key: 'terms', path: '/terms', priority: '0.4', changefreq: 'yearly' },
   { key: 'contact', path: '/contact', priority: '0.6', changefreq: 'yearly' },
 ];
 
@@ -45,27 +35,7 @@ const pageTypeByKey = {
   about: 'AboutPage',
   contact: 'ContactPage',
   'traditional-clothing': 'CollectionPage',
-  'sample-friends': 'CollectionPage',
 };
-
-const articlePages = new Set([
-  'dog-hanbok',
-  'cat-kimono',
-  'pet-qipao',
-  'pet-saree',
-  'maltese-hanbok',
-  'shiba-kimono',
-  'corgi-qipao',
-  'persian-cat-saree',
-  'tuxedo-cat-hanbok',
-  'poodle-wedding-dress',
-  'ragdoll-kimono',
-  'traditional-clothing',
-  'fashion-technology',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
-]);
 
 const escapeHtml = (value) =>
   String(value)
@@ -118,7 +88,7 @@ const renderOrganizationSchema = () => ({
   '@type': 'Organization',
   name: 'HAMDEVA',
   url: siteUrl,
-  description: 'HAMDEVA is an AI pet fitting platform for dogs and cats.',
+  description: 'HAMDEVA is an AI pet outfit preview tool for dogs and cats.',
   logo: defaultOgImage,
   contactPoint: [
     {
@@ -134,7 +104,7 @@ const renderWebSiteSchema = () => ({
   '@type': 'WebSite',
   name: 'HAMDEVA',
   url: siteUrl,
-  description: 'AI pet fitting platform for virtual try-on and outfit preview.',
+  description: 'AI pet outfit try-on and outfit preview tool for dogs and cats.',
 });
 
 const renderWebPageSchema = (page, pageUrl, pageType) => ({
@@ -147,25 +117,6 @@ const renderWebPageSchema = (page, pageUrl, pageType) => ({
     '@type': 'WebSite',
     name: 'HAMDEVA',
     url: siteUrl,
-  },
-});
-
-const renderArticleSchema = (page, pageUrl, articleType = 'Article') => ({
-  '@context': 'https://schema.org',
-  '@type': articleType,
-  headline: page.title,
-  description: page.description,
-  mainEntityOfPage: pageUrl,
-  url: pageUrl,
-  image: [defaultOgImage],
-  publisher: {
-    '@type': 'Organization',
-    name: 'HAMDEVA',
-    url: siteUrl,
-    logo: {
-      '@type': 'ImageObject',
-      url: defaultOgImage,
-    },
   },
 });
 
@@ -189,7 +140,7 @@ const replaceTag = (html, pattern, replacement) => (
 
 const buildHomeSnapshot = (locale) => ({
   title: locale.meta.homeTitle,
-  displayTitle: 'HAMDEVA AI Pet Fitting',
+  displayTitle: 'Preview Pet Outfits Before You Buy',
   description: locale.meta.homeDescription,
   summary: locale.meta.homeDescription,
   sections: [
@@ -207,7 +158,7 @@ const buildHomeSnapshot = (locale) => ({
     },
   ],
   faq: [],
-  relatedPages: ['about', 'how-it-works', 'traditional-clothing', 'pricing', 'contact'],
+  relatedPages: ['tryon', 'traditional-clothing', 'dog-outfit-generator', 'cat-outfit-generator', 'pricing'],
 });
 
 const buildContactSnapshot = (locale) => ({
@@ -231,7 +182,7 @@ const buildContactSnapshot = (locale) => ({
     },
   ],
   faq: [],
-  relatedPages: ['about', 'pricing', 'privacy', 'terms'],
+  relatedPages: ['tryon', 'pricing', 'privacy', 'terms'],
 });
 
 const buildSnapshotPage = (key, locale, editorialData, seoLandingPages) => {
@@ -300,8 +251,8 @@ const renderRelatedPages = (page, allPages, routeLookup) => {
   return `
       <section class="section editorial-section editorial-related-section">
         <div class="section-copy">
-          <h2>Related Reading</h2>
-          <p>Continue with public pages that explain the workflow, pricing, policies, and topic context around HAMDEVA.</p>
+          <h2>Related Pages</h2>
+          <p>Use these pages when you want a faster route into try-on, pricing, or stronger outfit ideas.</p>
         </div>
         <div class="compact-card-grid">
           ${items}
@@ -379,16 +330,6 @@ const renderStructuredData = (routeKey, page, pageUrl) => {
     structuredData.push(renderHowToSchema(page, pageUrl));
   }
 
-  if (articlePages.has(routeKey)) {
-    structuredData.push(
-      renderArticleSchema(
-        page,
-        pageUrl,
-        routeKey === 'fashion-technology' ? 'TechArticle' : 'Article',
-      ),
-    );
-  }
-
   if (page.faq && page.faq.length > 0) {
     structuredData.push(renderFaqSchema(page.faq));
   }
@@ -429,7 +370,7 @@ const main = async () => {
     }
 
     const pageUrl = `${siteUrl}${route.path === '/' ? '/' : route.path}`;
-    const documentTitle = route.key === 'home' ? withBrand(page.title) : withBrand(page.title);
+    const documentTitle = page.title.includes('HAMDEVA') ? page.title : `${page.title} | HAMDEVA`;
     const structuredData = renderStructuredData(route.key, page, pageUrl);
     const pageBody = renderPageBody(page, pages, routeLookup);
 
@@ -441,11 +382,11 @@ const main = async () => {
     html = replaceTag(html, /<meta\s+property="og:description"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:description" content="${escapeHtml(page.description)}" />`);
     html = replaceTag(html, /<meta\s+property="og:url"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:url" content="${pageUrl}" />`);
     html = replaceTag(html, /<meta\s+property="og:image"\s+content="[\s\S]*?"\s*\/?>/, `<meta property="og:image" content="${defaultOgImage}" />`);
-    html = replaceTag(html, /<meta\s+property="og:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta property="og:image:alt" content="HAMDEVA pet fitting preview" />');
+    html = replaceTag(html, /<meta\s+property="og:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta property="og:image:alt" content="HAMDEVA pet outfit preview" />');
     html = replaceTag(html, /<meta\s+name="twitter:title"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="twitter:title" content="${escapeHtml(documentTitle)}" />`);
     html = replaceTag(html, /<meta\s+name="twitter:description"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="twitter:description" content="${escapeHtml(page.description)}" />`);
     html = replaceTag(html, /<meta\s+name="twitter:image"\s+content="[\s\S]*?"\s*\/?>/, `<meta name="twitter:image" content="${defaultOgImage}" />`);
-    html = replaceTag(html, /<meta\s+name="twitter:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta name="twitter:image:alt" content="HAMDEVA pet fitting preview" />');
+    html = replaceTag(html, /<meta\s+name="twitter:image:alt"\s+content="[\s\S]*?"\s*\/?>/, '<meta name="twitter:image:alt" content="HAMDEVA pet outfit preview" />');
     html = replaceTag(html, /<link\s+rel="canonical"\s+href="[\s\S]*?"\s*\/?>/, `<link rel="canonical" href="${pageUrl}" />`);
     html = html.replace(structuredDataBlockPattern, structuredData);
     html = html.replace('<div id="root"></div>', pageBody);

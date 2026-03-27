@@ -1,12 +1,21 @@
 const PREVIEW_HOST_MARKERS = ['pages.dev', 'workers.dev'];
 const LEGACY_REDIRECTS = new Map([
-  ['/tryon', '/'],
   ['/how-it-works', '/how-to-use'],
   ['/countries', '/sample-outfits'],
+  ['/dog-hanbok', '/pet-hanbok'],
+  ['/maltese-hanbok', '/pet-hanbok'],
+  ['/tuxedo-cat-hanbok', '/pet-hanbok'],
+  ['/cat-kimono', '/sample-outfits'],
+  ['/shiba-kimono', '/sample-outfits'],
+  ['/ragdoll-kimono', '/sample-outfits'],
+  ['/pet-qipao', '/sample-outfits'],
+  ['/corgi-qipao', '/sample-outfits'],
+  ['/pet-saree', '/sample-outfits'],
+  ['/persian-cat-saree', '/sample-outfits'],
+  ['/poodle-wedding-dress', '/sample-outfits'],
 ]);
 const NON_INDEXABLE_PATHS = new Set([
   '/board',
-  '/contact',
   '/mypage',
   '/admin',
   '/site-management',

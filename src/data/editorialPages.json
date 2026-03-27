@@ -2,494 +2,231 @@
   "featuredOrder": [
     "about",
     "how-it-works",
-    "traditional-clothing",
-    "countries",
-    "fashion-technology",
-    "virtual-try-on-guide",
-    "outfit-photo-tips",
-    "ai-fitting-faq"
+    "traditional-clothing"
   ],
   "pages": {
     "about": {
       "title": "About HAMDEVA",
-      "description": "Learn what HAMDEVA does, who it helps, and how pet outfit previews fit into the wider service experience.",
-      "summary": "HAMDEVA is a pet outfit preview service built around simple generation, sample browsing, and practical guidance for better results.",
+      "description": "Learn what HAMDEVA does and why people use it to preview dog and cat outfits before they choose a final look.",
+      "summary": "HAMDEVA helps people compare pet outfit ideas quickly with an AI preview flow built for dogs and cats.",
       "sections": [
         {
-          "heading": "What HAMDEVA is for",
+          "heading": "What HAMDEVA is",
           "paragraphs": [
-            "HAMDEVA helps pet owners preview outfit ideas before they commit to buying, styling, or sharing a look for a dog or cat.",
-            "The service is built for quick visual comparison. Instead of guessing from a clothing image alone, a user can test whether an outfit direction feels playful, formal, seasonal, or photo-friendly on their pet."
+            "HAMDEVA is an AI pet outfit preview tool for dogs and cats. Users add a pet photo and an outfit image, then compare how the look reads before they make a final decision.",
+            "The service is strongest when you want to narrow down style direction fast, whether that means a casual hoodie, a themed costume, a formal outfit, or a special-event look."
           ]
         },
         {
-          "heading": "Why pet outfit planning needs a preview step",
+          "heading": "Why people use it",
           "paragraphs": [
-            "Pet outfits can look very different depending on fur color, face shape, ear silhouette, body proportion, and how much of the neck or chest stays visible in the final image.",
-            "A preview helps users rule out weak directions early. That makes the service useful for costume planning, holiday photos, special events, and everyday outfit experiments without turning every decision into a blind purchase."
+            "Pet outfits can look very different depending on fur color, face shape, body proportion, and how much of the chest or neck stays visible. HAMDEVA helps reduce that guesswork before you buy or style the real outfit.",
+            "That makes the product useful for shopping decisions, holiday planning, social posts, studio shoots, and everyday outfit ideas."
           ]
         },
         {
-          "heading": "How the site is organized",
+          "heading": "What the result means",
           "paragraphs": [
-            "HAMDEVA separates its public pages by job. The sample pages help users browse outfits and pet references, the how-to pages explain workflow, and the legal or support pages handle policy and contact questions.",
-            "That structure keeps the main try-on experience lighter. Users can read only the page they need instead of finding the same explanation repeated everywhere."
-          ]
-        },
-        {
-          "heading": "How to treat the result",
-          "paragraphs": [
-            "HAMDEVA presents AI output as a visual planning preview, not as exact proof of real-world fit, tailoring, or fabric behavior.",
-            "The strongest use of a result is comparison. Users can judge mood, silhouette, and shareability first, then decide whether a look is worth trying in real life."
-          ]
-        },
-        {
-          "heading": "What users can do next",
-          "paragraphs": [
-            "After a first preview, users can swap outfit references, compare multiple looks with the same pet photo, and save the result they prefer.",
-            "The overall goal is a workflow that stays simple: browse ideas, generate a preview, compare options, and move forward with more confidence."
+            "A HAMDEVA result is a visual preview, not an exact guarantee of fit, tailoring, or fabric behavior. It is designed to help with comparison first.",
+            "The best workflow is simple: compare a few directions, keep the look that reads best, and move forward with more confidence."
           ]
         }
       ],
       "faq": [
         {
-          "question": "Is HAMDEVA only a virtual try-on tool?",
-          "answer": "No. HAMDEVA is structured as an editorial fashion website with a try-on workflow inside it. The articles, guides, and reference pages are part of the core product rather than decorative filler."
+          "question": "Is HAMDEVA for dogs and cats only?",
+          "answer": "Yes. The public try-on flow is designed around dog and cat photos."
         },
         {
-          "question": "Why does HAMDEVA publish long-form content around the fitting tool?",
-          "answer": "Long-form content helps users understand garment context, choose stronger input images, and evaluate outputs more carefully. It also makes the public site more useful and more search-friendly."
-        },
-        {
-          "question": "Does HAMDEVA claim that AI previews replace real fitting?",
-          "answer": "No. The service presents AI output as a planning and comparison aid, not as a substitute for measurements, physical fabric behavior, or real craftsmanship."
-        },
-        {
-          "question": "Who is the platform designed for?",
-          "answer": "The current structure is useful for curious first-time visitors, travelers, students, creators, and users who want to compare cultural or visually distinctive outfits before committing time or money."
+          "question": "Does HAMDEVA replace real fitting?",
+          "answer": "No. It is a preview tool for planning and comparison before a real purchase or costume choice."
         }
       ],
-      "relatedPages": ["how-it-works", "traditional-clothing", "virtual-try-on-guide"]
+      "relatedPages": [
+        "how-it-works",
+        "traditional-clothing"
+      ]
     },
     "how-it-works": {
       "title": "How HAMDEVA Works",
-      "description": "Follow the core HAMDEVA workflow from pet photo selection to outfit reference choice and result review.",
-      "summary": "This page focuses on the basic pet fitting sequence so users can understand the flow before they start generating.",
+      "description": "See the core HAMDEVA flow from pet photo upload to outfit image selection and result review.",
+      "summary": "This page explains the short practical flow for getting a cleaner pet outfit preview.",
       "sections": [
         {
-          "heading": "Step 1: Choose the pet photo",
+          "heading": "Step 1: Add a clear pet photo",
           "paragraphs": [
-            "Start with one clear dog or cat photo. The best source usually shows the face well, keeps the body orientation easy to read, and avoids heavy blur or obstruction.",
-            "This image acts as the pet reference for the full generation, so it should represent the pet you actually want to preview."
+            "Start with a dog or cat photo where the face is easy to read and the pose is stable. Near-front photos usually work best because they keep identity clearer in the final result.",
+            "If the face is heavily blocked or the angle is extreme, the output usually becomes less reliable."
           ]
         },
         {
-          "heading": "Step 2: Pick the outfit image",
+          "heading": "Step 2: Add a readable outfit image",
           "paragraphs": [
-            "Next, select the clothing reference that should guide the look. A readable outfit image gives the system a clearer idea of shape, trim, and overall style direction.",
-            "If you do not have your own outfit reference yet, the sample outfit pages work as a safe starting point before you switch to a custom image."
+            "Pick an outfit image where the full shape is visible. Strong silhouette and visible detail matter more than busy styling language.",
+            "If you do not have your own clothing image yet, use sample outfits first and switch to your final reference later."
           ]
         },
         {
-          "heading": "Step 3: Generate the preview",
+          "heading": "Step 3: Compare the result",
           "paragraphs": [
-            "Once both images are ready, run the try-on flow and wait for the result sheet. HAMDEVA is designed to return a comparison-friendly output rather than a single decorative hero image.",
-            "That makes it easier to review one look quickly before moving on to a second outfit or a different pet photo."
-          ]
-        },
-        {
-          "heading": "Step 4: Compare the result to the source",
-          "paragraphs": [
-            "After generation, compare the output with the original outfit image. Check whether the mood, major silhouette, and category cues still feel close to the source.",
-            "If the preview feels weak, the first fix is usually better source material, not blind repetition."
-          ]
-        },
-        {
-          "heading": "Step 5: Iterate or save",
-          "paragraphs": [
-            "If the direction works, keep the result and move on to your next decision. If not, swap the outfit image or use a different pet photo and test again.",
-            "The workflow is meant to support fast comparison, not one perfect all-in attempt."
+            "After generation, compare the result against the source outfit. Look at overall mood, trim placement, silhouette, and whether the outfit category still reads clearly.",
+            "If the preview feels weak, improve the inputs before repeating the same request."
           ]
         }
       ],
       "faq": [
         {
-          "question": "What portrait angle usually works best?",
-          "answer": "A clear front-facing or near-front-facing portrait with balanced lighting usually gives the model the most stable identity reference."
+          "question": "What pet photo usually works best?",
+          "answer": "A clear dog or cat photo with good lighting and a visible face usually gives the cleanest result."
         },
         {
-          "question": "Why does the clothing image matter so much?",
-          "answer": "The garment reference is the strongest source for outfit shape, trim, and mood. A weak clothing image often leads to a weak result even if the portrait is good."
-        },
-        {
-          "question": "Why generate a sheet instead of one photo?",
-          "answer": "A multi-view sheet helps users compare front, angled, and back impressions in one place, which is more useful for judging silhouette continuity."
-        },
-        {
-          "question": "What should I do if the result feels generic?",
-          "answer": "Improve the input before repeating the request. A clearer portrait or a cleaner clothing reference usually helps more than blind regeneration."
+          "question": "Why does the outfit image matter so much?",
+          "answer": "The outfit image is the main guide for shape, trim, and styling direction, so weak references often create weak results."
         }
       ],
-      "relatedPages": ["outfit-photo-tips", "ai-fitting-faq", "traditional-clothing"]
+      "relatedPages": [
+        "traditional-clothing",
+        "outfit-photo-tips",
+        "ai-fitting-faq"
+      ]
     },
     "traditional-clothing": {
-      "title": "Traditional Clothing Sample Outfits",
-      "description": "Browse sample outfits as reference material for AI fitting, cultural comparison, and stronger garment selection.",
-      "summary": "This page is for browsing sample outfit references so users can choose a clearer style direction before they generate.",
+      "title": "Pet Outfit Ideas",
+      "description": "Browse pet outfit ideas and costume references for dogs and cats before you open the try-on tool.",
+      "summary": "This page works as the main outfit ideas hub, with traditional looks treated as one category among broader pet outfit directions.",
       "sections": [
         {
-          "heading": "Why this page exists",
+          "heading": "Use this page as an outfit ideas hub",
           "paragraphs": [
-            "Many users arrive without a prepared outfit image. The sample outfit page gives them a cleaner starting point so they can browse styles first and generate second.",
-            "That makes the page useful as both a reference library and a launch point into the try-on flow."
+            "Many visitors do not start with a final outfit image. They start with a mood: casual, formal, funny, seasonal, themed, or traditional. This page helps them narrow that direction before generation.",
+            "Instead of acting like a narrow cultural clothing directory, it now works as a broader pet outfit ideas page."
           ]
         },
         {
-          "heading": "What to look for in a sample",
+          "heading": "How to choose a useful reference",
           "paragraphs": [
-            "Strong samples usually have a readable front view, clear edges, and enough visual space around the garment to show the full outline.",
-            "Traditional garments are often useful references because wraps, ribbons, collars, skirt volume, and layered shapes are easier to recognize than a flat casual top."
+            "The best outfit references show a clear front shape, visible trim or accessory placement, and enough space around the outfit to read the full silhouette.",
+            "Traditional outfits still work well as references, but they are one idea category inside a wider outfit ideas collection."
           ]
         },
         {
-          "heading": "How to browse the categories",
+          "heading": "What to do after browsing",
           "paragraphs": [
-            "Use the page to compare categories before you choose one image. A formal robe, a soft draped look, and a decorative ceremonial style may all create very different moods in the final preview.",
-            "This browsing step helps you narrow your goal before you spend credits on generation."
-          ]
-        },
-        {
-          "heading": "How to move from samples to generation",
-          "paragraphs": [
-            "After choosing a sample, run the try-on result and compare whether the preview still keeps the original category feeling.",
-            "Look for the parts that matter most: overall silhouette, trim placement, drape, and whether the outfit still reads like the same garment family."
-          ]
-        },
-        {
-          "heading": "When to switch to your own reference",
-          "paragraphs": [
-            "Samples are best for getting oriented quickly. Once you understand which shape or mood works, you can replace the sample with your own outfit image for a more specific test.",
-            "That sequence keeps the sample page focused on discovery instead of repeating the same workflow advice found elsewhere."
+            "Once you find a direction that feels right, open the try-on page and test a stronger outfit image. If the first result is close, you can refine from there instead of starting blind.",
+            "That makes this page a practical bridge between broad inspiration and the actual tool."
           ]
         }
       ],
       "faq": [
         {
-          "question": "Why use sample outfits instead of my own clothing photo first?",
-          "answer": "Samples reduce friction and help you understand how the workflow behaves before you invest time in choosing or preparing your own garment reference."
+          "question": "Is this page only for traditional clothing?",
+          "answer": "No. Traditional looks are included, but the page now covers broader pet outfit and costume ideas."
         },
         {
-          "question": "Are traditional garments especially good sample references?",
-          "answer": "Yes. They often have strong silhouette, layering, and ornament signals that give the model clearer visual information."
-        },
-        {
-          "question": "Can sample pages be useful even without generating?",
-          "answer": "Yes. They can still function as educational comparison pages for visitors who want to understand outfit categories and styling differences."
-        },
-        {
-          "question": "What should I compare after generating from a sample?",
-          "answer": "Compare silhouette, mood, detail placement, and whether the result still feels like the same garment family as the source."
+          "question": "Should I browse here before using the generator?",
+          "answer": "Yes, especially if you do not have a final outfit image yet and want a faster way to choose a direction."
         }
       ],
-      "relatedPages": ["countries", "how-it-works", "virtual-try-on-guide"]
+      "relatedPages": [
+        "how-it-works",
+        "virtual-try-on-guide",
+        "fashion-technology"
+      ]
     },
     "countries": {
-      "title": "Country Clothing References",
-      "description": "Use country-based traditional clothing pages to compare garment identity, cultural context, and visual mood before generation.",
-      "summary": "Country comparison helps visitors understand that traditional outfits are not interchangeable and deserve explanation before they become AI references.",
+      "title": "Country Outfit References",
+      "description": "Use this page as a small supporting guide when you want to compare traditional outfit references by country.",
+      "summary": "This is a supporting page for users who specifically want country-based traditional outfit context.",
       "sections": [
         {
-          "heading": "Why country comparison adds value",
+          "heading": "What this page is for",
           "paragraphs": [
-            "A country page gives users a stronger starting point than a vague category label. Traditional dress is often discussed as if it were one broad visual bucket, but that approach hides the differences that make each garment legible and meaningful. A page organized by country or region helps the visitor notice that wrapping methods, layering logic, skirt volume, neckline construction, and symbolic presentation vary in important ways.",
-            "That comparison model is valuable even before anyone touches the fitting tool. It gives the user a frame for reading images more carefully, and it turns curiosity into an organized browsing experience rather than a random search spiral."
-          ]
-        },
-        {
-          "heading": "From cultural curiosity to practical reference",
-          "paragraphs": [
-            "Many visitors do not come to the site with expert knowledge. They may only know that they want something elegant, formal, dramatic, or culturally specific. Country pages help narrow that broad instinct into clearer reference choices. By showing representative garments and short explanation, the site gives the user enough orientation to choose a direction without pretending to replace deeper historical research.",
-            "This kind of guidance is especially useful for international visitors, creators, and travelers who need an introductory bridge. A small amount of structure can prevent large misunderstandings, especially when the visitor is unfamiliar with how different dress traditions signal occasion, status, movement, or formality."
-          ]
-        },
-        {
-          "heading": "Why this is search-friendly content",
-          "paragraphs": [
-            "Country clothing pages work well for search because they answer specific informational intent. A user searching for Korean traditional clothing, Japanese kimono styling, or broad comparisons among Asian ceremonial dress is not necessarily ready for generation yet. They often need a readable overview first. Pages that meet that need can attract more qualified traffic than tool-only screens.",
-            "Once the visitor lands, the page can naturally lead them toward related educational guides or the try-on workflow. That path creates stronger internal linking and gives search engines clearer evidence that the site has topic depth, not just interactive states."
-          ]
-        },
-        {
-          "heading": "How to use country pages inside HAMDEVA",
-          "paragraphs": [
-            "A practical use pattern is to compare several country references, identify which mood or silhouette feels closest to the intended use case, and then move into the sample or try-on route with a more focused goal. Someone preparing for palace photography may prioritize one visual language, while someone researching editorial styling may prefer another. The country page helps narrow that choice.",
-            "It also encourages users to notice differences instead of collapsing them into surface color impressions. Structured browsing makes the fitting experience better because the reference choice becomes more deliberate and culturally grounded."
-          ]
-        },
-        {
-          "heading": "Respect matters in digital fashion",
-          "paragraphs": [
-            "Technology makes garments easier to access visually, but access without context can still become shallow. Country pages help counter that problem by keeping a layer of explanation visible. They remind users that these outfits belong to living design traditions and should not be reduced to interchangeable costume aesthetics.",
-            "That framing is important for product integrity and for long-term publisher credibility. The strongest digital fashion sites do not simply make clothing clickable. They make it understandable."
+            "Country-based browsing can still help when you want a traditional outfit direction but do not know which style family to start with.",
+            "It is best used as a supporting reference page rather than the main entry point to the site."
           ]
         }
       ],
-      "faq": [
-        {
-          "question": "Why organize traditional outfits by country?",
-          "answer": "Country organization gives visitors a clearer comparison framework and helps them distinguish garment traditions that might otherwise be flattened into one generic category."
-        },
-        {
-          "question": "Does this page replace historical research?",
-          "answer": "No. It provides an accessible overview that helps visitors orient themselves before deeper reading or before selecting a fitting reference."
-        },
-        {
-          "question": "How does this help the try-on tool?",
-          "answer": "A clearer understanding of country-specific style makes users more likely to choose better references and interpret the result more accurately."
-        },
-        {
-          "question": "Why is country comparison important for search?",
-          "answer": "It answers informational queries that tool-only pages often miss, which makes the site more useful to visitors who are still researching."
-        }
-      ],
-      "relatedPages": ["traditional-clothing", "fashion-technology", "virtual-try-on-guide"]
+      "faq": [],
+      "relatedPages": [
+        "traditional-clothing",
+        "how-it-works"
+      ]
     },
     "fashion-technology": {
-      "title": "Fashion Technology and AI Try-On",
-      "description": "Read how HAMDEVA uses pet photos and outfit references to create comparison-friendly AI previews.",
-      "summary": "This page focuses on the logic behind the system so users can understand why input quality and view consistency matter.",
+      "title": "Pet Outfit Style Guide",
+      "description": "Read a short practical guide for choosing cleaner outfit references and better input combinations.",
+      "summary": "This is a supporting page for input quality and outfit selection, not a core landing page.",
       "sections": [
         {
-          "heading": "Why the system separates two inputs",
+          "heading": "How to use it",
           "paragraphs": [
-            "HAMDEVA relies on a pet image and an outfit image that play different roles. The pet photo anchors identity, while the outfit reference anchors clothing structure and visible details.",
-            "Keeping those inputs separate gives the model a clearer task than a vague text-only request."
-          ]
-        },
-        {
-          "heading": "Why readable references matter",
-          "paragraphs": [
-            "A weak source image forces the model to guess. That usually leads to flatter outfit detail, less stable pet identity, or a result that feels more generic than the source.",
-            "Clear pet portraits and outfit images with obvious shape give the system better constraints and more predictable output."
-          ]
-        },
-        {
-          "heading": "Why the output is shown as a sheet",
-          "paragraphs": [
-            "A multi-view sheet is more useful for comparison than one isolated image. It helps users check front, angle, and rear impressions in one place.",
-            "That format is especially helpful for outfits where drape, sleeve shape, or back structure affects the overall read."
-          ]
-        },
-        {
-          "heading": "Why pets are a special fitting case",
-          "paragraphs": [
-            "Dog and cat outfit previews are not only about clothing style. Fur volume, ear shape, chest width, and neck visibility all change how an outfit reads on screen.",
-            "That is one reason pet outfit previews need a workflow designed around animal proportions rather than copied directly from human fashion tools."
-          ]
-        },
-        {
-          "heading": "Where the technology stops",
-          "paragraphs": [
-            "The preview can support an early decision, but it cannot confirm exact sizing, material feel, comfort, or tailoring quality.",
-            "That limit is important to keep in mind. The technology is strongest when it is used as decision support, not as a replacement for the real garment."
+            "Use this guide when you want practical reminders about silhouette clarity, outfit image quality, and how to compare results more carefully.",
+            "It is meant to support the main try-on flow, not replace it."
           ]
         }
       ],
-      "faq": [
-        {
-          "question": "What makes fashion technology useful here?",
-          "answer": "It helps users compare garments visually before spending more time or money, especially when ordinary product images do not answer enough questions."
-        },
-        {
-          "question": "Can AI output replace real fitting?",
-          "answer": "No. It is most useful as an early-stage preview and comparison aid, not as a substitute for fabric, tailoring, or physical measurements."
-        },
-        {
-          "question": "Why is reference hierarchy important?",
-          "answer": "Clear separation between the identity image and the garment image makes the output more stable and more faithful to the intended task."
-        },
-        {
-          "question": "Why pair AI with editorial content?",
-          "answer": "Because users need help interpreting results. Strong content improves both trust and output quality by teaching better inputs and better comparison habits."
-        }
-      ],
-      "relatedPages": ["how-it-works", "virtual-try-on-guide", "ai-fitting-faq"]
+      "faq": [],
+      "relatedPages": [
+        "how-it-works",
+        "outfit-photo-tips"
+      ]
     },
     "virtual-try-on-guide": {
-      "title": "Virtual Try-On Guide",
-      "description": "Learn when virtual try-on is useful, what it cannot promise, and how to get better value from the workflow.",
-      "summary": "This guide is for deciding when to use pet virtual try-on, how to structure a session, and how to turn previews into better decisions.",
+      "title": "Pet Virtual Try-On Guide",
+      "description": "Read a short guide to what virtual pet outfit previews are good for and where they help most.",
+      "summary": "This supporting page explains the role of preview-based comparison before a real outfit decision.",
       "sections": [
         {
-          "heading": "Use virtual try-on at the decision stage",
+          "heading": "What this guide covers",
           "paragraphs": [
-            "Pet virtual try-on is most useful before you commit to one outfit direction. It helps when you are comparing options, narrowing categories, or checking whether a style feels right for a dog or cat photo.",
-            "It is less about final proof and more about choosing what deserves a closer look next."
-          ]
-        },
-        {
-          "heading": "Start each session with one clear goal",
-          "paragraphs": [
-            "A session works better when you know what you are testing. You may be comparing seasonal looks, checking costume mood, or reviewing whether one sample outfit family fits your pet photo better than another.",
-            "That small amount of intent helps you choose better references and judge the result more consistently."
-          ]
-        },
-        {
-          "heading": "Keep a second reference ready",
-          "paragraphs": [
-            "One of the easiest ways to improve a session is to keep an alternate outfit image ready. If the first reference is attractive but unclear, a second image with a cleaner outline can reveal whether the problem came from the source.",
-            "This makes the workflow more practical because you are testing decisions, not chasing one image blindly."
-          ]
-        },
-        {
-          "heading": "Judge whether the preview helps the next choice",
-          "paragraphs": [
-            "A useful preview should make the next choice easier. It should help you eliminate weak options, confirm a mood, or decide which outfit is worth refining further.",
-            "If the preview does not help you choose, change the inputs or narrow the question instead of expecting the output alone to solve everything."
-          ]
-        },
-        {
-          "heading": "Know when to leave the preview stage",
-          "paragraphs": [
-            "Once one outfit direction clearly wins, the preview has done its job. At that point the next step may be shopping, comparing real products, or testing a more specific custom outfit image.",
-            "Keeping that boundary clear prevents the guide from repeating the technical or photo-specific advice explained on other pages."
+            "Virtual try-on is most useful when you want a quick visual check before choosing an outfit, planning a costume, or comparing multiple references.",
+            "It is less useful as a promise of exact physical fit, which is why HAMDEVA presents the output as a preview."
           ]
         }
       ],
-      "faq": [
-        {
-          "question": "Should I treat virtual try-on as exact fit prediction?",
-          "answer": "No. It is best treated as a visual planning and comparison tool rather than an exact physical fitting system."
-        },
-        {
-          "question": "When is virtual try-on most useful?",
-          "answer": "It is especially useful when you need to compare several outfit directions, preview an unfamiliar garment category, or reduce uncertainty before a deeper decision."
-        },
-        {
-          "question": "Why do some sessions feel more useful than others?",
-          "answer": "Sessions improve when the user starts with a clear purpose, strong reference images, and realistic expectations about what the tool can deliver."
-        },
-        {
-          "question": "Why publish a separate try-on guide page?",
-          "answer": "Because education improves tool quality. Users make better choices when they understand the workflow before they start clicking."
-        }
-      ],
-      "relatedPages": ["how-it-works", "outfit-photo-tips", "ai-fitting-faq"]
+      "faq": [],
+      "relatedPages": [
+        "how-it-works",
+        "traditional-clothing"
+      ]
     },
     "outfit-photo-tips": {
-      "title": "Outfit Photo Tips for Better Results",
-      "description": "Use stronger garment photos, cleaner portraits, and clearer framing to improve virtual try-on quality.",
-      "summary": "Most disappointing try-on results come from weak references. Better input images usually improve quality more than repeating the same request.",
+      "title": "Outfit Photo Tips",
+      "description": "Use these quick photo tips to prepare cleaner pet and outfit images before generation.",
+      "summary": "This supporting page focuses on input quality for better preview results.",
       "sections": [
         {
-          "heading": "Why input quality dominates output quality",
+          "heading": "Quick tips",
           "paragraphs": [
-            "The easiest way to improve virtual try-on is not to chase a new prompt every time. It is to improve the reference material. AI systems respond to what they can read. If the portrait is dim, the face is hidden, or the garment image is cropped and cluttered, the model has to guess too much. Guessing produces weaker and more generic results.",
-            "This is why photo tips are core content on a site like HAMDEVA. Better images are not an optional optimization. They are one of the main determinants of whether the workflow becomes genuinely useful."
-          ]
-        },
-        {
-          "heading": "Portrait tips that matter most",
-          "paragraphs": [
-            "For the portrait, clarity beats drama. A straightforward image with visible facial features, balanced exposure, and minimal obstruction is usually more useful than a highly stylized shot. Extreme shadows, beauty filters, sunglasses, hands near the face, and heavy perspective distortion all weaken identity preservation.",
-            "Users should also avoid portraits that are so tightly cropped that the model loses a sense of posture and upper-body presence. A little extra framing usually helps because it gives the system more visual context for the person it should preserve."
-          ]
-        },
-        {
-          "heading": "Garment-photo tips that improve fidelity",
-          "paragraphs": [
-            "The outfit image should show the garment, not compete with it. Full shape visibility, clean background separation, readable detail, and obvious front orientation make a large difference. A product photo or clean editorial shot often works well because the garment remains the main subject. Folded clothing, mirror selfies, busy screenshots, and heavily obstructed garments tend to produce weaker results.",
-            "Traditional garments need even more care. If a robe overlap, ribbon, collar line, or skirt outline is hard to see, the model may simplify the design. When possible, use a garment photo that makes the structure easy to understand at a glance."
-          ]
-        },
-        {
-          "heading": "Small mistakes that quietly hurt output",
-          "paragraphs": [
-            "Some of the most common quality problems look harmless at first. A background object crossing the garment edge, a sleeve cropped out of frame, a face hidden by wind-blown hair, or a low-resolution screenshot may seem acceptable to a human viewer, yet still degrade the model's interpretation. These issues matter because the system does not know what to ignore as well as a human does.",
-            "Users often assume the model will fix these problems automatically. In reality, the cleaner the reference, the less the model needs to invent. Better results usually come from reducing ambiguity before generation rather than expecting the model to rescue weak material."
-          ]
-        },
-        {
-          "heading": "A practical retry loop",
-          "paragraphs": [
-            "If a result disappoints you, do not start by blaming the model alone. First, swap in a cleaner portrait or a clearer garment image. Compare the new result against the old one and note whether silhouette fidelity, facial stability, or overall coherence improved. This simple A/B process often reveals that the reference was the real bottleneck.",
-            "This is the most useful photo habit on the site: improve one input, compare the output, and keep the cleaner source if it clearly helps."
+            "Use bright, readable pet photos and outfit images with clear shape. Avoid heavy blur, blocked details, and clutter around the clothing item.",
+            "Small input improvements usually help more than repeating the same generation request."
           ]
         }
       ],
-      "faq": [
-        {
-          "question": "What is the biggest photo mistake people make?",
-          "answer": "Using images that look fine casually but are hard for the model to read clearly, such as cluttered screenshots, cropped garments, or portraits with obstructed faces."
-        },
-        {
-          "question": "Do I need a studio-quality photo?",
-          "answer": "No. You need a readable photo. Clear lighting, visible features, and simple framing matter more than expensive production."
-        },
-        {
-          "question": "Why do traditional garments need clearer references?",
-          "answer": "Because their identity often depends on silhouette, overlap, trim, and drape details that are easy to lose when the source image is weak."
-        },
-        {
-          "question": "Should I repeat the same request if the first result is weak?",
-          "answer": "Usually it is better to improve the inputs first. Stronger images often help more than repeating the same generation."
-        }
-      ],
-      "relatedPages": ["how-it-works", "virtual-try-on-guide", "traditional-clothing"]
+      "faq": [],
+      "relatedPages": [
+        "how-it-works",
+        "fashion-technology"
+      ]
     },
     "ai-fitting-faq": {
-      "title": "AI Fitting FAQ",
-      "description": "Review common questions about AI fitting quality, safety, realism, and how to get useful value from the experience.",
-      "summary": "This page answers the practical questions users tend to ask after their first generation or before uploading a photo.",
+      "title": "AI Pet Fitting FAQ",
+      "description": "Read quick answers about pet photos, outfit images, preview quality, and what the HAMDEVA result can and cannot do.",
+      "summary": "This FAQ page stays as a support page for common questions.",
       "sections": [
         {
-          "heading": "What counts as a useful result",
+          "heading": "What this FAQ helps with",
           "paragraphs": [
-            "A useful result does not need to behave like a final studio photo. It only needs to be clear enough to help with comparison, mood checking, and option filtering.",
-            "That standard is easier to apply than asking whether an AI preview is perfect in every detail."
-          ]
-        },
-        {
-          "heading": "Why results can vary so much",
-          "paragraphs": [
-            "Most quality gaps come from the source material. A clear pet photo and a readable outfit image usually create a stronger preview than a cluttered or low-resolution pair of inputs.",
-            "That is why two sessions can feel very different even when the user follows the same general workflow."
-          ]
-        },
-        {
-          "heading": "What to upload and what to avoid",
-          "paragraphs": [
-            "Upload images you have the right to use and avoid highly sensitive material you would not want processed by an AI service.",
-            "If an image feels risky from a privacy or rights perspective, it is better not to upload it."
-          ]
-        },
-        {
-          "heading": "When to ask support for help",
-          "paragraphs": [
-            "Support is most useful when something looks technically wrong, credits were deducted unexpectedly, or the workflow fails to complete as expected.",
-            "If the issue is mainly image quality, it is usually better to review the photo tips and your source images first."
+            "Use this page if you need short answers about supported inputs, expected output quality, and how to interpret the result.",
+            "The main product pages stay focused on using the tool, while this page handles common support questions."
           ]
         }
       ],
-      "faq": [
-        {
-          "question": "Is AI fitting realistic enough to make decisions?",
-          "answer": "It can be realistic enough for comparison and direction-setting, but it should not be treated as exact prediction of real fabric behavior or precise fit."
-        },
-        {
-          "question": "Why are some results much stronger than others?",
-          "answer": "Reference quality matters. Clear portraits and clean garment images usually produce more useful results than cluttered or ambiguous inputs."
-        },
-        {
-          "question": "Can I trust the result like a final product photo?",
-          "answer": "No. Treat it as a preview for evaluation, not as proof of exact real-world outcome."
-        },
-        {
-          "question": "Why publish a separate AI fitting FAQ page?",
-          "answer": "Because common user questions are real content needs. Answering them openly improves trust and gives the site stronger informational depth."
-        }
-      ],
-      "relatedPages": ["virtual-try-on-guide", "outfit-photo-tips", "fashion-technology"]
+      "faq": [],
+      "relatedPages": [
+        "how-it-works",
+        "outfit-photo-tips"
+      ]
     }
   }
 }

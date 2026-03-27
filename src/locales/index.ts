@@ -16,7 +16,14 @@ type DeepPartial<T> = {
 };
 export type SitePage =
   | 'home'
+  | 'tryon'
   | 'admin'
+  | 'dog-outfit-generator'
+  | 'cat-outfit-generator'
+  | 'pet-halloween-costume'
+  | 'pet-hanbok'
+  | 'dog-hoodie'
+  | 'cat-formal-outfit'
   | 'dog-hanbok'
   | 'cat-kimono'
   | 'pet-qipao'
@@ -52,7 +59,14 @@ export type SitePage =
 
 export const SITE_PAGES: SitePage[] = [
   'home',
+  'tryon',
   'admin',
+  'dog-outfit-generator',
+  'cat-outfit-generator',
+  'pet-halloween-costume',
+  'pet-hanbok',
+  'dog-hoodie',
+  'cat-formal-outfit',
   'dog-hanbok',
   'cat-kimono',
   'pet-qipao',
@@ -89,13 +103,11 @@ export const SITE_PAGES: SitePage[] = [
 
 export const NAV_PAGES: SitePage[] = [
   'home',
-  'about',
-  'how-it-works',
+  'tryon',
   'traditional-clothing',
-  'sample-friends',
-  'countries',
-  'fashion-technology',
+  'how-it-works',
   'pricing',
+  'contact',
 ];
 
 const locales: Partial<Record<LanguageCode, DeepPartial<ContentLocale>>> = {

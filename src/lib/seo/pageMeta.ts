@@ -10,7 +10,14 @@ export const SEO_NOINDEX_ROBOTS = 'noindex, nofollow, noarchive, nosnippet';
 
 export const PAGE_PATHS: Record<SitePage, string> = {
   home: '/',
+  tryon: '/tryon',
   admin: '/admin',
+  'dog-outfit-generator': '/dog-outfit-generator',
+  'cat-outfit-generator': '/cat-outfit-generator',
+  'pet-halloween-costume': '/pet-halloween-costume',
+  'pet-hanbok': '/pet-hanbok',
+  'dog-hoodie': '/dog-hoodie',
+  'cat-formal-outfit': '/cat-formal-outfit',
   'dog-hanbok': '/dog-hanbok',
   'cat-kimono': '/cat-kimono',
   'pet-qipao': '/pet-qipao',
@@ -47,28 +54,18 @@ export const PAGE_PATHS: Record<SitePage, string> = {
 
 export const INDEXABLE_PAGES = new Set<SitePage>([
   'home',
-  'dog-hanbok',
-  'cat-kimono',
-  'pet-qipao',
-  'pet-saree',
-  'maltese-hanbok',
-  'shiba-kimono',
-  'corgi-qipao',
-  'persian-cat-saree',
-  'tuxedo-cat-hanbok',
-  'poodle-wedding-dress',
-  'ragdoll-kimono',
+  'tryon',
+  'dog-outfit-generator',
+  'cat-outfit-generator',
+  'pet-halloween-costume',
+  'pet-hanbok',
+  'dog-hoodie',
+  'cat-formal-outfit',
   'about',
   'how-it-works',
   'traditional-clothing',
-  'sample-friends',
-  'fashion-technology',
   'pricing',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
   'privacy',
-  'account-deletion',
   'refund-policy',
   'terms',
   'contact',
@@ -78,10 +75,37 @@ export const LEGACY_PAGE_PATHS: Partial<Record<string, SitePage>> = {
   '/how-it-works': 'how-it-works',
   '/traditional-clothing': 'traditional-clothing',
   '/countries': 'traditional-clothing',
-  '/tryon': 'home',
 };
 
 const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description: string }>> = {
+  tryon: {
+    title: 'AI Pet Outfit Generator',
+    description: 'Upload your dog or cat photo, add an outfit image, and generate a pet outfit preview with HAMDEVA.',
+  },
+  'dog-outfit-generator': {
+    title: 'Dog Outfit Generator',
+    description: 'Generate dog outfit previews with your own pet photo, a clothing image, and quick ideas for better dog clothes try on results.',
+  },
+  'cat-outfit-generator': {
+    title: 'Cat Outfit Generator',
+    description: 'Create cat outfit previews with your cat photo and an outfit image to compare cute, formal, and themed looks before you choose one.',
+  },
+  'pet-halloween-costume': {
+    title: 'Pet Halloween Costume Preview',
+    description: 'Preview pet Halloween costume ideas on dogs and cats before you buy, plan, or post your final costume look.',
+  },
+  'pet-hanbok': {
+    title: 'Pet Hanbok Preview',
+    description: 'Compare pet hanbok outfit ideas and preview Korean-inspired looks for dogs and cats with clearer outfit references.',
+  },
+  'dog-hoodie': {
+    title: 'Dog Hoodie Preview',
+    description: 'See how a dog hoodie look reads on your pet before you buy, style, or share a casual dog outfit idea.',
+  },
+  'cat-formal-outfit': {
+    title: 'Cat Formal Outfit Preview',
+    description: 'Compare cat formal outfit ideas for studio photos, events, and polished costume looks before generating your final preview.',
+  },
   'dog-hanbok': {
     title: 'Dog Hanbok Preview Guide',
     description: 'See how a dog hanbok preview works on HAMDEVA before you generate your own AI pet fitting result with a Korean traditional outfit reference.',
@@ -135,8 +159,8 @@ const PAGE_META_FALLBACKS: Partial<Record<SitePage, { title: string; description
     description: 'See how to upload pet photos, choose outfit images, and get better AI pet fitting, dog clothes try on, and pet outfit preview results with HAMDEVA.',
   },
   'traditional-clothing': {
-    title: 'Pet Outfit Samples',
-    description: 'Browse sample pet outfit styles, traditional clothing references, and visual ideas before you create a HAMDEVA fitting preview.',
+    title: 'Pet Outfit Ideas',
+    description: 'Browse pet outfit ideas, costume references, and stronger starting points before you open the HAMDEVA try-on tool.',
   },
   'sample-friends': {
     title: 'Pet Sample Friends',

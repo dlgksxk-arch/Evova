@@ -1,7 +1,14 @@
 {
   "nav": {
     "home": "Home",
-    "traditional-clothing": "Sample Outfits",
+    "tryon": "Try On",
+    "traditional-clothing": "Outfit Ideas",
+    "dog-outfit-generator": "Dog Outfit Generator",
+    "cat-outfit-generator": "Cat Outfit Generator",
+    "pet-halloween-costume": "Pet Halloween Costume",
+    "pet-hanbok": "Pet Hanbok",
+    "dog-hoodie": "Dog Hoodie",
+    "cat-formal-outfit": "Cat Formal Outfit",
     "sample-friends": "Sample Friends",
     "countries": "Country Clothing",
     "how-it-works": "How It Works",
@@ -21,8 +28,8 @@
     "mypage": "My Page"
   },
   "meta": {
-    "homeTitle": "HAMDEVA | AI Pet Fitting, Dog Clothes Try On & Pet Outfit Generator",
-    "homeDescription": "HAMDEVA is an AI pet fitting site for dog clothes try on, pet outfit generator, and pet outfit preview. Upload a dog or cat photo and compare looks in seconds."
+    "homeTitle": "HAMDEVA | AI Pet Outfit Preview for Dogs & Cats",
+    "homeDescription": "Preview pet outfits before you buy. Upload a dog or cat photo, add an outfit image, and compare the look in seconds with HAMDEVA."
   },
   "hero_click": "Click Click,",
   "hero_space": "Virtual Fitting Space",
@@ -65,18 +72,16 @@
     ]
   },
   "homeSeo": {
-    "title": "AI Pet Fitting with HAMDEVA",
+    "title": "AI Pet Outfit Preview with HAMDEVA",
     "introParagraphs": [
-      "HAMDEVA is a digital pet fitting service for dogs and cats. Users upload a pet photo, add an outfit image, and generate a pet outfit preview to compare style ideas before saving, sharing, or buying anything in the real world.",
-      "The service is built for playful planning, themed shoots, holiday costumes, social media images, and quick visual comparison. It does not sell physical clothing on the site itself. Instead, it sells digital credits that can be used to create pet fitting previews.",
-      "HAMDEVA works best as an early decision tool. A user may want to know whether a holiday costume feels too busy, whether a traditional look suits the pet's fur color, or whether a softer style reads better on camera. The preview helps narrow that decision fast.",
-      "The site also includes pages for sample outfits, pet style guidance, and practical fitting tips so visitors can understand what the service does before they open the generator. That makes the homepage useful as an introduction page, not just a blank tool entry point.",
-      "The result should be read as a synthetic pet outfit preview, not as a guarantee of exact real-world fit. The strongest use case is visual comparison: deciding what look, mood, or styling direction is worth trying next."
+      "HAMDEVA is an AI pet outfit preview tool for dogs and cats.",
+      "Upload a pet photo, add an outfit image, and compare the look before you buy, plan, or post the final outfit.",
+      "The homepage works as a fast hub that points visitors to the generator, the outfit ideas page, and focused landing pages for stronger search intent."
     ],
-    "whyTitle": "Why Virtual Fitting?",
-    "whyBody": "Virtual fitting technology is becoming an important tool in online fashion environments. Users can evaluate styles without physically wearing the clothes and can explore a broader range of fashion and cultural outfits. It also helps brands, content creators, and educational platforms publish more explanatory content, which strengthens SEO. A user may search for a specific clothing style or cultural garment, arrive at HAMDEVA through that content, and then continue directly into an interactive fitting experience. That combination of search-friendly information and hands-on functionality is one of the core values of the service.",
-    "exploreTitle": "Explore Different Styles",
-    "exploreBody": "HAMDEVA lets users experience traditional clothing and a wide range of fashion styles through AI image composition. Users can compare country-specific traditional outfits, classic styles, modern fashion moods, and distinctive concept looks in one place while searching for an image that suits them. When rich text explanations and a real try-on experience are offered together, search engines are more likely to recognize the page as a topic-centered content page rather than just a tool page. The HAMDEVA homepage acts as that first entry point by clearly explaining what AI virtual fitting is and why it is useful."
+    "whyTitle": "Why use a preview first?",
+    "whyBody": "A preview helps you compare shape, mood, and category before spending money on the real outfit.",
+    "exploreTitle": "Start with a stronger route",
+    "exploreBody": "Use the try-on page when you are ready to generate, or browse focused landing pages when you already know the kind of outfit you want to test."
   },
   "modal": {
     "title": "Global Traditional Clothing Guide",
@@ -88,11 +93,11 @@
       "countries": "Countries"
     },
     "overview": {
-      "title": "A content-first traditional clothing platform",
+      "title": "Traditional outfit references inside HAMDEVA",
       "paragraphs": [
-        "HAMDEVA is designed as more than an image generator. It introduces users to traditional clothing from multiple regions and then lets them test garments through AI virtual try-on.",
-        "This structure makes the platform useful for travelers, students, fashion researchers, families planning portraits, and anyone curious about how cultural dress looks on a real person.",
-        "By combining educational content with a practical try-on tool, HAMDEVA helps people move from quick curiosity to informed visual understanding."
+        "HAMDEVA includes traditional outfit references as one supporting category inside a broader pet outfit preview tool.",
+        "Use these references when you want a stronger starting point for hanbok, kimono, qipao, saree, or other traditional-style ideas.",
+        "The goal is practical comparison before generation, not turning the whole site into a traditional-clothing directory."
       ]
     },
     "technology": {
@@ -133,8 +138,8 @@
   },
   "pages": {
     "traditional-clothing": {
-      "title": "Sample Outfits",
-      "description": "Explore sample pet outfits and preview ideas for dog and cat clothing styles before creating your own AI fitting results.",
+      "title": "Outfit Ideas",
+      "description": "Browse pet outfit ideas, costume references, and sample directions for dogs and cats before creating your own preview.",
       "sections": [
         {
           "heading": "Traditional outfits",
@@ -169,6 +174,26 @@
             "The best way to use the sample outfit page is to treat it as both a guide and a launch point. First review the garment categories, then look for images with a clear outline, visible detail, and a readable front view.",
             "After generating a result, compare whether the outfit mood, proportion, and decorative density still feel close to the sample reference. If they do not, try another reference with a stronger silhouette or less visual clutter.",
             "This process turns the page into more than a gallery. It becomes a practical worksheet for learning how AI virtual fitting behaves with different kinds of clothing."
+          ]
+        }
+      ]
+    },
+    "tryon": {
+      "title": "Try AI Pet Outfit Generator",
+      "description": "Upload your dog or cat photo, add an outfit image, and generate a pet outfit preview.",
+      "sections": [
+        {
+          "heading": "Use the tool first when you already know the look you want",
+          "paragraphs": [
+            "The try-on page is built for visitors who want to generate right away instead of reading broad product copy first.",
+            "Upload a pet photo, add an outfit image, and compare the result before you decide which look is worth keeping."
+          ]
+        },
+        {
+          "heading": "What makes a good input pair",
+          "paragraphs": [
+            "A clear pet photo and a readable outfit image usually produce the strongest result.",
+            "If the preview feels weak, improve the source images before repeating the same request."
           ]
         }
       ]
@@ -217,7 +242,7 @@
         {
           "heading": "Using the page for exploration",
           "paragraphs": [
-            "This page works well for travelers, students, costume researchers, content creators, and users who simply want a broader understanding of world dress traditions.",
+            "This page works best for visitors who specifically want more context before they choose a traditional outfit reference.",
             "The short descriptions are not meant to replace deep historical study, but they provide enough orientation to make browsing more meaningful and to help users choose stronger references for visual testing.",
             "When a visitor continues into HAMDEVA's generation flow, they do so with more context and better expectations."
           ]
@@ -363,7 +388,7 @@
         {
           "heading": "Billing contact",
           "paragraphs": [
-            "For payment questions or credit delivery issues, contact HAMDEVA support at dlgksxk@gmail.com.",
+            "For payment questions or credit delivery issues, contact HAMDEVA support at support@hamdeva.com.",
             "For card transactions, Polar may appear as the merchant of record on the payment record."
           ]
         }
@@ -465,7 +490,7 @@
         {
           "heading": "How to request account deletion",
           "paragraphs": [
-            "To request account deletion, email dlgksxk@gmail.com from the email address registered to your HAMDEVA account and use the subject line 'Account Deletion Request'.",
+            "To request account deletion, email support@hamdeva.com from the email address registered to your HAMDEVA account and use the subject line 'Account Deletion Request'.",
             "If you cannot send from the registered email address, include your HAMDEVA account email address and enough information for us to verify account ownership before deletion is processed.",
             "HAMDEVA may ask for limited confirmation details to prevent unauthorized deletion requests."
           ]
@@ -488,7 +513,7 @@
         {
           "heading": "Deleting only part of your data",
           "paragraphs": [
-            "If you want to delete only certain data instead of the full account, contact dlgksxk@gmail.com and describe the specific data you want removed.",
+            "If you want to delete only certain data instead of the full account, contact support@hamdeva.com and describe the specific data you want removed.",
             "HAMDEVA will review whether the requested partial deletion can be completed without deleting the full account and will respond with the available options."
           ]
         }
@@ -509,7 +534,7 @@
           "heading": "Payment review cases",
           "paragraphs": [
             "If a payment was completed by mistake, charged more than once, or affected by a technical issue, users should contact support with the account email, payment time, and a short description of the issue.",
-            "Support review is required before any exception can be considered. For billing-related reviews, users can contact dlgksxk@gmail.com."
+            "Support review is required before any exception can be considered. For billing-related reviews, users can contact support@hamdeva.com."
           ]
         },
         {
@@ -552,7 +577,7 @@
           "heading": "Support and contact",
           "paragraphs": [
             "For support, partnership questions, or content feedback, users can contact HAMDEVA through the support form and the published support email on this page.",
-            "The main support contact for HAMDEVA is dlgksxk@gmail.com.",
+            "The main support contact for HAMDEVA is support@hamdeva.com.",
             "When reporting a problem, include the action you attempted and the message shown on screen so the issue can be reviewed more efficiently."
           ]
         },
@@ -574,7 +599,7 @@
           "heading": "Support",
           "paragraphs": [
             "Use the contact form or direct email for product issues, article feedback, or partnership discussions.",
-            "The main support email for HAMDEVA is dlgksxk@gmail.com.",
+            "The main support email for HAMDEVA is support@hamdeva.com.",
             "We review messages related to AI quality, account support, cultural content, and partnership inquiries."
           ]
         },
@@ -617,8 +642,8 @@
   },
   "contact": {
     "supportTitle": "Email Support",
-    "supportBody": "For customer support, partnership questions, or editorial feedback, contact HAMDEVA at",
-    "supportFootnote": "We review messages related to technical issues, content corrections, traditional clothing education, and AI try-on quality improvements.",
+    "supportBody": "For product support, billing questions, or partnership inquiries, contact HAMDEVA at",
+    "supportFootnote": "We review messages about technical issues, payment questions, account problems, and preview quality.",
     "recipientLabel": "Recipient",
     "formTitle": "Contact Form",
     "name": "Name",

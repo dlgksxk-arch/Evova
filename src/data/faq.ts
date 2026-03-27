@@ -23,7 +23,30 @@ export const homeFaqs: FAQItem[] = [
     question: 'What should I compare in the result?',
     answer:
       'Check whether the pet pose, outfit shape, color balance, and overall mood still match the clothing reference you selected.',
-    },
+  },
+];
+
+export const tryOnFaqs: FAQItem[] = [
+  {
+    question: 'Do I need an account to use the generator?',
+    answer:
+      'Yes. Generation is tied to signed-in user state and credit usage in the current flow.',
+  },
+  {
+    question: 'What pet photo works best on the try-on page?',
+    answer:
+      'A clear dog or cat photo with a visible face and stable pose usually gives the cleanest preview.',
+  },
+  {
+    question: 'What outfit image should I upload?',
+    answer:
+      'Use a clothing image with a readable silhouette and visible front details. Strong shape usually matters more than a busy background or close-up fabric texture.',
+  },
+  {
+    question: 'What should I do if the first result feels weak?',
+    answer:
+      'Try a clearer outfit reference or a cleaner pet photo first. Better inputs usually help more than repeating the same request unchanged.',
+  },
 ];
 
 export const aboutFaqs: FAQItem[] = [
@@ -35,7 +58,7 @@ export const aboutFaqs: FAQItem[] = [
   {
     question: 'Why does the site include informational pages?',
     answer:
-      'They explain brand intent and page structure, while the try-on flow stays focused on execution.',
+      'They help visitors understand the workflow, browse outfit ideas, and get better results without slowing down the main try-on flow.',
   },
   {
     question: 'Does HAMDEVA replace real fitting?',

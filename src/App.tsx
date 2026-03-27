@@ -8,9 +8,8 @@ import { useCreditBootstrap } from './hooks/useCreditBootstrap';
 import { usePaymentSessionStatus } from './hooks/usePaymentSessionStatus';
 import type { PaymentStatusDetails } from './hooks/usePaymentSessionStatus';
 import { useSharedResult } from './hooks/useSharedResult';
-import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, type FAQItem } from './data/faq';
+import { aboutFaqs, homeFaqs, howToUseFaqs, sampleOutfitsFaqs, tryOnFaqs, type FAQItem } from './data/faq';
 import {
-  createArticleSchema,
   createBreadcrumbSchema,
   createFAQPageSchema,
   createHowToSchema,
@@ -48,6 +47,7 @@ import {
 import { normalizeUserProfile } from './lib/profile';
 import { resolveSampleAssetUrl } from './lib/assets';
 import { isNativeAndroidApp } from './lib/platform';
+import { signInWithGoogleOnAndroid } from './lib/native/authentication';
 import {
   acknowledgePlayBillingPurchase,
   consumePlayBillingPurchase,
@@ -162,31 +162,31 @@ const HOME_SHOWCASE_RESULT_IMAGES = [
   '/sample/result/hamdeva-image-7yO5Z50ql8Xr3VReDmEwGo48Jkr1_f4ebac74-b131-442c-95e8-d3a7b112556b.png',
 ] as const;
 const HOME_SHOWCASE_RESULT_IMAGE_URLS = HOME_SHOWCASE_RESULT_IMAGES.map((imagePath) => resolveSampleAssetUrl(imagePath));
-const HEADER_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board', 'mypage'];
-const MOBILE_NAV_PAGES: SitePage[] = ['home', 'about', 'how-it-works', 'traditional-clothing', 'sample-friends', 'fashion-technology', 'pricing', 'board'];
-const FOOTER_EDITORIAL_PAGES: SitePage[] = [
-  'about',
-  'how-it-works',
-  'traditional-clothing',
-  'sample-friends',
-  'fashion-technology',
-  'pricing',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
+const HEADER_NAV_PAGES: SitePage[] = ['home', 'tryon', 'traditional-clothing', 'how-it-works', 'pricing', 'contact'];
+const MOBILE_NAV_PAGES: SitePage[] = ['home', 'tryon', 'traditional-clothing', 'how-it-works', 'pricing', 'contact'];
+const TOPIC_LANDING_PAGES: SitePage[] = [
+  'dog-outfit-generator',
+  'cat-outfit-generator',
+  'pet-halloween-costume',
+  'pet-hanbok',
+  'dog-hoodie',
+  'cat-formal-outfit',
 ];
-const FOOTER_UTILITY_PAGES: SitePage[] = ['board', 'privacy', 'refund-policy', 'terms', 'contact'];
+const FOOTER_EDITORIAL_PAGES: SitePage[] = ['tryon', 'traditional-clothing', ...TOPIC_LANDING_PAGES, 'about', 'pricing', 'contact'];
+const FOOTER_UTILITY_PAGES: SitePage[] = ['privacy', 'refund-policy', 'terms'];
 const EDITORIAL_AD_PAGES = new Set<SitePage>([
+  'tryon',
   'about',
   'how-it-works',
   'traditional-clothing',
-  'sample-friends',
-  'countries',
-  'fashion-technology',
+  'dog-outfit-generator',
+  'cat-outfit-generator',
+  'pet-halloween-costume',
+  'pet-hanbok',
+  'dog-hoodie',
+  'cat-formal-outfit',
   'pricing',
-  'virtual-try-on-guide',
-  'outfit-photo-tips',
-  'ai-fitting-faq',
+  'contact',
 ]);
 const getTraditionalSampleCategoryLabel = (category: ClothSampleCategory, lang: LanguageCode) => {
   if (lang === 'ko') {
@@ -3299,6 +3299,8 @@ const getFaqItemsForPage = (page: SitePage, lang: LanguageCode, editorialFaq?: E
   switch (page) {
     case 'home':
       return homeFaqs;
+    case 'tryon':
+      return tryOnFaqs;
     default:
       if (editorialFaq && editorialFaq.length > 0) {
         return editorialFaq;
@@ -3558,6 +3560,13 @@ const DEFAULT_LANGUAGE: LanguageCode = 'en';
 const SITE_KEYWORDS = 'HAMDEVA, hamdeva, pet fitting, AI pet fitting, dog clothes try on, pet outfit generator, pet outfit preview, dog outfit preview, cat clothes try on, virtual pet fitting, dog clothes preview, pet clothes online, dress up your pet, dog costume ideas, cat costume ideas, 반려동물 옷입혀보기, 강아지 옷입혀보기, 고양이 옷입혀보기, 강아지 옷 미리보기, 고양이 옷 입혀보기, 강아지옷, 고양이옷, 펫 의상 미리보기';
 const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   home: `${SITE_KEYWORDS}, ai pet outfit, ai dog outfit, ai cat outfit, compare pet outfits, pet fitting online`,
+  tryon: `${SITE_KEYWORDS}, ai pet outfit generator, pet outfit preview tool, dog clothes try on tool, cat outfit generator`,
+  'dog-outfit-generator': `${SITE_KEYWORDS}, dog outfit generator, dog clothes try on, dog costume preview, dog outfit ideas`,
+  'cat-outfit-generator': `${SITE_KEYWORDS}, cat outfit generator, cat clothes try on, cat costume ideas, cat outfit preview`,
+  'pet-halloween-costume': `${SITE_KEYWORDS}, pet halloween costume, dog halloween costume ideas, cat halloween costume, pet costume preview`,
+  'pet-hanbok': `${SITE_KEYWORDS}, pet hanbok, dog hanbok, cat hanbok, korean pet outfit preview`,
+  'dog-hoodie': `${SITE_KEYWORDS}, dog hoodie, dog hoodie preview, casual dog outfit, dog sweatshirt ideas`,
+  'cat-formal-outfit': `${SITE_KEYWORDS}, cat formal outfit, cat tuxedo, cat dress ideas, formal cat costume`,
   'dog-hanbok': `${SITE_KEYWORDS}, dog hanbok, korean dog outfit, dog hanbok preview, pet hanbok preview, korean traditional pet outfit`,
   'cat-kimono': `${SITE_KEYWORDS}, cat kimono, cat kimono preview, pet kimono, japanese pet outfit, kimono cat costume preview`,
   'pet-qipao': `${SITE_KEYWORDS}, pet qipao, qipao pet preview, chinese pet outfit, pet cheongsam, qipao style pet outfit`,
@@ -3571,7 +3580,7 @@ const PAGE_KEYWORDS: Partial<Record<SitePage, string>> = {
   'ragdoll-kimono': `${SITE_KEYWORDS}, ragdoll kimono, ragdoll cat kimono, long hair cat kimono preview, cat japanese outfit`,
   about: `${SITE_KEYWORDS}, pet fitting service, ai pet fitting service, about hamdeva`,
   'how-it-works': `${SITE_KEYWORDS}, pet photo upload, outfit image upload, how pet fitting works, dog clothes try on steps`,
-  'traditional-clothing': `${SITE_KEYWORDS}, 샘플 의상, 반려동물 전통의상, 강아지 한복, 고양이 한복, 강아지 기모노, 고양이 기모노, 강아지 치파오, 고양이 치파오, 강아지 사리, 고양이 사리, 강아지 아오자이, 고양이 아오자이, 강아지 추트타이, 고양이 추트타이, 강아지 케바야, 고양이 케바야, 강아지 플라멩코 드레스, 고양이 플라멩코 드레스, pet hanbok, pet kimono, pet qipao, pet saree, pet ao dai, pet chut thai, pet kebaya, pet flamenco dress, 한국 전통의상, 일본 전통의상, 중국 전통의상, 인도 전통의상, 베트남 전통의상, 태국 전통의상, 인도네시아 전통의상, 스페인 전통의상`,
+  'traditional-clothing': `${SITE_KEYWORDS}, pet outfit ideas, pet costume ideas, dog outfit ideas, cat outfit ideas, pet hanbok, pet halloween costume, dog hoodie`,
   'sample-friends': `${SITE_KEYWORDS}, 샘플 강아지, 샘플 고양이, 강아지 품종, 고양이 품종, dog breeds, cat breeds, pet sample photo`,
   'fashion-technology': `${SITE_KEYWORDS}, pet style guide, dog outfit ideas, cat outfit ideas, ai pet fashion`,
   pricing: `${SITE_KEYWORDS}, pricing, credits, plans, pet fitting price, dog clothes try on price, pet outfit generator price`,
@@ -3587,7 +3596,7 @@ const normalizeLanguageCode = (value: string | null | undefined): LanguageCode =
 // ─── App ──────────────────────────────────────────────────────
 const App: React.FC = () => {
   const { i18n: i18next, t: translate } = useTranslation();
-  const SUPPORT_EMAIL = 'dlgksxk@gmail.com';
+  const SUPPORT_EMAIL = 'support@hamdeva.com';
   const personInputRef = useRef<HTMLInputElement>(null);
   const clothInputRef = useRef<HTMLInputElement>(null);
   const [personImage, setPersonImage] = useState<string | null>(null);
@@ -3812,8 +3821,8 @@ const App: React.FC = () => {
     return typeof preservedUntil === 'number' && preservedUntil > Date.now();
   };
   const preservedHistoryCount = historyItems.filter((item) => isHistoryPreserved(item)).length;
-  const loginComingSoonLabel = `${t.login} (${t.comingSoon})`;
-  const googleLoginComingSoonLabel = `${t.googleLogin} (${t.comingSoon})`;
+  const loginComingSoonLabel = t.login;
+  const googleLoginComingSoonLabel = t.googleLogin;
   const headerAccountLabel = currentUser ? t.myPage : t.login;
   const mobileHeaderAccountLabel = currentUser ? 'MY' : t.login;
   const headerCreditLabel = lang === 'ko'
@@ -4005,11 +4014,11 @@ const App: React.FC = () => {
   const seoLandingUiCopy = lang === 'ko'
     ? {
         homeLabel: '홈',
-        featuredTitle: '인기 의상 검색 가이드',
-        featuredDescription: '강아지 한복, 고양이 기모노, 반려동물 치파오, 반려동물 사리처럼 더 구체적인 검색을 위한 페이지입니다. 생성 전에 더 강한 가이드로 바로 들어갈 수 있습니다.',
-        sampleTitle: '의도 높은 의상 페이지',
-        sampleDescription: '이 상세 랜딩페이지들은 더 구체적인 검색 유입을 받도록 설계되어 있으며, 검색에서 샘플 선택까지 더 선명한 경로를 제공합니다.',
-        openPage: '페이지 열기',
+        featuredTitle: '바로 써보기 좋은 페이지',
+        featuredDescription: '강아지/고양이 생성, 할로윈 코스튬, 한복, 후드티, 포멀룩처럼 의도가 분명한 페이지로 바로 이동할 수 있습니다.',
+        sampleTitle: '빠른 카테고리 이동',
+        sampleDescription: '샘플 의상 페이지에서도 바로 도구 페이지와 고의도 랜딩으로 넘어갈 수 있게 구성했습니다.',
+        openPage: '열어보기',
       }
     : lang === 'ja'
       ? {
@@ -4031,10 +4040,10 @@ const App: React.FC = () => {
           }
         : {
             homeLabel: 'Home',
-            featuredTitle: 'Popular Outfit Search Guides',
-            featuredDescription: 'These pages target more specific searches such as dog hanbok, cat kimono, pet qipao, and pet saree so visitors can land on a stronger guide before generating.',
-            sampleTitle: 'High-Intent Outfit Pages',
-            sampleDescription: 'These detailed landing pages are built for more specific searches and give visitors a clearer route from search to sample selection.',
+            featuredTitle: 'High-Intent Landing Pages',
+            featuredDescription: 'Jump straight to dog, cat, seasonal, casual, and formal outfit pages when you already know what kind of look you want to test.',
+            sampleTitle: 'Jump to A Stronger Starting Point',
+            sampleDescription: 'Use these focused pages when you want faster outfit selection before opening the full try-on flow.',
             openPage: 'Open page',
           };
   const pricingUiCopy = getPricingUiCopy(lang);
@@ -4124,15 +4133,7 @@ const App: React.FC = () => {
       : currentPage === 'traditional-clothing' || currentPage === 'sample-friends'
         ? 'CollectionPage'
         : 'WebPage';
-  const articleStructuredData = (currentEditorialPage || currentSeoLandingPage) && currentPage !== 'about' && currentPage !== 'how-it-works'
-    ? createArticleSchema({
-        headline: currentPageCopy?.title ?? currentEditorialPage?.title ?? currentSeoLandingPage?.title ?? 'HAMDEVA',
-        url: getCanonicalPageUrl(currentPage),
-        description: currentPageCopy?.description ?? currentEditorialPage?.description ?? currentSeoLandingPage?.description ?? '',
-        image: `${SITE_URL}/sample/og-image.png`,
-        articleType: currentPage === 'fashion-technology' ? 'TechArticle' : 'Article',
-      })
-    : null;
+  const articleStructuredData = null;
   const howToStructuredData = currentPage === 'how-it-works'
     ? createHowToSchema({
         title: currentPageCopy?.title ?? contentLocale.pages['how-it-works'].title,
@@ -4153,7 +4154,6 @@ const App: React.FC = () => {
           pageType: pageSchemaType,
         }),
         createBreadcrumbSchema(breadcrumbItems),
-        ...(articleStructuredData ? [articleStructuredData] : []),
         ...(howToStructuredData ? [howToStructuredData] : []),
         ...(currentFaqItems.length > 0 ? [createFAQPageSchema(currentFaqItems)] : []),
       ]
@@ -5446,7 +5446,7 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const handleHeroCta = () => {
-    setShowTryOnModal(true);
+    navigateToPage('tryon');
   };
   const openOutfitGuide = (guideId: string) => {
     setSelectedOutfitGuideId(guideId);
@@ -5463,12 +5463,12 @@ const App: React.FC = () => {
   const handleStartGuideTryOn = async (imageUrl: string) => {
     closeOutfitGuide();
     await loadClothSample(imageUrl);
-    setShowTryOnModal(true);
+    navigateToPage('tryon');
   };
   const handleStartBreedTryOn = async (imageUrl: string, category: FaceCategory) => {
     closeBreedGuide();
     await loadPersonSample(imageUrl, category);
-    setShowTryOnModal(true);
+    navigateToPage('tryon');
   };
   const openAuthModal = (mode: AuthMode) => {
     if (!isFirebaseConfigured) {
@@ -5541,18 +5541,15 @@ const App: React.FC = () => {
       setAuthError(getFirebaseDisabledMessage(firebaseDisabledBaseMessage));
       return;
     }
-    if (isNativeAndroid) {
-      console.error('[HAMDEVA] google sign-in blocked on native android app');
-      setAuthError(authErrorCopy.nativeAppGoogleUnsupported);
-      return;
-    }
     setAuthSubmitting(true);
     setAuthError(null);
     try {
-      const credential = await signInWithPopup(auth, googleProvider);
+      const signedInUser = isNativeAndroid
+        ? await signInWithGoogleOnAndroid()
+        : (await signInWithPopup(auth, googleProvider)).user;
       setShowAuthModal(false);
       setAuthForm({ email: '', password: '' });
-      void syncUserCreditsAfterAuth(credential.user);
+      void syncUserCreditsAfterAuth(signedInUser);
     } catch (error) {
       console.error('[HAMDEVA] google sign-in failed', error);
       setAuthError(buildAuthErrorMessage(error, t.authFailed, authErrorCopy));
@@ -6386,10 +6383,65 @@ const App: React.FC = () => {
             <section className="section landing-feature-section">
               <div className="section-inner">
                 <div className="section-copy">
+                  <h2>{landingContent.intro.title}</h2>
+                  {landingContent.intro.paragraphs.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+                <div className="landing-inline-actions">
+                  <button className="generate-btn" onClick={handleHeroCta} type="button">
+                    {contentLocale.nav.tryon}
+                  </button>
+                  <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
+                    {contentLocale.nav['traditional-clothing']}
+                  </button>
+                  <button className="outline-btn" onClick={() => navigateToPage('pricing')} type="button">
+                    {contentLocale.nav.pricing}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-feature-section">
+              <div className="section-inner">
+                <div className="section-copy">
                   <h2>{landingContent.features.title}</h2>
                 </div>
                 <div className="landing-card-grid">
                   {landingContent.features.items.map((item) => (
+                    <article key={item.title} className="compact-info-card landing-feature-card">
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-feature-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{landingContent.steps.title}</h2>
+                </div>
+                <div className="landing-card-grid">
+                  {landingContent.steps.items.map((item) => (
+                    <article key={item.step} className="compact-info-card landing-feature-card">
+                      <strong>{item.step}</strong>
+                      <h3>{item.title}</h3>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section landing-feature-section">
+              <div className="section-inner">
+                <div className="section-copy">
+                  <h2>{landingContent.examples.title}</h2>
+                </div>
+                <div className="landing-card-grid">
+                  {landingContent.examples.items.map((item) => (
                     <article key={item.title} className="compact-info-card landing-feature-card">
                       <h3>{item.title}</h3>
                       <p>{item.description}</p>
@@ -6408,7 +6460,7 @@ const App: React.FC = () => {
                   </div>
                   <div className="landing-inline-actions">
                     <button className="generate-btn" onClick={handleHeroCta} type="button">
-                      {landingContent.hero.primaryButton}
+                      {contentLocale.nav.tryon}
                     </button>
                     <button className="outline-btn" onClick={() => navigateToPage('traditional-clothing')} type="button">
                       {landingContent.sampleInfo.button}
@@ -6446,6 +6498,57 @@ const App: React.FC = () => {
       ) : (
         <main className="section page-shell">
           <div className="section-inner page-layout">
+            {currentPage === 'tryon' && (
+              <>
+                <Suspense fallback={lazyPageFallback}>
+                  <TryOnStudio
+                    {...tryOnStudioProps}
+                    layout="page"
+                  />
+                </Suspense>
+                <article className="page-article">
+                  <h2>{landingContent.steps.title}</h2>
+                  <div className="landing-card-grid">
+                    {landingContent.steps.items.map((item) => (
+                      <article key={`tryon-step-${item.step}`} className="compact-info-card landing-feature-card">
+                        <strong>{item.step}</strong>
+                        <h3>{item.title}</h3>
+                        <p>{item.description}</p>
+                      </article>
+                    ))}
+                  </div>
+                </article>
+                {currentPageCopy?.sections?.map((section) => (
+                  <article key={`tryon-${section.heading}`} className="page-article">
+                    <h2>{section.heading}</h2>
+                    {section.paragraphs.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </article>
+                ))}
+                <section className="section editorial-section editorial-related-section">
+                  <div className="section-copy">
+                    <h2>{seoLandingUiCopy.featuredTitle}</h2>
+                    <p>{seoLandingUiCopy.featuredDescription}</p>
+                  </div>
+                  <div className="compact-card-grid">
+                    {[...featuredSeoLandingCards.slice(0, 4), {
+                      page: 'traditional-clothing' as SitePage,
+                      title: contentLocale.nav['traditional-clothing'],
+                      description: currentPage === 'tryon' ? landingContent.sampleInfo.body : '',
+                    }].map((card) => (
+                      <article key={`tryon-card-${card.page}`} className="compact-info-card">
+                        <h2>{card.title}</h2>
+                        <p>{card.description}</p>
+                        <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                          {seoLandingUiCopy.openPage}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
             {currentPage === 'admin' && (
               <Suspense fallback={lazyPageFallback}>
                 <AdminDashboard
@@ -6544,7 +6647,7 @@ const App: React.FC = () => {
               </article>
             )}
 
-            {currentPage !== 'admin' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPage !== 'about' && currentPage !== 'fashion-technology' && currentPage !== 'sample-friends' && currentPageCopy?.sections?.map((section) => (
+            {currentPage !== 'admin' && currentPage !== 'tryon' && currentPage !== 'payment-success' && currentPage !== 'payment-failed' && currentPage !== 'traditional-clothing' && currentPage !== 'how-it-works' && currentPage !== 'about' && currentPage !== 'fashion-technology' && currentPage !== 'sample-friends' && currentPageCopy?.sections?.map((section) => (
               <article key={section.heading} className="page-article">
                 <h2>{section.heading}</h2>
                 {section.paragraphs.map((paragraph) => (
@@ -6567,6 +6670,23 @@ const App: React.FC = () => {
                   <h2>{landingContent.sampleOutfits.catalogTitle}</h2>
                   <p>{landingContent.sampleOutfits.catalogBody}</p>
                 </article>
+                <section className="section editorial-section editorial-related-section">
+                  <div className="section-copy">
+                    <h2>{seoLandingUiCopy.sampleTitle}</h2>
+                    <p>{seoLandingUiCopy.sampleDescription}</p>
+                  </div>
+                  <div className="compact-card-grid">
+                    {featuredSeoLandingCards.map((card) => (
+                      <article key={`sample-jump-${card.page}`} className="compact-info-card">
+                        <h2>{card.title}</h2>
+                        <p>{card.description}</p>
+                        <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
+                          {seoLandingUiCopy.openPage}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </section>
                 <div className="sample-outfit-filter-bar" role="tablist" aria-label={landingContent.sampleOutfits.catalogTitle}>
                   {sampleOutfitFilterOptions.map((option) => (
                     <button
@@ -6601,23 +6721,6 @@ const App: React.FC = () => {
                     </article>
                   ))}
                 </div>
-                <section className="section editorial-section editorial-related-section">
-                  <div className="section-copy">
-                    <h2>{seoLandingUiCopy.sampleTitle}</h2>
-                    <p>{seoLandingUiCopy.sampleDescription}</p>
-                  </div>
-                  <div className="compact-card-grid">
-                    {featuredSeoLandingCards.map((card) => (
-                      <article key={`seo-${card.page}`} className="compact-info-card">
-                        <h2>{card.title}</h2>
-                        <p>{card.description}</p>
-                        <button className="text-link-btn" onClick={() => navigateToPage(card.page)} type="button">
-                          {seoLandingUiCopy.openPage}
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </section>
               </>
             )}
 
@@ -7418,8 +7521,6 @@ const App: React.FC = () => {
             }}
             email={authForm.email}
             error={authError}
-            googleDisabled={isNativeAndroid}
-            googleDisabledReason={isNativeAndroid ? authErrorCopy.nativeAppGoogleUnsupported : null}
             isSubmitting={authSubmitting}
             mode={authMode}
             password={authForm.password}
