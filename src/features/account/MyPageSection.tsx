@@ -110,6 +110,7 @@ const MyPageSection: React.FC<MyPageSectionProps> = ({
   historyCount,
   recentGenerationLabel,
   subscriptionStatusLabel,
+  locale,
   isFirebaseConfigured,
   firebaseDisabledMessage,
   isStartingCheckout,
